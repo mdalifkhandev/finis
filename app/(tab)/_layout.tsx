@@ -70,14 +70,14 @@ export default function RootLayout() {
         }}
       />
       <Tabs.Screen
-        name="projects"
+        name="company"
         options={{
-          title: "Projects",
+          title: "Company",
           tabBarIcon: ({ focused }) => (
             <TabIcon
               focused={focused}
-              activeName="stats-chart"
-              inactiveName="stats-chart-outline"
+              activeName="business"
+              inactiveName="business-outline"
             />
           ),
         }}
@@ -107,6 +107,10 @@ export default function RootLayout() {
             />
           ),
         }}
+      />
+      <Tabs.Screen
+        name="projects"
+        options={{ href: null, tabBarStyle: null }}
       />
       <Tabs.Screen
         name="inventory"
