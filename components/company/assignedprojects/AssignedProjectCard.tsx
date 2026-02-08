@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AvatarStack from "./AvatarStack";
 import PriorityBadge from "./PriorityBadge";
@@ -13,6 +13,7 @@ type AssignedProjectCardProps = {
   links: string;
   extraMembers: string;
   avatars: string[];
+  onPress?: () => void;
 };
 
 export default function AssignedProjectCard({
@@ -24,9 +25,14 @@ export default function AssignedProjectCard({
   links,
   extraMembers,
   avatars,
+  onPress,
 }: AssignedProjectCardProps) {
   return (
-    <View className="mt-4 h-[206px] w-full flex-col items-start gap-4 rounded-xl border border-[#EDEDED] bg-white p-4">
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={onPress}
+      className="mt-4 h-[206px] w-full flex-col items-start gap-4 rounded-xl border border-[#EDEDED] bg-white p-4"
+    >
       <View className="flex-row items-center">
         <PriorityBadge level={priority} />
         <Ionicons
@@ -69,6 +75,6 @@ export default function AssignedProjectCard({
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }

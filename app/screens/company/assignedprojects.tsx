@@ -70,6 +70,7 @@ export default function AssignedProjectsRoute() {
               links={project.links}
               extraMembers={project.extraMembers}
               avatars={avatars}
+              onPress={() => router.push("/screens/company/projectdetails")}
             />
           ))}
         </View>
