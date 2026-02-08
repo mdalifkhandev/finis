@@ -7,6 +7,12 @@ import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProjectDetailsRoute() {
+  const handlePressMenuItem = (item: string) => {
+    if (item === "Project details") {
+      router.push("/screens/company/projectinfo");
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
@@ -17,7 +23,7 @@ export default function ProjectDetailsRoute() {
         <ProjectOverviewCard
           onPressFloorPlan={() => router.push("/screens/company/floorplan")}
         />
-        <ProjectDetailsMenu />
+        <ProjectDetailsMenu onPressItem={handlePressMenuItem} />
       </ScrollView>
     </SafeAreaView>
   );
