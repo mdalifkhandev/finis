@@ -7,8 +7,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const menuItems = [
   { label: "Assigned Projects", route: "/screens/company/assignedprojects" },
-  { label: "Contacts" },
-  { label: "Documents" },
+  { label: "Contacts", route: "/screens/company/contacts" },
+  { label: "Documents", route: "/screens/company/documents" },
   { label: "Geofencing" },
 ];
 
@@ -42,7 +42,10 @@ export default function CompanyProfileRoute() {
                 item.route
                   ? () =>
                       router.push(
-                        item.route as "/screens/company/assignedprojects"
+                        item.route as
+                          | "/screens/company/assignedprojects"
+                          | "/screens/company/contacts"
+                          | "/screens/company/documents"
                       )
                   : undefined
               }
