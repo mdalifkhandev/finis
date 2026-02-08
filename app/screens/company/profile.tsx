@@ -9,7 +9,7 @@ const menuItems = [
   { label: "Assigned Projects", route: "/screens/company/assignedprojects" },
   { label: "Contacts", route: "/screens/company/contacts" },
   { label: "Documents", route: "/screens/company/documents" },
-  { label: "Geofencing" },
+  { label: "Geofencing", route: "/screens/company/geofencing" },
 ];
 
 const avatarUrl =
@@ -46,6 +46,7 @@ export default function CompanyProfileRoute() {
                           | "/screens/company/assignedprojects"
                           | "/screens/company/contacts"
                           | "/screens/company/documents"
+                          | "/screens/company/geofencing"
                       )
                   : undefined
               }
