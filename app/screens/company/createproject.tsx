@@ -2,7 +2,15 @@ import BackTitleHeader from "@/components/common/BackTitleHeader";
 import ProjectInputField from "@/components/company/project/ProjectInputField";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CreateProjectRoute() {
@@ -16,11 +24,17 @@ export default function CreateProjectRoute() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={16}
       >
-        <BackTitleHeader title="Create New Project" onBack={() => router.back()} />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 40 }}
+        >
+          <BackTitleHeader title="Create New Project" onBack={() => router.back()} />
 
         <View className="mt-6 px-5">
           <ProjectInputField
@@ -116,16 +130,17 @@ export default function CreateProjectRoute() {
             />
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className="mt-6 h-[52px] items-center justify-center rounded-[12px] bg-[#1D4F6D] px-8"
-          >
-            <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">
-              Create Project & Setup Floors
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              className="mt-6 h-[52px] items-center justify-center rounded-[12px] bg-[#1D4F6D] px-8"
+            >
+              <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">
+                Create Project & Setup Floors
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
