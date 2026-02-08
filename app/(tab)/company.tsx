@@ -1,3 +1,4 @@
+import BackTitleHeader from "@/components/common/BackTitleHeader";
 import React from "react";
 import {
   ScrollView,
@@ -10,7 +11,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import CompanyCard from "@/components/company/CompanyCard";
-import { cardShadow } from "@/components/home/styles";
 
 const companies = [
   {
@@ -48,18 +48,7 @@ export default function Company() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        <View className="flex-row items-center justify-between px-5 pt-4">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-            className="h-9 w-9 items-center justify-center rounded-full bg-white"
-            style={cardShadow}
-          >
-            <Ionicons name="chevron-back" size={18} color="#0f172a" />
-          </TouchableOpacity>
-          <Text className="text-base font-semibold text-slate-900">Company</Text>
-          <View className="h-9 w-9" />
-        </View>
+        <BackTitleHeader title="Company" onBack={() => router.back()} />
 
         <View className="mt-5 px-5">
           <View className="flex-row items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
@@ -74,7 +63,11 @@ export default function Company() {
 
         <View className="mt-2 px-5">
           {companies.map((company, index) => (
-            <CompanyCard key={`${company.name}-${index}`} {...company} />
+            <CompanyCard
+              key={`${company.name}-${index}`}
+              {...company}
+              onPress={() => router.push("/screens/company/profile")}
+            />
           ))}
         </View>
 
