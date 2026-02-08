@@ -14,7 +14,9 @@ export default function ProjectDetailsRoute() {
         contentContainerStyle={{ paddingBottom: 28 }}
       >
         <BackTitleHeader title="Projects details" onBack={() => router.back()} />
-        <ProjectOverviewCard />
+        <ProjectOverviewCard
+          onPressFloorPlan={() => router.push("/screens/company/floorplan")}
+        />
         <ProjectDetailsMenu />
       </ScrollView>
     </SafeAreaView>
