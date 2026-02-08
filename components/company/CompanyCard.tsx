@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { cardShadow } from "../home/styles";
 
@@ -10,6 +10,7 @@ type CompanyCardProps = {
   projects: string;
   address: string;
   website: string;
+  onPress?: () => void;
 };
 
 export default function CompanyCard({
@@ -19,9 +20,15 @@ export default function CompanyCard({
   projects,
   address,
   website,
+  onPress,
 }: CompanyCardProps) {
   return (
-    <View className="mt-4 rounded-2xl bg-white p-4" style={cardShadow}>
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPress}
+      className="mt-4 rounded-2xl bg-white p-4"
+      style={cardShadow}
+    >
       <View className="flex-row items-center">
         <View className="h-10 w-10 items-center justify-center rounded-full bg-slate-100">
           <Ionicons name="logo-google" size={18} color="#0f172a" />
@@ -56,6 +63,6 @@ export default function CompanyCard({
         <Ionicons name="globe-outline" size={14} color="#64748b" />
         <Text className="ml-2 text-xs text-slate-500">{website}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }

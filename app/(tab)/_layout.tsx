@@ -108,10 +108,7 @@ export default function RootLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="projects"
-        options={{ href: null, tabBarStyle: null }}
-      />
+      <Tabs.Screen name="projects" options={{ tabBarButton: () => null }} />
       <Tabs.Screen
         name="inventory"
         options={{
