@@ -10,6 +10,11 @@ export default function ProjectDetailsRoute() {
   const handlePressMenuItem = (item: string) => {
     if (item === "Project details") {
       router.push("/screens/company/projectinfo");
+      return;
+    }
+
+    if (item === "Project Analysis") {
+      router.push("/screens/company/projectanalysis");
     }
   };
 
