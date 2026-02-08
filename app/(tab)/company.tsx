@@ -1,6 +1,8 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import React from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -44,11 +46,17 @@ export default function Company() {
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={16}
       >
-        <BackTitleHeader title="Company" onBack={() => router.back()} />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 120 }}
+        >
+          <BackTitleHeader title="Company" onBack={() => router.back()} />
 
         <View className="mt-5 px-5">
           <View className="flex-row items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
@@ -71,17 +79,19 @@ export default function Company() {
           ))}
         </View>
 
-        <View className="mt-6 px-5">
-          <TouchableOpacity
-            activeOpacity={0.85}
-            className="items-center justify-center rounded-xl bg-[#1f3d5c] py-3"
-          >
-            <Text className="text-sm font-semibold text-white">
-              Create New Company
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          <View className="mt-6 px-5">
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => router.push("/screens/company/createcompany")}
+              className="items-center justify-center rounded-xl bg-[#1f3d5c] py-3"
+            >
+              <Text className="text-sm font-semibold text-white">
+                Create New Company
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
