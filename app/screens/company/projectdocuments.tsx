@@ -1,17 +1,19 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import DocumentsList from "@/components/company/documents/DocumentsList";
-import { getCompanyDocuments } from "@/components/company/documents/documentApi";
+import { getProjectDocuments } from "@/components/company/documents/documentApi";
 import { DocumentItem } from "@/components/company/documents/types";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function DocumentsRoute() {
+const projectId = "riverside-tower";
+
+export default function ProjectDocumentsRoute() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
 
   useEffect(() => {
-    getCompanyDocuments().then(setDocuments);
+    getProjectDocuments(projectId).then(setDocuments);
   }, []);
 
   return (
@@ -26,3 +28,4 @@ export default function DocumentsRoute() {
     </SafeAreaView>
   );
 }
+

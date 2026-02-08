@@ -15,6 +15,21 @@ export default function ProjectDetailsRoute() {
 
     if (item === "Project Analysis") {
       router.push("/screens/company/projectanalysis");
+      return;
+    }
+
+    if (item === "Team") {
+      router.push("/screens/company/team");
+      return;
+    }
+
+    if (item === "Document") {
+      router.push("/screens/company/projectdocuments");
+      return;
+    }
+
+    if (item === "Task") {
+      router.push("/screens/company/task");
     }
   };
 
