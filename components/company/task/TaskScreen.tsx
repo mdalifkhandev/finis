@@ -1,43 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import TaskCard from "./TaskCard";
 import TaskFilterTabs, { TaskFilter } from "./TaskFilterTabs";
-import { TaskItem } from "./types";
-
-const tasks: TaskItem[] = [
-  {
-    id: "task-1",
-    title: "Install electrical wiring - Floor 2",
-    location: "Riverside Tower",
-    assignee: "Mike Johnson",
-    startDate: "Jan 15",
-    dueDate: "Jan 18",
-    status: "In Progress",
-  },
-  {
-    id: "task-2",
-    title: "Install electrical wiring - Floor 2",
-    location: "Riverside Tower",
-    assignee: "Mike Johnson",
-    startDate: "Jan 15",
-    dueDate: "Jan 18",
-    status: "Pending",
-  },
-  {
-    id: "task-3",
-    title: "Install electrical wiring - Floor 2",
-    location: "Riverside Tower",
-    assignee: "Mike Johnson",
-    startDate: "Jan 15",
-    dueDate: "Jan 18",
-    status: "Completed",
-  },
-];
+import { useTaskItems } from "./taskStore";
 
 export default function TaskScreen() {
   const [filter, setFilter] = useState<TaskFilter>("All");
   const [searchText, setSearchText] = useState("");
+  const tasks = useTaskItems();
 
   const filteredTasks = useMemo(() => {
     const byFilter = tasks.filter((task) => {
@@ -55,12 +27,13 @@ export default function TaskScreen() {
         task.location.toLowerCase().includes(query) ||
         task.assignee.toLowerCase().includes(query)
     );
-  }, [filter, searchText]);
+  }, [filter, searchText, tasks]);
 
   return (
     <View className="mt-6 px-5">
       <TouchableOpacity
         activeOpacity={0.85}
+        onPress={() => router.push("/screens/company/createtask")}
         className="h-[52px] flex-row items-center justify-center rounded-[10px] bg-[#1E5371]"
       >
         <Ionicons name="add" size={22} color="#F4F8FA" />
@@ -84,7 +57,16 @@ export default function TaskScreen() {
 
       <View className="mt-2">
         {filteredTasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            onPress={() =>
+              router.push({
+                pathname: "/screens/company/taskdetails",
+                params: { taskId: task.id },
+              })
+            }
+          />
         ))}
       </View>
     </View>

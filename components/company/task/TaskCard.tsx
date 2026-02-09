@@ -6,12 +6,21 @@ import { TaskItem } from "./types";
 
 type TaskCardProps = {
   task: TaskItem;
+  onPress?: () => void;
   onPressUpdateStatus?: () => void;
 };
 
-export default function TaskCard({ task, onPressUpdateStatus }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  onPress,
+  onPressUpdateStatus,
+}: TaskCardProps) {
   return (
-    <View className="mt-2.5 rounded-xl border border-[#D6DBE2] bg-[#F7F9FB] px-3.5 py-3.5">
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={onPress}
+      className="mt-2.5 rounded-xl border border-[#D6DBE2] bg-[#F7F9FB] px-3.5 py-3.5"
+    >
       <View className="flex-row items-center">
         <Ionicons name="information-circle-outline" size={18} color="#2A66FF" />
         <Text className="ml-2 flex-1 text-[16px] text-[#2A313B]">{task.title}</Text>
@@ -47,6 +56,6 @@ export default function TaskCard({ task, onPressUpdateStatus }: TaskCardProps) {
           <Text className="text-[16px] font-medium text-[#1B5A83]">Update Status</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
