@@ -42,6 +42,7 @@ export default function ProjectDetailsRoute() {
         <BackTitleHeader title="Projects details" onBack={() => router.back()} />
         <ProjectOverviewCard
           onPressFloorPlan={() => router.push("/screens/company/floorplan")}
+          onPressEditProject={() => router.push("/screens/company/editproject")}
         />
         <ProjectDetailsMenu onPressItem={handlePressMenuItem} />
       </ScrollView>

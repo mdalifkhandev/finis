@@ -1,0 +1,65 @@
+import { useSyncExternalStore } from "react";
+
+export type ProjectTypeValue = "Apartment Building" | "House";
+export type HouseScopeValue = "whole" | "sections";
+
+export type ProjectData = {
+  projectName: string;
+  company: string;
+  startDate: string;
+  endDate: string;
+  projectType: ProjectTypeValue;
+  floors: string;
+  roomsPerFloor: string;
+  budgetEnabled: boolean;
+  budget: string;
+  location: string;
+  description: string;
+  houseScope: HouseScopeValue;
+  selectedSections: string[];
+};
+
+const DEFAULT_PROJECT_DATA: ProjectData = {
+  projectName: "Riverside Tower",
+  company: "CC.LTD",
+  startDate: "2025-08-01",
+  endDate: "Ongoing",
+  projectType: "Apartment Building",
+  floors: "5",
+  roomsPerFloor: "20",
+  budgetEnabled: true,
+  budget: "2500000",
+  location: "123 Construction Blvd, Toronto, ON",
+  description:
+    "Install electrical wiring and outlets for Room 302. Ensure all connections meet code requirements.",
+  houseScope: "whole",
+  selectedSections: [],
+};
+
+let projectData: ProjectData = DEFAULT_PROJECT_DATA;
+const listeners = new Set<() => void>();
+
+const notify = () => {
+  listeners.forEach((listener) => listener());
+};
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+
+const getSnapshot = () => projectData;
+
+export function useProjectData() {
+  return useSyncExternalStore(subscribe, getSnapshot);
+}
+
+export function saveProject(nextProjectData: ProjectData) {
+  projectData = nextProjectData;
+  notify();
+}
+
+export function getDefaultProjectData() {
+  return DEFAULT_PROJECT_DATA;
+}
+
