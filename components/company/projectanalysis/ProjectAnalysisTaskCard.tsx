@@ -7,8 +7,7 @@ type ProjectAnalysisTaskCardProps = {
   subtitle: string;
   units: string;
   date: string;
-  selected?: boolean;
-  accentColor: string;
+  status: "Completed" | "Pending" | "Not Started" | "In Progress";
   onPressCheck?: () => void;
 };
 
@@ -17,27 +16,36 @@ export default function ProjectAnalysisTaskCard({
   subtitle,
   units,
   date,
-  selected = false,
-  accentColor,
+  status,
   onPressCheck,
 }: ProjectAnalysisTaskCardProps) {
+  const isCompleted = status === "Completed";
+  const accentColor =
+    status === "Completed"
+      ? "#5C61F0"
+      : status === "Pending"
+      ? "#F4B501"
+      : "#BFC1C5";
+
   return (
     <View className="mt-2.5 flex-row items-center">
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={onPressCheck}
         className={`h-6 w-6 items-center justify-center rounded-full ${
-          selected ? "bg-[#5C61F0]" : "border-2 border-[#8F8F8F] bg-transparent"
+          isCompleted ? "bg-[#5C61F0]" : "border-2 border-[#8F8F8F] bg-transparent"
         }`}
       >
-        {selected ? (
+        {isCompleted ? (
           <Ionicons name="checkmark" size={14} color="#FFFFFF" />
         ) : null}
       </TouchableOpacity>
 
       <View
         className={`ml-2.5 flex-1 overflow-hidden rounded-xl border px-4 py-3 ${
-          selected ? "border-[#D7D9F2] bg-[#E6E7F7]" : "border-[#D5D9DF] bg-[#F7F9FB]"
+          isCompleted
+            ? "border-[#D7D9F2] bg-[#E6E7F7]"
+            : "border-[#D5D9DF] bg-[#F7F9FB]"
         }`}
       >
         <View

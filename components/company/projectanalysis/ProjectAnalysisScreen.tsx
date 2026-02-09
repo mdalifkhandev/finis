@@ -2,6 +2,21 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import ProjectAnalysisTaskCard from "./ProjectAnalysisTaskCard";
 
+type AnalysisTaskStatus =
+  | "Completed"
+  | "Pending"
+  | "Not Started"
+  | "In Progress";
+
+type AnalysisTask = {
+  id: string;
+  title: string;
+  subtitle: string;
+  units: string;
+  date: string;
+  status: AnalysisTaskStatus;
+};
+
 const initialTasks = [
   {
     id: "task-1",
@@ -9,8 +24,7 @@ const initialTasks = [
     subtitle: "Redesigne -Commerce Dashboard",
     units: "2 Unites",
     date: "Today",
-    selected: true,
-    accentColor: "#5C61F0",
+    status: "Completed",
   },
   {
     id: "task-2",
@@ -18,8 +32,7 @@ const initialTasks = [
     subtitle: "Redesigne -Commerce Dashboard",
     units: "2 Unites",
     date: "today",
-    selected: true,
-    accentColor: "#5C61F0",
+    status: "Completed",
   },
   {
     id: "task-3",
@@ -27,8 +40,7 @@ const initialTasks = [
     subtitle: "Analytics Dashboard UI Update",
     units: "2 Unites",
     date: "today",
-    selected: false,
-    accentColor: "#F4B501",
+    status: "Pending",
   },
   {
     id: "task-4",
@@ -36,8 +48,7 @@ const initialTasks = [
     subtitle: "Design System Creation",
     units: "2 Unites",
     date: "today",
-    selected: false,
-    accentColor: "#F4B501",
+    status: "In Progress",
   },
   {
     id: "task-5",
@@ -45,10 +56,9 @@ const initialTasks = [
     subtitle: "Mental Health App",
     units: "2 Unites",
     date: "today",
-    selected: false,
-    accentColor: "#BFC1C5",
+    status: "Pending",
   },
-];
+] satisfies AnalysisTask[];
 
 export default function ProjectAnalysisScreen() {
   const [tasks, setTasks] = useState(initialTasks);
@@ -56,8 +66,13 @@ export default function ProjectAnalysisScreen() {
   const handleToggleTask = (id: string) => {
     setTasks((previous) =>
       previous.map((task) =>
-        task.id === id ? { ...task, selected: !task.selected } : task
-      )
+        task.id === id
+          ? {
+              ...task,
+              status: task.status === "Completed" ? "Pending" : "Completed",
+            }
+          : task,
+      ),
     );
   };
 
@@ -70,8 +85,7 @@ export default function ProjectAnalysisScreen() {
           subtitle={task.subtitle}
           units={task.units}
           date={task.date}
-          selected={task.selected}
-          accentColor={task.accentColor}
+          status={task.status}
           onPressCheck={() => handleToggleTask(task.id)}
         />
       ))}

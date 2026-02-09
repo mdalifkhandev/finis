@@ -4,7 +4,7 @@ import ProjectInputField from "@/components/company/project/ProjectInputField";
 import ProjectTypeDropdown, {
   ProjectTypeValue,
 } from "@/components/company/project/ProjectTypeDropdown";
-import { saveProject } from "@/components/company/project/projectStore";
+import { saveProject, useProjectData } from "@/components/company/project/projectStore";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -18,29 +18,27 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function CreateProjectRoute() {
-  const [projectName, setProjectName] = useState("");
-  const [company] = useState("CC.LTD");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [projectType, setProjectType] =
-    useState<ProjectTypeValue>("Apartment Building");
-  const [floors, setFloors] = useState("");
-  const [roomsPerFloor, setRoomsPerFloor] = useState("");
-  const [budget, setBudget] = useState("");
-  const [location, setLocation] = useState("");
-  const [description, setDescription] = useState("");
-  const [budgetEnabled, setBudgetEnabled] = useState(false);
-  const [houseScope, setHouseScope] = useState<"whole" | "sections">("whole");
-  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+export default function EditProjectRoute() {
+  const currentProject = useProjectData();
+
+  const [projectName, setProjectName] = useState(currentProject.projectName);
+  const [company] = useState(currentProject.company || "CC.LTD");
+  const [startDate, setStartDate] = useState(currentProject.startDate);
+  const [endDate, setEndDate] = useState(currentProject.endDate);
+  const [projectType, setProjectType] = useState<ProjectTypeValue>(currentProject.projectType);
+  const [floors, setFloors] = useState(currentProject.floors);
+  const [roomsPerFloor, setRoomsPerFloor] = useState(currentProject.roomsPerFloor);
+  const [budget, setBudget] = useState(currentProject.budget);
+  const [location, setLocation] = useState(currentProject.location);
+  const [description, setDescription] = useState(currentProject.description);
+  const [budgetEnabled, setBudgetEnabled] = useState(currentProject.budgetEnabled);
+  const [houseScope, setHouseScope] = useState<"whole" | "sections">(currentProject.houseScope);
+  const [selectedSections, setSelectedSections] = useState<string[]>(
+    currentProject.selectedSections
+  );
 
   const isApartment = projectType === "Apartment Building";
-  const houseSectionOptions = [
-    "Basement",
-    "Upstairs",
-    "Main floor",
-    "Exterior",
-  ];
+  const houseSectionOptions = ["Basement", "Upstairs", "Main floor", "Exterior"];
 
   const handleSelectProjectType = (nextType: ProjectTypeValue) => {
     setProjectType(nextType);
@@ -65,7 +63,7 @@ export default function CreateProjectRoute() {
     });
   };
 
-  const handleCreateProject = () => {
+  const handleSave = () => {
     saveProject({
       projectName,
       company,
@@ -83,7 +81,7 @@ export default function CreateProjectRoute() {
         projectType === "House" && houseScope === "sections" ? selectedSections : [],
     });
 
-    router.push("/screens/company/projectdetails");
+    router.back();
   };
 
   return (
@@ -98,10 +96,7 @@ export default function CreateProjectRoute() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 40 }}
         >
-          <BackTitleHeader
-            title="Create New Project"
-            onBack={() => router.back()}
-          />
+          <BackTitleHeader title="Edit Project" onBack={() => router.back()} />
 
           <View className="mt-6 px-5">
             <ProjectInputField
@@ -140,10 +135,7 @@ export default function CreateProjectRoute() {
             </View>
 
             <View className="mt-4 rounded-xl border border-[#D8DEE6] bg-[#EDF1F4] p-3">
-              <ProjectTypeDropdown
-                value={projectType}
-                onChange={handleSelectProjectType}
-              />
+              <ProjectTypeDropdown value={projectType} onChange={handleSelectProjectType} />
 
               {isApartment ? (
                 <>
@@ -249,12 +241,10 @@ export default function CreateProjectRoute() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={handleCreateProject}
+              onPress={handleSave}
               className="mt-6 h-[52px] items-center justify-center rounded-[12px] bg-[#1D4F6D] px-8"
             >
-              <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">
-                Create Project & Setup Floors
-              </Text>
+              <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">Save</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -262,3 +252,4 @@ export default function CreateProjectRoute() {
     </SafeAreaView>
   );
 }
+

@@ -9,7 +9,7 @@ import {
 } from "react-native";
 
 type ProjectInputFieldProps = {
-  label: string;
+  label?: string;
   placeholder?: string;
   value?: string;
   onChangeText?: (value: string) => void;
@@ -34,13 +34,16 @@ export default function ProjectInputField({
   keyboardType,
 }: ProjectInputFieldProps) {
   const isPressable = Boolean(onPress);
+  const showHeader = Boolean(label) || Boolean(labelRight);
 
   return (
     <View className="w-full">
-      <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-[16px] font-medium text-[#1F2937]">{label}</Text>
-        {labelRight}
-      </View>
+      {showHeader ? (
+        <View className="mb-2 flex-row items-center justify-between">
+          <Text className="text-[16px] font-medium text-[#1F2937]">{label || ""}</Text>
+          {labelRight}
+        </View>
+      ) : null}
 
       {isPressable ? (
         <TouchableOpacity
