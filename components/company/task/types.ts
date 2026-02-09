@@ -8,5 +8,6 @@ export type TaskItem = {
   startDate: string;
   dueDate: string;
   status: TaskStatus;
+  description?: string;
+  priority?: string;
 };
-
