@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { Image, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function Index() {
+export default function SplashScreenRoute() {
   const router = useRouter();
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function Index() {
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1 items-center justify-center px-8">
         <Image
-          source={require("../assets/images/splash-icon.png")}
+          source={require("../../../assets/images/splash-icon.png")}
           resizeMode="contain"
           className="h-72 w-72"
         />
