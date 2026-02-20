@@ -19,10 +19,10 @@ export default function WelcomeRoute() {
       </View>
 
       <View className="px-5 pt-10">
-        <Text className="text-center text-[42px] font-bold text-[#2A2A2A]">
+        <Text className="text-center text-[24px] font-bold text-[#2A2A2A]">
           Welcome to Finis
         </Text>
-        <Text className="mt-3 text-center text-[22px] leading-8 text-[#666A70]">
+        <Text className="mt-3 text-center text-[16px] leading-6 text-[#666A70]">
           Connecting you with the best services, anytime, anywhere. Experience
           seamless support tailored just for you.
         </Text>
@@ -32,15 +32,17 @@ export default function WelcomeRoute() {
           activeOpacity={0.86}
           onPress={() => router.push("/screens/auth/location")}
         >
-          <Text className="text-[34px] font-semibold text-white">Get Stated</Text>
+          <Text className="text-[18px] font-semibold text-white">
+            Get Stated
+          </Text>
         </TouchableOpacity>
 
         <View className="mt-5 flex-row items-center justify-center">
-          <Text className="text-[31px] text-[#31353A]">
+          <Text className="text-[16px] text-[#31353A]">
             Already haven account?{" "}
           </Text>
-          <TouchableOpacity onPress={() => router.push("/screens/auth/login")}>
-            <Text className="text-[32px] font-semibold text-[#2A2A2A]">
+          <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+            <Text className="text-[16px] font-semibold text-[#2A2A2A]">
               Login
             </Text>
           </TouchableOpacity>

@@ -27,7 +27,7 @@ export default function VerificationCodeRoute() {
         <Text className="mt-6 text-center text-[38px] font-semibold text-[#1F2328]">
           Enter Verification Code
         </Text>
-        <Text className="mt-2 text-center text-[18px] text-[#535960]">
+        <Text className="mt-2 text-center text-[16px] text-[#535960]">
           We’ve sent a 6-digit code to j***@gmail.com
         </Text>
 
@@ -37,7 +37,7 @@ export default function VerificationCodeRoute() {
               key={`code-${index}`}
               maxLength={1}
               keyboardType="number-pad"
-              className="h-11 w-11 rounded-xl border border-[#8F969E] bg-transparent text-center text-[20px] text-[#1F2328]"
+              className="h-11 w-11 rounded-xl border border-[#8F969E] bg-transparent text-center text-[18px] text-[#1F2328]"
             />
           ))}
         </View>
@@ -48,7 +48,7 @@ export default function VerificationCodeRoute() {
 
         <TouchableOpacity
           className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
-          onPress={() => router.push("/screens/auth/new-password")}
+          onPress={() => router.push("/(auth)/new-password")}
           activeOpacity={0.86}
         >
           <Text className="text-[18px] font-semibold text-white">Verify</Text>
@@ -58,7 +58,7 @@ export default function VerificationCodeRoute() {
           Didn&apos;t receive the code?{" "}
           <Text className="font-medium text-[#3B4046]">Resend</Text>
         </Text>
-        <TouchableOpacity onPress={() => router.replace("/screens/auth/login")}>
+        <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
           <Text className="mt-3 text-center text-[17px] font-semibold text-[#3B4046]">
             Back to Login
           </Text>
