@@ -20,10 +20,10 @@ export default function NewPasswordRoute() {
       </View>
 
       <View className="px-5 pt-28">
-        <Text className="text-[46px] font-semibold text-[#1F2328]">
+        <Text className="text-[42px] font-semibold text-[#1F2328]">
           Set a new password
         </Text>
-        <Text className="mt-2 text-[33px] leading-10 text-[#545A61]">
+        <Text className="mt-2 text-[16px] leading-6 text-[#545A61]">
           Please set a new password for your account to continue
         </Text>
 
@@ -32,7 +32,7 @@ export default function NewPasswordRoute() {
             secureTextEntry
             placeholder="New Password"
             placeholderTextColor="#A0A6AE"
-            className="flex-1 text-[25px] text-[#1F2328]"
+            className="flex-1 text-[16px] text-[#1F2328]"
           />
           <Ionicons name="eye-off-outline" size={20} color="#B7BDC4" />
         </View>
@@ -42,14 +42,14 @@ export default function NewPasswordRoute() {
             secureTextEntry
             placeholder="Confirm Password"
             placeholderTextColor="#A0A6AE"
-            className="flex-1 text-[25px] text-[#1F2328]"
+            className="flex-1 text-[16px] text-[#1F2328]"
           />
           <Ionicons name="eye-off-outline" size={20} color="#B7BDC4" />
         </View>
 
         <TouchableOpacity
           className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
-          onPress={() => router.replace("/screens/auth/login")}
+          onPress={() => router.replace("/(auth)/login")}
         >
           <Text className="text-[18px] font-semibold text-white">
             Update Password

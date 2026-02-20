@@ -42,7 +42,7 @@ export default function ForgotPasswordRoute() {
 
         <TouchableOpacity
           className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
-          onPress={() => router.push("/screens/auth/verification-code")}
+          onPress={() => router.push("/(auth)/verification-code")}
           activeOpacity={0.86}
         >
           <Text className="text-[18px] font-semibold text-white">

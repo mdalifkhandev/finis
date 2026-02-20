@@ -22,29 +22,29 @@ export default function SignupRoute() {
       </View>
 
       <View className="px-5 pt-16">
-        <Text className="text-[40px] font-semibold text-[#1F2328]">Sign Up</Text>
-        <Text className="mt-1 text-[30px] text-[#656B72]">
+        <Text className="text-[38px] font-semibold text-[#1F2328]">Sign Up</Text>
+        <Text className="mt-1 text-[22px] text-[#656B72]">
           It only takes a minute to create your account
         </Text>
 
         <TextInput
           placeholder="E-mail address or phone number"
           placeholderTextColor="#90979F"
-          className="mt-12 h-14 rounded-xl border border-[#C8CED5] bg-[#F3F4F6] px-4 text-[25px] text-[#1E2328]"
+          className="mt-12 h-14 rounded-xl border border-[#C8CED5] bg-[#F3F4F6] px-4 text-[16px] text-[#1E2328]"
         />
 
         <TextInput
           placeholder="Password"
           placeholderTextColor="#90979F"
           secureTextEntry
-          className="mt-4 h-14 rounded-xl border border-[#C8CED5] bg-[#F3F4F6] px-4 text-[25px] text-[#1E2328]"
+          className="mt-4 h-14 rounded-xl border border-[#C8CED5] bg-[#F3F4F6] px-4 text-[16px] text-[#1E2328]"
         />
 
         <TextInput
           placeholder="Conform Password"
           placeholderTextColor="#90979F"
           secureTextEntry
-          className="mt-4 h-14 rounded-xl border border-[#C8CED5] bg-[#F3F4F6] px-4 text-[25px] text-[#1E2328]"
+          className="mt-4 h-14 rounded-xl border border-[#C8CED5] bg-[#F3F4F6] px-4 text-[16px] text-[#1E2328]"
         />
 
         <TouchableOpacity

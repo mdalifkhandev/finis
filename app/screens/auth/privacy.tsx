@@ -13,7 +13,7 @@ export default function PrivacyRoute() {
       <View className="flex-1 justify-center px-5">
         <View className="rounded-3xl bg-[#F5F5F5] p-4">
           <View className="mb-5 flex-row items-center justify-between">
-            <Text className="text-[38px] font-semibold text-[#262626]">
+            <Text className="text-[32px] font-semibold text-[#262626]">
               Privacy & Policy
             </Text>
             <TouchableOpacity onPress={() => router.back()}>
@@ -21,35 +21,35 @@ export default function PrivacyRoute() {
             </TouchableOpacity>
           </View>
 
-          <Text className="text-[29px] font-medium text-[#303030]">
+          <Text className="text-[18px] font-medium text-[#303030]">
             Last updated on 23 August 2025
           </Text>
 
-          <Text className="mt-4 text-[18px] leading-8 text-[#4A4A4A]">
+          <Text className="mt-4 text-[14px] leading-6 text-[#4A4A4A]">
             We collect personal information that you voluntarily provide to us
             when you register on the [app/service], express an interest in
             obtaining information about us or our products and services,
           </Text>
 
-          <Text className="mt-4 text-[18px] leading-8 text-[#4A4A4A]">
+          <Text className="mt-4 text-[14px] leading-6 text-[#4A4A4A]">
             The personal information that we collect depends on the context of
             your interactions with us and the [app/service], the choices you
             make, and the products and features you use.
           </Text>
 
-          <Text className="mt-5 text-[28px] font-medium text-[#1C1C1C]">
+          <Text className="mt-5 text-[16px] font-medium text-[#1C1C1C]">
             1.Information we collect
           </Text>
-          <Text className="mt-2 text-[18px] leading-8 text-[#4A4A4A]">
+          <Text className="mt-2 text-[14px] leading-6 text-[#4A4A4A]">
             The personal information that we collect depends on the context of
             your interactions with us and the [app/service], the choices you
             make, and the products and features you use.
           </Text>
 
-          <Text className="mt-5 text-[28px] font-medium text-[#1C1C1C]">
+          <Text className="mt-5 text-[16px] font-medium text-[#1C1C1C]">
             2.Information use collect
           </Text>
-          <Text className="mt-2 text-[18px] leading-8 text-[#4A4A4A]">
+          <Text className="mt-2 text-[14px] leading-6 text-[#4A4A4A]">
             We process your personal information for these purposes in reliance
             on our legitimate business interests, in order to enter into or
             perform a contract with you,
@@ -64,9 +64,11 @@ export default function PrivacyRoute() {
                 <Ionicons name="checkmark" size={14} color="#19557A" />
               ) : null}
             </View>
-            <Text className="ml-2 text-[18px] text-[#2C2C2C]">
+            <Text className="ml-2 text-[14px] text-[#2C2C2C]">
               Accept{" "}
-              <Text className="text-[#19557A] underline">terms & conditions</Text>
+              <Text className="text-[#19557A] underline">
+                terms & conditions
+              </Text>
             </Text>
           </Pressable>
 
@@ -81,7 +83,7 @@ export default function PrivacyRoute() {
             disabled={!accepted}
           >
             <Text
-              className={`text-3xl font-semibold ${
+              className={`text-[18px] font-semibold ${
                 accepted ? "text-[#19557A]" : "text-[#8C96A0]"
               }`}
             >
