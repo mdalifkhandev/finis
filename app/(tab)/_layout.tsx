@@ -82,6 +82,19 @@ export default function RootLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: "Chat",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              focused={focused}
+              activeName="chatbubble-ellipses"
+              inactiveName="chatbubble-ellipses-outline"
+            />
+          ),
+        }}
+      />
 
       <Tabs.Screen
         name="payroll"
@@ -96,7 +109,7 @@ export default function RootLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="projects" options={{ tabBarButton: () => null }} />
+      <Tabs.Screen name="projects" options={{ href: null }} />
       <Tabs.Screen
         name="inventory"
         options={{
@@ -113,3 +126,5 @@ export default function RootLayout() {
     </Tabs>
   );
 }
+
+
