@@ -7,6 +7,7 @@ type HomeHeaderProps = {
   subtitle: string;
   avatarUrl: string;
   onPressBell?: () => void;
+  onPressAvatar?: () => void;
 };
 
 export default function HomeHeader({
@@ -14,14 +15,17 @@ export default function HomeHeader({
   subtitle,
   avatarUrl,
   onPressBell,
+  onPressAvatar,
 }: HomeHeaderProps) {
   return (
     <View className="flex-row items-center justify-between px-5 pt-4">
       <View className="flex-row items-center">
-        <Image
-          source={{ uri: avatarUrl }}
-          className="h-12 w-12 rounded-full"
-        />
+        <TouchableOpacity activeOpacity={0.85} onPress={onPressAvatar}>
+          <Image
+            source={{ uri: avatarUrl }}
+            className="h-12 w-12 rounded-full"
+          />
+        </TouchableOpacity>
         <View className="ml-3">
           <Text className="text-base font-semibold text-slate-900">
             {name}

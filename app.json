@@ -46,6 +46,13 @@
             "backgroundColor": "#FFFFFF"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Finis to access your photos.",
+          "cameraPermission": "Allow Finis to use your camera."
+        }
       ]
     ],
     "experiments": {
