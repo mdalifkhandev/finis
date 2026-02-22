@@ -10,7 +10,10 @@ type ProjectTypeDropdownProps = {
   onChange: (next: ProjectTypeValue) => void;
 };
 
-const PROJECT_TYPE_OPTIONS: ProjectTypeValue[] = ["Apartment Building", "House"];
+const PROJECT_TYPE_OPTIONS: ProjectTypeValue[] = [
+  "Apartment Building",
+  "House",
+];
 
 export default function ProjectTypeDropdown({
   value,
@@ -20,7 +23,9 @@ export default function ProjectTypeDropdown({
 
   return (
     <View>
-      <Text className="mb-2 text-[16px] font-medium text-[#1F2937]">Project Type</Text>
+      <Text className="mb-2 text-[16px] font-medium text-[#1F2937]">
+        Project Type
+      </Text>
 
       <TouchableOpacity
         activeOpacity={0.85}
