@@ -82,19 +82,7 @@ export default function RootLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="tasks"
-        options={{
-          title: "Tasks",
-          tabBarIcon: ({ focused }) => (
-            <TabIcon
-              focused={focused}
-              activeName="checkmark-done"
-              inactiveName="checkmark-done-outline"
-            />
-          ),
-        }}
-      />
+
       <Tabs.Screen
         name="payroll"
         options={{
