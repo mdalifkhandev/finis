@@ -35,6 +35,7 @@ export default function RootLayout() {
         headerShown: false,
         tabBarActiveTintColor: "#1f3d5c",
         tabBarInactiveTintColor: "#6b7280",
+        tabBarHideOnKeyboard: true,
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: "600",
@@ -126,5 +127,3 @@ export default function RootLayout() {
     </Tabs>
   );
 }
-
-

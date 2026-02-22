@@ -1,12 +1,5 @@
-import React from "react";
-import { Text, View } from "react-native";
+import ChatListScreen from "@/components/chat/ChatListScreen";
 
-const chat = () => {
-  return (
-    <View>
-      <Text>chat</Text>
-    </View>
-  );
-};
-
-export default chat;
+export default function ChatTabRoute() {
+  return <ChatListScreen />;
+}

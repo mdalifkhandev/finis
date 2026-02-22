@@ -3,6 +3,7 @@ import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
+import { router } from "expo-router";
 import React from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -65,6 +66,7 @@ export default function Home() {
           name="Welcome Back"
           subtitle="Admin!!"
           avatarUrl={avatarUrl}
+          onPressAvatar={() => router.push("/screens/profile")}
         />
 
         <View className="mt-6 flex-row flex-wrap justify-between gap-y-4 px-5">
@@ -110,3 +112,4 @@ export default function Home() {
     </SafeAreaView>
   );
 }
+

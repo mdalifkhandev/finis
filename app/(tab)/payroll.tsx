@@ -1,15 +1,5 @@
-import { Text, View } from "react-native";
+import SchedulingPayrollScreen from "../../components/payroll/SchedulingPayrollScreen";
 
-export default function Payroll() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text>Payroll</Text>
-    </View>
-  );
+export default function PayrollTab() {
+  return <SchedulingPayrollScreen />;
 }
