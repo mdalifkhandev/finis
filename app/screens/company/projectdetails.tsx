@@ -1,50 +1,36 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
-import ProjectDetailsMenu from "@/components/company/projectdetails/ProjectDetailsMenu";
-import ProjectOverviewCard from "@/components/company/projectdetails/ProjectOverviewCard";
+import TaskViewCard from "@/components/company/taskdetails/TaskViewCard";
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ProjectDetailsRoute() {
-  const handlePressMenuItem = (item: string) => {
-    if (item === "Project details") {
-      router.push("/screens/company/projectinfo");
-      return;
-    }
-
-    if (item === "Project Analysis") {
-      router.push("/screens/company/projectanalysis");
-      return;
-    }
-
-    if (item === "Team") {
-      router.push("/screens/company/team");
-      return;
-    }
-
-    if (item === "Document") {
-      router.push("/screens/company/projectdocuments");
-      return;
-    }
-
-    if (item === "Task") {
-      router.push("/screens/company/task");
-    }
+  const mockTask = {
+    workerName: "Mike Johnson",
+    role: "Worker",
+    dateRange: "Jan 1 - Jan 15, 2025",
+    title: "Install electrical wiring",
+    location: "Riverside Tower",
+    city: "Dhaka",
+    roomNo: "277",
+    startTime: "8:00 PM",
+    endTime: "6:00 AM",
+    date: "3 Jan 2026",
+    description: "An electric problem refers to any issue related to electrical systems, such as lights or switches not working, loose or damaged wiring, circuit breaker tripping, or irregular power supply. If not addressed promptly, these issues can disrupt work and pose safety risks.",
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top']} className="flex-1 bg-[#F8F9FA]">
+      <BackTitleHeader title="View Task" onBack={() => router.back()} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 28 }}
       >
-        <BackTitleHeader title="Projects details" onBack={() => router.back()} />
-        <ProjectOverviewCard
-          onPressFloorPlan={() => router.push("/screens/company/floorplan")}
-          onPressEditProject={() => router.push("/screens/company/editproject")}
+        <TaskViewCard
+          {...mockTask}
+          onStartTask={() => console.log("Task Started")}
         />
-        <ProjectDetailsMenu onPressItem={handlePressMenuItem} />
       </ScrollView>
     </SafeAreaView>
   );
