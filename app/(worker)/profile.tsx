@@ -11,7 +11,7 @@ const THEME = {
         textMain: '#0F172A',
         textSecondary: '#64748B',
         bluePrimary: '#3B82F6',
-        blueBg: '#D8F0FF', // Specific highlighted blue from image
+        blueBg: '#D8F0FF',
         border: '#F1F5F9',
         cardBg: '#FFFFFF',
         red: '#FF4D4D',
