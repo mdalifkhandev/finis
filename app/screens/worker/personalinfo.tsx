@@ -1,6 +1,7 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import React from 'react';
+import React, { useState } from 'react';
 import {
     Image,
     ScrollView,
@@ -47,6 +48,21 @@ const InfoRow = ({ icon, label, value, isLast = false }: { icon: any, label: str
 );
 
 const PersonalInfoScreen = () => {
+    const [profileImage, setProfileImage] = useState<string | null>(null);
+
+    const pickProfileImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setProfileImage(result.assets[0].uri);
+        }
+    };
+
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.white }} edges={['top']}>
             <StatusBar barStyle="dark-content" />
@@ -90,22 +106,25 @@ const PersonalInfoScreen = () => {
                 <View style={{ alignItems: 'center', marginBottom: 32 }}>
                     <View style={{ width: 120, height: 120, position: 'relative' }}>
                         <Image
-                            source={{ uri: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=2574&auto=format&fit=crop' }}
+                            source={{ uri: profileImage || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=2574&auto=format&fit=crop' }}
                             style={{ width: '100%', height: '100%', borderRadius: 60 }}
                         />
-                        <TouchableOpacity style={{
-                            position: 'absolute',
-                            bottom: 0,
-                            right: 0,
-                            width: 34,
-                            height: 34,
-                            borderRadius: 17,
-                            backgroundColor: '#1D4F6D',
-                            borderWidth: 2,
-                            borderColor: 'white',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
+                        <TouchableOpacity
+                            onPress={pickProfileImage}
+                            style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                right: 0,
+                                width: 34,
+                                height: 34,
+                                borderRadius: 17,
+                                backgroundColor: '#1D4F6D',
+                                borderWidth: 2,
+                                borderColor: 'white',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
                             <Ionicons name="camera" size={18} color="white" />
                         </TouchableOpacity>
                     </View>

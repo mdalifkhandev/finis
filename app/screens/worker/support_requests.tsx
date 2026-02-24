@@ -27,6 +27,14 @@ const THEME = {
 
 const SupportRequestsScreen = () => {
     const [complain, setComplain] = useState('');
+    const [recipient, setRecipient] = useState<'admin' | 'worker' | 'user'>('admin');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const recipientOptions = [
+        { label: 'Send to admin', value: 'admin' },
+        { label: 'Send to worker', value: 'worker' },
+        { label: 'Send to user', value: 'user' },
+    ];
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }} edges={['top']}>
@@ -58,23 +66,71 @@ const SupportRequestsScreen = () => {
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 32, paddingBottom: 40 }}
                 >
-                    {/* Dropdown Placeholder */}
-                    <TouchableOpacity
-                        style={{
-                            height: 64,
-                            backgroundColor: '#F3F9FB',
-                            borderRadius: 12,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            paddingHorizontal: 16,
-                            borderWidth: 1,
-                            borderColor: '#E2E8F0',
-                            marginBottom: 16
-                        }}
-                    >
-                        <Text style={{ flex: 1, fontSize: 16, color: '#94A3B8', fontWeight: '500' }}>Send to admin</Text>
-                        <Feather name="chevron-down" size={24} color="#1A1C1E" />
-                    </TouchableOpacity>
+                    {/* Dropdown Section */}
+                    <View style={{ marginBottom: 16, zIndex: 10 }}>
+                        <TouchableOpacity
+                            onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+                            style={{
+                                height: 64,
+                                backgroundColor: '#F3F9FB',
+                                borderRadius: 12,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                paddingHorizontal: 16,
+                                borderWidth: 1,
+                                borderColor: '#E2E8F0',
+                            }}
+                        >
+                            <Text style={{ flex: 1, fontSize: 16, color: '#1A1C1E', fontWeight: '500' }}>
+                                {recipientOptions.find(opt => opt.value === recipient)?.label}
+                            </Text>
+                            <Feather name={isDropdownOpen ? "chevron-up" : "chevron-down"} size={24} color="#1A1C1E" />
+                        </TouchableOpacity>
+
+                        {isDropdownOpen && (
+                            <View style={{
+                                position: 'absolute',
+                                top: 68,
+                                left: 0,
+                                right: 0,
+                                backgroundColor: 'white',
+                                borderRadius: 12,
+                                borderWidth: 1,
+                                borderColor: '#E2E8F0',
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 8,
+                                elevation: 5,
+                                overflow: 'hidden'
+                            }}>
+                                {recipientOptions.map((option) => (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        onPress={() => {
+                                            setRecipient(option.value as any);
+                                            setIsDropdownOpen(false);
+                                        }}
+                                        style={{
+                                            paddingVertical: 16,
+                                            paddingHorizontal: 16,
+                                            backgroundColor: recipient === option.value ? '#F3F9FB' : 'white',
+                                            borderBottomWidth: option.value === 'user' ? 0 : 1,
+                                            borderBottomColor: '#F1F5F9'
+                                        }}
+                                    >
+                                        <Text style={{
+                                            fontSize: 16,
+                                            color: recipient === option.value ? '#1D4F6D' : '#475569',
+                                            fontWeight: recipient === option.value ? '700' : '500'
+                                        }}>
+                                            {option.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        )}
+                    </View>
 
                     {/* TextArea */}
                     <View style={{
