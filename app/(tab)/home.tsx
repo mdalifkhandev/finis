@@ -73,7 +73,7 @@ export default function Home() {
         {/* Temporary Developer Toggle to Switch Roles */}
         <View className="px-5 mt-4">
           <TouchableOpacity
-            onPress={() => router.replace("/(worker)/home")}
+            onPress={() => router.replace("/worker/home")}
             className="flex-row items-center justify-center bg-slate-900 h-12 rounded-xl border border-slate-700 shadow-sm"
             activeOpacity={0.8}
           >
@@ -125,4 +125,7 @@ export default function Home() {
     </SafeAreaView>
   );
 }
+
+
+
 
