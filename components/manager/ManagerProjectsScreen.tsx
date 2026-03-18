@@ -1,7 +1,13 @@
 import AssignedProjectCard from "@/components/company/assignedprojects/AssignedProjectCard";
 import { router } from "expo-router";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const avatars = [
@@ -34,10 +40,17 @@ const assignedProjects = [
 export default function ManagerProjectsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
         <View className="px-5 pt-8">
-          <Text className="text-[28px] font-semibold text-[#1F2328]">Projects</Text>
-          <Text className="mt-1 text-[15px] text-[#66707B]">Track active project execution and setup.</Text>
+          <Text className="text-[28px] font-semibold text-[#1F2328]">
+            Projects
+          </Text>
+          <Text className="mt-1 text-[15px] text-[#66707B]">
+            Track active project execution and setup.
+          </Text>
         </View>
 
         <View className="mt-5 px-5">

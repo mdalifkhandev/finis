@@ -1,0 +1,169 @@
+import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import QuoteReviewCard from "./QuoteReviewCard";
+import { formatCurrency, type QuoteEstimate, type QuoteProjectType, type QuotePropertyType, type QuoteUnitType } from "./quoteMockData";
+import type { QuoteSelectedWorkGroup } from "./QuoteWorkGroupCard";
+
+type QuoteFinalReviewStepProps = {
+  clientName: string;
+  projectAddress: string;
+  projectType: QuoteProjectType;
+  propertyType: QuotePropertyType;
+  unitType: QuoteUnitType;
+  estimate: QuoteEstimate;
+  workGroups: QuoteSelectedWorkGroup[];
+  subtotal: number;
+  itemsSelected: number;
+  rushTimelineFee: number;
+  afterHoursFee: number;
+  discountAmount: number;
+  finalTotal: number;
+  validUntilLabel: string;
+  projectDetailsLabel: string;
+  projectMetaLabel: string;
+  onEditSummary: () => void;
+  onEditWorkItems: () => void;
+  onOpenDiscount: () => void;
+  onGeneratePdf: () => void;
+};
+
+function DetailRow({ icon, label, value, subvalue }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string; subvalue?: string }) {
+  return (
+    <View className="mb-4 flex-row items-start">
+      <Ionicons name={icon} size={22} color="#255779" style={{ marginTop: 2 }} />
+      <View className="ml-3 flex-1">
+        <Text className="text-[13px] text-[#66707B]">{label}</Text>
+        <Text className="mt-1 text-[14px] font-medium leading-6 text-[#1F2937]">{value}</Text>
+        {subvalue ? <Text className="mt-1 text-[14px] text-[#66707B]">{subvalue}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+export default function QuoteFinalReviewStep({
+  clientName,
+  projectAddress,
+  projectType,
+  propertyType,
+  unitType,
+  estimate,
+  workGroups,
+  subtotal,
+  itemsSelected,
+  rushTimelineFee,
+  afterHoursFee,
+  discountAmount,
+  finalTotal,
+  validUntilLabel,
+  projectDetailsLabel,
+  projectMetaLabel,
+  onEditSummary,
+  onEditWorkItems,
+  onOpenDiscount,
+  onGeneratePdf,
+}: QuoteFinalReviewStepProps) {
+  const selectedGroups = workGroups
+    .map((group) => ({ ...group, items: group.items.filter((item) => item.selected) }))
+    .filter((group) => group.items.length > 0);
+
+  const totalAdjustments = rushTimelineFee + afterHoursFee - discountAmount;
+
+  return (
+    <>
+      <QuoteReviewCard title="Quote Summary" onEdit={onEditSummary}>
+        <Text className="text-[14px] leading-7 text-[#66707B]">Review and finalize the project quote</Text>
+        <View className="mt-5">
+          <DetailRow icon="business-outline" label="Client" value={clientName || "Acme Construction Ltd."} />
+          <DetailRow icon="location-outline" label="Project Address" value={projectAddress || "1234 Maple Street, Downtown District, CA 90210"} />
+          <DetailRow icon="document-text-outline" label="Project Details" value={projectDetailsLabel} subvalue={projectMetaLabel} />
+          <DetailRow icon="calendar-outline" label="Estimated Timeline" value={estimate.timeline} />
+        </View>
+      </QuoteReviewCard>
+
+      <QuoteReviewCard title="Selected Work Items" onEdit={onEditWorkItems}>
+        {selectedGroups.length ? (
+          <>
+            {selectedGroups.map((group) => {
+              const groupTotal = group.items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * item.selectedUnitPrice, 0);
+              return (
+                <View key={group.id} className="mb-4 rounded-[16px] border border-[#E2E8F0] bg-white px-4 py-4">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-[14px] font-medium text-[#1F2937]">{group.title}</Text>
+                    <Text className="text-[14px] font-medium text-[#1F2937]">{formatCurrency(groupTotal)}</Text>
+                  </View>
+                  {group.items.map((item) => (
+                    <View key={item.id} className="mt-4 flex-row items-start justify-between">
+                      <View className="flex-1 pr-3">
+                        <Text className="text-[13px] font-medium text-[#344054]">{item.title}</Text>
+                        <Text className="mt-1 text-[13px] text-[#66707B]">
+                          {item.quantity} {item.selectedUnit} × {formatCurrency(item.selectedUnitPrice)}
+                        </Text>
+                      </View>
+                      <Text className="text-[13px] font-medium text-[#1F2937]">
+                        {formatCurrency((Number(item.quantity) || 0) * item.selectedUnitPrice)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              );
+            })}
+            <View className="mt-1 border-t border-[#E5EAF0] pt-4">
+              <View className="flex-row items-center justify-between">
+                <Text className="text-[16px] font-medium text-[#1F2937]">Work Items Subtotal</Text>
+                <Text className="text-[16px] font-semibold text-[#1F2937]">{formatCurrency(subtotal)}</Text>
+              </View>
+            </View>
+          </>
+        ) : (
+          <Text className="text-[14px] text-[#66707B]">No work items selected.</Text>
+        )}
+      </QuoteReviewCard>
+
+      <QuoteReviewCard title="Pricing Adjustments" onEdit={onOpenDiscount}>
+        <View className="mb-3 flex-row items-center justify-between">
+          <Text className="text-[14px] text-[#1F2937]">Rush Timeline</Text>
+          <Text className="text-[14px] font-medium text-[#1F2937]">+{formatCurrency(rushTimelineFee)}</Text>
+        </View>
+        <View className="mb-3 flex-row items-center justify-between">
+          <Text className="text-[14px] text-[#1F2937]">After-hours Work</Text>
+          <Text className="text-[14px] font-medium text-[#1F2937]">+{formatCurrency(afterHoursFee)}</Text>
+        </View>
+        {discountAmount > 0 ? (
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="text-[14px] text-[#1F2937]">Discount</Text>
+            <Text className="text-[14px] font-medium text-[#16A34A]">-{formatCurrency(discountAmount)}</Text>
+          </View>
+        ) : null}
+        <View className="mt-2 border-t border-[#E5EAF0] pt-4">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-[16px] font-semibold text-[#1F2937]">Total Adjustments</Text>
+            <Text className="text-[16px] font-semibold text-[#1F2937]">{totalAdjustments >= 0 ? "+" : "-"}{formatCurrency(Math.abs(totalAdjustments))}</Text>
+          </View>
+        </View>
+      </QuoteReviewCard>
+
+      <QuoteReviewCard title="Quote Details">
+        <DetailRow icon="checkmark-circle-outline" label="Quote Valid Until" value={validUntilLabel} />
+        <DetailRow icon="calendar-outline" label="Estimated Timeline" value={estimate.timeline} />
+        <DetailRow icon="document-text-outline" label="Total Work Items" value={`${itemsSelected} items selected`} />
+      </QuoteReviewCard>
+
+      <QuoteReviewCard title=" ">
+        <TouchableOpacity activeOpacity={0.88} onPress={onOpenDiscount} className="h-[58px] items-center justify-center rounded-[16px] border border-[#1F5577] bg-white">
+          <Text className="text-[16px] font-medium text-[#1F5577]">Apply Discount</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity activeOpacity={0.88} onPress={onGeneratePdf} className="mt-4 h-[58px] flex-row items-center justify-center rounded-[16px] bg-[#1F5577]">
+          <Ionicons name="download-outline" size={22} color="#FFFFFF" />
+          <Text className="ml-2 text-[16px] font-medium text-white">Generate Quote PDF</Text>
+        </TouchableOpacity>
+
+        <View className="mt-5 rounded-[16px] bg-[#1F5577] px-4 py-4">
+          <Text className="text-[12px] uppercase tracking-[0.8px] text-[#C8DCE9]">Final Total</Text>
+          <Text className="mt-1 text-[26px] font-semibold text-white">{formatCurrency(finalTotal)}</Text>
+        </View>
+      </QuoteReviewCard>
+    </>
+  );
+}

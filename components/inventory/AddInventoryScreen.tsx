@@ -43,7 +43,9 @@ export default function AddInventoryScreen() {
 
           <View className="mt-6 flex-1 px-5">
             <View className="rounded-[24px] border border-[#DEE4EA] bg-[#F7F9FB] p-4">
-              <Text className="text-[17px] font-semibold text-[#2B2B2B]">Product details</Text>
+              <Text className="text-[17px] font-semibold text-[#2B2B2B]">
+                Product details
+              </Text>
 
               <InventoryFormField
                 label="Product Name"
@@ -74,7 +76,9 @@ export default function AddInventoryScreen() {
                 onPress={() => router.back()}
                 className="h-[56px] w-[48%] items-center justify-center rounded-[14px] border border-[#D3D9E2] bg-[#F7F9FB]"
               >
-                <Text className="text-[16px] font-medium text-[#1F2937]">Cancel</Text>
+                <Text className="text-[16px] font-medium text-[#1F2937]">
+                  Cancel
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -82,7 +86,9 @@ export default function AddInventoryScreen() {
                 onPress={handleSave}
                 className="h-[56px] w-[48%] items-center justify-center rounded-[14px] bg-[#B9DBEE]"
               >
-                <Text className="text-[16px] font-medium text-[#1F2937]">Save</Text>
+                <Text className="text-[16px] font-medium text-[#1F2937]">
+                  Save
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

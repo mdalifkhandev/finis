@@ -3,10 +3,9 @@ import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HomeHeader from "../../components/home/HomeHeader";
 
@@ -71,7 +70,7 @@ export default function Home() {
         />
 
         {/* Temporary Developer Toggle to Switch Roles */}
-        <View className="px-5 mt-4">
+        {/* <View className="px-5 mt-4">
           <TouchableOpacity
             onPress={() => router.replace("/worker/home")}
             className="flex-row items-center justify-center bg-slate-900 h-12 rounded-xl border border-slate-700 shadow-sm"
@@ -80,7 +79,7 @@ export default function Home() {
             <Ionicons name="swap-horizontal" size={18} color="white" className="mr-2" />
             <Text className="text-white font-semibold ml-2">Switch to Worker View (Dev)</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         <View className="mt-6 flex-row flex-wrap justify-between gap-y-4 px-5">
           {stats.map((item) => (
@@ -125,7 +124,3 @@ export default function Home() {
     </SafeAreaView>
   );
 }
-
-
-
-
