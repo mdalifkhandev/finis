@@ -9,16 +9,16 @@ type TaskPhotoCardProps = {
 
 export default function TaskPhotoCard({ title, imageUrl }: TaskPhotoCardProps) {
   return (
-    <View className="mt-5 rounded-[16px] border border-[#D6DCE3] bg-[#F7F9FB] p-3.5">
+    <View className="mt-4 rounded-[16px] border border-[#DADFE5] bg-white p-3">
       <View className="flex-row items-center">
-        <Ionicons name="camera-outline" size={20} color="#1F2937" />
-        <Text className="ml-2.5 text-[16px] font-semibold text-[#1E1E1E]">{title}</Text>
+        <Ionicons name="camera-outline" size={19} color="#1F2937" />
+        <Text className="ml-2 text-[15px] font-semibold text-[#1E1E1E]">{title}</Text>
       </View>
 
       <Image
         source={{ uri: imageUrl }}
         resizeMode="cover"
-        className="mt-3 h-[170px] w-full rounded-[14px]"
+        className="mt-3 h-[185px] w-full rounded-[14px]"
       />
     </View>
   );
