@@ -1,35 +1,40 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
-import TaskViewCard from "@/components/company/taskdetails/TaskViewCard";
+import ProjectDetailsMenu from "@/components/company/projectdetails/ProjectDetailsMenu";
+import ProjectOverviewCard from "@/components/company/projectdetails/ProjectOverviewCard";
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ProjectDetailsRoute() {
-  const mockTask = {
-    workerName: "Mike Johnson",
-    role: "Worker",
-    dateRange: "Jan 1 - Jan 15, 2025",
-    title: "Install electrical wiring",
-    location: "Riverside Tower",
-    city: "Dhaka",
-    roomNo: "277",
-    startTime: "8:00 PM",
-    endTime: "6:00 AM",
-    date: "3 Jan 2026",
-    description: "An electric problem refers to any issue related to electrical systems, such as lights or switches not working, loose or damaged wiring, circuit breaker tripping, or irregular power supply. If not addressed promptly, these issues can disrupt work and pose safety risks.",
-  };
+const MENU_ROUTES: Record<string, "/screens/company/projectinfo" | "/screens/company/projectanalysis" | "/screens/company/team" | "/screens/company/task" | "/screens/company/projectdocuments"> = {
+  "Project details": "/screens/company/projectinfo",
+  "Project Analysis": "/screens/company/projectanalysis",
+  Team: "/screens/company/team",
+  Task: "/screens/company/task",
+  Document: "/screens/company/projectdocuments",
+};
 
+export default function ProjectDetailsRoute() {
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-[#F8F9FA]">
-      <BackTitleHeader title="View Task" onBack={() => router.back()} />
+    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 28 }}
+        contentContainerStyle={{ paddingBottom: 34 }}
       >
-        <TaskViewCard
-          {...mockTask}
-          onStartTask={() => console.log("Task Started")}
+        <BackTitleHeader title="Projects details" onBack={() => router.back()} />
+
+        <ProjectOverviewCard
+          onPressFloorPlan={() => router.push("/screens/company/floorplan")}
+          onPressEditProject={() => router.push("/screens/company/editproject")}
+        />
+
+        <ProjectDetailsMenu
+          onPressItem={(item) => {
+            const route = MENU_ROUTES[item];
+            if (route) {
+              router.push(route);
+            }
+          }}
         />
       </ScrollView>
     </SafeAreaView>
