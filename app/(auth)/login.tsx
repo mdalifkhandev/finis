@@ -17,16 +17,10 @@ export default function LoginRoute() {
       </View>
 
       <View className="px-5 pt-16">
-        <Text className="text-[38px] font-semibold text-[#1F2328]">
-          Welcome Back
-        </Text>
-        <Text className="mt-1 text-[22px] text-[#4E545B]">
-          Login to your account
-        </Text>
+        <Text className="text-[38px] font-semibold text-[#1F2328]">Welcome Back</Text>
+        <Text className="mt-1 text-[22px] text-[#4E545B]">Login to your account</Text>
 
-        <Text className="mt-12 text-[16px] text-[#34393F]">
-          Enter Your E-mail Or Number
-        </Text>
+        <Text className="mt-12 text-[16px] text-[#34393F]">Enter Your E-mail Or Number</Text>
         <TextInput
           placeholder="E-mail address or number"
           placeholderTextColor="#90979F"
@@ -46,28 +40,21 @@ export default function LoginRoute() {
         </View>
 
         <View className="mt-3 flex-row items-center justify-between">
-          <TouchableOpacity
-            className="flex-row items-center"
-            onPress={() => setRemember((value) => !value)}
-          >
+          <TouchableOpacity className="flex-row items-center" onPress={() => setRemember((value) => !value)}>
             <View className="h-4 w-4 items-center justify-center rounded-full border border-[#A8AEB5]">
-              {remember ? (
-                <View className="h-2 w-2 rounded-full bg-[#1F5577]" />
-              ) : null}
+              {remember ? <View className="h-2 w-2 rounded-full bg-[#1F5577]" /> : null}
             </View>
             <Text className="ml-2 text-[16px] text-[#6B7076]">Remember me</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() => router.push("/(auth)/forgot-password")}
-          >
+          <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password") }>
             <Text className="text-[16px] text-[#FF5C5C]">Forgot password?</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
           className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
-          onPress={() => router.push("/(tab)/home")}
+          onPress={() => router.push("/screens/auth/roleselect")}
           activeOpacity={0.86}
         >
           <Text className="text-[18px] font-semibold text-white">Login</Text>
@@ -75,9 +62,7 @@ export default function LoginRoute() {
 
         <View className="mt-8 flex-row items-center">
           <View className="h-px flex-1 bg-[#BDC3CA]" />
-          <Text className="mx-3 text-[15px] text-[#4E545B]">
-            Or Continue With
-          </Text>
+          <Text className="mx-3 text-[15px] text-[#4E545B]">Or Continue With</Text>
           <View className="h-px flex-1 bg-[#BDC3CA]" />
         </View>
 
@@ -94,13 +79,9 @@ export default function LoginRoute() {
         </View>
 
         <View className="mt-6 flex-row items-center justify-center">
-          <Text className="text-[17px] text-[#34393F]">
-            Don’t have an account?{" "}
-          </Text>
+          <Text className="text-[17px] text-[#34393F]">Don’t have an account? </Text>
           <TouchableOpacity onPress={() => router.push("/(auth)/signup")}>
-            <Text className="text-[17px] font-semibold text-[#1F2328]">
-              Sign Up
-            </Text>
+            <Text className="text-[17px] font-semibold text-[#1F2328]">Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>

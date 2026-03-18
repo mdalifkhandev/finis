@@ -1,12 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import {
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignupRoute() {
@@ -23,9 +18,7 @@ export default function SignupRoute() {
 
       <View className="px-5 pt-16">
         <Text className="text-[38px] font-semibold text-[#1F2328]">Sign Up</Text>
-        <Text className="mt-1 text-[22px] text-[#656B72]">
-          It only takes a minute to create your account
-        </Text>
+        <Text className="mt-1 text-[22px] text-[#656B72]">It only takes a minute to create your account</Text>
 
         <TextInput
           placeholder="E-mail address or phone number"
@@ -47,21 +40,17 @@ export default function SignupRoute() {
           className="mt-4 h-14 rounded-xl border border-[#C8CED5] bg-[#F3F4F6] px-4 text-[16px] text-[#1E2328]"
         />
 
-        <TouchableOpacity
-          className="mt-4 flex-row items-center"
-          onPress={() => setAccepted((value) => !value)}
-        >
+        <TouchableOpacity className="mt-4 flex-row items-center" onPress={() => setAccepted((value) => !value)}>
           <View className="h-4 w-4 items-center justify-center rounded border border-[#7C838A]">
             {accepted ? <Ionicons name="checkmark" size={12} color="#1F5577" /> : null}
           </View>
-          <Text className="ml-2 text-[16px] text-[#4A4F56]">
-            Accept terms & conditions
-          </Text>
+          <Text className="ml-2 text-[16px] text-[#4A4F56]">Accept terms & conditions</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
           activeOpacity={0.85}
+          onPress={() => router.push("/screens/auth/roleselect")}
         >
           <Text className="text-[18px] font-semibold text-white">Sign Up</Text>
         </TouchableOpacity>
