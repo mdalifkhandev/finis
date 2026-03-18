@@ -2,8 +2,9 @@ import React, { useMemo, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import AddTeamMemberSheet, { TeamMemberOption } from "./AddTeamMemberSheet";
 import TeamMemberCard from "./TeamMemberCard";
+import TeamWorkerCard from "./TeamWorkerCard";
 
-const allMembers: TeamMemberOption[] = [
+const allManagers: TeamMemberOption[] = [
   {
     id: "john",
     name: "John Smith",
@@ -41,114 +42,231 @@ const allMembers: TeamMemberOption[] = [
       "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=256&auto=format&fit=crop",
   },
   {
-    id: "david",
-    name: "David Chen",
-    role: "QA Engineer",
-    email: "david@example.com",
-    phone: "(555) 567-8901",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=256&auto=format&fit=crop",
-  },
-  {
     id: "lisa",
-    name: "Lisa Brown",
-    role: "Architect",
-    email: "lisa@example.com",
-    phone: "(555) 678-9012",
+    name: "Rokeya Sultana",
+    role: "Operations Lead",
+    email: "rokeya@example.com",
+    phone: "(555) 654-7890",
     avatarUrl:
       "https://images.unsplash.com/photo-1542204625-de293a501df4?q=80&w=256&auto=format&fit=crop",
   },
+];
+
+const allWorkers: TeamMemberOption[] = [
   {
-    id: "carlos",
-    name: "Carlos Martinez",
+    id: "worker-emily",
+    name: "Emily Chen",
     role: "Electrician",
-    email: "carlos@example.com",
-    phone: "(555) 789-0123",
+    email: "emily@example.com",
+    phone: "(555) 456-7890",
     avatarUrl:
-      "https://images.unsplash.com/photo-1504257432389-52343af06ae3?q=80&w=256&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=256&auto=format&fit=crop",
   },
   {
-    id: "olivia",
-    name: "Olivia Wilson",
-    role: "Interior Designer",
-    email: "olivia@example.com",
-    phone: "(555) 890-1234",
+    id: "worker-sophia",
+    name: "Sophia Lee",
+    role: "Electrician",
+    email: "sophia@example.com",
+    phone: "(555) 345-1200",
     avatarUrl:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop",
   },
   {
-    id: "ahmed",
-    name: "Ahmed Rahman",
-    role: "Procurement Lead",
-    email: "ahmed@example.com",
-    phone: "(555) 901-2345",
+    id: "worker-daniel",
+    name: "Daniel Ross",
+    role: "Safety Officer",
+    email: "daniel@example.com",
+    phone: "(555) 890-1122",
     avatarUrl:
-      "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=256&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=256&auto=format&fit=crop",
+  },
+  {
+    id: "worker-maria",
+    name: "Maria Garcia",
+    role: "Foreman",
+    email: "maria@example.com",
+    phone: "(555) 221-9988",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1504257432389-52343af06ae3?q=80&w=256&auto=format&fit=crop",
+  },
+  {
+    id: "worker-jacob",
+    name: "Jacob Miller",
+    role: "Safety Officer",
+    email: "jacob@example.com",
+    phone: "(555) 112-3344",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop",
   },
 ];
 
+const initialAssignments: Record<string, string[]> = {
+  john: ["worker-emily", "worker-sophia", "worker-daniel", "worker-maria", "worker-jacob"],
+  sarah: ["worker-sophia", "worker-daniel"],
+  mike: ["worker-emily", "worker-maria"],
+  emily: ["worker-jacob"],
+  lisa: ["worker-daniel", "worker-jacob"],
+};
+
 export default function TeamScreen() {
   const [showAddSheet, setShowAddSheet] = useState(false);
-  const [memberIds, setMemberIds] = useState<string[]>([
-    "john",
-    "sarah",
-    "mike",
-    "emily",
-  ]);
+  const [activeManagerId, setActiveManagerId] = useState<string | null>(null);
+  const [managerIds, setManagerIds] = useState<string[]>(["john", "sarah", "mike", "emily", "lisa"]);
+  const [workerAssignments, setWorkerAssignments] =
+    useState<Record<string, string[]>>(initialAssignments);
 
-  const selectedMembers = useMemo(
-    () => allMembers.filter((member) => memberIds.includes(member.id)),
-    [memberIds]
+  const selectedManagers = useMemo(
+    () => allManagers.filter((manager) => managerIds.includes(manager.id)),
+    [managerIds]
   );
 
-  const availableMembers = useMemo(
-    () => allMembers.filter((member) => !memberIds.includes(member.id)),
-    [memberIds]
+  const activeManager = useMemo(
+    () => selectedManagers.find((manager) => manager.id === activeManagerId) ?? null,
+    [activeManagerId, selectedManagers]
   );
 
-  const handleAddMember = (member: TeamMemberOption) => {
-    setMemberIds((previous) =>
+  const activeWorkers = useMemo(() => {
+    if (!activeManagerId) {
+      return [];
+    }
+
+    const assignedIds = workerAssignments[activeManagerId] ?? [];
+    return allWorkers.filter((worker) => assignedIds.includes(worker.id));
+  }, [activeManagerId, workerAssignments]);
+
+  const availableManagers = useMemo(
+    () => allManagers.filter((manager) => !managerIds.includes(manager.id)),
+    [managerIds]
+  );
+
+  const availableWorkers = useMemo(() => {
+    if (!activeManagerId) {
+      return [];
+    }
+
+    const assignedIds = workerAssignments[activeManagerId] ?? [];
+    return allWorkers.filter((worker) => !assignedIds.includes(worker.id));
+  }, [activeManagerId, workerAssignments]);
+
+  const handleAddManager = (member: TeamMemberOption) => {
+    setManagerIds((previous) =>
       previous.includes(member.id) ? previous : [...previous, member.id]
     );
+    setWorkerAssignments((previous) => ({
+      ...previous,
+      [member.id]: previous[member.id] ?? [],
+    }));
+    setShowAddSheet(false);
   };
 
-  const handleDeleteMember = (id: string) => {
-    setMemberIds((previous) => previous.filter((memberId) => memberId !== id));
+  const handleAddWorker = (worker: TeamMemberOption) => {
+    if (!activeManagerId) {
+      return;
+    }
+
+    setWorkerAssignments((previous) => ({
+      ...previous,
+      [activeManagerId]: [...(previous[activeManagerId] ?? []), worker.id],
+    }));
+    setShowAddSheet(false);
   };
+
+  const handleDeleteManager = (id: string) => {
+    setManagerIds((previous) => previous.filter((managerId) => managerId !== id));
+    setWorkerAssignments((previous) => {
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
+
+    if (activeManagerId === id) {
+      setActiveManagerId(null);
+    }
+  };
+
+  const handleDeleteWorker = (workerId: string) => {
+    if (!activeManagerId) {
+      return;
+    }
+
+    setWorkerAssignments((previous) => ({
+      ...previous,
+      [activeManagerId]: (previous[activeManagerId] ?? []).filter((id) => id !== workerId),
+    }));
+  };
+
+  const handleOpenAddSheet = () => setShowAddSheet(true);
+
+  const headerCount = activeManager ? activeWorkers.length : selectedManagers.length;
+  const headerLabel = activeManager ? "Workers" : "Managers";
+  const buttonLabel = activeManager ? "Add Worker" : "Add Managers";
+  const sheetTitle = activeManager ? "Add Team Worker" : "Add Team Managers";
+  const sheetMembers = activeManager ? availableWorkers : availableManagers;
+  const handleSelectMember = activeManager ? handleAddWorker : handleAddManager;
 
   return (
     <>
-      <View className="mt-6 px-5">
+      <View className="mt-5 px-4">
         <View className="mb-2 flex-row items-center justify-between">
-          <Text className="text-[16px] font-medium text-[#283443]">Floors (5)</Text>
+          <Text className="text-[16px] font-medium text-[#283443]">
+            {headerLabel} ({headerCount})
+          </Text>
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() => setShowAddSheet(true)}
-            className="h-[42px] min-w-[132px] flex-row items-center justify-center rounded-[10px] border border-[#D3D9E1] bg-[#F8FAFC] px-4"
+            onPress={handleOpenAddSheet}
+            className="h-[40px] min-w-[128px] flex-row items-center justify-center rounded-[8px] border border-[#D3D9E1] bg-[#FFFFFF] px-4"
           >
             <Text className="mr-1 text-[18px] font-medium text-[#1F2937]">+</Text>
-            <Text className="text-[16px] font-medium text-[#1F2937]">Add Member</Text>
+            <Text className="text-[15px] font-medium text-[#1F2937]">{buttonLabel}</Text>
           </TouchableOpacity>
         </View>
 
-        {selectedMembers.map((member) => (
-          <TeamMemberCard
-            key={member.id}
-            avatarUrl={member.avatarUrl}
-            name={member.name}
-            role={member.role}
-            email={member.email}
-            phone={member.phone}
-            onDelete={() => handleDeleteMember(member.id)}
-          />
-        ))}
+        {activeManager ? (
+          <>
+            <TeamMemberCard
+              avatarUrl={activeManager.avatarUrl}
+              name={activeManager.name}
+              role={activeManager.role}
+              email={activeManager.email}
+              phone={activeManager.phone}
+              onPress={() => setActiveManagerId(null)}
+              hideDelete
+            />
+
+            <Text className="mt-3 text-[15px] font-medium text-[#283443]">All Worker</Text>
+
+            {activeWorkers.map((worker) => (
+              <TeamWorkerCard
+                key={worker.id}
+                avatarUrl={worker.avatarUrl}
+                name={worker.name}
+                role={worker.role}
+                onDelete={() => handleDeleteWorker(worker.id)}
+              />
+            ))}
+          </>
+        ) : (
+          selectedManagers.map((manager) => (
+            <TeamMemberCard
+              key={manager.id}
+              avatarUrl={manager.avatarUrl}
+              name={manager.name}
+              role={manager.role}
+              email={manager.email}
+              phone={manager.phone}
+              onDelete={() => handleDeleteManager(manager.id)}
+              onPress={() => setActiveManagerId(manager.id)}
+            />
+          ))
+        )}
       </View>
 
       <AddTeamMemberSheet
         visible={showAddSheet}
-        members={availableMembers}
+        title={sheetTitle}
+        members={sheetMembers}
         onClose={() => setShowAddSheet(false)}
-        onSelectMember={handleAddMember}
+        onSelectMember={handleSelectMember}
       />
     </>
   );
