@@ -77,7 +77,7 @@ export default function WorkerHome() {
                                 location={task.location}
                                 assignedAvatars={task.assignedAvatars}
                                 commentsCount={task.commentsCount}
-                                onPress={() => router.push('/screens/company/projectdetails')}
+                                onPress={() => router.push('/screens/worker/viewtask')}
                             />
                         ))}
                     </View>
