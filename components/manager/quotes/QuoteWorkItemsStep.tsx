@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity } from "react-native";
 import QuoteSectionCard from "./QuoteSectionCard";
@@ -5,6 +6,7 @@ import QuoteWorkGroupCard, { type QuoteSelectedWorkGroup } from "./QuoteWorkGrou
 import QuoteWorkTotalsBar from "./QuoteWorkTotalsBar";
 
 type QuoteWorkItemsStepProps = {
+  catalogLabel: string;
   groups: QuoteSelectedWorkGroup[];
   subtotal: number;
   itemsSelected: number;
@@ -13,11 +15,13 @@ type QuoteWorkItemsStepProps = {
   onToggleItem: (groupId: string, itemId: string) => void;
   onChangeItemQuantity: (groupId: string, itemId: string, value: string) => void;
   onSelectItemUnit: (groupId: string, itemId: string, unit: string) => void;
+  onAddCustomItem: () => void;
   onNext: () => void;
   onBack: () => void;
 };
 
 export default function QuoteWorkItemsStep({
+  catalogLabel,
   groups,
   subtotal,
   itemsSelected,
@@ -26,13 +30,24 @@ export default function QuoteWorkItemsStep({
   onToggleItem,
   onChangeItemQuantity,
   onSelectItemUnit,
+  onAddCustomItem,
   onNext,
   onBack,
 }: QuoteWorkItemsStepProps) {
   return (
     <>
-      <QuoteSectionCard title="Select Work Items" icon="construct-outline">
-        <Text className="text-[13px] leading-5 text-[#66707B]">Choose the services and specify quantities for this project.</Text>
+      <QuoteSectionCard title="Select Services" icon="construct-outline">
+        <Text className="text-[13px] leading-5 text-[#66707B]">
+          Catalog loaded from the selected configuration database: {catalogLabel}
+        </Text>
+        <Text className="mt-2 text-[13px] leading-5 text-[#66707B]">
+          Select the services you need. Quantity and unit of measurement stay separate.
+        </Text>
+
+        <TouchableOpacity activeOpacity={0.88} onPress={onAddCustomItem} className="mt-4 h-[46px] flex-row items-center justify-center rounded-[12px] border border-[#1F5577] bg-white">
+          <Ionicons name="add" size={18} color="#1F5577" />
+          <Text className="ml-2 text-[14px] font-medium text-[#1F5577]">Add Custom Item</Text>
+        </TouchableOpacity>
       </QuoteSectionCard>
 
       {groups.map((group) => (
