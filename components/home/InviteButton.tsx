@@ -86,7 +86,9 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
                 onPress={() => setShowRoleOptions((prev) => !prev)}
                 className="mt-3 h-12 flex-row items-center rounded-[10px] border border-[#D6DEE5] bg-[#EEF3F6] px-3"
               >
-                <Text className="flex-1 text-[16px] text-[#2B3138]">{role}</Text>
+                <Text className="flex-1 text-[16px] text-[#2B3138]">
+                  {role}
+                </Text>
                 <Ionicons name="chevron-down" size={18} color="#2B3138" />
               </TouchableOpacity>
 
@@ -122,7 +124,9 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
                   onPress={closeModal}
                   className="h-12 flex-1 items-center justify-center rounded-[16px] border-2 border-[#1F5577] bg-white"
                 >
-                  <Text className="text-[16px] font-medium text-[#1F5577]">Cancel</Text>
+                  <Text className="text-[16px] font-medium text-[#1F5577]">
+                    Cancel
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -130,7 +134,9 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
                   onPress={handleInvite}
                   className="h-12 flex-1 items-center justify-center rounded-[16px] bg-[#1F5577]"
                 >
-                  <Text className="text-[16px] font-semibold text-white">Invite</Text>
+                  <Text className="text-[16px] font-semibold text-white">
+                    Invite
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -140,5 +146,3 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
     </>
   );
 }
-
-

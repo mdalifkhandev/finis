@@ -62,7 +62,11 @@ export default function ManagerLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} activeName="home" inactiveName="home-outline" />
+            <TabIcon
+              focused={focused}
+              activeName="home"
+              inactiveName="home-outline"
+            />
           ),
         }}
       />
@@ -71,7 +75,11 @@ export default function ManagerLayout() {
         options={{
           title: "Projects",
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} activeName="briefcase" inactiveName="briefcase-outline" />
+            <TabIcon
+              focused={focused}
+              activeName="briefcase"
+              inactiveName="briefcase-outline"
+            />
           ),
         }}
       />
@@ -80,7 +88,11 @@ export default function ManagerLayout() {
         options={{
           title: "Tasks",
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} activeName="checkmark-done" inactiveName="checkmark-done-outline" />
+            <TabIcon
+              focused={focused}
+              activeName="checkmark-done"
+              inactiveName="checkmark-done-outline"
+            />
           ),
         }}
       />
@@ -89,7 +101,11 @@ export default function ManagerLayout() {
         options={{
           title: "Inventory",
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} activeName="cube" inactiveName="cube-outline" />
+            <TabIcon
+              focused={focused}
+              activeName="cube"
+              inactiveName="cube-outline"
+            />
           ),
         }}
       />
@@ -98,7 +114,11 @@ export default function ManagerLayout() {
         options={{
           title: "Chat",
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} activeName="chatbubble-ellipses" inactiveName="chatbubble-ellipses-outline" />
+            <TabIcon
+              focused={focused}
+              activeName="chatbubble-ellipses"
+              inactiveName="chatbubble-ellipses-outline"
+            />
           ),
         }}
       />
@@ -107,7 +127,11 @@ export default function ManagerLayout() {
         options={{
           title: "Quotes",
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} activeName="receipt" inactiveName="receipt-outline" />
+            <TabIcon
+              focused={focused}
+              activeName="receipt"
+              inactiveName="receipt-outline"
+            />
           ),
         }}
       />

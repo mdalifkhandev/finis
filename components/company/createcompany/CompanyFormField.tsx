@@ -40,7 +40,7 @@ export default function CompanyFormField({
       >
         <Text
           className={`flex-1 text-[16px] ${
-              value ? "text-[#374151]" : "text-[#BDBFC4]"
+            value ? "text-[#374151]" : "text-[#BDBFC4]"
           }`}
           numberOfLines={1}
         >

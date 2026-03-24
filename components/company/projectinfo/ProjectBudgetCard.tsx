@@ -41,7 +41,9 @@ export default function ProjectBudgetCard({
             />
           </View>
           {usageLabel ? (
-            <Text className="mt-2 text-[15px] text-[#596579]">{usageLabel}</Text>
+            <Text className="mt-2 text-[15px] text-[#596579]">
+              {usageLabel}
+            </Text>
           ) : null}
         </>
       ) : null}

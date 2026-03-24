@@ -1,5 +1,12 @@
 import React from "react";
-import { Modal, Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type AddCustomQuoteItemModalProps = {
   visible: boolean;
@@ -29,16 +36,31 @@ export default function AddCustomQuoteItemModal({
   onAdd,
 }: AddCustomQuoteItemModalProps) {
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-      <Pressable className="flex-1 items-center justify-center bg-black/30 px-6" onPress={onClose}>
-        <Pressable onPress={(event) => event.stopPropagation()} className="w-full max-w-[340px] rounded-[16px] bg-white p-4 shadow-lg">
-          <Text className="text-[16px] font-semibold text-[#1F2937]">Add Custom Item</Text>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+    >
+      <Pressable
+        className="flex-1 items-center justify-center bg-black/30 px-6"
+        onPress={onClose}
+      >
+        <Pressable
+          onPress={(event) => event.stopPropagation()}
+          className="w-full max-w-[340px] rounded-[16px] bg-white p-4 shadow-lg"
+        >
+          <Text className="text-[16px] font-semibold text-[#1F2937]">
+            Add Custom Item
+          </Text>
           <Text className="mt-1 text-[13px] leading-5 text-[#66707B]">
             Add a manual service if it does not exist in the selected catalog.
           </Text>
 
           <View className="mt-4">
-            <Text className="mb-2 text-[12px] text-[#66707B]">Service Name</Text>
+            <Text className="mb-2 text-[12px] text-[#66707B]">
+              Service Name
+            </Text>
             <TextInput
               value={title}
               onChangeText={onChangeTitle}
@@ -61,7 +83,9 @@ export default function AddCustomQuoteItemModal({
           </View>
 
           <View className="mt-3">
-            <Text className="mb-2 text-[12px] text-[#66707B]">Unit of Measurement</Text>
+            <Text className="mb-2 text-[12px] text-[#66707B]">
+              Unit of Measurement
+            </Text>
             <TextInput
               value={unit}
               onChangeText={onChangeUnit}
@@ -87,11 +111,23 @@ export default function AddCustomQuoteItemModal({
           </View>
 
           <View className="mt-4 flex-row gap-3">
-            <TouchableOpacity activeOpacity={0.85} onPress={onClose} className="h-[42px] flex-1 items-center justify-center rounded-[10px] border border-[#D5DDE6] bg-white">
-              <Text className="text-[13px] font-medium text-[#344054]">Cancel</Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onClose}
+              className="h-[42px] flex-1 items-center justify-center rounded-[10px] border border-[#D5DDE6] bg-white"
+            >
+              <Text className="text-[13px] font-medium text-[#344054]">
+                Cancel
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.85} onPress={onAdd} className="h-[42px] flex-1 items-center justify-center rounded-[10px] bg-[#1F5577]">
-              <Text className="text-[13px] font-medium text-white">Add Item</Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onAdd}
+              className="h-[42px] flex-1 items-center justify-center rounded-[10px] bg-[#1F5577]"
+            >
+              <Text className="text-[13px] font-medium text-white">
+                Add Item
+              </Text>
             </TouchableOpacity>
           </View>
         </Pressable>

@@ -1,5 +1,5 @@
-import AssignedProjectCard from "@/components/company/assignedprojects/AssignedProjectCard";
 import BackTitleHeader from "@/components/common/BackTitleHeader";
+import AssignedProjectCard from "@/components/company/assignedprojects/AssignedProjectCard";
 import { router } from "expo-router";
 import {
   ScrollView,

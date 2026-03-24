@@ -40,7 +40,9 @@ export default function ProjectInputField({
     <View className="w-full">
       {showHeader ? (
         <View className="mb-2 flex-row items-center justify-between">
-          <Text className="text-[16px] font-medium text-[#1F2937]">{label || ""}</Text>
+          <Text className="text-[16px] font-medium text-[#1F2937]">
+            {label || ""}
+          </Text>
           {labelRight}
         </View>
       ) : null}

@@ -49,8 +49,12 @@ export default function FloorSetupCard({
     <View className="mt-4 rounded-[14px] border border-[#CCD2D8] bg-[#F4F6F8] p-4">
       <View className="flex-row items-start justify-between">
         <View>
-          <Text className="text-[16px] font-semibold text-[#1C2026]">{floorName}</Text>
-          <Text className="mt-0.5 text-[14px] text-[#4E5B6D]">{roomCount} rooms</Text>
+          <Text className="text-[16px] font-semibold text-[#1C2026]">
+            {floorName}
+          </Text>
+          <Text className="mt-0.5 text-[14px] text-[#4E5B6D]">
+            {roomCount} rooms
+          </Text>
         </View>
 
         <View className="flex-row items-center pt-1">
@@ -76,7 +80,9 @@ export default function FloorSetupCard({
         onPress={onToggleRoomDetails}
         className="mt-4 self-start"
       >
-        <Text className="text-[16px] font-medium text-[#245E7D]">View Room Details</Text>
+        <Text className="text-[16px] font-medium text-[#245E7D]">
+          View Room Details
+        </Text>
       </TouchableOpacity>
 
       {showRoomSection ? (

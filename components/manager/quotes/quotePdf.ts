@@ -2,7 +2,13 @@ import * as MailComposer from "expo-mail-composer";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { Alert, Linking } from "react-native";
-import { formatCurrency, type QuoteEstimate, type QuoteProjectType, type QuotePropertyType, type QuoteUnitType } from "./quoteMockData";
+import {
+  formatCurrency,
+  type QuoteEstimate,
+  type QuoteProjectType,
+  type QuotePropertyType,
+  type QuoteUnitType,
+} from "./quoteMockData";
 import type { QuoteSelectedWorkGroup } from "./QuoteWorkGroupCard";
 
 function escapeHtml(value: string) {
@@ -33,7 +39,10 @@ export type GenerateQuotePdfParams = {
 
 function buildQuoteHtml(params: GenerateQuotePdfParams) {
   const selectedGroups = params.workGroups
-    .map((group) => ({ ...group, items: group.items.filter((item) => item.selected) }))
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.selected),
+    }))
     .filter((group) => group.items.length > 0);
 
   return `
@@ -69,7 +78,12 @@ function buildQuoteHtml(params: GenerateQuotePdfParams) {
             (group) => `
               <div class="group">
                 <div class="row"><strong>${escapeHtml(group.title)}</strong><strong>${formatCurrency(
-                  group.items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * item.selectedUnitPrice, 0)
+                  group.items.reduce(
+                    (sum, item) =>
+                      sum +
+                      (Number(item.quantity) || 0) * item.selectedUnitPrice,
+                    0,
+                  ),
                 )}</strong></div>
                 ${group.items
                   .map(
@@ -81,11 +95,11 @@ function buildQuoteHtml(params: GenerateQuotePdfParams) {
                         </div>
                         <div>${formatCurrency((Number(item.quantity) || 0) * item.selectedUnitPrice)}</div>
                       </div>
-                    `
+                    `,
                   )
                   .join("")}
               </div>
-            `
+            `,
           )
           .join("")}
         <div class="row" style="margin-top:12px"><strong>Subtotal</strong><strong>${formatCurrency(params.subtotal)}</strong></div>
@@ -128,7 +142,9 @@ export async function generateQuotePdf(params: GenerateQuotePdfParams) {
   return result.uri;
 }
 
-export async function emailQuotePdf(params: GenerateQuotePdfParams & { recipientEmail?: string }) {
+export async function emailQuotePdf(
+  params: GenerateQuotePdfParams & { recipientEmail?: string },
+) {
   const result = await createQuotePdf(params);
   const subject = `Quote for ${params.clientName || "Client"}`;
   const body = `Please find the attached quote for ${params.projectType} • ${params.propertyType} • ${params.unitType}.`;
@@ -147,9 +163,15 @@ export async function emailQuotePdf(params: GenerateQuotePdfParams & { recipient
   const supported = await Linking.canOpenURL(mailto);
   if (supported) {
     await Linking.openURL(mailto);
-    Alert.alert("Email Composer", "Email opened without attachment because native mail composer is unavailable on this device.");
+    Alert.alert(
+      "Email Composer",
+      "Email opened without attachment because native mail composer is unavailable on this device.",
+    );
     return;
   }
 
-  Alert.alert("Email Not Available", "No email composer is available on this device.");
+  Alert.alert(
+    "Email Not Available",
+    "No email composer is available on this device.",
+  );
 }

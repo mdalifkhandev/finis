@@ -14,7 +14,10 @@ export default function CompanyAvatarPicker({
   return (
     <View className="items-center">
       <View className="relative h-[120px] w-[120px]">
-        <Image source={{ uri: avatarUrl }} className="h-full w-full rounded-full" />
+        <Image
+          source={{ uri: avatarUrl }}
+          className="h-full w-full rounded-full"
+        />
         <TouchableOpacity
           onPress={onPress}
           activeOpacity={0.85}

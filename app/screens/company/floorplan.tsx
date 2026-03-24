@@ -1,5 +1,5 @@
-import AddFloorModal from "@/components/company/floorplan/AddFloorModal";
 import BackTitleHeader from "@/components/common/BackTitleHeader";
+import AddFloorModal from "@/components/company/floorplan/AddFloorModal";
 import AddRoomRangeModal from "@/components/company/floorplan/AddRoomRangeModal";
 import FloorSetupCard, {
   RoomInfo,
@@ -108,9 +108,8 @@ const buildStatsFromRooms = (rooms: RoomInfo[]): FloorStats => ({
 export default function FloorPlanRoute() {
   const [floors, setFloors] = useState<FloorInfo[]>(initialFloors);
   const [activeFloorId, setActiveFloorId] = useState<string | null>(null);
-  const [roomDetailsVisibleByFloorId, setRoomDetailsVisibleByFloorId] = useState<
-    Record<string, boolean>
-  >({});
+  const [roomDetailsVisibleByFloorId, setRoomDetailsVisibleByFloorId] =
+    useState<Record<string, boolean>>({});
   const [showAddFloorModal, setShowAddFloorModal] = useState(false);
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
 
@@ -270,7 +269,9 @@ export default function FloorPlanRoute() {
                 }
                 onDeleteFloor={() => handleDeleteFloor(floor.id)}
                 onDeleteRoom={(roomId) => handleDeleteRoom(floor.id, roomId)}
-                roomDetailsVisible={Boolean(roomDetailsVisibleByFloorId[floor.id])}
+                roomDetailsVisible={Boolean(
+                  roomDetailsVisibleByFloorId[floor.id],
+                )}
                 onToggleRoomDetails={() =>
                   setRoomDetailsVisibleByFloorId((previous) => ({
                     ...previous,

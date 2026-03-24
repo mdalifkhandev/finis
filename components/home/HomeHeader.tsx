@@ -1,6 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
 type HomeHeaderProps = {
   name: string;
@@ -27,9 +27,7 @@ export default function HomeHeader({
           />
         </TouchableOpacity>
         <View className="ml-3">
-          <Text className="text-base font-semibold text-slate-900">
-            {name}
-          </Text>
+          <Text className="text-base font-semibold text-slate-900">{name}</Text>
           <Text className="text-xs text-slate-500">{subtitle}</Text>
         </View>
       </View>

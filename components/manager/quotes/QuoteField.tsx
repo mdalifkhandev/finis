@@ -10,12 +10,22 @@ type QuoteFieldProps = {
   leftIcon?: keyof typeof Ionicons.glyphMap;
 };
 
-export default function QuoteField({ label, placeholder, value, onChangeText, leftIcon }: QuoteFieldProps) {
+export default function QuoteField({
+  label,
+  placeholder,
+  value,
+  onChangeText,
+  leftIcon,
+}: QuoteFieldProps) {
   return (
     <View className="mb-5">
-      <Text className="mb-2 text-[14px] font-medium text-[#2B2B2B]">{label}</Text>
+      <Text className="mb-2 text-[14px] font-medium text-[#2B2B2B]">
+        {label}
+      </Text>
       <View className="h-[56px] flex-row items-center rounded-[16px] border border-[#D4DCE5] bg-white px-4">
-        {leftIcon ? <Ionicons name={leftIcon} size={22} color="#A0A8B5" /> : null}
+        {leftIcon ? (
+          <Ionicons name={leftIcon} size={22} color="#A0A8B5" />
+        ) : null}
         <TextInput
           value={value}
           onChangeText={onChangeText}

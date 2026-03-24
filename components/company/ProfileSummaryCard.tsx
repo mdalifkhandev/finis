@@ -1,12 +1,6 @@
-import React from "react";
-import {
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import ProfileStatTile from "./ProfileStatTile";
 
 type ProfileSummaryCardProps = {
@@ -48,7 +42,10 @@ export default function ProfileSummaryCard({
         </View>
       </View>
 
-      <View className="mt-6 items-center rounded-3xl px-4 py-4" style={styles.infoTile}>
+      <View
+        className="mt-6 items-center rounded-3xl px-4 py-4"
+        style={styles.infoTile}
+      >
         <View className="flex-row items-center justify-center">
           <Ionicons name="person" size={22} color="#f2f5f9" />
           <Text className="ml-2 text-[20px] font-semibold text-white">

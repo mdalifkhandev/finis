@@ -1,6 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { cardShadow } from "./styles";
 
 type WorkerCardProps = {
@@ -40,9 +40,7 @@ export default function WorkerCard({
             className="h-10 w-10 rounded-full"
           />
           <View className="ml-3">
-            <Text className="text-sm font-semibold text-slate-900">
-              {name}
-            </Text>
+            <Text className="text-sm font-semibold text-slate-900">{name}</Text>
             <Text className="text-xs text-slate-500">{role}</Text>
           </View>
         </View>

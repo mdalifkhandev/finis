@@ -6,7 +6,14 @@ import React from "react";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const MENU_ROUTES: Record<string, "/screens/company/projectinfo" | "/screens/company/projectanalysis" | "/screens/company/team" | "/screens/company/task" | "/screens/company/projectdocuments"> = {
+const MENU_ROUTES: Record<
+  string,
+  | "/screens/company/projectinfo"
+  | "/screens/company/projectanalysis"
+  | "/screens/company/team"
+  | "/screens/company/task"
+  | "/screens/company/projectdocuments"
+> = {
   "Project details": "/screens/company/projectinfo",
   "Project Analysis": "/screens/company/projectanalysis",
   Team: "/screens/company/team",
@@ -21,7 +28,10 @@ export default function ProjectDetailsRoute() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 34 }}
       >
-        <BackTitleHeader title="Projects details" onBack={() => router.back()} />
+        <BackTitleHeader
+          title="Projects details"
+          onBack={() => router.back()}
+        />
 
         <ProjectOverviewCard
           onPressFloorPlan={() => router.push("/screens/company/floorplan")}

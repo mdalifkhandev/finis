@@ -15,7 +15,9 @@ export default function GeofenceMapCard() {
   const [location, setLocation] = useState<DeviceLocation | null>(null);
   const [locationLabel, setLocationLabel] = useState("Locating your device...");
   const [loading, setLoading] = useState(true);
-  const [webViewModule, setWebViewModule] = useState<WebViewModule | null>(null);
+  const [webViewModule, setWebViewModule] = useState<WebViewModule | null>(
+    null,
+  );
   const [webViewUnavailable, setWebViewUnavailable] = useState(false);
 
   useEffect(() => {

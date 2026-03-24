@@ -32,7 +32,9 @@ export default function ConversationHeader({
           <Text className="text-[17px] font-medium text-[#2B2B2B]">{name}</Text>
           <View className="ml-2 h-2.5 w-2.5 rounded-full bg-[#0FB866]" />
         </View>
-        <Text className="text-[14px] text-[#6B7280]">{idText || "ID: #225432"}</Text>
+        <Text className="text-[14px] text-[#6B7280]">
+          {idText || "ID: #225432"}
+        </Text>
       </View>
     </View>
   );

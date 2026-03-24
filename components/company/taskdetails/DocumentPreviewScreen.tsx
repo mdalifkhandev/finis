@@ -1,11 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
-import * as IntentLauncher from "expo-intent-launcher";
 import { Image } from "expo-image";
-import React, { useMemo } from "react";
-import { Alert, Linking, Platform, Text, TouchableOpacity, View } from "react-native";
-import Pdf from "react-native-pdf";
+import * as IntentLauncher from "expo-intent-launcher";
 import * as Sharing from "expo-sharing";
+import React, { useMemo } from "react";
+import {
+  Alert,
+  Linking,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Pdf from "react-native-pdf";
 
 type DocumentPreviewScreenProps = {
   uri: string;
@@ -53,7 +60,8 @@ function resolveMimeType(name: string, mimeType?: string | null) {
   }
   if (lowerName.endsWith(".txt")) return "text/plain";
   if (lowerName.endsWith(".png")) return "image/png";
-  if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg")) return "image/jpeg";
+  if (lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg"))
+    return "image/jpeg";
 
   return "*/*";
 }
@@ -63,8 +71,14 @@ export default function DocumentPreviewScreen({
   name,
   mimeType,
 }: DocumentPreviewScreenProps) {
-  const resolvedKind = useMemo(() => resolveKind(mimeType, name), [mimeType, name]);
-  const resolvedMimeType = useMemo(() => resolveMimeType(name, mimeType), [mimeType, name]);
+  const resolvedKind = useMemo(
+    () => resolveKind(mimeType, name),
+    [mimeType, name],
+  );
+  const resolvedMimeType = useMemo(
+    () => resolveMimeType(name, mimeType),
+    [mimeType, name],
+  );
 
   const handleOpenFile = async () => {
     try {
@@ -98,7 +112,9 @@ export default function DocumentPreviewScreen({
   if (!uri) {
     return (
       <View className="flex-1 items-center justify-center px-6">
-        <Text className="text-[15px] text-[#6B7280]">No preview available.</Text>
+        <Text className="text-[15px] text-[#6B7280]">
+          No preview available.
+        </Text>
       </View>
     );
   }
@@ -124,10 +140,14 @@ export default function DocumentPreviewScreen({
             </View>
           )}
           onError={() => {
-            Alert.alert("Preview failed", "Unable to preview this PDF inline. You can open it directly.", [
-              { text: "Cancel", style: "cancel" },
-              { text: "Open File", onPress: handleOpenFile },
-            ]);
+            Alert.alert(
+              "Preview failed",
+              "Unable to preview this PDF inline. You can open it directly.",
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Open File", onPress: handleOpenFile },
+              ],
+            );
           }}
         />
       </View>
@@ -142,7 +162,8 @@ export default function DocumentPreviewScreen({
           {name}
         </Text>
         <Text className="mt-2 text-center text-[13px] text-[#6B7280]">
-          This file type opens through the device app chooser. If Google Drive, Docs, or Word is installed, you can open it there.
+          This file type opens through the device app chooser. If Google Drive,
+          Docs, or Word is installed, you can open it there.
         </Text>
 
         <TouchableOpacity
@@ -150,7 +171,9 @@ export default function DocumentPreviewScreen({
           onPress={handleOpenFile}
           className="mt-5 h-[48px] min-w-[170px] items-center justify-center rounded-[12px] bg-[#1E5371] px-5"
         >
-          <Text className="text-[15px] font-medium text-white">Open In App</Text>
+          <Text className="text-[15px] font-medium text-white">
+            Open In App
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

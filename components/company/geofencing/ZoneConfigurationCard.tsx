@@ -2,7 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-function MetricCard({ label, children }: { label: string; children: React.ReactNode }) {
+function MetricCard({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <View className="flex-1 rounded-2xl bg-[#EEF2F6] p-4">
       <Text className="text-[14px] text-[#6B7280]">{label}</Text>
@@ -17,7 +23,9 @@ export default function ZoneConfigurationCard() {
       <View className="rounded-3xl border border-[#E2E8EE] bg-[#F7F9FB] p-4">
         <View className="flex-row justify-between">
           <View>
-            <Text className="text-[17px] font-semibold text-[#111827]">Zone</Text>
+            <Text className="text-[17px] font-semibold text-[#111827]">
+              Zone
+            </Text>
             <Text className="-mt-0.5 text-[17px] font-semibold text-[#111827]">
               Configuration
             </Text>
@@ -54,19 +62,25 @@ export default function ZoneConfigurationCard() {
             </Text>
           </MetricCard>
           <MetricCard label="Perimeter">
-            <Text className="text-[16px] font-semibold text-[#1F2937]">860 ft</Text>
+            <Text className="text-[16px] font-semibold text-[#1F2937]">
+              860 ft
+            </Text>
           </MetricCard>
         </View>
 
         <View className="mt-3 flex-row gap-3">
           <MetricCard label="Center Point">
-            <Text className="text-[15px] leading-6 text-[#1F2937]">43.6332° N,</Text>
+            <Text className="text-[15px] leading-6 text-[#1F2937]">
+              43.6332° N,
+            </Text>
             <Text className="-mt-0.5 text-[15px] leading-6 text-[#1F2937]">
               -79.4186° W
             </Text>
           </MetricCard>
           <MetricCard label="Monitoring Radius">
-            <Text className="text-[15px] leading-6 text-[#1F2937]">Precise</Text>
+            <Text className="text-[15px] leading-6 text-[#1F2937]">
+              Precise
+            </Text>
             <Text className="-mt-0.5 text-[15px] leading-6 text-[#1F2937]">
               Polygon
             </Text>

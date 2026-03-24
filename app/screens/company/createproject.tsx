@@ -80,7 +80,9 @@ export default function CreateProjectRoute() {
       description,
       houseScope: projectType === "House" ? houseScope : "whole",
       selectedSections:
-        projectType === "House" && houseScope === "sections" ? selectedSections : [],
+        projectType === "House" && houseScope === "sections"
+          ? selectedSections
+          : [],
     });
 
     router.push("/screens/company/projectdetails");
@@ -205,7 +207,9 @@ export default function CreateProjectRoute() {
 
               <View className="mt-3">
                 <View className="mb-2 flex-row items-center justify-between">
-                  <Text className="text-[16px] font-medium text-[#1F2937]">Budget</Text>
+                  <Text className="text-[16px] font-medium text-[#1F2937]">
+                    Budget
+                  </Text>
                   <Switch
                     value={budgetEnabled}
                     onValueChange={setBudgetEnabled}

@@ -7,7 +7,10 @@ type BackTitleHeaderProps = {
   onBack?: () => void;
 };
 
-export default function BackTitleHeader({ title, onBack }: BackTitleHeaderProps) {
+export default function BackTitleHeader({
+  title,
+  onBack,
+}: BackTitleHeaderProps) {
   return (
     <View className="flex-row items-center justify-between px-5 pt-2">
       <TouchableOpacity

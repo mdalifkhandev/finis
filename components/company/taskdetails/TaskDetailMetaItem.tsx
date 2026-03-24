@@ -22,7 +22,7 @@ export default function TaskDetailMetaItem({
   statusBadgeText,
 }: TaskDetailMetaItemProps) {
   const badgeStyle = statusBadgeText
-    ? STATUS_STYLES[statusBadgeText] ?? STATUS_STYLES.PENDING
+    ? (STATUS_STYLES[statusBadgeText] ?? STATUS_STYLES.PENDING)
     : null;
 
   return (
@@ -34,13 +34,21 @@ export default function TaskDetailMetaItem({
 
         <View className="ml-3 flex-1">
           <Text className="text-[12px] text-[#6B7280]">{label}</Text>
-          <Text className="mt-0.5 text-[14px] font-medium text-[#111827]">{value}</Text>
+          <Text className="mt-0.5 text-[14px] font-medium text-[#111827]">
+            {value}
+          </Text>
         </View>
       </View>
 
       {badgeStyle && statusBadgeText ? (
-        <View className="rounded-[6px] px-3 py-2" style={{ backgroundColor: badgeStyle.bg }}>
-          <Text className="text-[11px] font-semibold tracking-[0.4px]" style={{ color: badgeStyle.text }}>
+        <View
+          className="rounded-[6px] px-3 py-2"
+          style={{ backgroundColor: badgeStyle.bg }}
+        >
+          <Text
+            className="text-[11px] font-semibold tracking-[0.4px]"
+            style={{ color: badgeStyle.text }}
+          >
             {statusBadgeText}
           </Text>
         </View>

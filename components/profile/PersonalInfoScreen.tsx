@@ -21,25 +21,33 @@ export default function PersonalInfoScreen() {
 
       <View className="mt-3 items-center">
         <ProfileAvatar uri={avatarUrl} size={74} showCamera />
-        <Text className="mt-2 text-[16px] font-medium text-[#2B2B2B]">Rokey</Text>
+        <Text className="mt-2 text-[16px] font-medium text-[#2B2B2B]">
+          Rokey
+        </Text>
       </View>
 
       <View className="mt-3 px-4">
         <View className="rounded-[10px] border border-[#E0E4E9] bg-white px-3 py-3">
-          <Text className="text-[14px] font-semibold text-[#2B2B2B]">Personal Information</Text>
+          <Text className="text-[14px] font-semibold text-[#2B2B2B]">
+            Personal Information
+          </Text>
 
           <View className="mt-2">
             <Text className="text-[10px] text-[#98A2B3]">Full Name</Text>
             <Text className="text-[13px] text-[#2B2B2B]">Rokey Mahmud</Text>
           </View>
 
-          <Text className="mt-3 text-[14px] font-semibold text-[#2B2B2B]">Contact Information</Text>
+          <Text className="mt-3 text-[14px] font-semibold text-[#2B2B2B]">
+            Contact Information
+          </Text>
 
           <View className="mt-2 flex-row">
             <Ionicons name="mail-outline" size={14} color="#98A2B3" />
             <View className="ml-2">
               <Text className="text-[10px] text-[#98A2B3]">Email</Text>
-              <Text className="text-[13px] text-[#2B2B2B]">alice@example.com</Text>
+              <Text className="text-[13px] text-[#2B2B2B]">
+                alice@example.com
+              </Text>
             </View>
           </View>
 
@@ -47,7 +55,9 @@ export default function PersonalInfoScreen() {
             <Ionicons name="call-outline" size={14} color="#98A2B3" />
             <View className="ml-2">
               <Text className="text-[10px] text-[#98A2B3]">Phone</Text>
-              <Text className="text-[13px] text-[#2B2B2B]">+1 (555) 123-4567</Text>
+              <Text className="text-[13px] text-[#2B2B2B]">
+                +1 (555) 123-4567
+              </Text>
             </View>
           </View>
         </View>

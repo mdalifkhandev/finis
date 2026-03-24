@@ -12,7 +12,9 @@ export default function TaskPhotoCard({ title, imageUrl }: TaskPhotoCardProps) {
     <View className="mt-4 rounded-[16px] border border-[#DADFE5] bg-white p-3">
       <View className="flex-row items-center">
         <Ionicons name="camera-outline" size={19} color="#1F2937" />
-        <Text className="ml-2 text-[15px] font-semibold text-[#1E1E1E]">{title}</Text>
+        <Text className="ml-2 text-[15px] font-semibold text-[#1E1E1E]">
+          {title}
+        </Text>
       </View>
 
       <Image

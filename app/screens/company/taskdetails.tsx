@@ -1,7 +1,7 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
-import TaskDetailsScreen from "@/components/company/taskdetails/TaskDetailsScreen";
 import { useTaskItems } from "@/components/company/task/taskStore";
 import { getTaskDetailsPreset } from "@/components/company/taskdetails/taskDetailsPreset";
+import TaskDetailsScreen from "@/components/company/taskdetails/TaskDetailsScreen";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ScrollView } from "react-native";

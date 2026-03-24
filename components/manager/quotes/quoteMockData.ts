@@ -32,11 +32,25 @@ export type QuoteWorkGroup = {
   items: QuoteWorkItemTemplate[];
 };
 
-type QuotePricingMap = Record<QuoteProjectType, Record<QuotePropertyType, Record<QuoteUnitType, QuoteEstimate>>>;
-type QuoteWorkGroupMap = Record<QuoteProjectType, Record<QuotePropertyType, Record<QuoteUnitType, QuoteWorkGroup[]>>>;
+type QuotePricingMap = Record<
+  QuoteProjectType,
+  Record<QuotePropertyType, Record<QuoteUnitType, QuoteEstimate>>
+>;
+type QuoteWorkGroupMap = Record<
+  QuoteProjectType,
+  Record<QuotePropertyType, Record<QuoteUnitType, QuoteWorkGroup[]>>
+>;
 
-const unit = (name: string, price: number): QuoteUnitOption => ({ unit: name, price });
-const item = (id: string, title: string, defaultQuantity: number, unitOptions: QuoteUnitOption[]): QuoteWorkItemTemplate => ({ id, title, defaultQuantity, unitOptions });
+const unit = (name: string, price: number): QuoteUnitOption => ({
+  unit: name,
+  price,
+});
+const item = (
+  id: string,
+  title: string,
+  defaultQuantity: number,
+  unitOptions: QuoteUnitOption[],
+): QuoteWorkItemTemplate => ({ id, title, defaultQuantity, unitOptions });
 
 export const quotePricingMap: QuotePricingMap = {
   "New Build": {
@@ -218,30 +232,64 @@ const apartmentWorkGroups: QuoteWorkGroup[] = [
     id: "final-cleaning",
     title: "Final Cleaning",
     items: [
-      item("interior-deep-clean", "Interior Deep Clean", 1, [unit("service", 50)]),
-      item("window-cleaning", "Window Cleaning", 4, [unit("panel", 12.5), unit("sqm", 10)]),
-      item("debris-removal", "Debris Removal", 1, [unit("load", 350), unit("bag", 18)]),
-      item("floor-polishing", "Floor Polishing", 1, [unit("room", 75), unit("sqm", 4.5)]),
+      item("interior-deep-clean", "Interior Deep Clean", 1, [
+        unit("service", 50),
+      ]),
+      item("window-cleaning", "Window Cleaning", 4, [
+        unit("panel", 12.5),
+        unit("sqm", 10),
+      ]),
+      item("debris-removal", "Debris Removal", 1, [
+        unit("load", 350),
+        unit("bag", 18),
+      ]),
+      item("floor-polishing", "Floor Polishing", 1, [
+        unit("room", 75),
+        unit("sqm", 4.5),
+      ]),
     ],
   },
   {
     id: "caulking",
     title: "Caulking",
     items: [
-      item("bathroom-caulking", "Bathroom Caulking", 1, [unit("bathroom", 120)]),
+      item("bathroom-caulking", "Bathroom Caulking", 1, [
+        unit("bathroom", 120),
+      ]),
       item("kitchen-caulking", "Kitchen Caulking", 1, [unit("kitchen", 150)]),
-      item("window-sealing", "Window Sealing", 8, [unit("ft", 3), unit("meter", 9.84)]),
-      item("exterior-caulking", "Exterior Caulking", 6, [unit("meter", 4.5), unit("ft", 1.37)]),
+      item("window-sealing", "Window Sealing", 8, [
+        unit("ft", 3),
+        unit("meter", 9.84),
+      ]),
+      item("exterior-caulking", "Exterior Caulking", 6, [
+        unit("meter", 4.5),
+        unit("ft", 1.37),
+      ]),
     ],
   },
   {
     id: "fixture-installation",
     title: "Fixture Installation",
     items: [
-      item("light-fixture-installation", "Light Fixture Installation", 3, [unit("pcs", 125), unit("set", 340)]),
-      item("ceiling-fan-installation", "Ceiling Fan Installation", 1, [unit("pcs", 200)]),
-      item("bathroom-fixture-installation", "Bathroom Fixture Installation", 1, [unit("set", 175), unit("pcs", 58)]),
-      item("cabinet-hardware-installation", "Cabinet Hardware Installation", 10, [unit("pcs", 5), unit("set", 42)]),
+      item("light-fixture-installation", "Light Fixture Installation", 3, [
+        unit("pcs", 125),
+        unit("set", 340),
+      ]),
+      item("ceiling-fan-installation", "Ceiling Fan Installation", 1, [
+        unit("pcs", 200),
+      ]),
+      item(
+        "bathroom-fixture-installation",
+        "Bathroom Fixture Installation",
+        1,
+        [unit("set", 175), unit("pcs", 58)],
+      ),
+      item(
+        "cabinet-hardware-installation",
+        "Cabinet Hardware Installation",
+        10,
+        [unit("pcs", 5), unit("set", 42)],
+      ),
     ],
   },
 ];
@@ -253,7 +301,10 @@ const houseWorkGroups: QuoteWorkGroup[] = [
     items: [
       item("steel-rod", "Steel Rod", 1, [unit("kg", 2.8), unit("bundle", 85)]),
       item("cement-bag", "Cement Bag", 12, [unit("pcs", 8.5)]),
-      item("electric-cable", "Electric Cable", 25, [unit("meter", 1.9), unit("ft", 0.58)]),
+      item("electric-cable", "Electric Cable", 25, [
+        unit("meter", 1.9),
+        unit("ft", 0.58),
+      ]),
     ],
   },
   {
@@ -269,8 +320,14 @@ const houseWorkGroups: QuoteWorkGroup[] = [
     id: "finishes",
     title: "Finishes",
     items: [
-      item("paint-finish", "Paint Finish", 40, [unit("sqm", 2.4), unit("ft", 0.23)]),
-      item("baseboard-installation", "Baseboard Installation", 25, [unit("meter", 3.2), unit("ft", 0.98)]),
+      item("paint-finish", "Paint Finish", 40, [
+        unit("sqm", 2.4),
+        unit("ft", 0.23),
+      ]),
+      item("baseboard-installation", "Baseboard Installation", 25, [
+        unit("meter", 3.2),
+        unit("ft", 0.98),
+      ]),
       item("floor-tile", "Floor Tile", 18, [unit("sqm", 14), unit("box", 32)]),
     ],
   },
@@ -281,17 +338,28 @@ const officeWorkGroups: QuoteWorkGroup[] = [
     id: "workspace-setup",
     title: "Workspace Setup",
     items: [
-      item("partition-install", "Partition Installation", 12, [unit("meter", 42), unit("ft", 12.8)]),
+      item("partition-install", "Partition Installation", 12, [
+        unit("meter", 42),
+        unit("ft", 12.8),
+      ]),
       item("floor-boxes", "Floor Box Installation", 6, [unit("pcs", 140)]),
-      item("meeting-room-fitout", "Meeting Room Fit-out", 1, [unit("room", 980)]),
+      item("meeting-room-fitout", "Meeting Room Fit-out", 1, [
+        unit("room", 980),
+      ]),
     ],
   },
   {
     id: "network-electrical",
     title: "Network & Electrical",
     items: [
-      item("data-cabling", "Data Cabling", 60, [unit("meter", 6), unit("ft", 1.83)]),
-      item("lighting-grid", "Lighting Grid", 14, [unit("pcs", 55), unit("set", 780)]),
+      item("data-cabling", "Data Cabling", 60, [
+        unit("meter", 6),
+        unit("ft", 1.83),
+      ]),
+      item("lighting-grid", "Lighting Grid", 14, [
+        unit("pcs", 55),
+        unit("set", 780),
+      ]),
       item("access-control", "Access Control Setup", 2, [unit("door", 450)]),
     ],
   },
@@ -302,17 +370,28 @@ const hotelWorkGroups: QuoteWorkGroup[] = [
     id: "guest-rooms",
     title: "Guest Rooms",
     items: [
-      item("room-fixtures", "Room Fixture Installation", 8, [unit("room", 680)]),
+      item("room-fixtures", "Room Fixture Installation", 8, [
+        unit("room", 680),
+      ]),
       item("bath-fitout", "Bath Fit-out", 8, [unit("room", 740)]),
-      item("finish-touchups", "Finish Touch-ups", 20, [unit("sqm", 5.5), unit("ft", 0.52)]),
+      item("finish-touchups", "Finish Touch-ups", 20, [
+        unit("sqm", 5.5),
+        unit("ft", 0.52),
+      ]),
     ],
   },
   {
     id: "public-areas",
     title: "Public Areas",
     items: [
-      item("lobby-lighting", "Lobby Lighting", 12, [unit("pcs", 105), unit("set", 1250)]),
-      item("corridor-finishes", "Corridor Finishes", 30, [unit("meter", 18), unit("ft", 5.49)]),
+      item("lobby-lighting", "Lobby Lighting", 12, [
+        unit("pcs", 105),
+        unit("set", 1250),
+      ]),
+      item("corridor-finishes", "Corridor Finishes", 30, [
+        unit("meter", 18),
+        unit("ft", 5.49),
+      ]),
       item("signage-install", "Signage Installation", 4, [unit("set", 420)]),
     ],
   },
@@ -349,11 +428,19 @@ const quoteWorkGroupMap: QuoteWorkGroupMap = {
   },
 };
 
-export function getQuoteEstimate(projectType: QuoteProjectType, propertyType: QuotePropertyType, unitType: QuoteUnitType) {
+export function getQuoteEstimate(
+  projectType: QuoteProjectType,
+  propertyType: QuotePropertyType,
+  unitType: QuoteUnitType,
+) {
   return quotePricingMap[projectType][propertyType][unitType];
 }
 
-export function getQuoteWorkGroups(projectType: QuoteProjectType, propertyType: QuotePropertyType, unitType: QuoteUnitType) {
+export function getQuoteWorkGroups(
+  projectType: QuoteProjectType,
+  propertyType: QuotePropertyType,
+  unitType: QuoteUnitType,
+) {
   return quoteWorkGroupMap[projectType][propertyType][unitType];
 }
 

@@ -7,7 +7,9 @@ type LowStockAlertsCardProps = {
   alerts: LowStockAlert[];
 };
 
-export default function LowStockAlertsCard({ alerts }: LowStockAlertsCardProps) {
+export default function LowStockAlertsCard({
+  alerts,
+}: LowStockAlertsCardProps) {
   return (
     <View className="mt-3 overflow-hidden rounded-2xl border border-[#DEE4EA] bg-[#F7F9FB]">
       {alerts.map((alert, index) => {
@@ -27,8 +29,12 @@ export default function LowStockAlertsCard({ alerts }: LowStockAlertsCardProps) 
             />
 
             <View className="ml-4">
-              <Text className="text-[17px] font-medium text-[#111827]">{alert.title}</Text>
-              <Text className="mt-0.5 text-[15px] text-[#667085]">{alert.message}</Text>
+              <Text className="text-[17px] font-medium text-[#111827]">
+                {alert.title}
+              </Text>
+              <Text className="mt-0.5 text-[15px] text-[#667085]">
+                {alert.message}
+              </Text>
             </View>
           </View>
         );

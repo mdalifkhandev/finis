@@ -77,7 +77,9 @@ export function useInventoryItems() {
 
 export function useInventorySummary() {
   const items = useInventoryItems();
-  const lowStockCount = items.filter((item) => getInventoryStatus(item) !== "In Stock").length;
+  const lowStockCount = items.filter(
+    (item) => getInventoryStatus(item) !== "In Stock",
+  ).length;
 
   return {
     totalItems: totalItemsCount,
@@ -92,7 +94,10 @@ export function useLowStockAlerts() {
     .filter((item) => getInventoryStatus(item) !== "In Stock")
     .slice(0, 3)
     .map((item) => {
-      const status = getInventoryStatus(item) as Extract<InventoryStatus, "Critical" | "Low Stock">;
+      const status = getInventoryStatus(item) as Extract<
+        InventoryStatus,
+        "Critical" | "Low Stock"
+      >;
 
       const alert: LowStockAlert = {
         id: item.id,
@@ -110,7 +115,9 @@ export function addInventoryItem(input: {
   location: string;
   quantity: number;
 }) {
-  const quantity = Number.isFinite(input.quantity) ? Math.max(0, input.quantity) : 0;
+  const quantity = Number.isFinite(input.quantity)
+    ? Math.max(0, input.quantity)
+    : 0;
 
   const newItem: InventoryItem = {
     id: `inv-${Date.now()}`,

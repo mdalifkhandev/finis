@@ -16,13 +16,17 @@ export default function ProfileScreen() {
 
       <View className="mt-1 items-center px-4">
         <ProfileAvatar uri={avatarUrl} size={76} />
-        <Text className="mt-2 text-[16px] font-medium text-[#2B2B2B]">Rokey Mahmud</Text>
+        <Text className="mt-2 text-[16px] font-medium text-[#2B2B2B]">
+          Rokey Mahmud
+        </Text>
         <Text className="mt-0.5 text-[13px] text-[#49505A]">Admin</Text>
       </View>
 
       <View className="mt-4 px-4">
         <View className="rounded-[10px] border border-[#E0E4E9] bg-white px-3 py-3">
-          <Text className="mb-2 text-[12px] text-[#2B2B2B]">Account Information</Text>
+          <Text className="mb-2 text-[12px] text-[#2B2B2B]">
+            Account Information
+          </Text>
 
           <TouchableOpacity
             activeOpacity={0.85}
@@ -31,7 +35,9 @@ export default function ProfileScreen() {
           >
             <View className="flex-row items-center">
               <Ionicons name="person-outline" size={14} color="#2B2B2B" />
-              <Text className="ml-2 text-[12px] text-[#2B2B2B]">Personal info</Text>
+              <Text className="ml-2 text-[12px] text-[#2B2B2B]">
+                Personal info
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={14} color="#2B2B2B" />
           </TouchableOpacity>

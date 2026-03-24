@@ -81,7 +81,10 @@ export function getPayStubData(): PayStubData {
     { label: "Medicare", amount: 115.86 },
   ];
 
-  const totalDeductions = deductions.reduce((sum, item) => sum + item.amount, 0);
+  const totalDeductions = deductions.reduce(
+    (sum, item) => sum + item.amount,
+    0,
+  );
 
   return {
     regularHours: 160,

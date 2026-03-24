@@ -14,8 +14,8 @@ export default function ZoneViolationAlertCard() {
             Zone Violation Alert
           </Text>
           <Text className="mt-1 text-[14px] leading-6 text-[#4B5563]">
-            Worker <Text className="font-semibold">Mike Wilson</Text> was detected
-            50m outside
+            Worker <Text className="font-semibold">Mike Wilson</Text> was
+            detected 50m outside
           </Text>
           <Text className="-mt-1 text-[14px] leading-6 text-[#4B5563]">
             the designated zone at 09:45 AM.

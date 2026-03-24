@@ -1,12 +1,7 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ChatFilterTabs from "./ChatFilterTabs";
 import ChatListItem from "./ChatListItem";

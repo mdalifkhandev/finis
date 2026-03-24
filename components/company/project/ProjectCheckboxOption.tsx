@@ -26,7 +26,9 @@ export default function ProjectCheckboxOption({
             : "border-[#101010] bg-transparent"
         }`}
       >
-        {selected ? <Ionicons name="checkmark" size={15} color="#FFFFFF" /> : null}
+        {selected ? (
+          <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+        ) : null}
       </View>
       <Text className="ml-2 text-[16px] text-[#334155]">{label}</Text>
     </TouchableOpacity>

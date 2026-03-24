@@ -9,7 +9,11 @@ type WorkerPayrollCardProps = {
   onApprove?: () => void;
 };
 
-export default function WorkerPayrollCard({ worker, onViewStub, onApprove }: WorkerPayrollCardProps) {
+export default function WorkerPayrollCard({
+  worker,
+  onViewStub,
+  onApprove,
+}: WorkerPayrollCardProps) {
   const isApproved = worker.status === "Approved";
 
   return (
@@ -17,11 +21,15 @@ export default function WorkerPayrollCard({ worker, onViewStub, onApprove }: Wor
       <View className="flex-row items-start justify-between">
         <View className="flex-row items-center">
           <View className="h-[42px] w-[42px] items-center justify-center rounded-full bg-[#1F5577]">
-            <Text className="text-[18px] font-medium text-white">{worker.name.charAt(0)}</Text>
+            <Text className="text-[18px] font-medium text-white">
+              {worker.name.charAt(0)}
+            </Text>
           </View>
 
           <View className="ml-3">
-            <Text className="text-[14px] font-medium text-[#101828]">{worker.name}</Text>
+            <Text className="text-[14px] font-medium text-[#101828]">
+              {worker.name}
+            </Text>
             <Text className="text-[11px] text-[#667085]">{worker.role}</Text>
           </View>
         </View>
@@ -42,17 +50,23 @@ export default function WorkerPayrollCard({ worker, onViewStub, onApprove }: Wor
       <View className="mt-3 flex-row">
         <View className="flex-1">
           <Text className="text-[11px] text-[#667085]">Hours</Text>
-          <Text className="text-[12px] font-medium text-[#101828]">{worker.hours}</Text>
+          <Text className="text-[12px] font-medium text-[#101828]">
+            {worker.hours}
+          </Text>
         </View>
 
         <View className="flex-1">
           <Text className="text-[11px] text-[#667085]">Rate</Text>
-          <Text className="text-[12px] font-medium text-[#101828]">${worker.rate}/hr</Text>
+          <Text className="text-[12px] font-medium text-[#101828]">
+            ${worker.rate}/hr
+          </Text>
         </View>
 
         <View className="flex-1">
           <Text className="text-[11px] text-[#667085]">Total</Text>
-          <Text className="text-[12px] font-medium text-[#1F5577]">{formatCurrency(worker.total)}</Text>
+          <Text className="text-[12px] font-medium text-[#1F5577]">
+            {formatCurrency(worker.total)}
+          </Text>
         </View>
       </View>
 
@@ -66,7 +80,9 @@ export default function WorkerPayrollCard({ worker, onViewStub, onApprove }: Wor
               : "h-11 flex-1 items-center justify-center rounded-[8px] border border-[#D0D7E2] bg-[#FCFCFD]"
           }
         >
-          <Text className="text-[16px] font-medium text-[#1F2937]">View Stub</Text>
+          <Text className="text-[16px] font-medium text-[#1F2937]">
+            View Stub
+          </Text>
         </TouchableOpacity>
 
         {worker.showApproveButton ? (

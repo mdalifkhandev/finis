@@ -1,6 +1,12 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProfileField from "./ProfileField";
 import ProfileHeaderBar from "./ProfileHeaderBar";

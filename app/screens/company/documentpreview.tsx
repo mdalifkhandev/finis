@@ -1,6 +1,9 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import DocumentPreviewScreen from "@/components/company/taskdetails/DocumentPreviewScreen";
-import { getCurrentPreviewDocument, setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
+import {
+  getCurrentPreviewDocument,
+  setCurrentPreviewDocument,
+} from "@/components/company/taskdetails/documentPreviewStore";
 import { router } from "expo-router";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
