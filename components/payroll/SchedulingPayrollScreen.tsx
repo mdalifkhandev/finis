@@ -19,7 +19,10 @@ export default function SchedulingPayrollScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 96 }}
       >
-        <BackTitleHeader title="Scheduling & Payroll" onBack={() => router.back()} />
+        <BackTitleHeader
+          title="Scheduling & Payroll"
+          onBack={() => router.back()}
+        />
 
         <View className="mt-4 px-4">
           <PayrollCalendarCard
@@ -27,11 +30,19 @@ export default function SchedulingPayrollScreen() {
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
             onPrevMonth={() => {
-              const next = new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1);
+              const next = new Date(
+                monthDate.getFullYear(),
+                monthDate.getMonth() - 1,
+                1,
+              );
               setMonthDate(next);
             }}
             onNextMonth={() => {
-              const next = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1);
+              const next = new Date(
+                monthDate.getFullYear(),
+                monthDate.getMonth() + 1,
+                1,
+              );
               setMonthDate(next);
             }}
           />
@@ -41,12 +52,17 @@ export default function SchedulingPayrollScreen() {
             onPress={() => router.push("/screens/payroll/summary")}
             className="mt-3 h-[56px] items-center justify-center rounded-[12px] bg-[#1F5577]"
           >
-            <Text className="text-[16px] font-medium text-white">View Payroll Summary</Text>
+            <Text className="text-[16px] font-medium text-white">
+              View Payroll Summary
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View className="mt-3 px-4">
-          <Text className="text-[32px] font-medium text-[#101828]" style={{ fontSize: 32 / 2 }}>
+          <Text
+            className="text-[32px] font-medium text-[#101828]"
+            style={{ fontSize: 32 / 2 }}
+          >
             Scheduled Activities
           </Text>
 
