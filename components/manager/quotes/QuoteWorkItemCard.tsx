@@ -35,7 +35,7 @@ export default function QuoteWorkItemCard({
   onSelectUnit,
 }: QuoteWorkItemCardProps) {
   const quantity = Number(item.quantity) || 0;
-  const subtotal = item.selected ? quantity * item.selectedUnitPrice : 0;
+  const subtotal = quantity * item.selectedUnitPrice;
   const currentUnitIndex = item.unitOptions.findIndex(
     (option) => option.unit === item.selectedUnit,
   );
