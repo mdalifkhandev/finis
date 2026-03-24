@@ -24,7 +24,7 @@ export default function QuoteWorkGroupCard({ group, onToggleGroup, onToggleItem,
       <TouchableOpacity activeOpacity={0.85} onPress={onToggleGroup} className="flex-row items-center justify-between">
         <View>
           <Text className="text-[15px] font-medium text-[#1F2937]">{group.title}</Text>
-          <Text className="mt-1 text-[12px] text-[#7B8794]">{group.items.length} items</Text>
+          <Text className="mt-1 text-[12px] text-[#7B8794]">{group.items.length} services</Text>
         </View>
         <Ionicons name={group.expanded ? "chevron-up" : "chevron-down"} size={18} color="#7B8794" />
       </TouchableOpacity>

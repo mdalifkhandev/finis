@@ -26,6 +26,7 @@ type QuoteFinalReviewStepProps = {
   onEditWorkItems: () => void;
   onOpenDiscount: () => void;
   onGeneratePdf: () => void;
+  onEmailQuote: () => void;
 };
 
 function DetailRow({ icon, label, value, subvalue }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string; subvalue?: string }) {
@@ -62,6 +63,7 @@ export default function QuoteFinalReviewStep({
   onEditWorkItems,
   onOpenDiscount,
   onGeneratePdf,
+  onEmailQuote,
 }: QuoteFinalReviewStepProps) {
   const selectedGroups = workGroups
     .map((group) => ({ ...group, items: group.items.filter((item) => item.selected) }))
@@ -157,6 +159,11 @@ export default function QuoteFinalReviewStep({
         <TouchableOpacity activeOpacity={0.88} onPress={onGeneratePdf} className="mt-4 h-[58px] flex-row items-center justify-center rounded-[16px] bg-[#1F5577]">
           <Ionicons name="download-outline" size={22} color="#FFFFFF" />
           <Text className="ml-2 text-[16px] font-medium text-white">Generate Quote PDF</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity activeOpacity={0.88} onPress={onEmailQuote} className="mt-4 h-[58px] flex-row items-center justify-center rounded-[16px] border border-[#1F5577] bg-white">
+          <Ionicons name="mail-outline" size={22} color="#1F5577" />
+          <Text className="ml-2 text-[16px] font-medium text-[#1F5577]">Email Quote to Client</Text>
         </TouchableOpacity>
 
         <View className="mt-5 rounded-[16px] bg-[#1F5577] px-4 py-4">

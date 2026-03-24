@@ -1,6 +1,7 @@
+import * as MailComposer from "expo-mail-composer";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-import { Alert } from "react-native";
+import { Alert, Linking } from "react-native";
 import { formatCurrency, type QuoteEstimate, type QuoteProjectType, type QuotePropertyType, type QuoteUnitType } from "./quoteMockData";
 import type { QuoteSelectedWorkGroup } from "./QuoteWorkGroupCard";
 
@@ -13,7 +14,7 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#039;");
 }
 
-type GenerateQuotePdfParams = {
+export type GenerateQuotePdfParams = {
   clientName: string;
   projectAddress: string;
   projectType: QuoteProjectType;
@@ -30,12 +31,12 @@ type GenerateQuotePdfParams = {
   finalTotal: number;
 };
 
-export async function generateQuotePdf(params: GenerateQuotePdfParams) {
+function buildQuoteHtml(params: GenerateQuotePdfParams) {
   const selectedGroups = params.workGroups
     .map((group) => ({ ...group, items: group.items.filter((item) => item.selected) }))
     .filter((group) => group.items.length > 0);
 
-  const html = `
+  return `
   <html>
     <head>
       <meta charset="utf-8" />
@@ -44,7 +45,7 @@ export async function generateQuotePdf(params: GenerateQuotePdfParams) {
         h1 { font-size: 28px; margin-bottom: 8px; }
         h2 { font-size: 18px; margin: 24px 0 12px; }
         .card { border: 1px solid #d7e0e8; border-radius: 16px; padding: 16px; margin-bottom: 16px; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 8px; gap: 16px; }
         .muted { color: #66707B; }
         .total { background: #1F5577; color: #fff; border-radius: 16px; padding: 16px; margin-top: 16px; }
         .group { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; margin-top: 12px; }
@@ -103,12 +104,19 @@ export async function generateQuotePdf(params: GenerateQuotePdfParams) {
       </div>
     </body>
   </html>`;
+}
 
-  const result = await Print.printToFileAsync({ html });
+export async function createQuotePdf(params: GenerateQuotePdfParams) {
+  const html = buildQuoteHtml(params);
+  return Print.printToFileAsync({ html });
+}
+
+export async function generateQuotePdf(params: GenerateQuotePdfParams) {
+  const result = await createQuotePdf(params);
 
   if (!(await Sharing.isAvailableAsync())) {
     Alert.alert("PDF Ready", `Quote PDF created at: ${result.uri}`);
-    return;
+    return result.uri;
   }
 
   await Sharing.shareAsync(result.uri, {
@@ -116,4 +124,32 @@ export async function generateQuotePdf(params: GenerateQuotePdfParams) {
     dialogTitle: "Download Quote PDF",
     UTI: "com.adobe.pdf",
   });
+
+  return result.uri;
+}
+
+export async function emailQuotePdf(params: GenerateQuotePdfParams & { recipientEmail?: string }) {
+  const result = await createQuotePdf(params);
+  const subject = `Quote for ${params.clientName || "Client"}`;
+  const body = `Please find the attached quote for ${params.projectType} • ${params.propertyType} • ${params.unitType}.`;
+
+  if (await MailComposer.isAvailableAsync()) {
+    await MailComposer.composeAsync({
+      recipients: params.recipientEmail ? [params.recipientEmail] : [],
+      subject,
+      body,
+      attachments: [result.uri],
+    });
+    return;
+  }
+
+  const mailto = `mailto:${encodeURIComponent(params.recipientEmail || "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const supported = await Linking.canOpenURL(mailto);
+  if (supported) {
+    await Linking.openURL(mailto);
+    Alert.alert("Email Composer", "Email opened without attachment because native mail composer is unavailable on this device.");
+    return;
+  }
+
+  Alert.alert("Email Not Available", "No email composer is available on this device.");
 }
