@@ -1,16 +1,46 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { addTask, clearTaskDraft, getTaskDraft } from "./taskStore";
 import AssignWorkerCard, { WorkerItem } from "./AssignWorkerCard";
-import { router } from "expo-router";
+import { addTask, clearTaskDraft, getTaskDraft } from "./taskStore";
 
 const workers: WorkerItem[] = [
-  { id: "mike", name: "Mike Johnson", role: "Electrician", initial: "M", available: true },
-  { id: "sarah", name: "Sarah Davis", role: "Plumber", initial: "S", available: true },
-  { id: "tom", name: "Tom Wilson", role: "Carpenter", initial: "T", available: false },
-  { id: "john", name: "John Smith", role: "Painter", initial: "J", available: true },
-  { id: "robert", name: "Robert Brown", role: "HVAC Technician", initial: "R", available: true },
+  {
+    id: "mike",
+    name: "Mike Johnson",
+    role: "Electrician",
+    initial: "M",
+    available: true,
+  },
+  {
+    id: "sarah",
+    name: "Sarah Davis",
+    role: "Plumber",
+    initial: "S",
+    available: true,
+  },
+  {
+    id: "tom",
+    name: "Tom Wilson",
+    role: "Carpenter",
+    initial: "T",
+    available: false,
+  },
+  {
+    id: "john",
+    name: "John Smith",
+    role: "Painter",
+    initial: "J",
+    available: true,
+  },
+  {
+    id: "robert",
+    name: "Robert Brown",
+    role: "HVAC Technician",
+    initial: "R",
+    available: true,
+  },
 ];
 
 export default function AssignTaskScreen() {
@@ -23,7 +53,7 @@ export default function AssignTaskScreen() {
     return workers.filter(
       (worker) =>
         worker.name.toLowerCase().includes(query) ||
-        worker.role.toLowerCase().includes(query)
+        worker.role.toLowerCase().includes(query),
     );
   }, [searchText]);
 
@@ -31,7 +61,7 @@ export default function AssignTaskScreen() {
     setAssignedIds((previous) =>
       previous.includes(workerId)
         ? previous.filter((id) => id !== workerId)
-        : [...previous, workerId]
+        : [...previous, workerId],
     );
   };
 
@@ -48,7 +78,7 @@ export default function AssignTaskScreen() {
     }
 
     const assignedWorkers = workers.filter((worker) =>
-      assignedIds.includes(worker.id)
+      assignedIds.includes(worker.id),
     );
 
     const assignee =
@@ -83,7 +113,9 @@ export default function AssignTaskScreen() {
         />
       </View>
 
-      <Text className="mt-4 text-[18px] font-medium text-[#334155]">Available Workers</Text>
+      <Text className="mt-4 text-[18px] font-medium text-[#334155]">
+        Available Workers
+      </Text>
 
       <View className="mt-1">
         {filteredWorkers.map((worker) => (

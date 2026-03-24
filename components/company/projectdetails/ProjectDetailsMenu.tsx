@@ -14,7 +14,9 @@ type ProjectDetailsMenuProps = {
   onPressItem?: (item: string) => void;
 };
 
-export default function ProjectDetailsMenu({ onPressItem }: ProjectDetailsMenuProps) {
+export default function ProjectDetailsMenu({
+  onPressItem,
+}: ProjectDetailsMenuProps) {
   return (
     <View className="mx-5 mt-3.5 rounded-3xl border border-[#D7DDE4] bg-[#F8FAFC] py-1.5">
       {items.map((item) => (

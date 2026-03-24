@@ -62,4 +62,3 @@ export function saveProject(nextProjectData: ProjectData) {
 export function getDefaultProjectData() {
   return DEFAULT_PROJECT_DATA;
 }
-

@@ -1,6 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import AvatarStack from "./AvatarStack";
 import PriorityBadge from "./PriorityBadge";
 
@@ -44,7 +44,9 @@ export default function AssignedProjectCard({
       </View>
 
       <View className="w-full">
-        <Text className="text-[16px] font-semibold text-[#101010]">{title}</Text>
+        <Text className="text-[16px] font-semibold text-[#101010]">
+          {title}
+        </Text>
         <Text
           className="mt-1 text-[14px] font-normal leading-[22.4px] text-[#878787]"
           numberOfLines={1}
@@ -57,7 +59,9 @@ export default function AssignedProjectCard({
       <View className="w-full flex-row items-start justify-between">
         <View className="flex-1">
           <View className="w-[102px] flex-row items-center justify-center gap-2 rounded-md bg-[#F7F7F8] px-4 py-1">
-            <Text className="text-[12px] font-normal text-[#101010]">{date}</Text>
+            <Text className="text-[12px] font-normal text-[#101010]">
+              {date}
+            </Text>
           </View>
           <View className="mt-4">
             <AvatarStack avatars={avatars} extraCount={extraMembers} />

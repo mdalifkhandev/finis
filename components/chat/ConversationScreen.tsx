@@ -3,11 +3,14 @@ import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Keyboard, Platform, ScrollView, View } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import ChatAttachmentTray from "./ChatAttachmentTray";
 import ChatComposer from "./ChatComposer";
-import ChatMessageBubble from "./ChatMessageBubble";
 import { MessageModel, conversationInitialMessages } from "./chatData";
+import ChatMessageBubble from "./ChatMessageBubble";
 import ConversationHeader from "./ConversationHeader";
 
 function getCurrentTimeLabel() {
@@ -33,8 +36,10 @@ export default function ConversationScreen() {
     "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?q=80&w=120&auto=format&fit=crop";
 
   useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
     const showSub = Keyboard.addListener(showEvent, (event) => {
       setKeyboardHeight(event.endCoordinates?.height || 0);
@@ -52,7 +57,7 @@ export default function ConversationScreen() {
 
   const contentBottomPadding = useMemo(
     () => (attachmentsOpen ? 16 : 26),
-    [attachmentsOpen]
+    [attachmentsOpen],
   );
 
   const bottomOffset = Math.max(0, keyboardHeight - insets.bottom);
@@ -85,9 +90,13 @@ export default function ConversationScreen() {
     try {
       setAttachmentsOpen(false);
 
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert("Permission needed", "Allow photo library permission to pick image.");
+        Alert.alert(
+          "Permission needed",
+          "Allow photo library permission to pick image.",
+        );
         return;
       }
 
@@ -116,7 +125,10 @@ export default function ConversationScreen() {
 
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert("Permission needed", "Allow camera permission to take photo.");
+        Alert.alert(
+          "Permission needed",
+          "Allow camera permission to take photo.",
+        );
         return;
       }
 
@@ -144,7 +156,10 @@ export default function ConversationScreen() {
 
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== "granted") {
-        Alert.alert("Permission needed", "Allow location permission to send location.");
+        Alert.alert(
+          "Permission needed",
+          "Allow location permission to send location.",
+        );
         return;
       }
 

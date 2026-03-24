@@ -10,7 +10,11 @@ type ChatAttachmentTrayProps = {
 
 type AttachmentKey = "photo" | "camera" | "location";
 
-const ACTIONS: { key: AttachmentKey; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+const ACTIONS: {
+  key: AttachmentKey;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
   { key: "photo", label: "Photo", icon: "image-outline" },
   { key: "camera", label: "camera", icon: "camera-outline" },
   { key: "location", label: "Location", icon: "location-outline" },
@@ -40,7 +44,9 @@ export default function ChatAttachmentTray({
             <View className="h-14 w-14 items-center justify-center rounded-full bg-[#DCE7E8]">
               <Ionicons name={action.icon} size={29} color="#1D5478" />
             </View>
-            <Text className="mt-2 text-[15px] text-[#2B2B2B]">{action.label}</Text>
+            <Text className="mt-2 text-[15px] text-[#2B2B2B]">
+              {action.label}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>

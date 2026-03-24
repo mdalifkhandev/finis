@@ -6,7 +6,10 @@ type QuoteStepIndicatorProps = {
   totalSteps: number;
 };
 
-export default function QuoteStepIndicator({ currentStep, totalSteps }: QuoteStepIndicatorProps) {
+export default function QuoteStepIndicator({
+  currentStep,
+  totalSteps,
+}: QuoteStepIndicatorProps) {
   return (
     <View className="flex-row items-center justify-between py-1">
       {Array.from({ length: totalSteps }).map((_, index) => {
@@ -16,10 +19,18 @@ export default function QuoteStepIndicator({ currentStep, totalSteps }: QuoteSte
 
         return (
           <React.Fragment key={step}>
-            <View className={`h-10 w-10 items-center justify-center rounded-full ${isFilled ? "bg-[#1F5577]" : "bg-[#E7ECF2]"}`}>
-              <Text className={`text-[18px] font-semibold ${isFilled ? "text-white" : "text-[#8B94A1]"}`}>{step}</Text>
+            <View
+              className={`h-10 w-10 items-center justify-center rounded-full ${isFilled ? "bg-[#1F5577]" : "bg-[#E7ECF2]"}`}
+            >
+              <Text
+                className={`text-[18px] font-semibold ${isFilled ? "text-white" : "text-[#8B94A1]"}`}
+              >
+                {step}
+              </Text>
             </View>
-            {!isLast ? <View className="mx-3 h-[2px] flex-1 bg-[#E5EAF0]" /> : null}
+            {!isLast ? (
+              <View className="mx-3 h-[2px] flex-1 bg-[#E5EAF0]" />
+            ) : null}
           </React.Fragment>
         );
       })}

@@ -24,11 +24,15 @@ export default function AssignWorkerCard({
     <View className="mt-2.5 rounded-xl border border-[#D6DBE2] bg-[#F7F9FB] px-3 py-3">
       <View className="flex-row items-center">
         <View className="h-11 w-11 items-center justify-center rounded-full bg-[#24577A]">
-          <Text className="text-[22px] font-medium text-white">{worker.initial}</Text>
+          <Text className="text-[22px] font-medium text-white">
+            {worker.initial}
+          </Text>
         </View>
 
         <View className="ml-3 flex-1">
-          <Text className="text-[19px] font-medium text-[#1F2937]">{worker.name}</Text>
+          <Text className="text-[19px] font-medium text-[#1F2937]">
+            {worker.name}
+          </Text>
           <Text className="text-[15px] text-[#6B7280]">{worker.role}</Text>
         </View>
 
@@ -47,7 +51,9 @@ export default function AssignWorkerCard({
               : "border-[#2F6287] bg-transparent"
           }`}
         >
-          <Text className={`text-[17px] ${assigned ? "text-white" : "text-[#1E5B80]"}`}>
+          <Text
+            className={`text-[17px] ${assigned ? "text-white" : "text-[#1E5B80]"}`}
+          >
             {assigned ? "Assigned" : "Assign"}
           </Text>
         </TouchableOpacity>
@@ -55,4 +61,3 @@ export default function AssignWorkerCard({
     </View>
   );
 }
-

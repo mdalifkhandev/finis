@@ -17,8 +17,12 @@ export default function SignupRoute() {
       </View>
 
       <View className="px-5 pt-16">
-        <Text className="text-[38px] font-semibold text-[#1F2328]">Sign Up</Text>
-        <Text className="mt-1 text-[22px] text-[#656B72]">It only takes a minute to create your account</Text>
+        <Text className="text-[38px] font-semibold text-[#1F2328]">
+          Sign Up
+        </Text>
+        <Text className="mt-1 text-[22px] text-[#656B72]">
+          It only takes a minute to create your account
+        </Text>
 
         <TextInput
           placeholder="E-mail address or phone number"
@@ -40,11 +44,18 @@ export default function SignupRoute() {
           className="mt-4 h-14 rounded-xl border border-[#C8CED5] bg-[#F3F4F6] px-4 text-[16px] text-[#1E2328]"
         />
 
-        <TouchableOpacity className="mt-4 flex-row items-center" onPress={() => setAccepted((value) => !value)}>
+        <TouchableOpacity
+          className="mt-4 flex-row items-center"
+          onPress={() => setAccepted((value) => !value)}
+        >
           <View className="h-4 w-4 items-center justify-center rounded border border-[#7C838A]">
-            {accepted ? <Ionicons name="checkmark" size={12} color="#1F5577" /> : null}
+            {accepted ? (
+              <Ionicons name="checkmark" size={12} color="#1F5577" />
+            ) : null}
           </View>
-          <Text className="ml-2 text-[16px] text-[#4A4F56]">Accept terms & conditions</Text>
+          <Text className="ml-2 text-[16px] text-[#4A4F56]">
+            Accept terms & conditions
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -57,7 +68,9 @@ export default function SignupRoute() {
 
         <View className="mt-8 flex-row items-center">
           <View className="h-px flex-1 bg-[#BDC3CA]" />
-          <Text className="mx-3 text-[15px] text-[#4E545B]">Or Continue With</Text>
+          <Text className="mx-3 text-[15px] text-[#4E545B]">
+            Or Continue With
+          </Text>
           <View className="h-px flex-1 bg-[#BDC3CA]" />
         </View>
 

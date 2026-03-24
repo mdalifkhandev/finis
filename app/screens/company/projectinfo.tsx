@@ -12,9 +12,12 @@ const formatCurrency = (value: number) =>
 
 export default function ProjectInfoRoute() {
   const project = useProjectData();
-  const budgetNumber = Number((project.budget || "").replace(/[^\d.]/g, "")) || 0;
+  const budgetNumber =
+    Number((project.budget || "").replace(/[^\d.]/g, "")) || 0;
   const showBudgetCards = project.budgetEnabled && budgetNumber > 0;
-  const spentAmount = showBudgetCards ? Math.round(budgetNumber * 0.75) : 1875000;
+  const spentAmount = showBudgetCards
+    ? Math.round(budgetNumber * 0.75)
+    : 1875000;
   const remainingAmount = Math.max(budgetNumber - spentAmount, 0);
 
   return (

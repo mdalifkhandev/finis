@@ -31,19 +31,29 @@ export default function InventoryScreen() {
         />
 
         <View className="mt-5 flex-row justify-between px-5">
-          <InventoryStatCard value={String(summary.totalItems)} label="Total Items" />
-          <InventoryStatCard value={String(summary.lowStock)} label="Low Stock" />
+          <InventoryStatCard
+            value={String(summary.totalItems)}
+            label="Total Items"
+          />
+          <InventoryStatCard
+            value={String(summary.lowStock)}
+            label="Low Stock"
+          />
         </View>
 
         <View className="mt-5 px-5">
-          <Text className="text-[18px] font-medium text-[#111827]">Low Stock Alerts</Text>
+          <Text className="text-[18px] font-medium text-[#111827]">
+            Low Stock Alerts
+          </Text>
           <LowStockAlertsCard alerts={alerts} />
 
           <TouchableOpacity
             activeOpacity={0.85}
             className="mt-4 h-11 self-start rounded-full bg-[#1D5478] px-6"
           >
-            <Text className="pt-2.5 text-[16px] font-medium text-white">All Items</Text>
+            <Text className="pt-2.5 text-[16px] font-medium text-white">
+              All Items
+            </Text>
           </TouchableOpacity>
 
           <View className="mt-2">
@@ -56,4 +66,3 @@ export default function InventoryScreen() {
     </SafeAreaView>
   );
 }
-

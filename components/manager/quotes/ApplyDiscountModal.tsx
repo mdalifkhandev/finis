@@ -1,5 +1,12 @@
 import React from "react";
-import { Modal, Pressable, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Modal,
+  Pressable,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type ApplyDiscountModalProps = {
   visible: boolean;
@@ -19,13 +26,28 @@ export default function ApplyDiscountModal({
   onApply,
 }: ApplyDiscountModalProps) {
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-      <Pressable className="flex-1 items-center justify-center bg-black/30 px-6" onPress={onClose}>
-        <Pressable onPress={(event) => event.stopPropagation()} className="w-full max-w-[320px] rounded-[12px] bg-white p-4 shadow-lg">
-          <Text className="text-[16px] font-semibold text-[#1F2937]">Apply Discount</Text>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+    >
+      <Pressable
+        className="flex-1 items-center justify-center bg-black/30 px-6"
+        onPress={onClose}
+      >
+        <Pressable
+          onPress={(event) => event.stopPropagation()}
+          className="w-full max-w-[320px] rounded-[12px] bg-white p-4 shadow-lg"
+        >
+          <Text className="text-[16px] font-semibold text-[#1F2937]">
+            Apply Discount
+          </Text>
 
           <View className="mt-4">
-            <Text className="mb-2 text-[12px] text-[#66707B]">Discount Percentage</Text>
+            <Text className="mb-2 text-[12px] text-[#66707B]">
+              Discount Percentage
+            </Text>
             <View className="h-[42px] flex-row items-center rounded-[8px] border border-[#D5DDE6] bg-white px-3">
               <TextInput
                 value={value}
@@ -39,13 +61,25 @@ export default function ApplyDiscountModal({
             </View>
           </View>
 
-          <Text className="mt-3 text-[12px] text-[#66707B]">Discount amount: {discountAmountLabel}</Text>
+          <Text className="mt-3 text-[12px] text-[#66707B]">
+            Discount amount: {discountAmountLabel}
+          </Text>
 
           <View className="mt-4 flex-row gap-3">
-            <TouchableOpacity activeOpacity={0.85} onPress={onClose} className="h-[40px] flex-1 items-center justify-center rounded-[8px] border border-[#D5DDE6] bg-white">
-              <Text className="text-[13px] font-medium text-[#344054]">Cancel</Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onClose}
+              className="h-[40px] flex-1 items-center justify-center rounded-[8px] border border-[#D5DDE6] bg-white"
+            >
+              <Text className="text-[13px] font-medium text-[#344054]">
+                Cancel
+              </Text>
             </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.85} onPress={onApply} className="h-[40px] flex-1 items-center justify-center rounded-[8px] bg-[#1F5577]">
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onApply}
+              className="h-[40px] flex-1 items-center justify-center rounded-[8px] bg-[#1F5577]"
+            >
               <Text className="text-[13px] font-medium text-white">Apply</Text>
             </TouchableOpacity>
           </View>

@@ -12,10 +12,12 @@ export default function ProjectAnalysisRoute() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 36 }}
       >
-        <BackTitleHeader title="Project Analysis" onBack={() => router.back()} />
+        <BackTitleHeader
+          title="Project Analysis"
+          onBack={() => router.back()}
+        />
         <ProjectAnalysisScreen />
       </ScrollView>
     </SafeAreaView>
   );
 }
-

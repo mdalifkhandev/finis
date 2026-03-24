@@ -46,7 +46,7 @@ export default function CompanyProfileRoute() {
                           | "/screens/company/assignedprojects"
                           | "/screens/company/contacts"
                           | "/screens/company/documents"
-                          | "/screens/company/geofencing"
+                          | "/screens/company/geofencing",
                       )
                   : undefined
               }

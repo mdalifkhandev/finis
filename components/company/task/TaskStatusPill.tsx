@@ -16,11 +16,13 @@ export default function TaskStatusPill({ status }: TaskStatusPillProps) {
   const tone = toneByStatus[status];
 
   return (
-    <View className="rounded-full px-3 py-1.5" style={{ backgroundColor: tone.bg }}>
+    <View
+      className="rounded-full px-3 py-1.5"
+      style={{ backgroundColor: tone.bg }}
+    >
       <Text className="text-[13px] leading-[16px]" style={{ color: tone.text }}>
         {status}
       </Text>
     </View>
   );
 }
-

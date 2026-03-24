@@ -6,4 +6,3 @@ export type DocumentItem = {
   uploadedBy: string;
   uploadedDate: string;
 };
-

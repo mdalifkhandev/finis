@@ -24,8 +24,12 @@ export default function PriorityBadge({ level }: PriorityBadgeProps) {
   const styles = stylesByPriority[level];
 
   return (
-    <View className={`flex-row items-start gap-2 rounded px-4 py-1 ${styles.container}`}>
-      <Text className={`text-[12px] font-semibold leading-[18px] ${styles.text}`}>
+    <View
+      className={`flex-row items-start gap-2 rounded px-4 py-1 ${styles.container}`}
+    >
+      <Text
+        className={`text-[12px] font-semibold leading-[18px] ${styles.text}`}
+      >
         {level}
       </Text>
     </View>

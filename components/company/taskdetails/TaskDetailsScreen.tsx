@@ -65,8 +65,12 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
   return (
     <View className="mt-5 px-5 pb-8">
       <View className="rounded-[16px] border border-[#DADFE5] bg-white p-3.5">
-        <Text className="text-[15px] font-semibold text-[#1F2937]">Task Details</Text>
-        <Text className="mt-4 text-[13px] leading-[26px] text-[#5B6472]">{description}</Text>
+        <Text className="text-[15px] font-semibold text-[#1F2937]">
+          Task Details
+        </Text>
+        <Text className="mt-4 text-[13px] leading-[26px] text-[#5B6472]">
+          {description}
+        </Text>
 
         <TaskDetailMetaItem
           icon="location-outline"
@@ -95,7 +99,9 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
       <TaskPhotoCard title="After Photo" imageUrl={PHOTO_URL} />
 
       <View className="mt-5 rounded-[16px] border border-[#DADFE5] bg-white p-4">
-        <Text className="text-[15px] font-semibold text-[#1F2937]">Task Report Summary</Text>
+        <Text className="text-[15px] font-semibold text-[#1F2937]">
+          Task Report Summary
+        </Text>
         <Text className="mt-5 text-[13px] leading-[24px] text-[#737B88]">
           &quot;{preset.reportSummary}&quot;
         </Text>
@@ -108,18 +114,29 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
 
         <View className="mt-3 gap-3">
           {preset.inventory.map((item) => (
-            <TaskInventoryRow key={item.label} label={item.label} quantity={item.quantity} />
+            <TaskInventoryRow
+              key={item.label}
+              label={item.label}
+              quantity={item.quantity}
+            />
           ))}
         </View>
       </View>
 
       <View className="mt-6">
-        <Text className="text-[15px] font-semibold text-[#1F2937]">Task Expenses</Text>
-        <TaskExpensesCard documents={uploadedFiles} onRemoveDocument={handleRemoveDocument} />
+        <Text className="text-[15px] font-semibold text-[#1F2937]">
+          Task Expenses
+        </Text>
+        <TaskExpensesCard
+          documents={uploadedFiles}
+          onRemoveDocument={handleRemoveDocument}
+        />
       </View>
 
       <View className="mt-6">
-        <Text className="text-[15px] font-semibold text-[#1F2937]">Review & Decision</Text>
+        <Text className="text-[15px] font-semibold text-[#1F2937]">
+          Review & Decision
+        </Text>
 
         <View className="mt-3">
           <Text className="text-[13px] text-[#374151]">Description</Text>
@@ -140,12 +157,15 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
           className="mt-4 h-[52px] flex-row items-center justify-center rounded-[12px] bg-[#1E5371]"
         >
           <Ionicons name="cloud-upload-outline" size={20} color="#F3F7FA" />
-          <Text className="ml-2 text-[16px] font-medium text-[#F3F7FA]">Upload File</Text>
+          <Text className="ml-2 text-[16px] font-medium text-[#F3F7FA]">
+            Upload File
+          </Text>
         </TouchableOpacity>
 
         {uploadedFiles.length ? (
           <Text className="mt-2 text-[12px] text-[#6B7280]">
-            {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""} selected
+            {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""}{" "}
+            selected
           </Text>
         ) : null}
       </View>
@@ -155,14 +175,18 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
           activeOpacity={0.9}
           className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] border border-[#D6DDE5] bg-white"
         >
-          <Text className="text-[16px] font-medium text-[#1E1E1E]">Reject Task</Text>
+          <Text className="text-[16px] font-medium text-[#1E1E1E]">
+            Reject Task
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.9}
           className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] bg-[#1E5371]"
         >
-          <Text className="text-[16px] font-medium text-[#F3F7FA]">Approve Work</Text>
+          <Text className="text-[16px] font-medium text-[#F3F7FA]">
+            Approve Work
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

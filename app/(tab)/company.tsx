@@ -1,4 +1,7 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
+import CompanyCard from "@/components/company/CompanyCard";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React from "react";
 import {
   KeyboardAvoidingView,
@@ -10,9 +13,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import CompanyCard from "@/components/company/CompanyCard";
 
 const companies = [
   {
@@ -58,26 +58,26 @@ export default function Company() {
         >
           <BackTitleHeader title="Company" onBack={() => router.back()} />
 
-        <View className="mt-5 px-5">
-          <View className="flex-row items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
-            <Ionicons name="search" size={16} color="#94a3b8" />
-            <TextInput
-              placeholder="Search....."
-              placeholderTextColor="#94a3b8"
-              className="ml-2 flex-1 text-sm text-slate-700"
-            />
+          <View className="mt-5 px-5">
+            <View className="flex-row items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
+              <Ionicons name="search" size={16} color="#94a3b8" />
+              <TextInput
+                placeholder="Search....."
+                placeholderTextColor="#94a3b8"
+                className="ml-2 flex-1 text-sm text-slate-700"
+              />
+            </View>
           </View>
-        </View>
 
-        <View className="mt-2 px-5">
-          {companies.map((company, index) => (
-            <CompanyCard
-              key={`${company.name}-${index}`}
-              {...company}
-              onPress={() => router.push("/screens/company/profile")}
-            />
-          ))}
-        </View>
+          <View className="mt-2 px-5">
+            {companies.map((company, index) => (
+              <CompanyCard
+                key={`${company.name}-${index}`}
+                {...company}
+                onPress={() => router.push("/screens/company/profile")}
+              />
+            ))}
+          </View>
 
           <View className="mt-6 px-5">
             <TouchableOpacity

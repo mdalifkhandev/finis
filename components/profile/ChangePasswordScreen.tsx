@@ -1,6 +1,12 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ProfileField from "./ProfileField";
 import ProfileHeaderBar from "./ProfileHeaderBar";
@@ -16,7 +22,10 @@ export default function ChangePasswordScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ProfileHeaderBar title="Change Password" onBack={() => router.back()} />
+        <ProfileHeaderBar
+          title="Change Password"
+          onBack={() => router.back()}
+        />
 
         <View className="flex-1 px-4 pt-2">
           <ProfileField
@@ -49,11 +58,12 @@ export default function ChangePasswordScreen() {
             activeOpacity={0.88}
             className="mb-4 h-11 items-center justify-center rounded-[8px] bg-[#1F5577]"
           >
-            <Text className="text-[14px] font-semibold text-white">Update password</Text>
+            <Text className="text-[14px] font-semibold text-white">
+              Update password
+            </Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-

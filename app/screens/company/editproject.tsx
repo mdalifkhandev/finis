@@ -4,7 +4,10 @@ import ProjectInputField from "@/components/company/project/ProjectInputField";
 import ProjectTypeDropdown, {
   ProjectTypeValue,
 } from "@/components/company/project/ProjectTypeDropdown";
-import { saveProject, useProjectData } from "@/components/company/project/projectStore";
+import {
+  saveProject,
+  useProjectData,
+} from "@/components/company/project/projectStore";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -25,20 +28,33 @@ export default function EditProjectRoute() {
   const [company] = useState(currentProject.company || "CC.LTD");
   const [startDate, setStartDate] = useState(currentProject.startDate);
   const [endDate, setEndDate] = useState(currentProject.endDate);
-  const [projectType, setProjectType] = useState<ProjectTypeValue>(currentProject.projectType);
+  const [projectType, setProjectType] = useState<ProjectTypeValue>(
+    currentProject.projectType,
+  );
   const [floors, setFloors] = useState(currentProject.floors);
-  const [roomsPerFloor, setRoomsPerFloor] = useState(currentProject.roomsPerFloor);
+  const [roomsPerFloor, setRoomsPerFloor] = useState(
+    currentProject.roomsPerFloor,
+  );
   const [budget, setBudget] = useState(currentProject.budget);
   const [location, setLocation] = useState(currentProject.location);
   const [description, setDescription] = useState(currentProject.description);
-  const [budgetEnabled, setBudgetEnabled] = useState(currentProject.budgetEnabled);
-  const [houseScope, setHouseScope] = useState<"whole" | "sections">(currentProject.houseScope);
+  const [budgetEnabled, setBudgetEnabled] = useState(
+    currentProject.budgetEnabled,
+  );
+  const [houseScope, setHouseScope] = useState<"whole" | "sections">(
+    currentProject.houseScope,
+  );
   const [selectedSections, setSelectedSections] = useState<string[]>(
-    currentProject.selectedSections
+    currentProject.selectedSections,
   );
 
   const isApartment = projectType === "Apartment Building";
-  const houseSectionOptions = ["Basement", "Upstairs", "Main floor", "Exterior"];
+  const houseSectionOptions = [
+    "Basement",
+    "Upstairs",
+    "Main floor",
+    "Exterior",
+  ];
 
   const handleSelectProjectType = (nextType: ProjectTypeValue) => {
     setProjectType(nextType);
@@ -78,7 +94,9 @@ export default function EditProjectRoute() {
       description,
       houseScope: projectType === "House" ? houseScope : "whole",
       selectedSections:
-        projectType === "House" && houseScope === "sections" ? selectedSections : [],
+        projectType === "House" && houseScope === "sections"
+          ? selectedSections
+          : [],
     });
 
     router.back();
@@ -135,7 +153,10 @@ export default function EditProjectRoute() {
             </View>
 
             <View className="mt-4 rounded-xl border border-[#D8DEE6] bg-[#EDF1F4] p-3">
-              <ProjectTypeDropdown value={projectType} onChange={handleSelectProjectType} />
+              <ProjectTypeDropdown
+                value={projectType}
+                onChange={handleSelectProjectType}
+              />
 
               {isApartment ? (
                 <>
@@ -197,7 +218,9 @@ export default function EditProjectRoute() {
 
               <View className="mt-3">
                 <View className="mb-2 flex-row items-center justify-between">
-                  <Text className="text-[16px] font-medium text-[#1F2937]">Budget</Text>
+                  <Text className="text-[16px] font-medium text-[#1F2937]">
+                    Budget
+                  </Text>
                   <Switch
                     value={budgetEnabled}
                     onValueChange={setBudgetEnabled}
@@ -244,7 +267,9 @@ export default function EditProjectRoute() {
               onPress={handleSave}
               className="mt-6 h-[52px] items-center justify-center rounded-[12px] bg-[#1D4F6D] px-8"
             >
-              <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">Save</Text>
+              <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">
+                Save
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -252,4 +277,3 @@ export default function EditProjectRoute() {
     </SafeAreaView>
   );
 }
-

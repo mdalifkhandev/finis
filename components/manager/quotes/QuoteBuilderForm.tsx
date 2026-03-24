@@ -3,7 +3,11 @@ import { Text, TouchableOpacity, View } from "react-native";
 import QuoteChoiceCard from "./QuoteChoiceCard";
 import QuoteField from "./QuoteField";
 import QuoteSectionCard from "./QuoteSectionCard";
-import type { QuoteProjectType, QuotePropertyType, QuoteUnitType } from "./quoteMockData";
+import type {
+  QuoteProjectType,
+  QuotePropertyType,
+  QuoteUnitType,
+} from "./quoteMockData";
 
 export type QuoteProjectDetailSelection = QuoteProjectType | QuotePropertyType;
 
@@ -41,7 +45,12 @@ export default function QuoteBuilderForm({
   return (
     <>
       <QuoteSectionCard title="Client Information" icon="business-outline">
-        <QuoteField label="Client Name *" placeholder="" value={clientName} onChangeText={setClientName} />
+        <QuoteField
+          label="Client Name *"
+          placeholder=""
+          value={clientName}
+          onChangeText={setClientName}
+        />
         <QuoteField
           label="Project Address *"
           placeholder="Enter full project address"
@@ -49,12 +58,24 @@ export default function QuoteBuilderForm({
           onChangeText={setProjectAddress}
           leftIcon="location-outline"
         />
-        <QuoteField label="Phone Number" placeholder="" value={phoneNumber} onChangeText={setPhoneNumber} />
-        <QuoteField label="Email" placeholder="" value={email} onChangeText={setEmail} />
+        <QuoteField
+          label="Phone Number"
+          placeholder=""
+          value={phoneNumber}
+          onChangeText={setPhoneNumber}
+        />
+        <QuoteField
+          label="Email"
+          placeholder=""
+          value={email}
+          onChangeText={setEmail}
+        />
       </QuoteSectionCard>
 
       <QuoteSectionCard title="Project Details" icon="home-outline">
-        <Text className="mb-3 text-[14px] font-medium text-[#2B2B2B]">Project Type *</Text>
+        <Text className="mb-3 text-[14px] font-medium text-[#2B2B2B]">
+          Project Type *
+        </Text>
         <View className="mb-3 flex-row gap-3">
           <QuoteChoiceCard
             label="New Build"
@@ -81,24 +102,46 @@ export default function QuoteBuilderForm({
           />
         </View>
 
-        <Text className="mb-3 text-[14px] font-medium text-[#2B2B2B]">Unit Type *</Text>
+        <Text className="mb-3 text-[14px] font-medium text-[#2B2B2B]">
+          Unit Type *
+        </Text>
         <View className="flex-row flex-wrap gap-3">
           <View className="w-[48%]">
-            <QuoteChoiceCard label="House" selected={unitType === "House"} onPress={() => setUnitType("House")} />
+            <QuoteChoiceCard
+              label="House"
+              selected={unitType === "House"}
+              onPress={() => setUnitType("House")}
+            />
           </View>
           <View className="w-[48%]">
-            <QuoteChoiceCard label="Apartment" selected={unitType === "Apartment"} onPress={() => setUnitType("Apartment")} />
+            <QuoteChoiceCard
+              label="Apartment"
+              selected={unitType === "Apartment"}
+              onPress={() => setUnitType("Apartment")}
+            />
           </View>
           <View className="w-[48%]">
-            <QuoteChoiceCard label="Office" selected={unitType === "Office"} onPress={() => setUnitType("Office")} />
+            <QuoteChoiceCard
+              label="Office"
+              selected={unitType === "Office"}
+              onPress={() => setUnitType("Office")}
+            />
           </View>
           <View className="w-[48%]">
-            <QuoteChoiceCard label="Hotel" selected={unitType === "Hotel"} onPress={() => setUnitType("Hotel")} />
+            <QuoteChoiceCard
+              label="Hotel"
+              selected={unitType === "Hotel"}
+              onPress={() => setUnitType("Hotel")}
+            />
           </View>
         </View>
       </QuoteSectionCard>
 
-      <TouchableOpacity activeOpacity={0.88} onPress={onNext} className="mt-5 h-[56px] items-center justify-center rounded-[14px] bg-[#1F5577]">
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={onNext}
+        className="mt-5 h-[56px] items-center justify-center rounded-[14px] bg-[#1F5577]"
+      >
         <Text className="text-[16px] font-medium text-white">Next</Text>
       </TouchableOpacity>
     </>

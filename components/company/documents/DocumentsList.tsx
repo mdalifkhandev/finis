@@ -36,4 +36,3 @@ export default function DocumentsList({ documents }: DocumentsListProps) {
     </View>
   );
 }
-

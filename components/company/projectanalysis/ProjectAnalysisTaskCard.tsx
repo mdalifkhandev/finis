@@ -24,8 +24,8 @@ export default function ProjectAnalysisTaskCard({
     status === "Completed"
       ? "#5C61F0"
       : status === "Pending"
-      ? "#F4B501"
-      : "#BFC1C5";
+        ? "#F4B501"
+        : "#BFC1C5";
 
   return (
     <View className="mt-2.5 flex-row items-center">
@@ -33,7 +33,9 @@ export default function ProjectAnalysisTaskCard({
         activeOpacity={0.85}
         onPress={onPressCheck}
         className={`h-6 w-6 items-center justify-center rounded-full ${
-          isCompleted ? "bg-[#5C61F0]" : "border-2 border-[#8F8F8F] bg-transparent"
+          isCompleted
+            ? "bg-[#5C61F0]"
+            : "border-2 border-[#8F8F8F] bg-transparent"
         }`}
       >
         {isCompleted ? (
@@ -57,7 +59,9 @@ export default function ProjectAnalysisTaskCard({
         <Text className="mt-0.5 text-[14px] text-[#6F7785]">{subtitle}</Text>
 
         <View className="mt-2 flex-row items-center">
-          <Text className="text-[12px] font-medium text-[#131820]">{units}</Text>
+          <Text className="text-[12px] font-medium text-[#131820]">
+            {units}
+          </Text>
           <Text className="mx-2 text-[12px] text-[#131820]">•</Text>
           <Ionicons name="calendar-outline" size={12} color="#131820" />
           <Text className="ml-1 text-[12px] text-[#131820]">{date}</Text>

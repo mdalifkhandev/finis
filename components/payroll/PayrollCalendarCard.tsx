@@ -94,18 +94,37 @@ export default function PayrollCalendarCard({
   return (
     <View className="rounded-[16px] border border-[#D8DDE3] bg-white px-3 pb-3 pt-3">
       <View className="flex-row items-center justify-between">
-        <TouchableOpacity activeOpacity={0.85} className="flex-row items-center">
-          <Text className="text-[25px] font-semibold text-[#111827]" style={{ fontSize: 25 / 2 }}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          className="flex-row items-center"
+        >
+          <Text
+            className="text-[25px] font-semibold text-[#111827]"
+            style={{ fontSize: 25 / 2 }}
+          >
             {monthLabel}
           </Text>
-          <Ionicons name="chevron-down" size={18} color="#111827" style={{ marginLeft: 4 }} />
+          <Ionicons
+            name="chevron-down"
+            size={18}
+            color="#111827"
+            style={{ marginLeft: 4 }}
+          />
         </TouchableOpacity>
 
         <View className="flex-row items-center">
-          <TouchableOpacity activeOpacity={0.8} onPress={onPrevMonth} className="px-1 py-1">
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onPrevMonth}
+            className="px-1 py-1"
+          >
             <Ionicons name="chevron-back" size={24} color="#111827" />
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.8} onPress={onNextMonth} className="px-1 py-1">
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onNextMonth}
+            className="px-1 py-1"
+          >
             <Ionicons name="chevron-forward" size={24} color="#111827" />
           </TouchableOpacity>
         </View>
@@ -113,7 +132,10 @@ export default function PayrollCalendarCard({
 
       <View className="mt-5 flex-row justify-between px-1">
         {WEEK_DAYS.map((item) => (
-          <Text key={item} className="w-9 text-center text-[12px] font-medium text-[#1F5577]">
+          <Text
+            key={item}
+            className="w-9 text-center text-[12px] font-medium text-[#1F5577]"
+          >
             {item}
           </Text>
         ))}
@@ -121,7 +143,8 @@ export default function PayrollCalendarCard({
 
       <View className="mt-2 flex-row flex-wrap justify-between px-1">
         {days.map((item) => {
-          const selected = item.inCurrentMonth && isSameDate(item.date, selectedDate);
+          const selected =
+            item.inCurrentMonth && isSameDate(item.date, selectedDate);
 
           return (
             <TouchableOpacity
@@ -132,7 +155,9 @@ export default function PayrollCalendarCard({
             >
               {selected ? (
                 <View className="h-[40px] w-[40px] items-center justify-center rounded-full bg-[#1F5577]">
-                  <Text className="text-[14px] font-medium text-white">{item.day}</Text>
+                  <Text className="text-[14px] font-medium text-white">
+                    {item.day}
+                  </Text>
                 </View>
               ) : (
                 <Text

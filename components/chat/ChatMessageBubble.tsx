@@ -7,15 +7,23 @@ type ChatMessageBubbleProps = {
   avatarUrl: string;
 };
 
-export default function ChatMessageBubble({ message, avatarUrl }: ChatMessageBubbleProps) {
+export default function ChatMessageBubble({
+  message,
+  avatarUrl,
+}: ChatMessageBubbleProps) {
   const isMe = message.sender === "me";
 
   const BubbleBody = () => {
     if (message.kind === "image" && message.imageUri) {
       return (
         <>
-          <Image source={{ uri: message.imageUri }} className="h-44 w-full rounded-[10px]" />
-          <Text className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}>
+          <Image
+            source={{ uri: message.imageUri }}
+            className="h-44 w-full rounded-[10px]"
+          />
+          <Text
+            className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}
+          >
             {message.time}
           </Text>
         </>
@@ -31,7 +39,9 @@ export default function ChatMessageBubble({ message, avatarUrl }: ChatMessageBub
         >
           {message.text}
         </Text>
-        <Text className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}>
+        <Text
+          className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}
+        >
           {message.time}
         </Text>
       </>
@@ -50,7 +60,10 @@ export default function ChatMessageBubble({ message, avatarUrl }: ChatMessageBub
 
   return (
     <View className="mt-4 flex-row items-end px-4">
-      <Image source={{ uri: avatarUrl }} className="mr-2 h-6 w-6 rounded-full" />
+      <Image
+        source={{ uri: avatarUrl }}
+        className="mr-2 h-6 w-6 rounded-full"
+      />
       <View className="w-[66%] rounded-[14px] bg-[#F8FAFC] px-4 py-3">
         <BubbleBody />
       </View>

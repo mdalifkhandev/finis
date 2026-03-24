@@ -19,7 +19,9 @@ export default function AvatarStack({ avatars, extraCount }: AvatarStackProps) {
         />
       ))}
       <View className="-ml-2 h-9 w-9 items-center justify-center rounded-full bg-[#06dc56]">
-        <Text className="text-[10px] font-semibold text-black">{extraCount}</Text>
+        <Text className="text-[10px] font-semibold text-black">
+          {extraCount}
+        </Text>
       </View>
     </View>
   );

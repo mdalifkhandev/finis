@@ -101,7 +101,13 @@ const allWorkers: TeamMemberOption[] = [
 ];
 
 const initialAssignments: Record<string, string[]> = {
-  john: ["worker-emily", "worker-sophia", "worker-daniel", "worker-maria", "worker-jacob"],
+  john: [
+    "worker-emily",
+    "worker-sophia",
+    "worker-daniel",
+    "worker-maria",
+    "worker-jacob",
+  ],
   sarah: ["worker-sophia", "worker-daniel"],
   mike: ["worker-emily", "worker-maria"],
   emily: ["worker-jacob"],
@@ -111,18 +117,26 @@ const initialAssignments: Record<string, string[]> = {
 export default function TeamScreen() {
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [activeManagerId, setActiveManagerId] = useState<string | null>(null);
-  const [managerIds, setManagerIds] = useState<string[]>(["john", "sarah", "mike", "emily", "lisa"]);
+  const [managerIds, setManagerIds] = useState<string[]>([
+    "john",
+    "sarah",
+    "mike",
+    "emily",
+    "lisa",
+  ]);
   const [workerAssignments, setWorkerAssignments] =
     useState<Record<string, string[]>>(initialAssignments);
 
   const selectedManagers = useMemo(
     () => allManagers.filter((manager) => managerIds.includes(manager.id)),
-    [managerIds]
+    [managerIds],
   );
 
   const activeManager = useMemo(
-    () => selectedManagers.find((manager) => manager.id === activeManagerId) ?? null,
-    [activeManagerId, selectedManagers]
+    () =>
+      selectedManagers.find((manager) => manager.id === activeManagerId) ??
+      null,
+    [activeManagerId, selectedManagers],
   );
 
   const activeWorkers = useMemo(() => {
@@ -136,7 +150,7 @@ export default function TeamScreen() {
 
   const availableManagers = useMemo(
     () => allManagers.filter((manager) => !managerIds.includes(manager.id)),
-    [managerIds]
+    [managerIds],
   );
 
   const availableWorkers = useMemo(() => {
@@ -150,7 +164,7 @@ export default function TeamScreen() {
 
   const handleAddManager = (member: TeamMemberOption) => {
     setManagerIds((previous) =>
-      previous.includes(member.id) ? previous : [...previous, member.id]
+      previous.includes(member.id) ? previous : [...previous, member.id],
     );
     setWorkerAssignments((previous) => ({
       ...previous,
@@ -172,7 +186,9 @@ export default function TeamScreen() {
   };
 
   const handleDeleteManager = (id: string) => {
-    setManagerIds((previous) => previous.filter((managerId) => managerId !== id));
+    setManagerIds((previous) =>
+      previous.filter((managerId) => managerId !== id),
+    );
     setWorkerAssignments((previous) => {
       const next = { ...previous };
       delete next[id];
@@ -191,13 +207,17 @@ export default function TeamScreen() {
 
     setWorkerAssignments((previous) => ({
       ...previous,
-      [activeManagerId]: (previous[activeManagerId] ?? []).filter((id) => id !== workerId),
+      [activeManagerId]: (previous[activeManagerId] ?? []).filter(
+        (id) => id !== workerId,
+      ),
     }));
   };
 
   const handleOpenAddSheet = () => setShowAddSheet(true);
 
-  const headerCount = activeManager ? activeWorkers.length : selectedManagers.length;
+  const headerCount = activeManager
+    ? activeWorkers.length
+    : selectedManagers.length;
   const headerLabel = activeManager ? "Workers" : "Managers";
   const buttonLabel = activeManager ? "Add Worker" : "Add Managers";
   const sheetTitle = activeManager ? "Add Team Worker" : "Add Team Managers";
@@ -216,8 +236,12 @@ export default function TeamScreen() {
             onPress={handleOpenAddSheet}
             className="h-[40px] min-w-[128px] flex-row items-center justify-center rounded-[8px] border border-[#D3D9E1] bg-[#FFFFFF] px-4"
           >
-            <Text className="mr-1 text-[18px] font-medium text-[#1F2937]">+</Text>
-            <Text className="text-[15px] font-medium text-[#1F2937]">{buttonLabel}</Text>
+            <Text className="mr-1 text-[18px] font-medium text-[#1F2937]">
+              +
+            </Text>
+            <Text className="text-[15px] font-medium text-[#1F2937]">
+              {buttonLabel}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -233,7 +257,9 @@ export default function TeamScreen() {
               hideDelete
             />
 
-            <Text className="mt-3 text-[15px] font-medium text-[#283443]">All Worker</Text>
+            <Text className="mt-3 text-[15px] font-medium text-[#283443]">
+              All Worker
+            </Text>
 
             {activeWorkers.map((worker) => (
               <TeamWorkerCard

@@ -10,7 +10,10 @@ type TaskFilterTabsProps = {
 
 const filters: TaskFilter[] = ["All", "Progress", "Pending", "Completed"];
 
-export default function TaskFilterTabs({ value, onChange }: TaskFilterTabsProps) {
+export default function TaskFilterTabs({
+  value,
+  onChange,
+}: TaskFilterTabsProps) {
   return (
     <View className="mt-3 flex-row items-center">
       {filters.map((filter, index) => {
@@ -38,4 +41,3 @@ export default function TaskFilterTabs({ value, onChange }: TaskFilterTabsProps)
     </View>
   );
 }
-

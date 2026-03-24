@@ -62,7 +62,9 @@ const PRESETS: Record<TaskStatus, TaskDetailsPreset> = {
   },
 };
 
-export function getTaskDetailsPreset(status: TaskStatus | undefined): TaskDetailsPreset {
+export function getTaskDetailsPreset(
+  status: TaskStatus | undefined,
+): TaskDetailsPreset {
   if (!status) {
     return PRESETS.Pending;
   }

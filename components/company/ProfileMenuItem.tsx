@@ -1,6 +1,6 @@
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
 type ProfileMenuItemProps = {
   label: string;

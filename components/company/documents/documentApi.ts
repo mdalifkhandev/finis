@@ -74,8 +74,7 @@ export async function getCompanyDocuments(): Promise<DocumentItem[]> {
 }
 
 export async function getProjectDocuments(
-  projectId: string
+  projectId: string,
 ): Promise<DocumentItem[]> {
   return simulateNetwork(projectDocuments[projectId] ?? []);
 }
-

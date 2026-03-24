@@ -5,17 +5,21 @@ import ProjectInfoRow from "./ProjectInfoRow";
 export default function ProjectDetailsInfoCard() {
   return (
     <View className="mt-3.5 rounded-xl border border-[#D8DEE5] bg-[#F7F9FB] px-3.5 py-3.5">
-      <Text className="text-[16px] font-medium text-[#111827]">Project details</Text>
+      <Text className="text-[16px] font-medium text-[#111827]">
+        Project details
+      </Text>
 
       <Text className="mt-3 text-[15px] text-[#6B7687]">Description</Text>
       <Text className="mt-1 text-[16px] leading-[28px] text-[#222B37]">
-        We partner with industry-leading print providers to ensure your creations
-        come to life with exceptional quality
+        We partner with industry-leading print providers to ensure your
+        creations come to life with exceptional quality
       </Text>
 
       <View className="mt-3 border-t border-[#D4D9E0]" />
 
-      <Text className="mt-3 text-[16px] font-medium text-[#4B5563]">Client Info</Text>
+      <Text className="mt-3 text-[16px] font-medium text-[#4B5563]">
+        Client Info
+      </Text>
 
       <ProjectInfoRow label="Name" value="Kristin Watson" />
       <ProjectInfoRow
@@ -31,7 +35,9 @@ export default function ProjectDetailsInfoCard() {
         label="Connection"
         value={
           <View className="rounded-md bg-[#DDE4FF] px-2 py-0.5">
-            <Text className="text-[11px] font-medium text-[#1F4BFF]">eEmployee</Text>
+            <Text className="text-[11px] font-medium text-[#1F4BFF]">
+              eEmployee
+            </Text>
           </View>
         }
       />
@@ -40,4 +46,3 @@ export default function ProjectDetailsInfoCard() {
     </View>
   );
 }
-

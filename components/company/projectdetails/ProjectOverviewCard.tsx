@@ -18,7 +18,8 @@ export default function ProjectOverviewCard({
   const project = useProjectData();
   const projectName = project.projectName || "Riverside Tower";
   const projectCompany = project.company || "Horizon Builders Inc.";
-  const projectLocation = project.location || "123 Construction Blvd, Toronto, ON";
+  const projectLocation =
+    project.location || "123 Construction Blvd, Toronto, ON";
   const dateRange = `${project.startDate || "2025-08-01"} - ${project.endDate || "Ongoing"}`;
 
   return (
@@ -30,7 +31,9 @@ export default function ProjectOverviewCard({
       <View className="flex-row items-center">
         <Image source={{ uri: avatarUrl }} className="h-14 w-14 rounded-full" />
         <View className="ml-3">
-          <Text className="text-[16px] font-semibold text-white">{projectName}</Text>
+          <Text className="text-[16px] font-semibold text-white">
+            {projectName}
+          </Text>
           <Text className="mt-1 text-[14px] text-[#9BD9B4]">@maya.louis</Text>
         </View>
       </View>
@@ -38,7 +41,9 @@ export default function ProjectOverviewCard({
       <View className="mt-3 rounded-xl bg-[rgba(136,175,201,0.45)] px-3.5 py-3">
         <View className="flex-row items-center">
           <Ionicons name="location-outline" size={16} color="#EAF2F8" />
-          <Text className="ml-3 flex-1 text-[14px] text-white">{projectLocation}</Text>
+          <Text className="ml-3 flex-1 text-[14px] text-white">
+            {projectLocation}
+          </Text>
         </View>
 
         <View className="mt-2.5 flex-row items-center">

@@ -25,7 +25,7 @@ export default function TaskScreen() {
       (task) =>
         task.title.toLowerCase().includes(query) ||
         task.location.toLowerCase().includes(query) ||
-        task.assignee.toLowerCase().includes(query)
+        task.assignee.toLowerCase().includes(query),
     );
   }, [filter, searchText, tasks]);
 
