@@ -1,12 +1,14 @@
 import { router } from "expo-router";
-import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InventoryHeader from "./InventoryHeader";
 import InventoryItemCard from "./InventoryItemCard";
 import InventoryStatCard from "./InventoryStatCard";
 import LowStockAlertsCard from "./LowStockAlertsCard";
+import UpdateInventoryModal from "./UpdateInventoryModal";
 import {
+  updateInventoryItem,
   useInventoryItems,
   useInventorySummary,
   useLowStockAlerts,
@@ -16,6 +18,47 @@ export default function InventoryScreen() {
   const summary = useInventorySummary();
   const alerts = useLowStockAlerts();
   const items = useInventoryItems();
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [editedQuantity, setEditedQuantity] = useState("");
+  const [editedUnit, setEditedUnit] = useState("");
+
+  const selectedItem = useMemo(
+    () => items.find((item) => item.id === selectedItemId) ?? null,
+    [items, selectedItemId],
+  );
+
+  const handleOpenUpdate = (itemId: string) => {
+    const item = items.find((entry) => entry.id === itemId);
+    if (!item) return;
+
+    setSelectedItemId(item.id);
+    setEditedQuantity(String(item.currentQty));
+    setEditedUnit(item.unit);
+  };
+
+  const handleCloseUpdate = () => {
+    setSelectedItemId(null);
+    setEditedQuantity("");
+    setEditedUnit("");
+  };
+
+  const handleSaveUpdate = () => {
+    if (!selectedItem) return;
+
+    const quantity = Number(editedQuantity);
+    if (!Number.isFinite(quantity) || quantity < 0) {
+      Alert.alert("Invalid Quantity", "Enter a valid stock quantity.");
+      return;
+    }
+
+    updateInventoryItem({
+      id: selectedItem.id,
+      quantity,
+      unit: editedUnit,
+    });
+
+    handleCloseUpdate();
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -58,11 +101,26 @@ export default function InventoryScreen() {
 
           <View className="mt-2">
             {items.map((item) => (
-              <InventoryItemCard key={item.id} item={item} />
+              <InventoryItemCard
+                key={item.id}
+                item={item}
+                onPressUpdate={() => handleOpenUpdate(item.id)}
+              />
             ))}
           </View>
         </View>
       </ScrollView>
+
+      <UpdateInventoryModal
+        visible={Boolean(selectedItem)}
+        item={selectedItem}
+        quantity={editedQuantity}
+        unit={editedUnit}
+        onChangeQuantity={setEditedQuantity}
+        onChangeUnit={setEditedUnit}
+        onClose={handleCloseUpdate}
+        onSave={handleSaveUpdate}
+      />
     </SafeAreaView>
   );
 }

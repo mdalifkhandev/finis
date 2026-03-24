@@ -4,12 +4,20 @@ import React, { useMemo, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import TaskCard from "./TaskCard";
 import TaskFilterTabs, { TaskFilter } from "./TaskFilterTabs";
-import { useTaskItems } from "./taskStore";
+import { updateTaskStatus, useTaskItems } from "./taskStore";
+import type { TaskItem, TaskStatus } from "./types";
+import UpdateTaskStatusModal from "./UpdateTaskStatusModal";
 
 export default function TaskScreen() {
   const [filter, setFilter] = useState<TaskFilter>("All");
   const [searchText, setSearchText] = useState("");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const tasks = useTaskItems();
+
+  const selectedTask = useMemo<TaskItem | null>(
+    () => tasks.find((task) => task.id === selectedTaskId) ?? null,
+    [tasks, selectedTaskId],
+  );
 
   const filteredTasks = useMemo(() => {
     const byFilter = tasks.filter((task) => {
@@ -28,6 +36,12 @@ export default function TaskScreen() {
         task.assignee.toLowerCase().includes(query),
     );
   }, [filter, searchText, tasks]);
+
+  const handleSelectStatus = (status: TaskStatus) => {
+    if (!selectedTaskId) return;
+    updateTaskStatus(selectedTaskId, status);
+    setSelectedTaskId(null);
+  };
 
   return (
     <View className="mt-6 px-5">
@@ -66,9 +80,17 @@ export default function TaskScreen() {
                 params: { taskId: task.id },
               })
             }
+            onPressUpdateStatus={() => setSelectedTaskId(task.id)}
           />
         ))}
       </View>
+
+      <UpdateTaskStatusModal
+        visible={Boolean(selectedTask)}
+        task={selectedTask}
+        onClose={() => setSelectedTaskId(null)}
+        onSelectStatus={handleSelectStatus}
+      />
     </View>
   );
 }

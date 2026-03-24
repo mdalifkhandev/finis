@@ -83,6 +83,18 @@ export function addTask(input: {
   notify();
 }
 
+export function updateTaskStatus(taskId: string, status: TaskStatus) {
+  tasks = tasks.map((task) =>
+    task.id === taskId
+      ? {
+          ...task,
+          status,
+        }
+      : task,
+  );
+  notify();
+}
+
 export function setTaskDraft(draft: TaskDraft) {
   taskDraft = draft;
 }
