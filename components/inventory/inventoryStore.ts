@@ -59,6 +59,13 @@ const subscribe = (listener: () => void) => {
 
 const getSnapshot = () => inventoryItems;
 
+function getTodayLabel() {
+  return new Date().toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export function getInventoryStatus(item: InventoryItem): InventoryStatus {
   if (item.currentQty <= item.minStock * 0.4) {
     return "Critical";
@@ -127,10 +134,34 @@ export function addInventoryItem(input: {
     minStock: Math.max(10, Math.round(quantity * 0.6) || 10),
     unit: "pcs",
     location: input.location,
-    updatedAt: "Today",
+    updatedAt: getTodayLabel(),
   };
 
   inventoryItems = [newItem, ...inventoryItems];
   totalItemsCount += 1;
+  notify();
+}
+
+export function updateInventoryItem(input: {
+  id: string;
+  quantity: number;
+  unit: string;
+}) {
+  const quantity = Number.isFinite(input.quantity)
+    ? Math.max(0, input.quantity)
+    : 0;
+  const unit = input.unit.trim() || "pcs";
+
+  inventoryItems = inventoryItems.map((item) =>
+    item.id === input.id
+      ? {
+          ...item,
+          currentQty: quantity,
+          unit,
+          updatedAt: getTodayLabel(),
+        }
+      : item,
+  );
+
   notify();
 }

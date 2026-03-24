@@ -47,7 +47,7 @@ export default function QuoteBuilderForm({
       <QuoteSectionCard title="Client Information" icon="business-outline">
         <QuoteField
           label="Client Name *"
-          placeholder=""
+          placeholder="Roky Islam"
           value={clientName}
           onChangeText={setClientName}
         />
@@ -60,13 +60,13 @@ export default function QuoteBuilderForm({
         />
         <QuoteField
           label="Phone Number"
-          placeholder=""
+          placeholder="+880123456789"
           value={phoneNumber}
           onChangeText={setPhoneNumber}
         />
         <QuoteField
           label="Email"
-          placeholder=""
+          placeholder="Enter your mail"
           value={email}
           onChangeText={setEmail}
         />

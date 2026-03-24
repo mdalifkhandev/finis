@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export type TaskFilter = "All" | "Progress" | "Pending" | "Completed";
 
@@ -15,29 +15,36 @@ export default function TaskFilterTabs({
   onChange,
 }: TaskFilterTabsProps) {
   return (
-    <View className="mt-3 flex-row items-center">
-      {filters.map((filter, index) => {
-        const isActive = value === filter;
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      className="mt-3"
+      contentContainerStyle={{ paddingRight: 12 }}
+    >
+      <View className="flex-row items-center">
+        {filters.map((filter, index) => {
+          const isActive = value === filter;
 
-        return (
-          <TouchableOpacity
-            key={filter}
-            activeOpacity={0.85}
-            onPress={() => onChange(filter)}
-            className={`h-10 min-w-[66px] items-center justify-center rounded-[9px] border px-3 ${
-              isActive
-                ? "border-[#1F5777] bg-[#1F5777]"
-                : "border-[#D2DAE1] bg-[#DFE6EA]"
-            } ${index > 0 ? "ml-2" : ""}`}
-          >
-            <Text
-              className={`text-[16px] ${isActive ? "text-white" : "text-[#3E4B59]"}`}
+          return (
+            <TouchableOpacity
+              key={filter}
+              activeOpacity={0.85}
+              onPress={() => onChange(filter)}
+              className={`h-10 min-w-[92px] items-center justify-center rounded-[9px] border px-4 ${
+                isActive
+                  ? "border-[#1F5777] bg-[#1F5777]"
+                  : "border-[#D2DAE1] bg-[#DFE6EA]"
+              } ${index > 0 ? "ml-2" : ""}`}
             >
-              {filter}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+              <Text
+                className={`text-[16px] ${isActive ? "text-white" : "text-[#3E4B59]"}`}
+              >
+                {filter}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </ScrollView>
   );
 }
