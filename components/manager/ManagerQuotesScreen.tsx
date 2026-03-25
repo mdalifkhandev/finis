@@ -1,11 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AddCustomQuoteItemModal from "./quotes/AddCustomQuoteItemModal";
 import ApplyDiscountModal from "./quotes/ApplyDiscountModal";
-import QuoteBuilderForm, {
-  type QuoteProjectDetailSelection,
-} from "./quotes/QuoteBuilderForm";
+import QuoteBuilderForm from "./quotes/QuoteBuilderForm";
 import QuoteFinalReviewStep from "./quotes/QuoteFinalReviewStep";
 import {
   formatCurrency,
@@ -48,13 +46,8 @@ function getProjectMeta(unitType: QuoteUnitType) {
     case "House":
       return "2,500 sq ft • 2 floors";
     case "Apartment":
-      return "1,250 sq ft • 1 unit";
-    case "Office":
-      return "3,200 sq ft • 1 office suite";
-    case "Hotel":
-      return "4,800 sq ft • 8 rooms";
     default:
-      return "Project meta pending";
+      return "1,250 sq ft • 1 unit";
   }
 }
 
@@ -73,24 +66,7 @@ function getCatalogLabel(
   propertyType: QuotePropertyType,
   unitType: QuoteUnitType,
 ) {
-  return `${projectType} ${propertyType} ${unitType}`;
-}
-
-function mapProjectDetailSelection(value: QuoteProjectDetailSelection): {
-  projectType: QuoteProjectType;
-  propertyType: QuotePropertyType;
-} {
-  switch (value) {
-    case "Renovation":
-      return { projectType: "Renovation", propertyType: "Residential" };
-    case "Commercial":
-      return { projectType: "New Build", propertyType: "Commercial" };
-    case "Residential":
-      return { projectType: "New Build", propertyType: "Residential" };
-    case "New Build":
-    default:
-      return { projectType: "New Build", propertyType: "Residential" };
-  }
+  return `${projectType} - ${propertyType} - ${unitType}`;
 }
 
 export default function ManagerQuotesScreen() {
@@ -99,9 +75,8 @@ export default function ManagerQuotesScreen() {
   const [projectAddress, setProjectAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
-  const [projectDetailSelection, setProjectDetailSelection] =
-    useState<QuoteProjectDetailSelection>("New Build");
-  const [projectType, setProjectType] = useState<QuoteProjectType>("New Build");
+  const [projectType, setProjectType] =
+    useState<QuoteProjectType>("New Build");
   const [propertyType, setPropertyType] =
     useState<QuotePropertyType>("Residential");
   const [unitType, setUnitType] = useState<QuoteUnitType>("Apartment");
@@ -116,16 +91,6 @@ export default function ManagerQuotesScreen() {
   const [customQuantity, setCustomQuantity] = useState("1");
   const [customUnit, setCustomUnit] = useState("pcs");
   const [customUnitPrice, setCustomUnitPrice] = useState("0");
-
-  useEffect(() => {
-    const mappedSelection = mapProjectDetailSelection(projectDetailSelection);
-    setProjectType(mappedSelection.projectType);
-    setPropertyType(mappedSelection.propertyType);
-  }, [projectDetailSelection]);
-
-  useEffect(() => {
-    setWorkGroups(buildInitialGroups(projectType, propertyType, unitType));
-  }, [projectType, propertyType, unitType]);
 
   const estimate = useMemo(
     () => getQuoteEstimate(projectType, propertyType, unitType),
@@ -263,6 +228,19 @@ export default function ManagerQuotesScreen() {
     setCustomItemModalVisible(false);
   };
 
+  const syncCombination = (
+    nextProjectType: QuoteProjectType,
+    nextPropertyType: QuotePropertyType,
+    nextUnitType: QuoteUnitType,
+  ) => {
+    setProjectType(nextProjectType);
+    setPropertyType(nextPropertyType);
+    setUnitType(nextUnitType);
+    setWorkGroups(
+      buildInitialGroups(nextProjectType, nextPropertyType, nextUnitType),
+    );
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
@@ -295,10 +273,18 @@ export default function ManagerQuotesScreen() {
               setPhoneNumber={setPhoneNumber}
               email={email}
               setEmail={setEmail}
-              projectDetailSelection={projectDetailSelection}
-              onSelectProjectDetail={setProjectDetailSelection}
+              projectType={projectType}
+              setProjectType={(value) =>
+                syncCombination(value, propertyType, unitType)
+              }
+              propertyType={propertyType}
+              setPropertyType={(value) =>
+                syncCombination(projectType, value, unitType)
+              }
               unitType={unitType}
-              setUnitType={setUnitType}
+              setUnitType={(value) =>
+                syncCombination(projectType, propertyType, value)
+              }
               onNext={() => setStep(2)}
             />
           ) : step === 2 ? (

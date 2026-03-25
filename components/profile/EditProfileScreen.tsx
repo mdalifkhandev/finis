@@ -13,7 +13,7 @@ import ProfileHeaderBar from "./ProfileHeaderBar";
 
 export default function EditProfileScreen() {
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("alice@example.com");
+  const [email] = useState("alice@example.com");
   const [phone, setPhone] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState("");
@@ -26,7 +26,7 @@ export default function EditProfileScreen() {
       >
         <ProfileHeaderBar title="Edit Profile" onBack={() => router.back()} />
 
-        <View className="px-4 pt-2">
+        <View className="px-3 pt-5">
           <ProfileField
             placeholder="Full name"
             value={fullName}
@@ -36,7 +36,7 @@ export default function EditProfileScreen() {
           <ProfileField
             placeholder="alice@example.com"
             value={email}
-            onChangeText={setEmail}
+            editable={false}
             rightIconName="lock-closed-outline"
           />
 
@@ -63,7 +63,7 @@ export default function EditProfileScreen() {
 
           <TouchableOpacity
             activeOpacity={0.88}
-            className="mt-4 h-11 items-center justify-center rounded-[6px] bg-[#1F5577]"
+            className="mt-5 h-[42px] items-center justify-center rounded-[6px] bg-[#1F5577]"
           >
             <Text className="text-[14px] font-semibold text-white">Save</Text>
           </TouchableOpacity>

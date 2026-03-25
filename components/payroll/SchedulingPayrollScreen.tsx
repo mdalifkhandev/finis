@@ -29,22 +29,7 @@ export default function SchedulingPayrollScreen() {
             monthDate={monthDate}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
-            onPrevMonth={() => {
-              const next = new Date(
-                monthDate.getFullYear(),
-                monthDate.getMonth() - 1,
-                1,
-              );
-              setMonthDate(next);
-            }}
-            onNextMonth={() => {
-              const next = new Date(
-                monthDate.getFullYear(),
-                monthDate.getMonth() + 1,
-                1,
-              );
-              setMonthDate(next);
-            }}
+            onMonthDateChange={setMonthDate}
           />
 
           <TouchableOpacity
