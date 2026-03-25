@@ -21,8 +21,6 @@ type QuoteFinalReviewStepProps = {
   workGroups: QuoteSelectedWorkGroup[];
   subtotal: number;
   itemsSelected: number;
-  rushTimelineFee: number;
-  afterHoursFee: number;
   discountAmount: number;
   finalTotal: number;
   validUntilLabel: string;
@@ -77,8 +75,6 @@ export default function QuoteFinalReviewStep({
   workGroups,
   subtotal,
   itemsSelected,
-  rushTimelineFee,
-  afterHoursFee,
   discountAmount,
   finalTotal,
   validUntilLabel,
@@ -96,8 +92,6 @@ export default function QuoteFinalReviewStep({
       items: group.items.filter((item) => item.selected),
     }))
     .filter((group) => group.items.length > 0);
-
-  const totalAdjustments = rushTimelineFee + afterHoursFee - discountAmount;
 
   return (
     <>
@@ -164,8 +158,7 @@ export default function QuoteFinalReviewStep({
                           {item.title}
                         </Text>
                         <Text className="mt-1 text-[13px] text-[#66707B]">
-                          {item.quantity} {item.selectedUnit} ×{" "}
-                          {formatCurrency(item.selectedUnitPrice)}
+                          {item.quantity} {item.selectedUnit} × {formatCurrency(item.selectedUnitPrice)}
                         </Text>
                       </View>
                       <Text className="text-[13px] font-medium text-[#1F2937]">
@@ -188,46 +181,22 @@ export default function QuoteFinalReviewStep({
                 </Text>
               </View>
             </View>
+            {discountAmount > 0 ? (
+              <View className="mt-3 flex-row items-center justify-between rounded-[12px] bg-[#ECFDF3] px-3 py-3">
+                <Text className="text-[13px] font-medium text-[#15803D]">
+                  Discount Applied
+                </Text>
+                <Text className="text-[13px] font-semibold text-[#15803D]">
+                  -{formatCurrency(discountAmount)}
+                </Text>
+              </View>
+            ) : null}
           </>
         ) : (
           <Text className="text-[14px] text-[#66707B]">
             No work items selected.
           </Text>
         )}
-      </QuoteReviewCard>
-
-      <QuoteReviewCard title="Pricing Adjustments" onEdit={onOpenDiscount}>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className="text-[14px] text-[#1F2937]">Rush Timeline</Text>
-          <Text className="text-[14px] font-medium text-[#1F2937]">
-            +{formatCurrency(rushTimelineFee)}
-          </Text>
-        </View>
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className="text-[14px] text-[#1F2937]">After-hours Work</Text>
-          <Text className="text-[14px] font-medium text-[#1F2937]">
-            +{formatCurrency(afterHoursFee)}
-          </Text>
-        </View>
-        {discountAmount > 0 ? (
-          <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-[14px] text-[#1F2937]">Discount</Text>
-            <Text className="text-[14px] font-medium text-[#16A34A]">
-              -{formatCurrency(discountAmount)}
-            </Text>
-          </View>
-        ) : null}
-        <View className="mt-2 border-t border-[#E5EAF0] pt-4">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-[16px] font-semibold text-[#1F2937]">
-              Total Adjustments
-            </Text>
-            <Text className="text-[16px] font-semibold text-[#1F2937]">
-              {totalAdjustments >= 0 ? "+" : "-"}
-              {formatCurrency(Math.abs(totalAdjustments))}
-            </Text>
-          </View>
-        </View>
       </QuoteReviewCard>
 
       <QuoteReviewCard title="Quote Details">
@@ -245,6 +214,16 @@ export default function QuoteFinalReviewStep({
           icon="document-text-outline"
           label="Total Work Items"
           value={`${itemsSelected} items selected`}
+        />
+        <DetailRow
+          icon="layers-outline"
+          label="Quote Type"
+          value={`${projectType} • ${propertyType} • ${unitType}`}
+        />
+        <DetailRow
+          icon="cash-outline"
+          label="Final Total"
+          value={formatCurrency(finalTotal)}
         />
       </QuoteReviewCard>
 
@@ -280,15 +259,6 @@ export default function QuoteFinalReviewStep({
             Email Quote to Client
           </Text>
         </TouchableOpacity>
-
-        <View className="mt-5 rounded-[16px] bg-[#1F5577] px-4 py-4">
-          <Text className="text-[12px] uppercase tracking-[0.8px] text-[#C8DCE9]">
-            Final Total
-          </Text>
-          <Text className="mt-1 text-[26px] font-semibold text-white">
-            {formatCurrency(finalTotal)}
-          </Text>
-        </View>
       </QuoteReviewCard>
     </>
   );

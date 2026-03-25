@@ -31,8 +31,6 @@ export type GenerateQuotePdfParams = {
   validUntilLabel: string;
   workGroups: QuoteSelectedWorkGroup[];
   subtotal: number;
-  rushTimelineFee: number;
-  afterHoursFee: number;
   discountAmount: number;
   finalTotal: number;
 };
@@ -103,13 +101,7 @@ function buildQuoteHtml(params: GenerateQuotePdfParams) {
           )
           .join("")}
         <div class="row" style="margin-top:12px"><strong>Subtotal</strong><strong>${formatCurrency(params.subtotal)}</strong></div>
-      </div>
-
-      <h2>Pricing Adjustments</h2>
-      <div class="card">
-        <div class="row"><span>Rush Timeline</span><span>${formatCurrency(params.rushTimelineFee)}</span></div>
-        <div class="row"><span>After-hours Work</span><span>${formatCurrency(params.afterHoursFee)}</span></div>
-        <div class="row"><span>Discount</span><span>-${formatCurrency(params.discountAmount)}</span></div>
+        ${params.discountAmount > 0 ? `<div class="row"><strong>Discount</strong><strong>-${formatCurrency(params.discountAmount)}</strong></div>` : ""}
       </div>
 
       <div class="total">

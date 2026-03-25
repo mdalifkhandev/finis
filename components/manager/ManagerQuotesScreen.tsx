@@ -7,8 +7,8 @@ import QuoteBuilderForm from "./quotes/QuoteBuilderForm";
 import QuoteFinalReviewStep from "./quotes/QuoteFinalReviewStep";
 import {
   formatCurrency,
+  getQuoteCatalog,
   getQuoteEstimate,
-  getQuoteWorkGroups,
   type QuoteProjectType,
   type QuotePropertyType,
   type QuoteUnitType,
@@ -17,29 +17,15 @@ import { emailQuotePdf, generateQuotePdf } from "./quotes/quotePdf";
 import QuoteStepIndicator from "./quotes/QuoteStepIndicator";
 import type { QuoteSelectedWorkGroup } from "./quotes/QuoteWorkGroupCard";
 import QuoteWorkItemsStep from "./quotes/QuoteWorkItemsStep";
-
-function buildInitialGroups(
-  projectType: QuoteProjectType,
-  propertyType: QuotePropertyType,
-  unitType: QuoteUnitType,
-): QuoteSelectedWorkGroup[] {
-  return getQuoteWorkGroups(projectType, propertyType, unitType).map(
-    (group, groupIndex) => ({
-      id: group.id,
-      title: group.title,
-      expanded: groupIndex === 0,
-      items: group.items.map((item) => ({
-        id: item.id,
-        title: item.title,
-        quantity: String(item.defaultQuantity),
-        unitOptions: item.unitOptions,
-        selectedUnit: item.unitOptions[0].unit,
-        selectedUnitPrice: item.unitOptions[0].price,
-        selected: false,
-      })),
-    }),
-  );
-}
+import {
+  addCustomQuoteWorkItem,
+  buildQuoteSelectedWorkGroups,
+  calculateQuoteWorkTotals,
+  toggleQuoteWorkGroup,
+  toggleQuoteWorkItem,
+  updateQuoteWorkItemQuantity,
+  updateQuoteWorkItemUnit,
+} from "./quotes/quoteWorkState";
 
 function getProjectMeta(unitType: QuoteUnitType) {
   switch (unitType) {
@@ -61,14 +47,6 @@ function getValidUntilLabel() {
   });
 }
 
-function getCatalogLabel(
-  projectType: QuoteProjectType,
-  propertyType: QuotePropertyType,
-  unitType: QuoteUnitType,
-) {
-  return `${projectType} - ${propertyType} - ${unitType}`;
-}
-
 export default function ManagerQuotesScreen() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [clientName, setClientName] = useState("");
@@ -81,7 +59,9 @@ export default function ManagerQuotesScreen() {
     useState<QuotePropertyType>("Residential");
   const [unitType, setUnitType] = useState<QuoteUnitType>("Apartment");
   const [workGroups, setWorkGroups] = useState<QuoteSelectedWorkGroup[]>(() =>
-    buildInitialGroups("New Build", "Residential", "Apartment"),
+    buildQuoteSelectedWorkGroups(
+      getQuoteCatalog("New Build", "Residential", "Apartment"),
+    ),
   );
   const [discountModalVisible, setDiscountModalVisible] = useState(false);
   const [discountPercentInput, setDiscountPercentInput] = useState("0");
@@ -92,53 +72,28 @@ export default function ManagerQuotesScreen() {
   const [customUnit, setCustomUnit] = useState("pcs");
   const [customUnitPrice, setCustomUnitPrice] = useState("0");
 
+  const catalog = useMemo(
+    () => getQuoteCatalog(projectType, propertyType, unitType),
+    [projectType, propertyType, unitType],
+  );
   const estimate = useMemo(
     () => getQuoteEstimate(projectType, propertyType, unitType),
     [projectType, propertyType, unitType],
   );
 
-  const subtotal = useMemo(
-    () =>
-      workGroups.reduce(
-        (groupTotal, group) =>
-          groupTotal +
-          group.items.reduce((itemTotal, item) => {
-            if (!item.selected) return itemTotal;
-            return (
-              itemTotal + (Number(item.quantity) || 0) * item.selectedUnitPrice
-            );
-          }, 0),
-        0,
-      ),
+  const { subtotal, itemsSelected } = useMemo(
+    () => calculateQuoteWorkTotals(workGroups),
     [workGroups],
   );
 
-  const itemsSelected = useMemo(
-    () =>
-      workGroups.reduce(
-        (total, group) =>
-          total + group.items.filter((item) => item.selected).length,
-        0,
-      ),
-    [workGroups],
-  );
-
-  const rushTimelineFee = useMemo(() => subtotal * 0.15, [subtotal]);
-  const afterHoursFee = useMemo(
-    () => (itemsSelected > 0 ? 1200 : 0),
-    [itemsSelected],
-  );
   const discountAmount = useMemo(
     () => subtotal * (appliedDiscountPercent / 100),
     [subtotal, appliedDiscountPercent],
   );
-  const finalTotal =
-    subtotal + rushTimelineFee + afterHoursFee - discountAmount;
-  const visibleStep = step;
+  const finalTotal = subtotal - discountAmount;
   const validUntilLabel = getValidUntilLabel();
   const projectDetailsLabel = `${projectType} • ${propertyType}`;
   const projectMetaLabel = getProjectMeta(unitType);
-  const catalogLabel = getCatalogLabel(projectType, propertyType, unitType);
 
   const quoteParams = {
     clientName,
@@ -151,10 +106,23 @@ export default function ManagerQuotesScreen() {
     validUntilLabel,
     workGroups,
     subtotal,
-    rushTimelineFee,
-    afterHoursFee,
     discountAmount,
     finalTotal,
+  };
+
+  const syncCombination = (
+    nextProjectType: QuoteProjectType,
+    nextPropertyType: QuotePropertyType,
+    nextUnitType: QuoteUnitType,
+  ) => {
+    setProjectType(nextProjectType);
+    setPropertyType(nextPropertyType);
+    setUnitType(nextUnitType);
+    setWorkGroups(
+      buildQuoteSelectedWorkGroups(
+        getQuoteCatalog(nextProjectType, nextPropertyType, nextUnitType),
+      ),
+    );
   };
 
   const handleGeneratePdf = async () => {
@@ -185,60 +153,20 @@ export default function ManagerQuotesScreen() {
       return;
     }
 
-    const quantityValue = Number(customQuantity) || 0;
-    const unitPriceValue = Number(customUnitPrice) || 0;
-    const unitLabel = customUnit.trim() || "pcs";
-
-    setWorkGroups((current) => {
-      const customGroup = current.find((group) => group.id === "custom-items");
-      const customItem = {
-        id: `custom-${Date.now()}`,
-        title: customTitle.trim(),
-        quantity: String(quantityValue || 1),
-        unitOptions: [{ unit: unitLabel, price: unitPriceValue }],
-        selectedUnit: unitLabel,
-        selectedUnitPrice: unitPriceValue,
-        selected: true,
-        isCustom: true,
-      };
-
-      if (customGroup) {
-        return current.map((group) =>
-          group.id === "custom-items"
-            ? { ...group, expanded: true, items: [...group.items, customItem] }
-            : group,
-        );
-      }
-
-      return [
-        ...current,
-        {
-          id: "custom-items",
-          title: "Custom Items",
-          expanded: true,
-          items: [customItem],
-        },
-      ];
-    });
-
+    setWorkGroups((current) =>
+      addCustomQuoteWorkItem(
+        current,
+        customTitle,
+        customQuantity,
+        customUnit,
+        customUnitPrice,
+      ),
+    );
     setCustomTitle("");
     setCustomQuantity("1");
     setCustomUnit("pcs");
     setCustomUnitPrice("0");
     setCustomItemModalVisible(false);
-  };
-
-  const syncCombination = (
-    nextProjectType: QuoteProjectType,
-    nextPropertyType: QuotePropertyType,
-    nextUnitType: QuoteUnitType,
-  ) => {
-    setProjectType(nextProjectType);
-    setPropertyType(nextPropertyType);
-    setUnitType(nextUnitType);
-    setWorkGroups(
-      buildInitialGroups(nextProjectType, nextPropertyType, nextUnitType),
-    );
   };
 
   return (
@@ -259,7 +187,7 @@ export default function ManagerQuotesScreen() {
               Construction Quote Builder
             </Text>
             <View className="mt-5">
-              <QuoteStepIndicator currentStep={visibleStep} totalSteps={3} />
+              <QuoteStepIndicator currentStep={step} totalSteps={3} />
             </View>
           </View>
 
@@ -289,75 +217,29 @@ export default function ManagerQuotesScreen() {
             />
           ) : step === 2 ? (
             <QuoteWorkItemsStep
-              catalogLabel={catalogLabel}
+              catalogTitle={catalog.title}
+              catalogDescription={catalog.description}
               groups={workGroups}
               subtotal={subtotal}
               itemsSelected={itemsSelected}
-              estimatedTotal={finalTotal}
+              estimatedTotal={subtotal}
               onAddCustomItem={() => setCustomItemModalVisible(true)}
               onToggleGroup={(groupId) =>
-                setWorkGroups((current) =>
-                  current.map((group) =>
-                    group.id === groupId
-                      ? { ...group, expanded: !group.expanded }
-                      : group,
-                  ),
-                )
+                setWorkGroups((current) => toggleQuoteWorkGroup(current, groupId))
               }
               onToggleItem={(groupId, itemId) =>
                 setWorkGroups((current) =>
-                  current.map((group) =>
-                    group.id === groupId
-                      ? {
-                          ...group,
-                          items: group.items.map((item) =>
-                            item.id === itemId
-                              ? { ...item, selected: !item.selected }
-                              : item,
-                          ),
-                        }
-                      : group,
-                  ),
+                  toggleQuoteWorkItem(current, groupId, itemId),
                 )
               }
               onChangeItemQuantity={(groupId, itemId, value) =>
                 setWorkGroups((current) =>
-                  current.map((group) =>
-                    group.id === groupId
-                      ? {
-                          ...group,
-                          items: group.items.map((item) =>
-                            item.id === itemId
-                              ? { ...item, quantity: value }
-                              : item,
-                          ),
-                        }
-                      : group,
-                  ),
+                  updateQuoteWorkItemQuantity(current, groupId, itemId, value),
                 )
               }
               onSelectItemUnit={(groupId, itemId, unit) =>
                 setWorkGroups((current) =>
-                  current.map((group) =>
-                    group.id === groupId
-                      ? {
-                          ...group,
-                          items: group.items.map((item) => {
-                            if (item.id !== itemId) return item;
-                            const option = item.unitOptions.find(
-                              (unitOption) => unitOption.unit === unit,
-                            );
-                            return option
-                              ? {
-                                  ...item,
-                                  selectedUnit: option.unit,
-                                  selectedUnitPrice: option.price,
-                                }
-                              : item;
-                          }),
-                        }
-                      : group,
-                  ),
+                  updateQuoteWorkItemUnit(current, groupId, itemId, unit),
                 )
               }
               onBack={() => setStep(1)}
@@ -374,8 +256,6 @@ export default function ManagerQuotesScreen() {
               workGroups={workGroups}
               subtotal={subtotal}
               itemsSelected={itemsSelected}
-              rushTimelineFee={rushTimelineFee}
-              afterHoursFee={afterHoursFee}
               discountAmount={discountAmount}
               finalTotal={finalTotal}
               validUntilLabel={validUntilLabel}
