@@ -32,19 +32,23 @@ export type QuoteWorkGroup = {
   items: QuoteWorkItemTemplate[];
 };
 
+export type QuoteCatalog = {
+  key: string;
+  title: string;
+  description: string;
+  groups: QuoteWorkGroup[];
+};
+
 type QuotePricingMap = Record<
   QuoteProjectType,
   Record<QuotePropertyType, Record<QuoteUnitType, QuoteEstimate>>
 >;
-type QuoteWorkGroupMap = Record<
+type QuoteCatalogMap = Record<
   QuoteProjectType,
-  Record<QuotePropertyType, Record<QuoteUnitType, QuoteWorkGroup[]>>
+  Record<QuotePropertyType, Record<QuoteUnitType, QuoteCatalog>>
 >;
 
-const unit = (name: string, price: number): QuoteUnitOption => ({
-  unit: name,
-  price,
-});
+const unit = (name: string, price: number): QuoteUnitOption => ({ unit: name, price });
 const item = (
   id: string,
   title: string,
@@ -175,6 +179,22 @@ const commercialApartmentWorkGroups: QuoteWorkGroup[] = [
   },
 ];
 
+function makeCatalog(
+  projectType: QuoteProjectType,
+  propertyType: QuotePropertyType,
+  unitType: QuoteUnitType,
+  groups: QuoteWorkGroup[],
+): QuoteCatalog {
+  return {
+    key: `${projectType}-${propertyType}-${unitType}`,
+    title: `${projectType} - ${propertyType} - ${unitType}`,
+    description:
+      `Services loaded from the ${projectType} / ${propertyType} / ${unitType} pricing catalog. ` +
+      "Select items, enter quantity, and pick the correct unit of measurement.",
+    groups,
+  };
+}
+
 export const quotePricingMap: QuotePricingMap = {
   "New Build": {
     Residential: {
@@ -270,25 +290,25 @@ export const quotePricingMap: QuotePricingMap = {
   },
 };
 
-const quoteWorkGroupMap: QuoteWorkGroupMap = {
+const quoteCatalogMap: QuoteCatalogMap = {
   "New Build": {
     Residential: {
-      House: residentialHouseWorkGroups,
-      Apartment: residentialApartmentWorkGroups,
+      House: makeCatalog("New Build", "Residential", "House", residentialHouseWorkGroups),
+      Apartment: makeCatalog("New Build", "Residential", "Apartment", residentialApartmentWorkGroups),
     },
     Commercial: {
-      House: commercialHouseWorkGroups,
-      Apartment: commercialApartmentWorkGroups,
+      House: makeCatalog("New Build", "Commercial", "House", commercialHouseWorkGroups),
+      Apartment: makeCatalog("New Build", "Commercial", "Apartment", commercialApartmentWorkGroups),
     },
   },
   Renovations: {
     Residential: {
-      House: residentialHouseWorkGroups,
-      Apartment: residentialApartmentWorkGroups,
+      House: makeCatalog("Renovations", "Residential", "House", residentialHouseWorkGroups),
+      Apartment: makeCatalog("Renovations", "Residential", "Apartment", residentialApartmentWorkGroups),
     },
     Commercial: {
-      House: commercialHouseWorkGroups,
-      Apartment: commercialApartmentWorkGroups,
+      House: makeCatalog("Renovations", "Commercial", "House", commercialHouseWorkGroups),
+      Apartment: makeCatalog("Renovations", "Commercial", "Apartment", commercialApartmentWorkGroups),
     },
   },
 };
@@ -301,12 +321,20 @@ export function getQuoteEstimate(
   return quotePricingMap[projectType][propertyType][unitType];
 }
 
+export function getQuoteCatalog(
+  projectType: QuoteProjectType,
+  propertyType: QuotePropertyType,
+  unitType: QuoteUnitType,
+) {
+  return quoteCatalogMap[projectType][propertyType][unitType];
+}
+
 export function getQuoteWorkGroups(
   projectType: QuoteProjectType,
   propertyType: QuotePropertyType,
   unitType: QuoteUnitType,
 ) {
-  return quoteWorkGroupMap[projectType][propertyType][unitType];
+  return getQuoteCatalog(projectType, propertyType, unitType).groups;
 }
 
 export function getQuoteTotal(lineItems: QuoteLineItem[]) {

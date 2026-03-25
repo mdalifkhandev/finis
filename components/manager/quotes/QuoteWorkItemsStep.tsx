@@ -8,7 +8,8 @@ import QuoteWorkGroupCard, {
 import QuoteWorkTotalsBar from "./QuoteWorkTotalsBar";
 
 type QuoteWorkItemsStepProps = {
-  catalogLabel: string;
+  catalogTitle: string;
+  catalogDescription: string;
   groups: QuoteSelectedWorkGroup[];
   subtotal: number;
   itemsSelected: number;
@@ -27,7 +28,8 @@ type QuoteWorkItemsStepProps = {
 };
 
 export default function QuoteWorkItemsStep({
-  catalogLabel,
+  catalogTitle,
+  catalogDescription,
   groups,
   subtotal,
   itemsSelected,
@@ -43,13 +45,11 @@ export default function QuoteWorkItemsStep({
   return (
     <>
       <QuoteSectionCard title="Select Services" icon="construct-outline">
-        <Text className="text-[13px] leading-5 text-[#66707B]">
-          Catalog loaded from the selected configuration database:{" "}
-          {catalogLabel}
+        <Text className="text-[14px] font-medium text-[#2B2B2B]">
+          {catalogTitle}
         </Text>
         <Text className="mt-2 text-[13px] leading-5 text-[#66707B]">
-          Select the services you need. Quantity and unit of measurement stay
-          separate.
+          {catalogDescription}
         </Text>
 
         <TouchableOpacity
