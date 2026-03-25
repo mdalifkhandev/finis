@@ -27,7 +27,7 @@ export default function ChangePasswordScreen() {
           onBack={() => router.back()}
         />
 
-        <View className="flex-1 px-4 pt-2">
+        <View className="flex-1 px-4 pt-4">
           <ProfileField
             label="Current Password"
             placeholder="Enter old password"
@@ -56,7 +56,7 @@ export default function ChangePasswordScreen() {
 
           <TouchableOpacity
             activeOpacity={0.88}
-            className="mb-4 h-11 items-center justify-center rounded-[8px] bg-[#1F5577]"
+            className="mb-4 h-[42px] items-center justify-center rounded-[10px] bg-[#1F5577]"
           >
             <Text className="text-[14px] font-semibold text-white">
               Update password

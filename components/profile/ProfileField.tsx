@@ -11,15 +11,21 @@ export default function ProfileField({
   label,
   rightIconName,
   className,
+  editable = true,
   ...inputProps
 }: ProfileFieldProps) {
   return (
-    <View className="mt-3">
-      {label ? <Text className="mb-1 text-[12px] text-[#2B2B2B]">{label}</Text> : null}
-      <View className="h-11 flex-row items-center rounded-[6px] border border-[#D8DEE5] bg-[#EFF4F7] px-3">
+    <View className="mt-3.5">
+      {label ? (
+        <Text className="mb-1.5 text-[12px] font-medium text-[#2B2B2B]">
+          {label}
+        </Text>
+      ) : null}
+      <View className="h-[42px] flex-row items-center rounded-[8px] border border-[#D8DEE5] bg-[#EFF4F7] px-3.5">
         <TextInput
+          editable={editable}
           placeholderTextColor="#A0A8B1"
-          className={`flex-1 text-[13px] text-[#2B2B2B] ${className ?? ""}`}
+          className={`flex-1 text-[14px] text-[#2B2B2B] ${className ?? ""}`}
           {...inputProps}
         />
         {rightIconName ? (

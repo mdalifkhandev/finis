@@ -9,8 +9,6 @@ import type {
   QuoteUnitType,
 } from "./quoteMockData";
 
-export type QuoteProjectDetailSelection = QuoteProjectType | QuotePropertyType;
-
 type QuoteBuilderFormProps = {
   clientName: string;
   setClientName: (value: string) => void;
@@ -20,8 +18,10 @@ type QuoteBuilderFormProps = {
   setPhoneNumber: (value: string) => void;
   email: string;
   setEmail: (value: string) => void;
-  projectDetailSelection: QuoteProjectDetailSelection;
-  onSelectProjectDetail: (value: QuoteProjectDetailSelection) => void;
+  projectType: QuoteProjectType;
+  setProjectType: (value: QuoteProjectType) => void;
+  propertyType: QuotePropertyType;
+  setPropertyType: (value: QuotePropertyType) => void;
   unitType: QuoteUnitType;
   setUnitType: (value: QuoteUnitType) => void;
   onNext: () => void;
@@ -36,8 +36,10 @@ export default function QuoteBuilderForm({
   setPhoneNumber,
   email,
   setEmail,
-  projectDetailSelection,
-  onSelectProjectDetail,
+  projectType,
+  setProjectType,
+  propertyType,
+  setPropertyType,
   unitType,
   setUnitType,
   onNext,
@@ -76,36 +78,39 @@ export default function QuoteBuilderForm({
         <Text className="mb-3 text-[14px] font-medium text-[#2B2B2B]">
           Project Type *
         </Text>
-        <View className="mb-3 flex-row gap-3">
+        <View className="mb-5 flex-row gap-3">
           <QuoteChoiceCard
             label="New Build"
-            selected={projectDetailSelection === "New Build"}
-            onPress={() => onSelectProjectDetail("New Build")}
+            selected={projectType === "New Build"}
+            onPress={() => setProjectType("New Build")}
           />
           <QuoteChoiceCard
-            label="Renovation"
-            selected={projectDetailSelection === "Renovation"}
-            onPress={() => onSelectProjectDetail("Renovation")}
+            label="Renovations"
+            selected={projectType === "Renovations"}
+            onPress={() => setProjectType("Renovations")}
           />
         </View>
 
+        <Text className="mb-3 text-[14px] font-medium text-[#2B2B2B]">
+          Property Type *
+        </Text>
         <View className="mb-5 flex-row gap-3">
           <QuoteChoiceCard
             label="Residential"
-            selected={projectDetailSelection === "Residential"}
-            onPress={() => onSelectProjectDetail("Residential")}
+            selected={propertyType === "Residential"}
+            onPress={() => setPropertyType("Residential")}
           />
           <QuoteChoiceCard
             label="Commercial"
-            selected={projectDetailSelection === "Commercial"}
-            onPress={() => onSelectProjectDetail("Commercial")}
+            selected={propertyType === "Commercial"}
+            onPress={() => setPropertyType("Commercial")}
           />
         </View>
 
         <Text className="mb-3 text-[14px] font-medium text-[#2B2B2B]">
           Unit Type *
         </Text>
-        <View className="flex-row flex-wrap gap-3">
+        <View className="flex-row gap-3">
           <View className="w-[48%]">
             <QuoteChoiceCard
               label="House"
@@ -118,20 +123,6 @@ export default function QuoteBuilderForm({
               label="Apartment"
               selected={unitType === "Apartment"}
               onPress={() => setUnitType("Apartment")}
-            />
-          </View>
-          <View className="w-[48%]">
-            <QuoteChoiceCard
-              label="Office"
-              selected={unitType === "Office"}
-              onPress={() => setUnitType("Office")}
-            />
-          </View>
-          <View className="w-[48%]">
-            <QuoteChoiceCard
-              label="Hotel"
-              selected={unitType === "Hotel"}
-              onPress={() => setUnitType("Hotel")}
             />
           </View>
         </View>
