@@ -1,50 +1,179 @@
-# Welcome to your Expo app 👋
+# Finis
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Finis is a role-based React Native app built with Expo Router for construction, field operations, inventory, payroll, tasks, chat, and quotation workflows.
 
-## Get started
+The project currently includes three role experiences:
+- Admin
+- Worker
+- Manager
 
-1. Install dependencies
+## Overview
+Finis is organized around separate app experiences for different user roles:
+- Admin: company, projects, tasks, payroll, inventory, chat, and profile flows
+- Worker: home, tasks, chat, profile, and worker support/settings flows
+- Manager: home, projects, tasks, inventory, chat, and dynamic quote builder flow
 
-   ```bash
-   npm install
-   ```
+The app uses file-based routing with Expo Router and NativeWind for UI styling.
 
-2. Start the app
+## Main Features
+### Admin
+- Dashboard and role-based home flow
+- Company profile and project overview
+- Assigned projects
+- Project details, analysis, team, task, and documents
+- Create and edit project flows
+- Floor and room setup
+- Geofencing UI
+- Payroll calendar, payroll summary, and pay stub screens
+- Inventory overview and stock update flow
+- Admin profile, personal info, edit profile, and change password
 
-   ```bash
-   npx expo start
-   ```
+### Worker
+- Worker home and task flow
+- View task and task details screens
+- Worker profile
+- Worker settings/help/legal screens
+- Worker chat flow
 
-In the output, you'll find options to open the app in a
+### Manager
+- Manager dashboard
+- Projects and tasks tabs
+- Inventory and chat tabs
+- Quotes builder with 3 steps:
+  1. Client and project details
+  2. Dynamic service selection from combination-based catalogs
+  3. Final review with discount, PDF generation, and email actions
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Quotes Flow
+The manager quotes module supports the following exact combinations:
+- New Build - Residential - House
+- New Build - Residential - Apartment
+- New Build - Commercial - House
+- New Build - Commercial - Apartment
+- Renovations - Residential - House
+- Renovations - Residential - Apartment
+- Renovations - Commercial - House
+- Renovations - Commercial - Apartment
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Step 2 is data-driven and loads services based on the selected combination. The quote flow also supports:
+- Separate quantity and unit selection
+- Item-level unit pricing
+- Dynamic subtotals
+- Custom item addition
+- Final quote review
+- Discount modal
+- Quote PDF generation
+- Quote email action
 
-## Get a fresh project
+## Tech Stack
+- Expo SDK 54
+- React 19
+- React Native 0.81
+- Expo Router
+- NativeWind
+- TypeScript
+- Expo Image Picker
+- Expo Document Picker
+- Expo Location
+- Expo Print
+- Expo Sharing
+- Expo Mail Composer
+- React Native PDF
+- React Native WebView
+- React Native UI Datepicker
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+## Project Structure
+```text
+app/
+  (auth)/
+  (tab)/                # Admin tabs
+  manager/              # Manager tabs
+  worker/               # Worker tabs
+  screens/
+    auth/
+    chat/
+    company/
+    inventory/
+    payroll/
+    profile/
+    worker/
+components/
+  auth/
+  chat/
+  common/
+  company/
+  home/
+  inventory/
+  manager/
+  payroll/
+  profile/
+assets/
+shims/
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Routing Notes
+- `app/(tab)` is the admin tab layout
+- `app/worker` is the worker tab layout
+- `app/manager` is the manager tab layout
+- `app/screens/auth/roleselect.tsx` is the development-only role selection screen
 
-## Learn more
+## App Entry Flow
+Current startup flow:
+1. `app/index.tsx`
+2. splash screen image
+3. redirect to `/screens/auth/privacy`
+4. auth flow
+5. development-only role selection screen
 
-To learn more about developing your project with Expo, look at the following resources:
+## Development Notes
+The role selection screen is currently used for development and UI testing. Once backend-based authentication and role assignment are connected, the app can route directly by authenticated role.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Setup
+Install dependencies:
 
-## Join the community
+```bash
+npm install
+```
 
-Join our community of developers creating universal apps.
+Start the Expo dev server:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo start
+```
+
+Run on Android:
+
+```bash
+npx expo run:android
+```
+
+Run on iOS:
+
+```bash
+npx expo run:ios
+```
+
+Run lint:
+
+```bash
+npm run lint
+```
+
+Type check:
+
+```bash
+npx tsc --noEmit
+```
+
+## Assets and App Icon
+App configuration is managed in `app.json`.
+Important assets include:
+- `assets/images/icon.png`
+- `assets/images/splash-icon.png`
+
+After changing launcher icon assets, rebuild the app to see the updated icon.
+
+## Notes
+- This repository currently focuses on frontend flows and mocked business data in several modules.
+- Some flows are already structured to be replaced by backend data later, especially the manager quotes module.
+- The project contains custom role-based UI implementations rather than a single shared navigation shell.
