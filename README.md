@@ -1,51 +1,99 @@
 # Finis
 
-Finis is a role-based React Native app built with Expo Router for construction, field operations, inventory, payroll, tasks, chat, and quotation workflows.
+Finis is a role-based construction operations mobile app built with Expo, React Native, Expo Router, and NativeWind.
 
-The project currently includes three role experiences:
+The app currently covers three user experiences:
 - Admin
 - Worker
 - Manager
 
-## Overview
-Finis is organized around separate app experiences for different user roles:
-- Admin: company, projects, tasks, payroll, inventory, chat, and profile flows
-- Worker: home, tasks, chat, profile, and worker support/settings flows
-- Manager: home, projects, tasks, inventory, chat, and dynamic quote builder flow
+It is focused on frontend workflows for project management, tasks, inventory, payroll, geofencing, chat, profile management, and quotation building.
 
-The app uses file-based routing with Expo Router and NativeWind for UI styling.
+## Why Finis Was Built
+Finis was built to reduce day-to-day operational friction between office teams and field teams in construction work.
 
-## Main Features
+Construction teams often deal with disconnected workflows across projects, tasks, inventory, payroll, field communication, and quotations. Finis brings these workflows into one mobile app so each role can work from the same system with role-specific access and screens.
+
+A major goal of the app is to make project coordination faster, reduce manual follow-up, improve visibility into field work, and help sales or management teams generate structured quotations more efficiently.
+
+## Problems It Solves
+Finis is intended to solve these business and workflow problems:
+- project and company information being spread across different places
+- admin, manager, and worker workflows being disconnected
+- task assignment and tracking being too manual
+- inventory stock updates not being reflected quickly
+- payroll scheduling and summary flow being fragmented
+- field documents and activity records not being centrally accessible
+- quotation generation taking too much time
+- service pricing and work item selection not being standardized
+- client-facing quote output being inconsistent
+- role-specific users not having a focused workflow inside one app
+
+## Current Scope
+This repository is primarily frontend-focused.
+
+Some modules already behave like backend-ready flows, but many business workflows still use mock data.
+
+Examples:
+- manager quotes use combination-based mock catalogs
+- task, team, and inventory screens include local interactive state
+- role selection is currently development-only
+
+## Role Experiences
 ### Admin
-- Dashboard and role-based home flow
-- Company profile and project overview
+Admin can access:
+- Home dashboard
+- Company tab
+- Chat tab
+- Payroll tab
+- Inventory tab
+- Company profile and project flows
 - Assigned projects
-- Project details, analysis, team, task, and documents
+- Project details, project analysis, team, task, and documents
 - Create and edit project flows
 - Floor and room setup
-- Geofencing UI
-- Payroll calendar, payroll summary, and pay stub screens
-- Inventory overview and stock update flow
-- Admin profile, personal info, edit profile, and change password
+- Geofencing
+- Payroll summary and pay stub
+- Admin profile and settings-style flows
+
+Admin tab layout lives in:
+- `app/(tab)/_layout.tsx`
 
 ### Worker
-- Worker home and task flow
-- View task and task details screens
-- Worker profile
-- Worker settings/help/legal screens
-- Worker chat flow
+Worker can access:
+- Home
+- Tasks
+- Chat
+- Profile
+- Worker support/settings/legal screens
+- View task
+- Worker task details
+
+Worker tab layout lives in:
+- `app/worker/_layout.tsx`
 
 ### Manager
-- Manager dashboard
-- Projects and tasks tabs
-- Inventory and chat tabs
-- Quotes builder with 3 steps:
-  1. Client and project details
-  2. Dynamic service selection from combination-based catalogs
-  3. Final review with discount, PDF generation, and email actions
+Manager can access:
+- Home
+- Projects
+- Tasks
+- Inventory
+- Chat
+- Quotes
 
-## Quotes Flow
-The manager quotes module supports the following exact combinations:
+Manager tab layout lives in:
+- `app/manager/_layout.tsx`
+
+## Quotes Module
+The manager quotes module is one of the main structured flows in the app.
+
+### Step Flow
+1. Client information and project setup
+2. Service selection from a dynamic catalog
+3. Final review with discount, PDF, and email actions
+
+### Supported Combinations
+The quote flow currently supports these exact combinations:
 - New Build - Residential - House
 - New Build - Residential - Apartment
 - New Build - Commercial - House
@@ -55,40 +103,142 @@ The manager quotes module supports the following exact combinations:
 - Renovations - Commercial - House
 - Renovations - Commercial - Apartment
 
-Step 2 is data-driven and loads services based on the selected combination. The quote flow also supports:
-- Separate quantity and unit selection
-- Item-level unit pricing
-- Dynamic subtotals
-- Custom item addition
-- Final quote review
-- Discount modal
-- Quote PDF generation
-- Quote email action
+### Current Quote Behavior
+- project type, property type, and unit type are selected separately
+- step 2 loads a catalog from a backend-like mock structure
+- quantity and unit of measurement are separate
+- item subtotal is based on quantity × selected unit price
+- custom items can be added manually
+- final review supports discount
+- quote PDF can be generated
+- quote email action can be triggered
+
+### Quote Files
+Main quote-related files:
+- `components/manager/ManagerQuotesScreen.tsx`
+- `components/manager/quotes/QuoteBuilderForm.tsx`
+- `components/manager/quotes/QuoteWorkItemsStep.tsx`
+- `components/manager/quotes/QuoteFinalReviewStep.tsx`
+- `components/manager/quotes/quoteMockData.ts`
+- `components/manager/quotes/quoteWorkState.ts`
+- `components/manager/quotes/quotePdf.ts`
+- `components/manager/quotes/AddCustomQuoteItemModal.tsx`
+- `components/manager/quotes/ApplyDiscountModal.tsx`
+
+## Main Modules
+### Authentication
+Relevant routes:
+- `app/(auth)/login.tsx`
+- `app/(auth)/signup.tsx`
+- `app/(auth)/forgot-password.tsx`
+- `app/(auth)/new-password.tsx`
+- `app/(auth)/verification-code.tsx`
+- `app/screens/auth/welcome.tsx`
+- `app/screens/auth/privacy.tsx`
+- `app/screens/auth/location.tsx`
+- `app/screens/auth/roleselect.tsx`
+
+### Company / Project
+Relevant routes include:
+- `app/screens/company/profile.tsx`
+- `app/screens/company/assignedprojects.tsx`
+- `app/screens/company/projectdetails.tsx`
+- `app/screens/company/projectinfo.tsx`
+- `app/screens/company/projectanalysis.tsx`
+- `app/screens/company/team.tsx`
+- `app/screens/company/task.tsx`
+- `app/screens/company/taskdetails.tsx`
+- `app/screens/company/documents.tsx`
+- `app/screens/company/projectdocuments.tsx`
+- `app/screens/company/contacts.tsx`
+- `app/screens/company/createproject.tsx`
+- `app/screens/company/editproject.tsx`
+- `app/screens/company/floorplan.tsx`
+- `app/screens/company/geofencing.tsx`
+
+### Inventory
+Relevant routes:
+- `app/(tab)/inventory.tsx`
+- `app/screens/inventory/add.tsx`
+
+Related components:
+- `components/inventory/InventoryScreen.tsx`
+- `components/inventory/AddInventoryScreen.tsx`
+- `components/inventory/UpdateInventoryModal.tsx`
+- `components/inventory/inventoryStore.ts`
+
+### Payroll
+Relevant routes:
+- `app/(tab)/payroll.tsx`
+- `app/screens/payroll/summary.tsx`
+- `app/screens/payroll/paystub.tsx`
+
+Related components:
+- `components/payroll/SchedulingPayrollScreen.tsx`
+- `components/payroll/PayrollCalendarCard.tsx`
+- `components/payroll/PayrollSummaryScreen.tsx`
+- `components/payroll/PayStubScreen.tsx`
+
+### Chat
+Relevant routes:
+- `app/(tab)/chat.tsx`
+- `app/screens/chat/conversation.tsx`
+- `app/worker/chat.tsx`
+- `app/manager/chat.tsx`
+
+### Profile
+Admin profile routes:
+- `app/screens/profile/index.tsx`
+- `app/screens/profile/personalinfo.tsx`
+- `app/screens/profile/edit.tsx`
+- `app/screens/profile/changepassword.tsx`
+
+Worker profile routes:
+- `app/worker/profile.tsx`
+- `app/screens/worker/personalinfo.tsx`
+- `app/screens/worker/edit_profile.tsx`
+- `app/screens/worker/change_password.tsx`
 
 ## Tech Stack
+Core stack:
 - Expo SDK 54
 - React 19
 - React Native 0.81
+- TypeScript
 - Expo Router
 - NativeWind
-- TypeScript
-- Expo Image Picker
-- Expo Document Picker
-- Expo Location
-- Expo Print
-- Expo Sharing
-- Expo Mail Composer
-- React Native PDF
-- React Native WebView
-- React Native UI Datepicker
+
+Important libraries used in this project:
+- `expo-image-picker`
+- `expo-document-picker`
+- `expo-location`
+- `expo-print`
+- `expo-sharing`
+- `expo-mail-composer`
+- `react-native-pdf`
+- `react-native-webview`
+- `react-native-ui-datepicker`
+- `react-native-safe-area-context`
+
+## Native / Interactive Features
+The app currently includes these native or semi-native capabilities:
+- image picking
+- document picking
+- PDF generation
+- PDF preview
+- document preview routing
+- email composer integration
+- share sheet integration
+- Android intent-based external open flow for local documents
+- geolocation access for map/geofence-related UI
 
 ## Project Structure
 ```text
 app/
   (auth)/
-  (tab)/                # Admin tabs
-  manager/              # Manager tabs
-  worker/               # Worker tabs
+  (tab)/                # Admin tab layout
+  manager/              # Manager tab layout
+  worker/               # Worker tab layout
   screens/
     auth/
     chat/
@@ -111,22 +261,29 @@ assets/
 shims/
 ```
 
-## Routing Notes
-- `app/(tab)` is the admin tab layout
-- `app/worker` is the worker tab layout
-- `app/manager` is the manager tab layout
-- `app/screens/auth/roleselect.tsx` is the development-only role selection screen
-
 ## App Entry Flow
-Current startup flow:
+Current app entry flow:
 1. `app/index.tsx`
-2. splash screen image
+2. splash image screen
 3. redirect to `/screens/auth/privacy`
-4. auth flow
-5. development-only role selection screen
+4. auth-related screens
+5. development role selector
+6. role-based navigation shell
 
-## Development Notes
-The role selection screen is currently used for development and UI testing. Once backend-based authentication and role assignment are connected, the app can route directly by authenticated role.
+## Development Role Selection
+The screen:
+- `app/screens/auth/roleselect.tsx`
+
+is currently used for development and manual UI testing.
+
+Once backend-based authentication and role assignment are connected, the app can skip this screen and route directly to the correct role layout.
+
+## Requirements
+Recommended local setup:
+- Node.js 20+
+- npm
+- Android Studio for Android emulator/builds
+- Xcode for iOS builds on macOS
 
 ## Setup
 Install dependencies:
@@ -135,22 +292,28 @@ Install dependencies:
 npm install
 ```
 
-Start the Expo dev server:
+Start Expo dev server:
 
 ```bash
 npx expo start
 ```
 
-Run on Android:
+Run Android:
 
 ```bash
 npx expo run:android
 ```
 
-Run on iOS:
+Run iOS:
 
 ```bash
 npx expo run:ios
+```
+
+Run web:
+
+```bash
+npx expo start --web
 ```
 
 Run lint:
@@ -159,21 +322,45 @@ Run lint:
 npm run lint
 ```
 
-Type check:
+Run TypeScript check:
 
 ```bash
 npx tsc --noEmit
 ```
 
-## Assets and App Icon
-App configuration is managed in `app.json`.
-Important assets include:
-- `assets/images/icon.png`
-- `assets/images/splash-icon.png`
+## Build / Asset Notes
+- App configuration is managed in `app.json`
+- Main app icon is in `assets/images/icon.png`
+- Splash-related image is in `assets/images/splash-icon.png`
+- After changing launcher icon assets, rebuild the app to see the updated launcher icon
 
-After changing launcher icon assets, rebuild the app to see the updated icon.
+## Known Limitations
+Current limitations in the repo:
+- several modules still use mock data
+- role routing is development-oriented, not backend-auth-driven
+- some flows are UI-complete but not API-complete
+- manager quotes are catalog-driven locally, not from a real backend yet
+- some business rules are represented as frontend assumptions for now
 
-## Notes
-- This repository currently focuses on frontend flows and mocked business data in several modules.
-- Some flows are already structured to be replaced by backend data later, especially the manager quotes module.
-- The project contains custom role-based UI implementations rather than a single shared navigation shell.
+## Backend-Ready Areas
+These parts are already structured so backend integration is easier later:
+- manager quotes catalog selection
+- role-based navigation separation
+- inventory update flow
+- task status updates
+- profile avatar update flow
+
+## Suggested Next Backend Integrations
+Recommended backend work order:
+1. auth + role assignment
+2. quotes catalog API
+3. project and task APIs
+4. inventory stock API
+5. payroll data API
+6. chat backend / realtime messaging
+
+## Notes for Contributors
+- Keep role-based flows isolated by route layout
+- Prefer reusing components instead of duplicating whole screens
+- Keep data-driven structures in modules like quotes and inventory so backend integration stays clean
+- When changing app icon or some native package behavior, rebuild the app instead of relying only on hot reload
