@@ -97,7 +97,7 @@ export default function LoginRoute() {
           <Text className="text-[17px] text-[#34393F]">
             Don’t have an account?{" "}
           </Text>
-          <TouchableOpacity onPress={() => router.push("/(auth)/signup")}>
+          <TouchableOpacity onPress={() => router.push("/screens/auth/location")}>
             <Text className="text-[17px] font-semibold text-[#1F2328]">
               Sign Up
             </Text>

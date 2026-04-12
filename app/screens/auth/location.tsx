@@ -11,7 +11,7 @@ export default function LocationRoute() {
     const { status } = await Location.requestForegroundPermissionsAsync();
 
     if (status === "granted") {
-      router.replace("/(auth)/login");
+      router.replace("/(auth)/signup");
       return;
     }
 
