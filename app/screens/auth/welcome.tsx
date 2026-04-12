@@ -1,24 +1,28 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WelcomeRoute() {
   const router = useRouter();
+  const { height } = useWindowDimensions();
+  const imageMaxHeight = Math.min(560, Math.max(300, height * 0.60));
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <View>
-        <View />
-
         <Image
           source={require("../../../assets/images/welcome.svg")}
-          contentFit="contain"
-          style={{ height: 532, width: 375 }}
+          contentFit="cover"
+          style={{
+            width: "100%",
+            height: imageMaxHeight,
+            alignSelf: "center",
+          }}
         />
       </View>
 
-      <View className="px-5">
+      <View className="px-5 mt-3">
         <Text className="text-center text-[24px] font-bold text-[#2A2A2A]">
           Welcome to Finis
         </Text>
