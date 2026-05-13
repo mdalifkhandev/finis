@@ -1,0 +1,26 @@
+export type AuthUser = {
+  id: string;
+  email: string;
+  phone: string | null;
+  fullName: string;
+  role: "admin" | "worker" | "manager" | string;
+  avatarUrl: string | null;
+  tenantId: string | null;
+};
+
+export type AuthSession = {
+  accessToken: string;
+  user: AuthUser;
+};
+
+export type LoginCredentials = {
+  identifier: string;
+  password: string;
+};
+
+export type ApiResponse<T> = {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: T;
+};
