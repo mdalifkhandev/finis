@@ -1,14 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import { isAxiosError } from "axios";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  Alert,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { getRoleHomeRoute } from "@/features/auth/auth.routes";
 import { useLoginMutation } from "@/features/auth/useLoginMutation";
 
@@ -22,7 +18,7 @@ export default function LoginScreen() {
     const trimmedIdentifier = identifier.trim();
 
     if (!trimmedIdentifier || !password) {
-      Alert.alert("Missing info", "Enter your email or phone and password.");
+      toast.error("Enter your email or phone and password.");
       return;
     }
 
@@ -30,12 +26,16 @@ export default function LoginScreen() {
       { identifier: trimmedIdentifier, password },
       {
         onSuccess: (session) => {
+          toast.success("Login successful");
           router.replace(getRoleHomeRoute(session.user.role));
         },
         onError: (error) => {
-          Alert.alert(
-            "Login failed",
-            error instanceof Error ? error.message : "Unable to sign in.",
+          const message = isAxiosError(error)
+            ? (error.response?.data?.message as string | undefined)
+            : undefined;
+          toast.error(
+            message ||
+              (error instanceof Error ? error.message : "Unable to sign in."),
           );
         },
       },

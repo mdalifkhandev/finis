@@ -4,8 +4,13 @@ export type AuthUser = {
   phone: string | null;
   fullName: string;
   role: "admin" | "worker" | "manager" | string;
+  status?: string;
   avatarUrl: string | null;
   tenantId: string | null;
+  department?: string | null;
+  joinDate?: string | null;
+  lastLoginAt?: string | null;
+  createdAt?: string | null;
 };
 
 export type AuthSession = {

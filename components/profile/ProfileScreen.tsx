@@ -3,7 +3,10 @@ import { router } from "expo-router";
 import React from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
+import { isAxiosError } from "axios";
 import { logoutRequest } from "@/features/auth/auth.api";
+import { queryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/stores/auth-store";
 import ProfileAvatar from "./ProfileAvatar";
 import ProfileHeaderBar from "./ProfileHeaderBar";
@@ -21,10 +24,16 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await logoutRequest();
-          } catch {
+            const message = await logoutRequest();
+            toast.success(message);
+          } catch (error) {
+            const message = isAxiosError(error)
+              ? (error.response?.data?.message as string | undefined)
+              : undefined;
+            toast.error(message || "Logout API failed. Logged out locally.");
             // If API fails, still clear local session to prevent stuck login state.
           } finally {
+            queryClient.clear();
             clearSession();
             router.replace("/(auth)/login");
           }

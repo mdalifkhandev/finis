@@ -2,6 +2,9 @@ import { router } from "expo-router";
 import React from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { DEFAULT_AVATAR_URL } from "@/features/auth/auth.constants";
+import { useAuthMeQuery } from "@/features/auth/useAuthMeQuery";
+import { useAuthStore } from "@/stores/auth-store";
 import HomeHeader from "../../components/home/HomeHeader";
 import SectionHeader from "../../components/home/SectionHeader";
 import StatCard from "../../components/home/StatCard";
@@ -51,13 +54,20 @@ const WEEKLY_ACTIVITY = [
 ];
 
 export default function WorkerHome() {
+  useAuthMeQuery();
+  const user = useAuthStore((state) => state.user);
+  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
+  const displayName = user?.fullName?.trim() || "Welcome Back";
+  const subtitle = user?.role ? `${user.role}!` : "Electrician!";
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
       <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
         <HomeHeader
-          name="Welcome Back"
-          subtitle="Electrician!"
-          avatarUrl="https://i.pravatar.cc/150?u=worker"
+          name={displayName}
+          subtitle={subtitle}
+          avatarUrl={avatarUrl}
+          onPressAvatar={() => router.push("/screens/profile")}
         />
 
         <View className="flex-row justify-between px-5 mt-6">

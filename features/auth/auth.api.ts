@@ -2,16 +2,21 @@ import { api } from "@/lib/api/client";
 import type {
   ApiResponse,
   AuthSession,
+  AuthUser,
   LoginCredentials,
 } from "./auth.types";
 
 function normalizeSession(session: AuthSession): AuthSession {
   return {
     accessToken: session.accessToken,
-    user: {
-      ...session.user,
-      fullName: session.user.fullName.trim(),
-    },
+    user: normalizeUser(session.user),
+  };
+}
+
+function normalizeUser(user: AuthUser): AuthUser {
+  return {
+    ...user,
+    fullName: user.fullName.trim(),
   };
 }
 
@@ -34,4 +39,16 @@ export async function logoutRequest() {
   if (!data.success) {
     throw new Error(data.message || "Logout failed");
   }
+
+  return data.message || "Logout successful";
+}
+
+export async function meRequest() {
+  const { data } = await api.get<ApiResponse<AuthUser>>("/auth/me");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to fetch profile");
+  }
+
+  return normalizeUser(data.data);
 }
