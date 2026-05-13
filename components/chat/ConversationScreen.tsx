@@ -1,5 +1,3 @@
-import * as ImagePicker from "expo-image-picker";
-import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Keyboard, Platform, ScrollView, View } from "react-native";
@@ -89,6 +87,7 @@ export default function ConversationScreen() {
   const handlePickFromGallery = async () => {
     try {
       setAttachmentsOpen(false);
+      const ImagePicker = await import("expo-image-picker");
 
       const permission =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -122,6 +121,7 @@ export default function ConversationScreen() {
   const handleOpenCamera = async () => {
     try {
       setAttachmentsOpen(false);
+      const ImagePicker = await import("expo-image-picker");
 
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) {
@@ -153,6 +153,7 @@ export default function ConversationScreen() {
   const handlePickLocation = async () => {
     try {
       setAttachmentsOpen(false);
+      const Location = await import("expo-location");
 
       const permission = await Location.requestForegroundPermissionsAsync();
       if (permission.status !== "granted") {

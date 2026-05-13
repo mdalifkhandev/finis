@@ -1,4 +1,3 @@
-import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { useSyncExternalStore } from "react";
 
@@ -24,24 +23,35 @@ export function useProfileAvatar() {
 }
 
 export async function pickProfileAvatar() {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  try {
+    const ImagePicker = await import("expo-image-picker");
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-  if (!permission.granted) {
-    Alert.alert("Permission Required", "Allow photo access to change the profile image.");
-    return;
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission Required",
+        "Allow photo access to change the profile image.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (result.canceled || !result.assets.length) {
+      return;
+    }
+
+    profileAvatarUri = result.assets[0].uri;
+    notify();
+  } catch {
+    Alert.alert(
+      "Unavailable",
+      "Image picker is unavailable in this runtime.",
+    );
   }
-
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ["images"],
-    allowsEditing: true,
-    aspect: [1, 1],
-    quality: 1,
-  });
-
-  if (result.canceled || !result.assets.length) {
-    return;
-  }
-
-  profileAvatarUri = result.assets[0].uri;
-  notify();
 }

@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as DocumentPicker from "expo-document-picker";
 import React, { useState } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { TaskItem, TaskStatus } from "../task/types";
@@ -30,6 +29,7 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
 
   const handleUploadFile = async () => {
     try {
+      const DocumentPicker = await import("expo-document-picker");
       const result = await DocumentPicker.getDocumentAsync({
         multiple: true,
         copyToCacheDirectory: true,
