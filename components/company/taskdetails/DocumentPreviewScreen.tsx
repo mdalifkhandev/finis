@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system/legacy";
 import { Image } from "expo-image";
-import * as IntentLauncher from "expo-intent-launcher";
 import * as Sharing from "expo-sharing";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -124,6 +123,7 @@ export default function DocumentPreviewScreen({
       }
 
       if (Platform.OS === "android" && uri.startsWith("file://")) {
+        const IntentLauncher = await import("expo-intent-launcher");
         const contentUri = await FileSystem.getContentUriAsync(uri);
 
         await IntentLauncher.startActivityAsync("android.intent.action.VIEW", {

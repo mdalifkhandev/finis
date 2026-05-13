@@ -1,4 +1,3 @@
-import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
     Alert,
@@ -49,6 +48,14 @@ export default function TaskViewCard({
   };
 
   const handleTakePhoto = async () => {
+    let ImagePicker;
+    try {
+      ImagePicker = await import("expo-image-picker");
+    } catch {
+      Alert.alert("Unavailable", "Image picker is unavailable in this runtime.");
+      return;
+    }
+
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== "granted") {

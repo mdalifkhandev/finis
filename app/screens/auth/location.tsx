@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,14 +7,22 @@ export default function LocationRoute() {
   const router = useRouter();
 
   const handleAllowLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
+    try {
+      const Location = await import("expo-location");
+      const { status } = await Location.requestForegroundPermissionsAsync();
 
-    if (status === "granted") {
-      router.replace("/(auth)/signup");
-      return;
+      if (status === "granted") {
+        router.replace("/(auth)/signup");
+        return;
+      }
+
+      Alert.alert("Permission Needed", "Please allow location permission.");
+    } catch {
+      Alert.alert(
+        "Unavailable",
+        "Location service is unavailable in this runtime.",
+      );
     }
-
-    Alert.alert("Permission Needed", "Please allow location permission.");
   };
 
   return (

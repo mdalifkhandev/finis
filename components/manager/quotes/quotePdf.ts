@@ -1,4 +1,3 @@
-import * as MailComposer from "expo-mail-composer";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { Alert, Linking } from "react-native";
@@ -141,14 +140,19 @@ export async function emailQuotePdf(
   const subject = `Quote for ${params.clientName || "Client"}`;
   const body = `Please find the attached quote for ${params.projectType} • ${params.propertyType} • ${params.unitType}.`;
 
-  if (await MailComposer.isAvailableAsync()) {
-    await MailComposer.composeAsync({
-      recipients: params.recipientEmail ? [params.recipientEmail] : [],
-      subject,
-      body,
-      attachments: [result.uri],
-    });
-    return;
+  try {
+    const MailComposer = await import("expo-mail-composer");
+    if (await MailComposer.isAvailableAsync()) {
+      await MailComposer.composeAsync({
+        recipients: params.recipientEmail ? [params.recipientEmail] : [],
+        subject,
+        body,
+        attachments: [result.uri],
+      });
+      return;
+    }
+  } catch {
+    // Fall back to mailto below.
   }
 
   const mailto = `mailto:${encodeURIComponent(params.recipientEmail || "")}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

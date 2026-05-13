@@ -1,4 +1,3 @@
-import * as Location from "expo-location";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import MapLegend from "./MapLegend";
@@ -44,6 +43,7 @@ export default function GeofenceMapCard() {
     let active = true;
 
     const loadLocation = async () => {
+      const Location = await import("expo-location");
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (!active) return;
 

@@ -1,18 +1,21 @@
-import { useRouter } from "expo-router";
-import { useEffect } from "react";
+import { getRoleHomeRoute } from "@/features/auth/auth.routes";
+import { useAuthStore } from "@/stores/auth-store";
+import { Redirect } from "expo-router";
 import { Image, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
-  const router = useRouter();
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const userRole = useAuthStore((state) => state.user?.role);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      router.replace("/screens/auth/privacy");
-    }, 2500);
+  if (isHydrated && accessToken && userRole) {
+    return <Redirect href={getRoleHomeRoute(userRole) as never} />;
+  }
 
-    return () => clearTimeout(timer);
-  }, [router]);
+  if (isHydrated && (!accessToken || !userRole)) {
+    return <Redirect href={"/screens/auth/spalsh-screen" as never} />;
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-white">

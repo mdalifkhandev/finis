@@ -27,3 +27,11 @@ export async function loginRequest(credentials: LoginCredentials) {
 
   return normalizeSession(data.data);
 }
+
+export async function logoutRequest() {
+  const { data } = await api.post<ApiResponse<null>>("/auth/logout");
+
+  if (!data.success) {
+    throw new Error(data.message || "Logout failed");
+  }
+}

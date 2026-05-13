@@ -1,14 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { logoutRequest } from "@/features/auth/auth.api";
+import { useAuthStore } from "@/stores/auth-store";
 import ProfileAvatar from "./ProfileAvatar";
 import ProfileHeaderBar from "./ProfileHeaderBar";
 import { useProfileAvatar } from "./profileStore";
 
 export default function ProfileScreen() {
   const avatarUri = useProfileAvatar();
+  const clearSession = useAuthStore((state) => state.clearSession);
+
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await logoutRequest();
+          } catch {
+            // If API fails, still clear local session to prevent stuck login state.
+          } finally {
+            clearSession();
+            router.replace("/(auth)/login");
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -47,6 +70,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           activeOpacity={0.85}
+          onPress={handleLogout}
           className="mt-2 w-full flex-row items-center justify-between rounded-[10px] border border-[#E0E4E9] bg-white px-3 py-3"
         >
           <Text className="text-[14px] text-[#2B2B2B]">Log Out</Text>
