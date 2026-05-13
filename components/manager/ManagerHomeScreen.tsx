@@ -3,6 +3,9 @@ import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
+import { DEFAULT_AVATAR_URL } from "@/features/auth/auth.constants";
+import { useAuthMeQuery } from "@/features/auth/useAuthMeQuery";
+import { useAuthStore } from "@/stores/auth-store";
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView, View } from "react-native";
@@ -78,10 +81,13 @@ const workersOnSite: SiteWorker[] = [
   },
 ];
 
-const avatarUrl =
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop";
-
 export default function ManagerHomeScreen() {
+  useAuthMeQuery();
+  const user = useAuthStore((state) => state.user);
+  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
+  const displayName = user?.fullName?.trim() || "Welcome Back";
+  const subtitle = user?.role ? `${user.role}!` : "Manager!!";
+
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <ScrollView
@@ -89,8 +95,8 @@ export default function ManagerHomeScreen() {
         contentContainerStyle={{ paddingBottom: 120 }}
       >
         <HomeHeader
-          name="Welcome Back"
-          subtitle="Admin!!"
+          name={displayName}
+          subtitle={subtitle}
           avatarUrl={avatarUrl}
           onPressAvatar={() => router.push("/screens/profile")}
         />
