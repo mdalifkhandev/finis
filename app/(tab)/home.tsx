@@ -3,70 +3,87 @@ import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
+import { useAdminDashboardQuery } from "@/features/admin/useAdminDashboardQuery";
 import { DEFAULT_AVATAR_URL } from "@/features/auth/auth.constants";
 import { useAuthMeQuery } from "@/features/auth/useAuthMeQuery";
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/authStore";
 import { router } from "expo-router";
 import React from "react";
-import { ScrollView, View } from "react-native";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HomeHeader from "../../components/home/HomeHeader";
 
-const stats = [
-  { icon: "trending-up-outline", value: "56", label: "Active Projects" },
-  { icon: "people-outline", value: "85", label: "Active Orders" },
-  { icon: "cash-outline", value: "$24.5K", label: "Payroll Pending" },
-  { icon: "alert-circle-outline", value: "85", label: "Inventory Alerts" },
-] as const;
-
-const projects = [
-  {
-    title: "Riverside Tower",
-    status: "On Track" as const,
-    workers: "15 workers",
-    progress: 75,
-  },
-  {
-    title: "Riverside Tower",
-    status: "Delayed" as const,
-    workers: "15 workers",
-    progress: 75,
-  },
-];
-
-const workers = [
-  {
-    name: "John Smith",
-    role: "Electrician",
-    location: "Riverside Tower",
-    status: "Active" as const,
-  },
-  {
-    name: "John Smith",
-    role: "Electrician",
-    location: "Riverside Tower",
-    status: "Active" as const,
-  },
-  {
-    name: "John Smith",
-    role: "Electrician",
-    location: "Riverside Tower",
-    status: "Active" as const,
-  },
-];
-
 export default function Home() {
-  useAuthMeQuery();
+  const authMeQuery = useAuthMeQuery();
+  const dashboardQuery = useAdminDashboardQuery();
+  const dashboard = dashboardQuery.data;
   const user = useAuthStore((state) => state.user);
   const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
   const displayName = user?.fullName?.trim() || "Welcome Back";
   const subtitle = user?.role ? `${user.role}!` : "Admin!!";
+  const handleRefresh = async () => {
+    await Promise.all([authMeQuery.refetch(), dashboardQuery.refetch()]);
+  };
+  const refreshing = authMeQuery.isRefetching || dashboardQuery.isRefetching;
+  const stats = [
+    {
+      icon: "trending-up-outline" as const,
+      value: String(dashboard?.stats.activeProjects ?? 0),
+      label: "Active Projects",
+    },
+    {
+      icon: "people-outline" as const,
+      value: String(dashboard?.stats.workersOnSite ?? 0),
+      label: "Active Worker",
+    },
+    {
+      icon: "cash-outline" as const,
+      value: String(dashboard?.stats.payrollPending ?? 0),
+      label: "Payroll Pending",
+    },
+    {
+      icon: "alert-circle-outline" as const,
+      value: String(dashboard?.stats.inventoryAlerts ?? 0),
+      label: "Inventory Alerts",
+    },
+  ];
+  const projects = (dashboard?.activeProjects.data ?? []).map((project) => ({
+    title: project.name || "Project",
+    status: (project.status?.toLowerCase() === "delayed"
+      ? "Delayed"
+      : "On Track") as
+      | "On Track"
+      | "Delayed",
+    workers: `${project.teamCount ?? 0} workers`,
+    progress: Number(project.progress ?? 0),
+  }));
+  const workers = (dashboard?.workersOnSite.data ?? []).map((worker) => ({
+    name: worker.fullName || "Worker",
+    role: worker.role || "Worker",
+    location: "On Site",
+    status: "Active" as const,
+    avatarUrl: worker.avatarUrl || DEFAULT_AVATAR_URL,
+  }));
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
       >
         <HomeHeader
           name={displayName}
@@ -74,6 +91,15 @@ export default function Home() {
           avatarUrl={avatarUrl}
           onPressAvatar={() => router.push("/screens/profile")}
         />
+
+        {(dashboardQuery.isLoading || authMeQuery.isLoading) && !dashboard ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="small" color="#1f3d5c" />
+            <Text className="mt-2 text-xs text-slate-500">
+              Loading dashboard...
+            </Text>
+          </View>
+        ) : null}
 
         {/* Temporary Developer Toggle to Switch Roles */}
         {/* <View className="px-5 mt-4">
@@ -122,7 +148,7 @@ export default function Home() {
               role={worker.role}
               location={worker.location}
               status={worker.status}
-              avatarUrl={avatarUrl}
+              avatarUrl={worker.avatarUrl}
             />
           ))}
         </View>

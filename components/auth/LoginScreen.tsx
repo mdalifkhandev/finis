@@ -1,18 +1,46 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { isAxiosError } from "axios";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import { getRoleHomeRoute } from "@/features/auth/auth.routes";
 import { useLoginMutation } from "@/features/auth/useLoginMutation";
 
+const REMEMBERED_IDENTIFIER_KEY = "finis-remembered-identifier";
+
 export default function LoginScreen() {
   const router = useRouter();
   const loginMutation = useLoginMutation();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRememberedIdentifier = async () => {
+      const storedIdentifier = await AsyncStorage.getItem(
+        REMEMBERED_IDENTIFIER_KEY,
+      );
+
+      if (!isMounted || !storedIdentifier) {
+        return;
+      }
+
+      setIdentifier(storedIdentifier);
+      setRememberMe(true);
+    };
+
+    loadRememberedIdentifier();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleLogin = () => {
     const trimmedIdentifier = identifier.trim();
@@ -25,7 +53,16 @@ export default function LoginScreen() {
     loginMutation.mutate(
       { identifier: trimmedIdentifier, password },
       {
-        onSuccess: (session) => {
+        onSuccess: async (session) => {
+          if (rememberMe) {
+            await AsyncStorage.setItem(
+              REMEMBERED_IDENTIFIER_KEY,
+              trimmedIdentifier,
+            );
+          } else {
+            await AsyncStorage.removeItem(REMEMBERED_IDENTIFIER_KEY);
+          }
+
           toast.success("Login successful");
           router.replace(getRoleHomeRoute(session.user.role));
         },
@@ -79,9 +116,56 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             placeholder="********"
             placeholderTextColor="#90979F"
-            secureTextEntry
+            secureTextEntry={!showPassword}
             className="ml-2 flex-1 text-[16px] text-[#1E2328]"
           />
+          <TouchableOpacity
+            onPress={() => setShowPassword((current) => !current)}
+            activeOpacity={0.75}
+            className="ml-2 h-8 w-8 items-center justify-center"
+            accessibilityRole="button"
+            accessibilityLabel={
+              showPassword ? "Hide password" : "Show password"
+            }
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={18}
+              color="#9BA2AA"
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View className="mt-3 flex-row items-center justify-between">
+          <TouchableOpacity
+            onPress={() => setRememberMe((current) => !current)}
+            activeOpacity={0.8}
+            className="flex-row items-center"
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: rememberMe }}
+          >
+            <View
+              className={`h-4 w-4 items-center justify-center rounded-full border ${
+                rememberMe ? "border-[#1F5577] bg-[#1F5577]" : "border-[#B7BDC4]"
+              }`}
+            >
+              {rememberMe ? (
+                <View className="h-1.5 w-1.5 rounded-full bg-white" />
+              ) : null}
+            </View>
+            <Text className="ml-2 text-[14px] text-[#6D737A]">
+              Remember me
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push("/(auth)/forgot-password")}
+            activeOpacity={0.75}
+          >
+            <Text className="text-[14px] font-medium text-[#FF7A7A]">
+              Forgot password?
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity

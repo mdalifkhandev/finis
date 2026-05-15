@@ -1,32 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner-native";
-import { meRequest } from "@/services/authService";
+import { getAdminDashboard } from "@/services/adminService";
 import { useAuthStore } from "@/stores/authStore";
 
-export function useAuthMeQuery() {
+export function useAdminDashboardQuery() {
   const accessToken = useAuthStore((state) => state.accessToken);
-  const setUser = useAuthStore((state) => state.setUser);
+  const role = useAuthStore((state) => state.user?.role);
 
   const query = useQuery({
-    queryKey: ["auth", "me", accessToken],
-    queryFn: meRequest,
-    enabled: !!accessToken,
-    staleTime: 5 * 60 * 1000,
+    queryKey: ["admin", "dashboard", accessToken],
+    queryFn: getAdminDashboard,
+    enabled: !!accessToken && role === "admin",
+    staleTime: 60 * 1000,
   });
-
-  useEffect(() => {
-    if (query.data) {
-      setUser(query.data);
-    }
-  }, [query.data, setUser]);
 
   useEffect(() => {
     if (query.isError) {
       toast.error(
         query.error instanceof Error
           ? query.error.message
-          : "Failed to load profile",
+          : "Failed to load dashboard",
       );
     }
   }, [query.error, query.isError]);

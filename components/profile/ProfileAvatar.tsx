@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { Image, TouchableOpacity, View } from "react-native";
 
 type ProfileAvatarProps = {
@@ -16,11 +16,17 @@ export default function ProfileAvatar({
   onPressCamera,
 }: ProfileAvatarProps) {
   const cameraSize = Math.max(18, Math.round(size * 0.26));
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <View style={{ width: size, height: size }}>
       <Image
-        source={{ uri }}
+        source={
+          uri && !imageFailed
+            ? { uri }
+            : require("../../assets/images/placeholder-person.png")
+        }
+        onError={() => setImageFailed(true)}
         style={{ width: size, height: size, borderRadius: size / 2 }}
       />
 
