@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
-import { loginRequest } from "./auth.api";
-import { useAuthStore } from "@/stores/auth-store";
-import type { LoginCredentials } from "./auth.types";
+import { loginRequest } from "@/services/authService";
+import { useAuthStore } from "@/stores/authStore";
+import type { LoginCredentials } from "@/types/api/auth";
 
 export function useLoginMutation() {
   const setSession = useAuthStore((state) => state.setSession);

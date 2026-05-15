@@ -8,7 +8,7 @@
     "scheme": "finis",
     "userInterfaceStyle": "automatic",
     "androidStatusBar": {
-      "backgroundColor": "#000000",
+      "backgroundColor": "#FFFFFF",
       "barStyle": "light-content",
       "translucent": false
     },
@@ -49,6 +49,12 @@
         {
           "photosPermission": "Allow Finis to access your photos.",
           "cameraPermission": "Allow Finis to use your camera."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow Finis to access your location."
         }
       ],
       "expo-mail-composer"

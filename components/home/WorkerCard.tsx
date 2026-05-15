@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { Image, Text, View } from "react-native";
 import { cardShadow } from "./styles";
 
@@ -30,13 +30,19 @@ export default function WorkerCard({
   avatarUrl,
 }: WorkerCardProps) {
   const styles = statusStyles[status];
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <View className="mx-5 mt-3 rounded-2xl bg-white p-3" style={cardShadow}>
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Image
-            source={{ uri: avatarUrl }}
+            source={
+              avatarUrl && !imageFailed
+                ? { uri: avatarUrl }
+                : require("../../assets/images/placeholder-person.png")
+            }
+            onError={() => setImageFailed(true)}
             className="h-10 w-10 rounded-full"
           />
           <View className="ml-3">

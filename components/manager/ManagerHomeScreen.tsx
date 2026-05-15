@@ -5,7 +5,7 @@ import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
 import { DEFAULT_AVATAR_URL } from "@/features/auth/auth.constants";
 import { useAuthMeQuery } from "@/features/auth/useAuthMeQuery";
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/authStore";
 import { router } from "expo-router";
 import React from "react";
 import { ScrollView, View } from "react-native";

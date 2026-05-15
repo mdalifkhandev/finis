@@ -1,12 +1,17 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import {
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function WelcomeRoute() {
   const router = useRouter();
   const { height } = useWindowDimensions();
-  const imageMaxHeight = Math.min(560, Math.max(300, height * 0.60));
+  const imageMaxHeight = Math.min(560, Math.max(300, height * 0.6));
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -41,7 +46,7 @@ export default function WelcomeRoute() {
           </Text>
         </TouchableOpacity>
 
-        <View className="mt-5 flex-row items-center justify-center">
+        {/* <View className="mt-5 flex-row items-center justify-center">
           <Text className="text-[16px] text-[#31353A]">
             Already haven account?{" "}
           </Text>
@@ -50,7 +55,7 @@ export default function WelcomeRoute() {
               Login
             </Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </View>
     </SafeAreaView>
   );

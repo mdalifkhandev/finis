@@ -1,6 +1,6 @@
 import { create, type InternalAxiosRequestConfig } from "axios";
 import { API_BASE_URL } from "@/lib/config";
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/authStore";
 
 export const api = create({
   baseURL: API_BASE_URL,
