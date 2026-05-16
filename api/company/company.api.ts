@@ -5,6 +5,7 @@ import type { AdminCompaniesResponse } from "@/types/admin.types";
 import type { AdminCompanyDetailResponse } from "@/types/admin.types";
 import type {
   CreateCompanyPayload,
+  CompanyProjectsResponse,
   CreateCompanyResponse,
   UpdateCompanyPayload,
 } from "@/types/company.types";
@@ -82,6 +83,27 @@ export async function getCompany(id: string) {
     ...data.data,
     logoUrl: resolveMediaUrl(data.data.logoUrl),
   };
+}
+
+export async function getCompanyProjects(id: string) {
+  const { data } = await api.get<CompanyProjectsResponse>(
+    `/admin/companies/${id}/projects`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load projects");
+  }
+
+  return data.data.map((project) => ({
+    ...project,
+    teamMembers: project.teamMembers.map((member) => ({
+      ...member,
+      user: {
+        ...member.user,
+        avatarUrl: resolveMediaUrl(member.user.avatarUrl),
+      },
+    })),
+  }));
 }
 
 export async function createCompany(payload: CreateCompanyPayload) {
