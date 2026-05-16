@@ -3,7 +3,7 @@ import React from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
-import { useAuthMeQuery } from "@/hooks/auth/useAuthMeQuery";
+import { useAuthMeQuery } from "@/hooks/auth/auth";
 import { useAuthStore } from "@/store/auth.store";
 import HomeHeader from "../../components/home/HomeHeader";
 import SectionHeader from "../../components/home/SectionHeader";

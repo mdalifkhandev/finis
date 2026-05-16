@@ -29,6 +29,10 @@ export type InviteUserData = {
   role: "admin" | "manager" | "worker" | string;
 };
 
+export type ForgotPasswordData = {
+  email: string;
+};
+
 export type ApiResponse<T> = {
   success: boolean;
   statusCode: number;

@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import { getAdminDashboard } from "@/api/admin/admin.api";
 import { useAuthStore } from "@/store/auth.store";

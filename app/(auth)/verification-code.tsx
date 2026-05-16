@@ -1,10 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function VerificationCodeRoute() {
   const router = useRouter();
+  const { email } = useLocalSearchParams<{ email?: string }>();
+  const maskedEmail =
+    typeof email === "string" && email.includes("@")
+      ? `${email.slice(0, 1)}***@${email.split("@")[1]}`
+      : "your email";
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -28,7 +33,7 @@ export default function VerificationCodeRoute() {
           Enter Verification Code
         </Text>
         <Text className="mt-2 text-center text-[16px] text-[#535960]">
-          We’ve sent a 6-digit code to j***@gmail.com
+          We’ve sent a 6-digit code to {maskedEmail}
         </Text>
 
         <View className="mt-8 flex-row items-center justify-between">
