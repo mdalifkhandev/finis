@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner-native";
-import { getAdminDashboard } from "@/services/adminService";
-import { useAuthStore } from "@/stores/authStore";
+import { getAdminDashboard } from "@/api/admin/admin.api";
+import { useAuthStore } from "@/store/auth.store";
 
 export function useAdminDashboardQuery() {
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
 
   const query = useQuery({
-    queryKey: ["admin", "dashboard", accessToken],
+    queryKey: ["admin", "dashboard", token],
     queryFn: getAdminDashboard,
-    enabled: !!accessToken && role === "admin",
+    enabled: !!token && role === "admin",
     staleTime: 60 * 1000,
   });
 

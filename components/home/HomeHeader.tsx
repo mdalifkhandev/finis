@@ -5,7 +5,7 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 type HomeHeaderProps = {
   name: string;
   subtitle: string;
-  avatarUrl: string;
+  avatarUrl?: string | null;
   onPressBell?: () => void;
   onPressAvatar?: () => void;
 };

@@ -3,7 +3,8 @@ import { API_BASE_URL } from "@/lib/config";
 import type {
   AdminDashboardData,
   AdminDashboardResponse,
-} from "@/types/api/admin";
+  AdminDashboardWorker,
+} from "@/types/admin.types";
 
 function resolveMediaUrl(path: string | null) {
   if (!path) {
@@ -28,7 +29,7 @@ export async function getAdminDashboard() {
     ...data.data,
     workersOnSite: {
       ...data.data.workersOnSite,
-      data: data.data.workersOnSite.data.map((worker) => ({
+      data: data.data.workersOnSite.data.map((worker: AdminDashboardWorker) => ({
         ...worker,
         avatarUrl: resolveMediaUrl(worker.avatarUrl),
       })),

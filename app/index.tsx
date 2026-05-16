@@ -1,5 +1,5 @@
-import { getRoleHomeRoute } from "@/features/auth/auth.routes";
-import { useAuthStore } from "@/stores/authStore";
+import { getRoleHomeRoute } from "@/api/auth/auth.routes";
+import { useAuthStore } from "@/store/auth.store";
 import { Redirect } from "expo-router";
 import { Image, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

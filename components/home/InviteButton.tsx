@@ -8,27 +8,48 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { toast } from "sonner-native";
+import { useInviteMutation } from "@/hooks/auth/useInviteMutation";
 
 type InviteButtonProps = {
   onPress?: () => void;
 };
 
 export default function InviteButton({ onPress }: InviteButtonProps) {
+  const { invite, isPending } = useInviteMutation();
   const [visible, setVisible] = useState(false);
-  const [emailOrPhone, setEmailOrPhone] = useState("");
-  const [role, setRole] = useState("Admin");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("manager");
   const [showRoleOptions, setShowRoleOptions] = useState(false);
 
-  const roleOptions = ["Admin", "Manager", "Supervisor"];
+  const roleOptions = [
+    { label: "Admin", value: "admin" },
+    { label: "Manager", value: "manager" },
+    { label: "Worker", value: "worker" },
+  ];
 
   const closeModal = () => {
     setVisible(false);
     setShowRoleOptions(false);
   };
 
-  const handleInvite = () => {
-    closeModal();
-    setEmailOrPhone("");
+  const handleInvite = async () => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      toast.error("Enter email");
+      return;
+    }
+
+    try {
+      const message = await invite({ email: trimmedEmail, role });
+      toast.success(message);
+      setEmail("");
+      setRole("manager");
+      closeModal();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Invite failed");
+    }
   };
 
   return (
@@ -56,7 +77,7 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
           >
             <View className="flex-row items-center justify-between px-4 py-4">
               <Text className="text-[17px] font-semibold text-[#1F5577]">
-                Add Specification
+                Invite User
               </Text>
               <TouchableOpacity activeOpacity={0.8} onPress={closeModal}>
                 <Ionicons name="close" size={26} color="#1F5577" />
@@ -67,13 +88,13 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
 
             <View className="px-4 py-4">
               <Text className="mb-2.5 text-[16px] font-medium text-[#2B3138]">
-                Add email or phone number
+                Email
               </Text>
 
               <View className="h-12 justify-center rounded-[10px] border border-[#D6DEE5] bg-[#EEF3F6] px-3">
                 <TextInput
-                  value={emailOrPhone}
-                  onChangeText={setEmailOrPhone}
+                  value={email}
+                  onChangeText={setEmail}
                   placeholder="Email"
                   placeholderTextColor="#8C98A4"
                   className="text-[16px] text-[#1F2937]"
@@ -87,7 +108,8 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
                 className="mt-3 h-12 flex-row items-center rounded-[10px] border border-[#D6DEE5] bg-[#EEF3F6] px-3"
               >
                 <Text className="flex-1 text-[16px] text-[#2B3138]">
-                  {role}
+                  {roleOptions.find((item) => item.value === role)?.label ??
+                    "Manager"}
                 </Text>
                 <Ionicons name="chevron-down" size={18} color="#2B3138" />
               </TouchableOpacity>
@@ -96,22 +118,22 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
                 <View className="mt-2 overflow-hidden rounded-[10px] border border-[#D6DEE5] bg-white">
                   {roleOptions.map((option) => (
                     <TouchableOpacity
-                      key={option}
+                      key={option.value}
                       activeOpacity={0.85}
                       onPress={() => {
-                        setRole(option);
+                        setRole(option.value);
                         setShowRoleOptions(false);
                       }}
                       className="h-10 justify-center px-3"
                     >
                       <Text
                         className={`text-[15px] ${
-                          option === role
+                          option.value === role
                             ? "font-semibold text-[#1F5577]"
                             : "text-[#2B3138]"
                         }`}
                       >
-                        {option}
+                        {option.label}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -132,10 +154,11 @@ export default function InviteButton({ onPress }: InviteButtonProps) {
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={handleInvite}
+                  disabled={isPending}
                   className="h-12 flex-1 items-center justify-center rounded-[16px] bg-[#1F5577]"
                 >
                   <Text className="text-[16px] font-semibold text-white">
-                    Invite
+                    {isPending ? "Sending..." : "Invite"}
                   </Text>
                 </TouchableOpacity>
               </View>

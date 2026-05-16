@@ -2,9 +2,9 @@ import { router } from "expo-router";
 import React from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { DEFAULT_AVATAR_URL } from "@/features/auth/auth.constants";
-import { useAuthMeQuery } from "@/features/auth/useAuthMeQuery";
-import { useAuthStore } from "@/stores/authStore";
+import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
+import { useAuthMeQuery } from "@/hooks/auth/useAuthMeQuery";
+import { useAuthStore } from "@/store/auth.store";
 import HomeHeader from "../../components/home/HomeHeader";
 import SectionHeader from "../../components/home/SectionHeader";
 import StatCard from "../../components/home/StatCard";
@@ -56,7 +56,7 @@ const WEEKLY_ACTIVITY = [
 export default function WorkerHome() {
   useAuthMeQuery();
   const user = useAuthStore((state) => state.user);
-  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
+  const avatarUrl = user?.avatarUrl ?? DEFAULT_AVATAR_URL;
   const displayName = user?.fullName?.trim() || "Welcome Back";
   const subtitle = user?.role ? `${user.role}!` : "Electrician!";
 

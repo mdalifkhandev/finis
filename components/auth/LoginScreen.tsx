@@ -6,14 +6,14 @@ import React, { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
-import { getRoleHomeRoute } from "@/features/auth/auth.routes";
-import { useLoginMutation } from "@/features/auth/useLoginMutation";
+import { getRoleHomeRoute } from "@/api/auth/auth.routes";
+import { useLogin } from "@/hooks/auth/useLogin";
 
 const REMEMBERED_IDENTIFIER_KEY = "finis-remembered-identifier";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const loginMutation = useLoginMutation();
+  const { login, isPending } = useLogin();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -42,7 +42,7 @@ export default function LoginScreen() {
     };
   }, []);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const trimmedIdentifier = identifier.trim();
 
     if (!trimmedIdentifier || !password) {
@@ -50,33 +50,32 @@ export default function LoginScreen() {
       return;
     }
 
-    loginMutation.mutate(
-      { identifier: trimmedIdentifier, password },
-      {
-        onSuccess: async (session) => {
-          if (rememberMe) {
-            await AsyncStorage.setItem(
-              REMEMBERED_IDENTIFIER_KEY,
-              trimmedIdentifier,
-            );
-          } else {
-            await AsyncStorage.removeItem(REMEMBERED_IDENTIFIER_KEY);
-          }
+    try {
+      const session = await login({
+        identifier: trimmedIdentifier,
+        password,
+      });
 
-          toast.success("Login successful");
-          router.replace(getRoleHomeRoute(session.user.role));
-        },
-        onError: (error) => {
-          const message = isAxiosError(error)
-            ? (error.response?.data?.message as string | undefined)
-            : undefined;
-          toast.error(
-            message ||
-              (error instanceof Error ? error.message : "Unable to sign in."),
-          );
-        },
-      },
-    );
+      if (rememberMe) {
+        await AsyncStorage.setItem(
+          REMEMBERED_IDENTIFIER_KEY,
+          trimmedIdentifier,
+        );
+      } else {
+        await AsyncStorage.removeItem(REMEMBERED_IDENTIFIER_KEY);
+      }
+
+      toast.success("Login successful");
+      router.replace(getRoleHomeRoute(session.user.role));
+    } catch (error) {
+      const message = isAxiosError(error)
+        ? (error.response?.data?.message as string | undefined)
+        : undefined;
+      toast.error(
+        message ||
+          (error instanceof Error ? error.message : "Unable to sign in."),
+      );
+    }
   };
 
   return (
@@ -172,10 +171,10 @@ export default function LoginScreen() {
           className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
           onPress={handleLogin}
           activeOpacity={0.86}
-          disabled={loginMutation.isPending}
+          disabled={isPending}
         >
           <Text className="text-[18px] font-semibold text-white">
-            {loginMutation.isPending ? "Logging in..." : "Login"}
+            {isPending ? "Logging in..." : "Login"}
           </Text>
         </TouchableOpacity>
       </View>

@@ -1,4 +1,4 @@
-import type { ApiResponse } from "./index";
+import type { ApiResponse } from "./auth.types";
 
 export type AdminDashboardStats = {
   activeProjects: number;

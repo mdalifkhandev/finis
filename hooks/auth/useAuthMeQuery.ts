@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { toast } from "sonner-native";
-import { meRequest } from "@/services/authService";
-import { useAuthStore } from "@/stores/authStore";
+import { meRequest } from "@/api/auth/auth.api";
+import { useAuthStore } from "@/store/auth.store";
 
 export function useAuthMeQuery() {
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const token = useAuthStore((state) => state.token);
   const setUser = useAuthStore((state) => state.setUser);
 
   const query = useQuery({
-    queryKey: ["auth", "me", accessToken],
+    queryKey: ["auth", "me", token],
     queryFn: meRequest,
-    enabled: !!accessToken,
+    enabled: !!token,
     staleTime: 5 * 60 * 1000,
   });
 
