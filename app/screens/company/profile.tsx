@@ -1,8 +1,10 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import ProfileMenuItem from "@/components/company/ProfileMenuItem";
 import ProfileSummaryCard from "@/components/company/ProfileSummaryCard";
+import { useCompanyQuery } from "@/hooks/company/company";
+import { useLocalSearchParams } from "expo-router";
 import { router } from "expo-router";
-import { ScrollView, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const menuItems = [
@@ -12,10 +14,13 @@ const menuItems = [
   { label: "Geofencing", route: "/screens/company/geofencing" },
 ];
 
-const avatarUrl =
-  "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=256&auto=format&fit=crop";
+const placeholderAvatar = require("../../../assets/images/placeholder-person.png");
 
 export default function CompanyProfileRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const companyId = typeof id === "string" ? id : undefined;
+  const { data, isLoading } = useCompanyQuery(companyId);
+
   return (
     <SafeAreaView className="flex-1 bg-[#e9edf1]">
       <ScrollView
@@ -24,14 +29,29 @@ export default function CompanyProfileRoute() {
       >
         <BackTitleHeader title="Company" onBack={() => router.back()} />
 
-        <ProfileSummaryCard
-          name="Maya Louis Matthew"
-          handle="@maya.louis"
-          avatarUrl={avatarUrl}
-          completedProjects="12"
-          annualRevenue="15"
-          totalEmployees="50"
-        />
+        {isLoading && !data ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="small" color="#1f3d5c" />
+            <Text className="mt-2 text-xs text-slate-500">
+              Loading company...
+            </Text>
+          </View>
+        ) : data ? (
+          <ProfileSummaryCard
+            name={data.name}
+            handle={data.industry}
+            avatarSource={
+              data.logoUrl ? { uri: data.logoUrl } : placeholderAvatar
+            }
+            completedProjects={String(data._count.projects)}
+            annualRevenue={data.revenue.toLocaleString()}
+            totalEmployees={String(data._count.members)}
+          />
+        ) : (
+          <View className="mt-10 items-center">
+            <Text className="text-sm text-slate-500">Company not found.</Text>
+          </View>
+        )}
 
         <View className="mx-5 mt-6 rounded-3xl border border-[#d4d9de] bg-[#f5f6f8] py-2">
           {menuItems.map((item) => (

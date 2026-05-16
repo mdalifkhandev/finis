@@ -2,6 +2,7 @@ import type { DocumentItem } from "@/components/company/documents/types";
 import { api } from "@/lib/api/client";
 import { API_BASE_URL } from "@/lib/config";
 import type { AdminCompaniesResponse } from "@/types/admin.types";
+import type { AdminCompanyDetailResponse } from "@/types/admin.types";
 import type {
   CreateCompanyPayload,
   CreateCompanyResponse,
@@ -40,6 +41,21 @@ export async function getCompanies(params: CompaniesParams = {}) {
       logoUrl: resolveMediaUrl(company.logoUrl),
     })),
     meta: data.meta,
+  };
+}
+
+export async function getCompany(id: string) {
+  const { data } = await api.get<AdminCompanyDetailResponse>(
+    `/admin/companies/${id}`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load company");
+  }
+
+  return {
+    ...data.data,
+    logoUrl: resolveMediaUrl(data.data.logoUrl),
   };
 }
 

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
-import { createCompany, getCompanies } from "@/api/company/company.api";
+import { createCompany, getCompanies, getCompany } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type { CreateCompanyPayload } from "@/types/company.types";
 
@@ -55,4 +55,28 @@ export function useCreateCompanyMutation() {
     isPending: mutation.isPending,
     error: mutation.error,
   };
+}
+
+export function useCompanyQuery(id?: string) {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+  const query = useQuery({
+    queryKey: ["company", "detail", id, token],
+    queryFn: () => getCompany(id as string),
+    enabled: !!id && !!token && role === "admin",
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load company",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
 }

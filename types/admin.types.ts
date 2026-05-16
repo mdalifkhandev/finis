@@ -87,3 +87,13 @@ export type AdminCompany = {
 export type AdminCompaniesResponse = ApiResponse<AdminCompany[]> & {
   meta: ApiMeta;
 };
+
+export type AdminCompanyDetail = AdminCompany & {
+  tenantId: string | null;
+  ownerId: string;
+  description: string;
+  updatedAt: string;
+  certifications: unknown[];
+};
+
+export type AdminCompanyDetailResponse = ApiResponse<AdminCompanyDetail>;
