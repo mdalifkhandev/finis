@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
-import { getCompanies } from "@/api/company/company.api";
+import { createCompany, getCompanies } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
+import type { CreateCompanyPayload } from "@/types/company.types";
 
 export function useCompaniesQuery(page: number, limit: number) {
   const token = useAuthStore((state) => state.token);
@@ -26,4 +27,32 @@ export function useCompaniesQuery(page: number, limit: number) {
   }, [query.error, query.isError]);
 
   return query;
+}
+
+export function useCreateCompanyMutation() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (payload: CreateCompanyPayload) => createCompany(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["company", "companies"] });
+    },
+  });
+
+  useEffect(() => {
+    if (mutation.isError) {
+      toast.error(
+        mutation.error instanceof Error
+          ? mutation.error.message
+          : "Failed to create company",
+      );
+    }
+  }, [mutation.error, mutation.isError]);
+
+  return {
+    createCompany: mutation.mutateAsync,
+    mutate: mutation.mutate,
+    isPending: mutation.isPending,
+    error: mutation.error,
+  };
 }
