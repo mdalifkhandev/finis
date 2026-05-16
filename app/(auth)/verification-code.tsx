@@ -1,15 +1,58 @@
 import { Ionicons } from "@expo/vector-icons";
+import { isAxiosError } from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
+import { useVerifyOtp } from "@/hooks/auth/auth";
 
 export default function VerificationCodeRoute() {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email?: string }>();
+  const { email, forgotToken } = useLocalSearchParams<{
+    email?: string;
+    forgotToken?: string;
+  }>();
+  const { verifyOtp, isPending } = useVerifyOtp();
+  const [otp, setOtp] = useState("");
   const maskedEmail =
     typeof email === "string" && email.includes("@")
       ? `${email.slice(0, 1)}***@${email.split("@")[1]}`
       : "your email";
+
+  const handleVerify = async () => {
+    if (!forgotToken || typeof forgotToken !== "string") {
+      toast.error("Reset token missing. Please try again.");
+      return;
+    }
+
+    if (otp.length !== 6) {
+      toast.error("Enter 6 digit OTP.");
+      return;
+    }
+
+    try {
+      const result = await verifyOtp({
+        forgotToken,
+        otp,
+      });
+
+      toast.success("OTP verified");
+      router.push({
+        pathname: "/(auth)/new-password",
+        params: { resetToken: result.resetToken },
+      });
+    } catch (error) {
+      const message = isAxiosError(error)
+        ? (error.response?.data?.message as string | undefined)
+        : undefined;
+
+      toast.error(
+        message ||
+          (error instanceof Error ? error.message : "OTP verification failed"),
+      );
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -38,14 +81,25 @@ export default function VerificationCodeRoute() {
 
         <View className="mt-8 flex-row items-center justify-between">
           {[...Array(6)].map((_, index) => (
-            <TextInput
+            <View
               key={`code-${index}`}
-              maxLength={1}
-              keyboardType="number-pad"
-              className="h-11 w-11 rounded-xl border border-[#8F969E] bg-transparent text-center text-[18px] text-[#1F2328]"
-            />
+              className="h-11 w-11 items-center justify-center rounded-xl border border-[#8F969E] bg-transparent"
+            >
+              <Text className="text-[18px] text-[#1F2328]">
+                {otp[index] ?? ""}
+              </Text>
+            </View>
           ))}
         </View>
+
+        <TextInput
+          value={otp}
+          onChangeText={(value) => setOtp(value.replace(/\D/g, "").slice(0, 6))}
+          keyboardType="number-pad"
+          maxLength={6}
+          autoFocus
+          className="absolute h-0 w-0 opacity-0"
+        />
 
         <Text className="mt-5 text-center text-[16px] font-semibold text-[#42484F]">
           Paste Code
@@ -53,10 +107,13 @@ export default function VerificationCodeRoute() {
 
         <TouchableOpacity
           className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
-          onPress={() => router.push("/(auth)/new-password")}
+          onPress={handleVerify}
           activeOpacity={0.86}
+          disabled={isPending}
         >
-          <Text className="text-[18px] font-semibold text-white">Verify</Text>
+          <Text className="text-[18px] font-semibold text-white">
+            {isPending ? "Verifying..." : "Verify"}
+          </Text>
         </TouchableOpacity>
 
         <Text className="mt-8 text-center text-[16px] text-[#8A9097]">

@@ -1,10 +1,54 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { isAxiosError } from "axios";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
+import { useResetPassword } from "@/hooks/auth/auth";
 
 export default function NewPasswordRoute() {
   const router = useRouter();
+  const { resetToken } = useLocalSearchParams<{ resetToken?: string }>();
+  const { resetPassword, isPending } = useResetPassword();
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleUpdatePassword = async () => {
+    if (!resetToken || typeof resetToken !== "string") {
+      toast.error("Reset token missing. Please try again.");
+      return;
+    }
+
+    if (!newPassword || !confirmPassword) {
+      toast.error("Enter and confirm your new password.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    try {
+      await resetPassword({
+        resetToken,
+        newPassword,
+      });
+
+      toast.success("Password updated");
+      router.replace("/(auth)/login");
+    } catch (error) {
+      const message = isAxiosError(error)
+        ? (error.response?.data?.message as string | undefined)
+        : undefined;
+
+      toast.error(
+        message ||
+          (error instanceof Error ? error.message : "Password reset failed"),
+      );
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -29,6 +73,8 @@ export default function NewPasswordRoute() {
 
         <View className="mt-8 h-14 flex-row items-center rounded-xl border border-[#B8BEC5] bg-[#F2F3F5] px-3">
           <TextInput
+            value={newPassword}
+            onChangeText={setNewPassword}
             secureTextEntry
             placeholder="New Password"
             placeholderTextColor="#A0A6AE"
@@ -39,6 +85,8 @@ export default function NewPasswordRoute() {
 
         <View className="mt-3 h-14 flex-row items-center rounded-xl border border-[#B8BEC5] bg-[#F2F3F5] px-3">
           <TextInput
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
             secureTextEntry
             placeholder="Confirm Password"
             placeholderTextColor="#A0A6AE"
@@ -49,10 +97,11 @@ export default function NewPasswordRoute() {
 
         <TouchableOpacity
           className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
-          onPress={() => router.replace("/(auth)/login")}
+          onPress={handleUpdatePassword}
+          disabled={isPending}
         >
           <Text className="text-[18px] font-semibold text-white">
-            Update Password
+            {isPending ? "Updating..." : "Update Password"}
           </Text>
         </TouchableOpacity>
       </View>

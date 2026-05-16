@@ -33,6 +33,25 @@ export type ForgotPasswordData = {
   email: string;
 };
 
+export type ForgotPasswordResponse = {
+  forgotToken: string;
+  otp?: string;
+};
+
+export type VerifyOtpData = {
+  forgotToken: string;
+  otp: string;
+};
+
+export type VerifyOtpResponse = {
+  resetToken: string;
+};
+
+export type ResetPasswordData = {
+  resetToken: string;
+  newPassword: string;
+};
+
 export type ApiResponse<T> = {
   success: boolean;
   statusCode: number;
