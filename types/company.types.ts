@@ -20,4 +20,6 @@ export type CreateCompanyPayload = {
   logo?: CompanyLogoFile | null;
 };
 
+export type UpdateCompanyPayload = CreateCompanyPayload;
+
 export type CreateCompanyResponse = ApiResponse<AdminCompany>;
