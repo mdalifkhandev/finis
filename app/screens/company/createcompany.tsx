@@ -6,6 +6,7 @@ import type { CompanyLogoFile } from "@/types/company.types";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import React, { useState } from "react";
+import { isAxiosError } from "axios";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -104,8 +105,15 @@ export default function CreateCompanyRoute() {
       toast.success("Company created");
       router.back();
     } catch (error) {
+      console.log("createCompany screen error", error);
+
+      const message = isAxiosError(error)
+        ? (error.response?.data?.message as string | undefined)
+        : undefined;
+
       toast.error(
-        error instanceof Error ? error.message : "Failed to create company",
+        message ||
+          (error instanceof Error ? error.message : "Failed to create company"),
       );
     }
   };
