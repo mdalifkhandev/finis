@@ -1,3 +1,4 @@
+import type { DocumentItem } from "@/components/company/documents/types";
 import { api } from "@/lib/api/client";
 import { API_BASE_URL } from "@/lib/config";
 import type { AdminCompaniesResponse } from "@/types/admin.types";
@@ -5,7 +6,6 @@ import type {
   CreateCompanyPayload,
   CreateCompanyResponse,
 } from "@/types/company.types";
-import type { DocumentItem } from "@/components/company/documents/types";
 
 function resolveMediaUrl(path: string | null) {
   if (!path) {
@@ -57,24 +57,32 @@ export async function createCompany(payload: CreateCompanyPayload) {
   formData.append("projectLevel", payload.projectLevel);
 
   if (payload.logo) {
-    formData.append("logo", payload.logo as unknown as Blob);
+    formData.append("logo", {
+      uri: payload.logo.uri,
+      name: payload.logo.name,
+      type: payload.logo.type,
+    } as any);
   }
 
-  const { data } = await api.post<CreateCompanyResponse>(
-    "/admin/companies",
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
+  try {
+    const { data } = await api.post<CreateCompanyResponse>(
+      "/admin/companies",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       },
-    },
-  );
+    );
 
-  if (!data.success) {
-    throw new Error(data.message || "Failed to create company");
+    if (!data.success) {
+      throw new Error(data.message || "Failed to create company");
+    }
+
+    return data.data;
+  } catch (error) {
+    throw error;
   }
-
-  return data.data;
 }
 
 const companyDocuments: DocumentItem[] = [
