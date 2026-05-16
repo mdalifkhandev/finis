@@ -6,14 +6,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Index() {
   const isHydrated = useAuthStore((state) => state.isHydrated);
-  const accessToken = useAuthStore((state) => state.accessToken);
+  const token = useAuthStore((state) => state.token);
   const userRole = useAuthStore((state) => state.user?.role);
 
-  if (isHydrated && accessToken && userRole) {
+  if (isHydrated && token && userRole) {
     return <Redirect href={getRoleHomeRoute(userRole) as never} />;
   }
 
-  if (isHydrated && (!accessToken || !userRole)) {
+  if (isHydrated && !token) {
     return <Redirect href={"/screens/auth/spalsh-screen" as never} />;
   }
 
