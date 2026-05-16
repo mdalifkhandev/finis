@@ -47,6 +47,13 @@ export type PaginatedDashboardList<T> = {
   };
 };
 
+export type ApiMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
 export type AdminDashboardData = {
   stats: AdminDashboardStats;
   activeProjects: PaginatedDashboardList<AdminDashboardProject>;
@@ -57,3 +64,26 @@ export type AdminDashboardData = {
 export type AdminDashboardResponse = ApiResponse<AdminDashboardData>;
 export type AdminActiveWorkersResponse = ApiResponse<AdminActiveWorker[]>;
 export type AdminActiveProjectsResponse = ApiResponse<AdminDashboardProject[]>;
+
+export type AdminCompany = {
+  id: string;
+  name: string;
+  industry: string;
+  revenue: number;
+  projectLevel: string;
+  address: string;
+  website: string;
+  phone: string;
+  email: string;
+  logoUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+  _count: {
+    projects: number;
+    members: number;
+  };
+};
+
+export type AdminCompaniesResponse = ApiResponse<AdminCompany[]> & {
+  meta: ApiMeta;
+};

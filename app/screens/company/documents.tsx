@@ -1,6 +1,6 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import DocumentsList from "@/components/company/documents/DocumentsList";
-import { getCompanyDocuments } from "@/components/company/documents/documentApi";
+import { getCompanyDocuments } from "@/api/company/company.api";
 import { DocumentItem } from "@/components/company/documents/types";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
