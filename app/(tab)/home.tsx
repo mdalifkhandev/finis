@@ -6,6 +6,7 @@ import WorkerCard from "@/components/home/WorkerCard";
 import { useAdminDashboardQuery } from "@/hooks/admin/admin";
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import { useAuthMeQuery } from "@/hooks/auth/auth";
+import { API_BASE_URL } from "@/lib/config";
 import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
 import React from "react";
@@ -19,12 +20,24 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import HomeHeader from "../../components/home/HomeHeader";
 
+function resolveAvatarUrl(avatarUrl?: string | null) {
+  if (!avatarUrl) {
+    return DEFAULT_AVATAR_URL;
+  }
+
+  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
+    return avatarUrl;
+  }
+
+  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
+
 export default function Home() {
   const authMeQuery = useAuthMeQuery();
   const dashboardQuery = useAdminDashboardQuery();
   const dashboard = dashboardQuery.data;
   const user = useAuthStore((state) => state.user);
-  const avatarUrl = user?.avatarUrl ?? DEFAULT_AVATAR_URL;
+  const avatarUrl = resolveAvatarUrl(user?.avatarUrl);
   const displayName = user?.fullName?.trim() || "Welcome Back";
   const subtitle = user?.role ? `${user.role}!` : "Admin!!";
   const handleRefresh = async () => {
@@ -127,7 +140,11 @@ export default function Home() {
         <InviteButton />
 
         <View className="mt-6">
-          <SectionHeader title="Active Projects" actionLabel="View All" />
+          <SectionHeader
+            title="Active Projects"
+            actionLabel="View All"
+            onPressAction={() => router.push("/screens/home/projects")}
+          />
           {projects.map((project, index) => (
             <ProjectCard
               key={`${project.title}-${index}`}
@@ -140,7 +157,11 @@ export default function Home() {
         </View>
 
         <View className="mt-6">
-          <SectionHeader title="Workers On Site" actionLabel="View All" />
+          <SectionHeader
+            title="Workers On Site"
+            actionLabel="View All"
+            onPressAction={() => router.push("/screens/home/workers")}
+          />
           {workers.map((worker, index) => (
             <WorkerCard
               key={`${worker.name}-${index}`}

@@ -1,21 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
-import { API_BASE_URL } from "@/lib/config";
 
 const placeholderAvatar = require("../../assets/images/placeholder-person.png");
-
-function resolveAvatarUrl(avatarUrl?: string | null) {
-  if (!avatarUrl) {
-    return null;
-  }
-
-  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
-    return avatarUrl;
-  }
-
-  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
-}
 
 type HomeHeaderProps = {
   name: string;
@@ -33,14 +20,13 @@ export default function HomeHeader({
   onPressAvatar,
 }: HomeHeaderProps) {
   const [imageFailed, setImageFailed] = useState(false);
-  const resolvedAvatarUrl = resolveAvatarUrl(avatarUrl);
 
   return (
     <View className="flex-row items-center justify-between px-5 pt-4">
       <View className="flex-row items-center">
         <TouchableOpacity activeOpacity={0.85} onPress={onPressAvatar}>
           <Image
-            source={resolvedAvatarUrl && !imageFailed ? { uri: resolvedAvatarUrl } : placeholderAvatar}
+            source={avatarUrl ? { uri: avatarUrl } : placeholderAvatar}
             onError={() => setImageFailed(true)}
             resizeMode="cover"
             className="h-12 w-12 rounded-full"

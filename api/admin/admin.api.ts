@@ -1,6 +1,9 @@
 import { api } from "@/lib/api/client";
 import { API_BASE_URL } from "@/lib/config";
 import type {
+  AdminActiveWorker,
+  AdminActiveWorkersResponse,
+  AdminActiveProjectsResponse,
   AdminDashboardData,
   AdminDashboardResponse,
   AdminDashboardWorker,
@@ -35,4 +38,49 @@ export async function getAdminDashboard() {
       })),
     },
   } as AdminDashboardData;
+}
+
+type ActiveWorkersParams = {
+  page?: number;
+  limit?: number;
+};
+
+export async function getActiveWorkers(params: ActiveWorkersParams = {}) {
+  const { page = 1, limit = 10 } = params;
+  const { data } = await api.get<AdminActiveWorkersResponse>(
+    "/admin/dashboard/active-workers",
+    {
+      params: { page, limit },
+    },
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load workers");
+  }
+
+  return data.data.map((worker: AdminActiveWorker) => ({
+    ...worker,
+    avatarUrl: resolveMediaUrl(worker.avatarUrl),
+  }));
+}
+
+type ActiveProjectsParams = {
+  page?: number;
+  limit?: number;
+};
+
+export async function getActiveProjects(params: ActiveProjectsParams = {}) {
+  const { page = 1, limit = 10 } = params;
+  const { data } = await api.get<AdminActiveProjectsResponse>(
+    "/admin/dashboard/active-projects",
+    {
+      params: { page, limit },
+    },
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load projects");
+  }
+
+  return data.data;
 }
