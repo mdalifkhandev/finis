@@ -6,12 +6,16 @@ import {
   inviteRequest,
   loginApi,
   meRequest,
+  resetPasswordRequest,
+  verifyOtpRequest,
 } from "@/api/auth/auth.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
   ForgotPasswordData,
   InviteUserData,
   LoginPayload,
+  ResetPasswordData,
+  VerifyOtpData,
 } from "@/types/auth.types";
 
 export const useLogin = () => {
@@ -80,6 +84,32 @@ export const useForgotPassword = () => {
 
   return {
     sendCode: mutation.mutateAsync,
+    mutate: mutation.mutate,
+    isPending: mutation.isPending,
+    error: mutation.error,
+  };
+};
+
+export const useVerifyOtp = () => {
+  const mutation = useMutation({
+    mutationFn: (payload: VerifyOtpData) => verifyOtpRequest(payload),
+  });
+
+  return {
+    verifyOtp: mutation.mutateAsync,
+    mutate: mutation.mutate,
+    isPending: mutation.isPending,
+    error: mutation.error,
+  };
+};
+
+export const useResetPassword = () => {
+  const mutation = useMutation({
+    mutationFn: (payload: ResetPasswordData) => resetPasswordRequest(payload),
+  });
+
+  return {
+    resetPassword: mutation.mutateAsync,
     mutate: mutation.mutate,
     isPending: mutation.isPending,
     error: mutation.error,

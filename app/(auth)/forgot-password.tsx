@@ -21,11 +21,14 @@ export default function ForgotPasswordRoute() {
     }
 
     try {
-      await sendCode({ email: trimmedEmail });
+      const response = await sendCode({ email: trimmedEmail });
       toast.success("Reset code sent");
       router.push({
         pathname: "/(auth)/verification-code",
-        params: { email: trimmedEmail },
+        params: {
+          email: trimmedEmail,
+          forgotToken: response.forgotToken,
+        },
       });
     } catch (error) {
       const message = isAxiosError(error)

@@ -5,8 +5,12 @@ import type {
   AuthResponse,
   AuthSession,
   ForgotPasswordData,
+  ForgotPasswordResponse,
   InviteUserData,
   LoginPayload,
+  ResetPasswordData,
+  VerifyOtpData,
+  VerifyOtpResponse,
   User,
 } from "@/types/auth.types";
 
@@ -95,11 +99,40 @@ export const inviteRequest = async (payload: InviteUserData) => {
 };
 
 export const forgotPasswordRequest = async (payload: ForgotPasswordData) => {
-  const { data } = await api.post("/auth/forgot-password", payload);
+  const { data } = await api.post<ApiResponse<ForgotPasswordResponse>>(
+    "/auth/forgot-password",
+    payload,
+  );
 
   if (!data.success) {
     throw new Error(data.message || "Failed to send reset code");
   }
 
-  return data.message || "Reset code sent";
+  return data.data;
+};
+
+export const verifyOtpRequest = async (payload: VerifyOtpData) => {
+  const { data } = await api.post<ApiResponse<VerifyOtpResponse>>(
+    "/auth/verify-otp",
+    payload,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "OTP verification failed");
+  }
+
+  return data.data;
+};
+
+export const resetPasswordRequest = async (payload: ResetPasswordData) => {
+  const { data } = await api.post<ApiResponse<null>>(
+    "/auth/reset-password",
+    payload,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Password reset failed");
+  }
+
+  return data.message || "Password updated";
 };
