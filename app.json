@@ -8,7 +8,7 @@
     "scheme": "finis",
     "userInterfaceStyle": "automatic",
     "androidStatusBar": {
-      "backgroundColor": "#FFFFFF",
+      "backgroundColor": "#000000",
       "barStyle": "light-content",
       "translucent": false
     },

@@ -7,7 +7,7 @@ import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import { getRoleHomeRoute } from "@/api/auth/auth.routes";
-import { useLogin } from "@/hooks/auth/useLogin";
+import { useLogin } from "@/hooks/auth/auth";
 
 const REMEMBERED_IDENTIFIER_KEY = "finis-remembered-identifier";
 

@@ -4,12 +4,15 @@ import type {
   ApiResponse,
   AuthResponse,
   AuthSession,
+  ForgotPasswordData,
   InviteUserData,
   LoginPayload,
   User,
 } from "@/types/auth.types";
 
-function normalizeUser(user: Partial<User> & { email: string; id: string }): User {
+function normalizeUser(
+  user: Partial<User> & { email: string; id: string },
+): User {
   return {
     id: user.id,
     email: user.email,
@@ -89,4 +92,14 @@ export const inviteRequest = async (payload: InviteUserData) => {
   }
 
   return data.message || "Invite sent";
+};
+
+export const forgotPasswordRequest = async (payload: ForgotPasswordData) => {
+  const { data } = await api.post("/auth/forgot-password", payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to send reset code");
+  }
+
+  return data.message || "Reset code sent";
 };

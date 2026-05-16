@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Toaster } from "sonner-native";
-import { useAuthMeQuery } from "@/hooks/auth/useAuthMeQuery";
+import { useAuthMeQuery } from "@/hooks/auth/auth";
 import { queryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/store/auth.store";
 

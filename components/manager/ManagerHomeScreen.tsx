@@ -4,7 +4,7 @@ import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
-import { useAuthMeQuery } from "@/hooks/auth/useAuthMeQuery";
+import { useAuthMeQuery } from "@/hooks/auth/auth";
 import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
 import React from "react";

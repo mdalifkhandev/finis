@@ -9,7 +9,7 @@ import {
   View,
 } from "react-native";
 import { toast } from "sonner-native";
-import { useInviteMutation } from "@/hooks/auth/useInviteMutation";
+import { useInviteMutation } from "@/hooks/auth/auth";
 
 type InviteButtonProps = {
   onPress?: () => void;
