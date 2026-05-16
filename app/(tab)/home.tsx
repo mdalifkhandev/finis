@@ -3,10 +3,10 @@ import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
-import { useAdminDashboardQuery } from "@/features/admin/useAdminDashboardQuery";
-import { DEFAULT_AVATAR_URL } from "@/features/auth/auth.constants";
-import { useAuthMeQuery } from "@/features/auth/useAuthMeQuery";
-import { useAuthStore } from "@/stores/authStore";
+import { useAdminDashboardQuery } from "@/hooks/admin/useAdminDashboardQuery";
+import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
+import { useAuthMeQuery } from "@/hooks/auth/useAuthMeQuery";
+import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -24,7 +24,7 @@ export default function Home() {
   const dashboardQuery = useAdminDashboardQuery();
   const dashboard = dashboardQuery.data;
   const user = useAuthStore((state) => state.user);
-  const avatarUrl = user?.avatarUrl || DEFAULT_AVATAR_URL;
+  const avatarUrl = user?.avatarUrl ?? DEFAULT_AVATAR_URL;
   const displayName = user?.fullName?.trim() || "Welcome Back";
   const subtitle = user?.role ? `${user.role}!` : "Admin!!";
   const handleRefresh = async () => {
