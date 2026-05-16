@@ -5,11 +5,13 @@ import {
   createCompany,
   getCompanies,
   getCompany,
+  getCompanyProjects,
   updateCompany,
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
   CreateCompanyPayload,
+  CompanyProject,
   UpdateCompanyPayload,
 } from "@/types/company.types";
 
@@ -116,6 +118,30 @@ export function useCompanyQuery(id?: string) {
         query.error instanceof Error
           ? query.error.message
           : "Failed to load company",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useCompanyProjectsQuery(id?: string) {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+  const query = useQuery<CompanyProject[]>({
+    queryKey: ["company", "projects", id, token],
+    queryFn: () => getCompanyProjects(id as string),
+    enabled: !!id && !!token && role === "admin",
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load projects",
       );
     }
   }, [query.error, query.isError]);

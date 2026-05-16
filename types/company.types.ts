@@ -23,3 +23,38 @@ export type CreateCompanyPayload = {
 export type UpdateCompanyPayload = CreateCompanyPayload;
 
 export type CreateCompanyResponse = ApiResponse<AdminCompany>;
+
+export type CompanyProjectTeamMemberUser = {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+};
+
+export type CompanyProjectTeamMember = {
+  id: string;
+  projectId: string;
+  userId: string;
+  role: string;
+  managerId: string | null;
+  createdAt: string;
+  user: CompanyProjectTeamMemberUser;
+};
+
+export type CompanyProject = {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  progress: number;
+  startDate: string;
+  endDate: string;
+  budget: number;
+  location: string;
+  _count: {
+    teamMembers: number;
+    tasks: number;
+  };
+  teamMembers: CompanyProjectTeamMember[];
+};
+
+export type CompanyProjectsResponse = ApiResponse<CompanyProject[]>;
