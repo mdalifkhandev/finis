@@ -6,6 +6,7 @@ import type { AdminCompanyDetailResponse } from "@/types/admin.types";
 import type {
   CreateCompanyPayload,
   CreateCompanyResponse,
+  UpdateCompanyPayload,
 } from "@/types/company.types";
 
 function resolveMediaUrl(path: string | null) {
@@ -24,6 +25,30 @@ type CompaniesParams = {
   page?: number;
   limit?: number;
 };
+
+function buildCompanyFormData(payload: CreateCompanyPayload | UpdateCompanyPayload) {
+  const formData = new FormData();
+
+  formData.append("name", payload.name);
+  formData.append("industry", payload.industry);
+  formData.append("description", payload.description);
+  formData.append("phone", payload.phone);
+  formData.append("email", payload.email);
+  formData.append("website", payload.website);
+  formData.append("address", payload.address);
+  formData.append("revenue", payload.revenue);
+  formData.append("projectLevel", payload.projectLevel);
+
+  if (payload.logo) {
+    formData.append("logo", {
+      uri: payload.logo.uri,
+      name: payload.logo.name,
+      type: payload.logo.type,
+    } as any);
+  }
+
+  return formData;
+}
 
 export async function getCompanies(params: CompaniesParams = {}) {
   const { page = 1, limit = 10 } = params;
@@ -60,25 +85,7 @@ export async function getCompany(id: string) {
 }
 
 export async function createCompany(payload: CreateCompanyPayload) {
-  const formData = new FormData();
-
-  formData.append("name", payload.name);
-  formData.append("industry", payload.industry);
-  formData.append("description", payload.description);
-  formData.append("phone", payload.phone);
-  formData.append("email", payload.email);
-  formData.append("website", payload.website);
-  formData.append("address", payload.address);
-  formData.append("revenue", payload.revenue);
-  formData.append("projectLevel", payload.projectLevel);
-
-  if (payload.logo) {
-    formData.append("logo", {
-      uri: payload.logo.uri,
-      name: payload.logo.name,
-      type: payload.logo.type,
-    } as any);
-  }
+  const formData = buildCompanyFormData(payload);
 
   try {
     const { data } = await api.post<CreateCompanyResponse>(
@@ -93,6 +100,33 @@ export async function createCompany(payload: CreateCompanyPayload) {
 
     if (!data.success) {
       throw new Error(data.message || "Failed to create company");
+    }
+
+    return data.data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function updateCompany(
+  id: string,
+  payload: UpdateCompanyPayload,
+) {
+  const formData = buildCompanyFormData(payload);
+
+  try {
+    const { data } = await api.put<CreateCompanyResponse>(
+      `/admin/companies/${id}`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to update company");
     }
 
     return data.data;

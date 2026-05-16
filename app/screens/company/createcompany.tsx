@@ -1,12 +1,15 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import CompanyAvatarPicker from "@/components/company/createcompany/CompanyAvatarPicker";
 import CompanyFormField from "@/components/company/createcompany/CompanyFormField";
-import { useCreateCompanyMutation } from "@/hooks/company/company";
+import {
+  useCompanyQuery,
+  useCreateCompanyMutation,
+  useUpdateCompanyMutation,
+} from "@/hooks/company/company";
 import type { CompanyLogoFile } from "@/types/company.types";
 import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
-import React, { useState } from "react";
-import { isAxiosError } from "axios";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +22,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 
 export default function CreateCompanyRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const companyId = typeof id === "string" ? id : undefined;
+  const isEditMode = Boolean(companyId);
+
   const [companyName, setCompanyName] = useState("");
   const [industry, setIndustry] = useState("");
   const [isIndustryOpen, setIsIndustryOpen] = useState(false);
@@ -31,7 +38,16 @@ export default function CreateCompanyRoute() {
   const [projectLevel, setProjectLevel] = useState("");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<CompanyLogoFile | null>(null);
-  const { createCompany, isPending } = useCreateCompanyMutation();
+
+  const { data: companyData } = useCompanyQuery(companyId);
+  const { createCompany, isPending: isCreating } = useCreateCompanyMutation();
+  const { updateCompany, isPending: isUpdating } =
+    useUpdateCompanyMutation(companyId);
+
+  const pageTitle = isEditMode ? "Edit Company" : "Create Company";
+  const submitLabel = isEditMode ? "Update Company" : "Create Company";
+  const isPending = isEditMode ? isUpdating : isCreating;
+
   const industries = [
     "Construction",
     "Technology",
@@ -40,6 +56,28 @@ export default function CreateCompanyRoute() {
     "Education",
     "Retail",
   ];
+
+  useEffect(() => {
+    if (!companyData) {
+      return;
+    }
+
+    setCompanyName(companyData.name ?? "");
+    setIndustry(companyData.industry ?? "");
+    setDescription(companyData.description ?? "");
+    setPhone(companyData.phone ?? "");
+    setEmail(companyData.email ?? "");
+    setWebsite(companyData.website ?? "");
+    setAddress(companyData.address ?? "");
+    setRevenue(
+      companyData.revenue !== null && companyData.revenue !== undefined
+        ? String(companyData.revenue)
+        : "",
+    );
+    setProjectLevel(companyData.projectLevel ?? "");
+    setLogoPreview(companyData.logoUrl ?? null);
+    setLogoFile(null);
+  }, [companyData]);
 
   const handlePickLogo = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -65,7 +103,7 @@ export default function CreateCompanyRoute() {
     });
   };
 
-  const handleCreateCompany = async () => {
+  const handleSubmit = async () => {
     const trimmedName = companyName.trim();
 
     if (
@@ -83,38 +121,36 @@ export default function CreateCompanyRoute() {
       return;
     }
 
-    if (!logoFile) {
+    if (!isEditMode && !logoFile) {
       toast.error("Please select a company logo.");
       return;
     }
 
-    try {
-      await createCompany({
-        name: trimmedName,
-        industry,
-        description: description.trim(),
-        phone: phone.trim(),
-        email: email.trim(),
-        website: website.trim(),
-        address: address.trim(),
-        revenue: revenue.trim(),
-        projectLevel: projectLevel.trim(),
-        logo: logoFile,
-      });
+    const payload = {
+      name: trimmedName,
+      industry,
+      description: description.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      website: website.trim(),
+      address: address.trim(),
+      revenue: revenue.trim(),
+      projectLevel: projectLevel.trim(),
+      logo: logoFile,
+    };
 
-      toast.success("Company created");
+    try {
+      if (isEditMode && companyId) {
+        await updateCompany({ id: companyId, payload });
+        toast.success("Company updated");
+      } else {
+        await createCompany(payload);
+        toast.success("Company created");
+      }
+
       router.back();
     } catch (error) {
-      console.log("createCompany screen error", error);
-
-      const message = isAxiosError(error)
-        ? (error.response?.data?.message as string | undefined)
-        : undefined;
-
-      toast.error(
-        message ||
-          (error instanceof Error ? error.message : "Failed to create company"),
-      );
+      console.log("save company error", error);
     }
   };
 
@@ -125,7 +161,7 @@ export default function CreateCompanyRoute() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={16}
       >
-        <BackTitleHeader title="Create Company" onBack={() => router.back()} />
+        <BackTitleHeader title={pageTitle} onBack={() => router.back()} />
         <ScrollView
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -234,12 +270,12 @@ export default function CreateCompanyRoute() {
 
           <TouchableOpacity
             activeOpacity={0.86}
-            onPress={handleCreateCompany}
+            onPress={handleSubmit}
             disabled={isPending}
             className="mt-5 h-[52px] items-center justify-center rounded-[14px] bg-[#1D5677]"
           >
             <Text className="text-[16px] font-medium text-[#EAF0F4]">
-              {isPending ? "Creating..." : "Create Company"}
+              {isPending ? "Saving..." : submitLabel}
             </Text>
           </TouchableOpacity>
         </ScrollView>

@@ -46,6 +46,15 @@ export default function CompanyProfileRoute() {
             completedProjects={String(data._count.projects)}
             annualRevenue={data.revenue.toLocaleString()}
             totalEmployees={String(data._count.members)}
+            onEdit={
+              companyId
+                ? () =>
+                    router.push({
+                      pathname: "/screens/company/createcompany",
+                      params: { id: companyId },
+                    })
+                : undefined
+            }
           />
         ) : (
           <View className="mt-10 items-center">
