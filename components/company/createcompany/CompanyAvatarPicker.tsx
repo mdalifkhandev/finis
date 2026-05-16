@@ -1,9 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Image, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 
 type CompanyAvatarPickerProps = {
-  avatarUrl: string;
+  avatarUrl?: string | null;
   onPress?: () => void;
 };
 
@@ -14,10 +14,17 @@ export default function CompanyAvatarPicker({
   return (
     <View className="items-center">
       <View className="relative h-[120px] w-[120px]">
-        <Image
-          source={{ uri: avatarUrl }}
-          className="h-full w-full rounded-full"
-        />
+        {avatarUrl ? (
+          <Image
+            source={{ uri: avatarUrl }}
+            className="h-full w-full rounded-full"
+          />
+        ) : (
+          <View className="h-full w-full items-center justify-center rounded-full bg-[#F3F4F6]">
+            <Ionicons name="business-outline" size={42} color="#6B7280" />
+            <Text className="mt-1 text-[10px] text-[#6B7280]">Company Logo</Text>
+          </View>
+        )}
         <TouchableOpacity
           onPress={onPress}
           activeOpacity={0.85}
