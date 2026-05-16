@@ -91,7 +91,7 @@ export default function Company() {
               </View>
             ) : filteredCompanies.length ? (
               filteredCompanies.map((company) => (
-                <CompanyCard
+              <CompanyCard
                   key={company.id}
                   name={company.name}
                   type={company.industry}
@@ -100,7 +100,12 @@ export default function Company() {
                   address={company.address}
                   website={company.website}
                   logoUrl={company.logoUrl}
-                  onPress={() => router.push("/screens/company/profile")}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/screens/company/profile",
+                      params: { id: company.id },
+                    })
+                  }
                 />
               ))
             ) : (

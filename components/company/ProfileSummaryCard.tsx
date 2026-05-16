@@ -1,12 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ImageSourcePropType,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import ProfileStatTile from "./ProfileStatTile";
 
 type ProfileSummaryCardProps = {
   name: string;
   handle: string;
-  avatarUrl: string;
+  avatarSource: ImageSourcePropType;
   completedProjects: string;
   annualRevenue: string;
   totalEmployees: string;
@@ -16,7 +23,7 @@ type ProfileSummaryCardProps = {
 export default function ProfileSummaryCard({
   name,
   handle,
-  avatarUrl,
+  avatarSource,
   completedProjects,
   annualRevenue,
   totalEmployees,
@@ -31,11 +38,7 @@ export default function ProfileSummaryCard({
       </View>
 
       <View className="flex-row items-center">
-        <Image
-          source={{ uri: avatarUrl }}
-          className="h-20 w-20 rounded-full"
-          style={styles.avatar}
-        />
+        <Image source={avatarSource} className="h-20 w-20 rounded-full" style={styles.avatar} />
         <View className="ml-4 flex-1">
           <Text className="text-[16px] font-semibold text-white">{name}</Text>
           <Text className="mt-1 text-[14px] text-[#9ad8b3]">{handle}</Text>
