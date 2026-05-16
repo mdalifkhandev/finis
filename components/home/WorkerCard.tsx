@@ -1,7 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Image, Text, View } from "react-native";
+import { API_BASE_URL } from "@/lib/config";
 import { cardShadow } from "./styles";
+
+const placeholderAvatar = require("../../assets/images/placeholder-person.png");
+
+function resolveAvatarUrl(avatarUrl: string) {
+  if (!avatarUrl) {
+    return null;
+  }
+
+  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
+    return avatarUrl;
+  }
+
+  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
 
 type WorkerCardProps = {
   name: string;
@@ -31,18 +46,16 @@ export default function WorkerCard({
 }: WorkerCardProps) {
   const styles = statusStyles[status];
   const [imageFailed, setImageFailed] = useState(false);
+  const resolvedAvatarUrl = resolveAvatarUrl(avatarUrl);
 
   return (
     <View className="mx-5 mt-3 rounded-2xl bg-white p-3" style={cardShadow}>
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Image
-            source={
-              avatarUrl && !imageFailed
-                ? { uri: avatarUrl }
-                : require("../../assets/images/placeholder-person.png")
-            }
+            source={resolvedAvatarUrl && !imageFailed ? { uri: resolvedAvatarUrl } : placeholderAvatar}
             onError={() => setImageFailed(true)}
+            resizeMode="cover"
             className="h-10 w-10 rounded-full"
           />
           <View className="ml-3">

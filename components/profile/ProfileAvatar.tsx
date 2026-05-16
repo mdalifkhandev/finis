@@ -1,6 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Image, TouchableOpacity, View } from "react-native";
+import { API_BASE_URL } from "@/lib/config";
+
+const placeholderAvatar = require("../../assets/images/placeholder-person.png");
+
+function resolveAvatarUrl(uri: string) {
+  if (!uri) {
+    return null;
+  }
+
+  if (uri.startsWith("http://") || uri.startsWith("https://")) {
+    return uri;
+  }
+
+  return `${API_BASE_URL}${uri.startsWith("/") ? "" : "/"}${uri}`;
+}
 
 type ProfileAvatarProps = {
   uri: string;
@@ -17,16 +32,14 @@ export default function ProfileAvatar({
 }: ProfileAvatarProps) {
   const cameraSize = Math.max(18, Math.round(size * 0.26));
   const [imageFailed, setImageFailed] = useState(false);
+  const resolvedUri = resolveAvatarUrl(uri);
 
   return (
     <View style={{ width: size, height: size }}>
       <Image
-        source={
-          uri && !imageFailed
-            ? { uri }
-            : require("../../assets/images/placeholder-person.png")
-        }
+        source={resolvedUri && !imageFailed ? { uri: resolvedUri } : placeholderAvatar}
         onError={() => setImageFailed(true)}
+        resizeMode="cover"
         style={{ width: size, height: size, borderRadius: size / 2 }}
       />
 

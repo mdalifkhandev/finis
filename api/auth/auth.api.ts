@@ -1,4 +1,5 @@
 import { api } from "@/lib/api/client";
+import { API_BASE_URL } from "@/lib/config";
 import type {
   ApiResponse,
   AuthResponse,
@@ -15,9 +16,21 @@ function normalizeUser(user: Partial<User> & { email: string; id: string }): Use
     name: user.name ?? user.fullName ?? user.email,
     fullName: user.fullName ?? user.name ?? user.email,
     role: user.role,
-    avatarUrl: user.avatarUrl ?? null,
+    avatarUrl: resolveMediaUrl(user.avatarUrl) ?? null,
     phone: user.phone ?? null,
   };
+}
+
+function resolveMediaUrl(path: string | null | undefined) {
+  if (!path) {
+    return null;
+  }
+
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
 export const loginApi = async (payload: LoginPayload) => {
@@ -62,7 +75,10 @@ export const meRequest = async () => {
     throw new Error(data.message || "Failed to fetch profile");
   }
 
-  return normalizeUser(data.data);
+  return normalizeUser({
+    ...data.data,
+    avatarUrl: resolveMediaUrl(data.data.avatarUrl) ?? data.data.avatarUrl,
+  });
 };
 
 export const inviteRequest = async (payload: InviteUserData) => {
