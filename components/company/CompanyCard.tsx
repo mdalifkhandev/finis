@@ -1,27 +1,44 @@
+import { API_BASE_URL } from "@/lib/config";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { cardShadow } from "../home/styles";
 
 type CompanyCardProps = {
   name: string;
   type: string;
   revenue: string;
-  projects: string;
+  projectLevel: string;
   address: string;
   website: string;
+  logoUrl?: string | null;
   onPress?: () => void;
 };
+
+function resolveLogoUrl(logoUrl?: string | null) {
+  if (!logoUrl) {
+    return null;
+  }
+
+  if (logoUrl.startsWith("http://") || logoUrl.startsWith("https://")) {
+    return logoUrl;
+  }
+
+  return `${API_BASE_URL}${logoUrl.startsWith("/") ? "" : "/"}${logoUrl}`;
+}
 
 export default function CompanyCard({
   name,
   type,
   revenue,
-  projects,
+  projectLevel,
   address,
   website,
+  logoUrl,
   onPress,
 }: CompanyCardProps) {
+  const resolvedLogoUrl = resolveLogoUrl(logoUrl);
+
   return (
     <TouchableOpacity
       activeOpacity={0.85}
@@ -30,27 +47,35 @@ export default function CompanyCard({
       style={cardShadow}
     >
       <View className="flex-row items-center">
-        <View className="h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-          <Ionicons name="logo-google" size={18} color="#0f172a" />
+        <View className="h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-100">
+          {resolvedLogoUrl ? (
+            <Image
+              source={{ uri: resolvedLogoUrl }}
+              className="h-10 w-10 rounded-full"
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name="business-outline" size={18} color="#0f172a" />
+          )}
         </View>
         <View className="ml-3">
-          <Text className="text-sm font-semibold text-slate-900">{name}</Text>
-          <Text className="text-xs text-slate-500">{type}</Text>
+          <Text className="text-base font-semibold text-slate-900">{name}</Text>
+          <Text className="text-sm text-slate-500">{type}</Text>
         </View>
       </View>
 
-      <View className="mt-4 flex-row items-center">
+      <View className="mt-4 flex-row items-center justify-between w-full">
         <View>
-          <Text className="text-[10px] text-slate-400">Revenue</Text>
-          <Text className="text-sm font-semibold text-slate-900">
+          <Text className="text-sm text-slate-400">Revenue</Text>
+          <Text className="text-base font-semibold text-slate-900">
             {revenue}
           </Text>
         </View>
         <View className="mx-5 h-8 w-px bg-slate-200" />
         <View>
-          <Text className="text-[10px] text-slate-400">Projects</Text>
-          <Text className="text-sm font-semibold text-slate-900">
-            {projects}
+          <Text className="text-sm text-slate-400">Projects</Text>
+          <Text className="text-base font-semibold text-slate-900">
+            {projectLevel}
           </Text>
         </View>
       </View>

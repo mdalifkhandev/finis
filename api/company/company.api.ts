@@ -1,4 +1,43 @@
-import { DocumentItem } from "./types";
+import { api } from "@/lib/api/client";
+import { API_BASE_URL } from "@/lib/config";
+import type { AdminCompaniesResponse } from "@/types/admin.types";
+import type { DocumentItem } from "@/components/company/documents/types";
+
+function resolveMediaUrl(path: string | null) {
+  if (!path) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+type CompaniesParams = {
+  page?: number;
+  limit?: number;
+};
+
+export async function getCompanies(params: CompaniesParams = {}) {
+  const { page = 1, limit = 10 } = params;
+  const { data } = await api.get<AdminCompaniesResponse>("/admin/companies", {
+    params: { page, limit },
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load companies");
+  }
+
+  return {
+    data: data.data.map((company) => ({
+      ...company,
+      logoUrl: resolveMediaUrl(company.logoUrl),
+    })),
+    meta: data.meta,
+  };
+}
 
 const companyDocuments: DocumentItem[] = [
   {
