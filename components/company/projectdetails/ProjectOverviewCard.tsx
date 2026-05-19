@@ -7,20 +7,32 @@ const avatarUrl =
   "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=256&auto=format&fit=crop";
 
 type ProjectOverviewCardProps = {
+  projectName?: string;
+  projectCompany?: string;
+  projectLocation?: string;
+  dateRange?: string;
+  projectLogoUrl?: string | null;
   onPressFloorPlan?: () => void;
   onPressEditProject?: () => void;
 };
 
 export default function ProjectOverviewCard({
+  projectName,
+  projectCompany,
+  projectLocation,
+  dateRange,
+  projectLogoUrl,
   onPressFloorPlan,
   onPressEditProject,
 }: ProjectOverviewCardProps) {
   const project = useProjectData();
-  const projectName = project.projectName || "Riverside Tower";
-  const projectCompany = project.company || "Horizon Builders Inc.";
-  const projectLocation =
-    project.location || "123 Construction Blvd, Toronto, ON";
-  const dateRange = `${project.startDate || "2025-08-01"} - ${project.endDate || "Ongoing"}`;
+  const resolvedProjectName = projectName || project.projectName || "Riverside Tower";
+  const resolvedProjectCompany = projectCompany || project.company || "Horizon Builders Inc.";
+  const resolvedProjectLocation =
+    projectLocation || project.location || "123 Construction Blvd, Toronto, ON";
+  const resolvedDateRange =
+    dateRange || `${project.startDate || "2025-08-01"} - ${project.endDate || "Ongoing"}`;
+  const resolvedAvatar = projectLogoUrl || avatarUrl;
 
   return (
     <View className="mx-5 mt-6 overflow-hidden rounded-[14px] bg-[#225879] p-3">
@@ -29,10 +41,10 @@ export default function ProjectOverviewCard({
       <View className="absolute -right-20 bottom-0 h-64 w-64 rounded-full border-[10px] border-[rgba(131,177,205,0.18)]" />
 
       <View className="flex-row items-center">
-        <Image source={{ uri: avatarUrl }} className="h-14 w-14 rounded-full" />
+        <Image source={{ uri: resolvedAvatar }} className="h-14 w-14 rounded-full" />
         <View className="ml-3">
           <Text className="text-[16px] font-semibold text-white">
-            {projectName}
+            {resolvedProjectName}
           </Text>
           <Text className="mt-1 text-[14px] text-[#9BD9B4]">@maya.louis</Text>
         </View>
@@ -42,18 +54,18 @@ export default function ProjectOverviewCard({
         <View className="flex-row items-center">
           <Ionicons name="location-outline" size={16} color="#EAF2F8" />
           <Text className="ml-3 flex-1 text-[14px] text-white">
-            {projectLocation}
+            {resolvedProjectLocation}
           </Text>
         </View>
 
         <View className="mt-2.5 flex-row items-center">
           <Ionicons name="business-outline" size={16} color="#EAF2F8" />
-          <Text className="ml-3 text-[14px] text-white">{projectCompany}</Text>
+          <Text className="ml-3 text-[14px] text-white">{resolvedProjectCompany}</Text>
         </View>
 
         <View className="mt-2.5 flex-row items-center">
           <Ionicons name="globe-outline" size={16} color="#EAF2F8" />
-          <Text className="ml-3 text-[14px] text-white">{dateRange}</Text>
+          <Text className="ml-3 text-[14px] text-white">{resolvedDateRange}</Text>
         </View>
       </View>
 

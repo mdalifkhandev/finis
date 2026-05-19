@@ -99,7 +99,12 @@ export default function AssignedProjectsRoute() {
                   links={String(project._count.tasks)}
                   extraMembers={`${project._count.teamMembers}+`}
                   avatars={avatars.length ? avatars : fallbackAvatars}
-                  onPress={() => router.push("/screens/company/projectdetails")}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/screens/company/projectdetails",
+                      params: { id: project.id },
+                    })
+                  }
                 />
               );
             })}
