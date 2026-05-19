@@ -14,6 +14,7 @@ type ProjectOverviewCardProps = {
   projectLogoUrl?: string | null;
   onPressFloorPlan?: () => void;
   onPressEditProject?: () => void;
+  status?: string;
 };
 
 export default function ProjectOverviewCard({
@@ -24,14 +25,18 @@ export default function ProjectOverviewCard({
   projectLogoUrl,
   onPressFloorPlan,
   onPressEditProject,
+  status,
 }: ProjectOverviewCardProps) {
   const project = useProjectData();
-  const resolvedProjectName = projectName || project.projectName || "Riverside Tower";
-  const resolvedProjectCompany = projectCompany || project.company || "Horizon Builders Inc.";
+  const resolvedProjectName =
+    projectName || project.projectName || "Riverside Tower";
+  const resolvedProjectCompany =
+    projectCompany || project.company || "Horizon Builders Inc.";
   const resolvedProjectLocation =
     projectLocation || project.location || "123 Construction Blvd, Toronto, ON";
   const resolvedDateRange =
-    dateRange || `${project.startDate || "2025-08-01"} - ${project.endDate || "Ongoing"}`;
+    dateRange ||
+    `${project.startDate || "2025-08-01"} - ${project.endDate || "Ongoing"}`;
   const resolvedAvatar = projectLogoUrl || avatarUrl;
 
   return (
@@ -41,12 +46,17 @@ export default function ProjectOverviewCard({
       <View className="absolute -right-20 bottom-0 h-64 w-64 rounded-full border-[10px] border-[rgba(131,177,205,0.18)]" />
 
       <View className="flex-row items-center">
-        <Image source={{ uri: resolvedAvatar }} className="h-14 w-14 rounded-full" />
+        <Image
+          source={{ uri: resolvedAvatar }}
+          className="h-14 w-14 rounded-full"
+        />
         <View className="ml-3">
-          <Text className="text-[16px] font-semibold text-white">
+          <Text className="text-[18px] font-semibold text-white">
             {resolvedProjectName}
           </Text>
-          <Text className="mt-1 text-[14px] text-[#9BD9B4]">@maya.louis</Text>
+          <Text className=" text-[14px] text-[#9BD9B4] capitalize">
+            {status}
+          </Text>
         </View>
       </View>
 
@@ -60,12 +70,16 @@ export default function ProjectOverviewCard({
 
         <View className="mt-2.5 flex-row items-center">
           <Ionicons name="business-outline" size={16} color="#EAF2F8" />
-          <Text className="ml-3 text-[14px] text-white">{resolvedProjectCompany}</Text>
+          <Text className="ml-3 text-[14px] text-white">
+            {resolvedProjectCompany}
+          </Text>
         </View>
 
         <View className="mt-2.5 flex-row items-center">
           <Ionicons name="globe-outline" size={16} color="#EAF2F8" />
-          <Text className="ml-3 text-[14px] text-white">{resolvedDateRange}</Text>
+          <Text className="ml-3 text-[14px] text-white">
+            {resolvedDateRange}
+          </Text>
         </View>
       </View>
 

@@ -11,6 +11,7 @@ import type {
   CompanyProjectsResponse,
   CreateCompanyResponse,
   ProjectProfileResponse,
+  UpdateProjectPayload,
   UpdateCompanyPayload,
 } from "@/types/company.types";
 
@@ -243,6 +244,20 @@ export async function getProjectProfile(id: string) {
       logoUrl: resolveMediaUrl(data.data.client.logoUrl),
     },
   };
+}
+
+export async function updateProject(id: string, payload: UpdateProjectPayload) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: { id: string };
+  }>(`/admin/projects/${id}`, payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update project");
+  }
+
+  return data.data;
 }
 
 const projectDocuments: Record<string, DocumentItem[]> = {

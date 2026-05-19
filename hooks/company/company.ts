@@ -1,25 +1,27 @@
-import { useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner-native";
 import {
-  createProject,
   createCompany,
-  getProjectProfile,
-  getCompanyContacts,
+  createProject,
   getCompanies,
   getCompany,
+  getCompanyContacts,
   getCompanyProjects,
+  getProjectProfile,
   updateCompany,
+  updateProject,
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
   CompanyContact,
-  CreateProjectPayload,
-  CreateCompanyPayload,
   CompanyProject,
+  CreateCompanyPayload,
+  CreateProjectPayload,
   ProjectProfile,
   UpdateCompanyPayload,
+  UpdateProjectPayload,
 } from "@/types/company.types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { toast } from "sonner-native";
 
 export function useCompaniesQuery(page: number, limit: number) {
   const token = useAuthStore((state) => state.token);
@@ -51,7 +53,9 @@ export function useCreateCompanyMutation() {
   const mutation = useMutation({
     mutationFn: (payload: CreateCompanyPayload) => createCompany(payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["company", "companies"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["company", "companies"],
+      });
     },
   });
 
@@ -77,10 +81,17 @@ export function useUpdateCompanyMutation(companyId?: string) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateCompanyPayload }) =>
-      updateCompany(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UpdateCompanyPayload;
+    }) => updateCompany(id, payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["company", "companies"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["company", "companies"],
+      });
       if (companyId) {
         void queryClient.invalidateQueries({
           queryKey: ["company", "detail", companyId],
@@ -137,7 +148,9 @@ export function useCreateProjectMutation(companyId?: string) {
   const mutation = useMutation({
     mutationFn: (payload: CreateProjectPayload) => createProject(payload),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["admin", "active-projects"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["admin", "active-projects"],
+      });
       if (companyId) {
         void queryClient.invalidateQueries({
           queryKey: ["company", "projects", companyId],
@@ -234,4 +247,53 @@ export function useProjectProfileQuery(id?: string) {
   }, [query.error, query.isError]);
 
   return query;
+}
+
+export function useUpdateProjectMutation(
+  projectId?: string,
+  companyId?: string,
+) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UpdateProjectPayload;
+    }) => updateProject(id, payload),
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "profile", projectId],
+        });
+      }
+      if (companyId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["company", "projects", companyId],
+        });
+      }
+      void queryClient.invalidateQueries({
+        queryKey: ["admin", "active-projects"],
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (mutation.isError) {
+      toast.error(
+        mutation.error instanceof Error
+          ? mutation.error.message
+          : "Failed to update project",
+      );
+    }
+  }, [mutation.error, mutation.isError]);
+
+  return {
+    updateProject: mutation.mutateAsync,
+    mutate: mutation.mutate,
+    isPending: mutation.isPending,
+    error: mutation.error,
+  };
 }
