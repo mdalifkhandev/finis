@@ -5,9 +5,15 @@ import { DocumentItem } from "./types";
 
 type DocumentsListProps = {
   documents: DocumentItem[];
+  onPreviewPress?: (document: DocumentItem) => void;
+  onDownloadPress?: (document: DocumentItem) => void;
 };
 
-export default function DocumentsList({ documents }: DocumentsListProps) {
+export default function DocumentsList({
+  documents,
+  onPreviewPress,
+  onDownloadPress,
+}: DocumentsListProps) {
   if (documents.length === 0) {
     return (
       <View className="mt-7 px-5">
@@ -30,6 +36,12 @@ export default function DocumentsList({ documents }: DocumentsListProps) {
             fileSize={document.fileSize}
             uploadedBy={document.uploadedBy}
             uploadedDate={document.uploadedDate}
+            onPreviewPress={
+              onPreviewPress ? () => onPreviewPress(document) : undefined
+            }
+            onDownloadPress={
+              onDownloadPress ? () => onDownloadPress(document) : undefined
+            }
           />
         </View>
       ))}

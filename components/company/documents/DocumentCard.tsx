@@ -8,6 +8,7 @@ type DocumentCardProps = {
   fileSize: string;
   uploadedBy: string;
   uploadedDate: string;
+  onPreviewPress?: () => void;
   onDownloadPress?: () => void;
 };
 
@@ -17,6 +18,7 @@ export default function DocumentCard({
   fileSize,
   uploadedBy,
   uploadedDate,
+  onPreviewPress,
   onDownloadPress,
 }: DocumentCardProps) {
   return (
@@ -35,7 +37,11 @@ export default function DocumentCard({
           <Ionicons name="document-text-outline" size={22} color="#2662F4" />
         </View>
 
-        <View className="ml-3 flex-1">
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={onPreviewPress}
+          className="ml-3 flex-1"
+        >
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -49,7 +55,7 @@ export default function DocumentCard({
           <Text className="text-[13px] leading-5 text-[#697487]">
             Uploaded by {uploadedBy} on {uploadedDate}
           </Text>
-        </View>
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={onDownloadPress}
