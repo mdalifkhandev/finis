@@ -68,10 +68,15 @@ export default function CompanyProfileRoute() {
               key={item.label}
               label={item.label}
               onPress={
-                item.label === "Assigned Projects" && companyId
+                (item.label === "Assigned Projects" ||
+                  item.label === "Contacts") &&
+                companyId
                   ? () =>
                       router.push({
-                        pathname: "/screens/company/assignedprojects",
+                        pathname:
+                          item.label === "Assigned Projects"
+                            ? "/screens/company/assignedprojects"
+                            : "/screens/company/contacts",
                         params: { id: companyId },
                       })
                   : item.route

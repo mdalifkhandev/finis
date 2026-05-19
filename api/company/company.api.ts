@@ -5,6 +5,7 @@ import type { AdminCompaniesResponse } from "@/types/admin.types";
 import type { AdminCompanyDetailResponse } from "@/types/admin.types";
 import type {
   CreateCompanyPayload,
+  CompanyContactsResponse,
   CompanyProjectsResponse,
   CreateCompanyResponse,
   UpdateCompanyPayload,
@@ -103,6 +104,21 @@ export async function getCompanyProjects(id: string) {
         avatarUrl: resolveMediaUrl(member.user.avatarUrl),
       },
     })),
+  }));
+}
+
+export async function getCompanyContacts(id: string) {
+  const { data } = await api.get<CompanyContactsResponse>(
+    `/admin/companies/${id}/contacts`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load contacts");
+  }
+
+  return data.data.map((contact) => ({
+    ...contact,
+    avatarUrl: resolveMediaUrl(contact.avatarUrl),
   }));
 }
 
