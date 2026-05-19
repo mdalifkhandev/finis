@@ -24,6 +24,20 @@ export type UpdateCompanyPayload = CreateCompanyPayload;
 
 export type CreateCompanyResponse = ApiResponse<AdminCompany>;
 
+export type CreateProjectPayload = {
+  name: string;
+  companyId: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  budget: number;
+  location: string;
+  description: string;
+  numFloors: number;
+  roomsPerFloor: number;
+  autoGenerateFloors: boolean;
+};
+
 export type CompanyProjectTeamMemberUser = {
   id: string;
   fullName: string;

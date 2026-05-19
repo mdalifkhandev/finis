@@ -113,7 +113,14 @@ export default function AssignedProjectsRoute() {
         <View className="mt-7 px-5">
           <TouchableOpacity
             activeOpacity={0.86}
-            onPress={() => router.push("/screens/company/createproject")}
+            onPress={() =>
+              companyId
+                ? router.push({
+                    pathname: "/screens/company/createproject",
+                    params: { id: companyId },
+                  })
+                : router.push("/screens/company/createproject")
+            }
             className="h-[52px] w-full flex-row items-center justify-center gap-2 rounded-[12px] bg-[#1D4F6D] px-8 py-3"
             style={styles.buttonChrome}
           >

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import {
+  createProject,
   createCompany,
   getCompanyContacts,
   getCompanies,
@@ -12,6 +13,7 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import type {
   CompanyContact,
+  CreateProjectPayload,
   CreateCompanyPayload,
   CompanyProject,
   UpdateCompanyPayload,
@@ -125,6 +127,39 @@ export function useCompanyQuery(id?: string) {
   }, [query.error, query.isError]);
 
   return query;
+}
+
+export function useCreateProjectMutation(companyId?: string) {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (payload: CreateProjectPayload) => createProject(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["admin", "active-projects"] });
+      if (companyId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["company", "projects", companyId],
+        });
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (mutation.isError) {
+      toast.error(
+        mutation.error instanceof Error
+          ? mutation.error.message
+          : "Failed to create project",
+      );
+    }
+  }, [mutation.error, mutation.isError]);
+
+  return {
+    createProject: mutation.mutateAsync,
+    mutate: mutation.mutate,
+    isPending: mutation.isPending,
+    error: mutation.error,
+  };
 }
 
 export function useCompanyProjectsQuery(id?: string) {
