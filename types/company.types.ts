@@ -74,6 +74,43 @@ export type CompanyProject = {
 
 export type CompanyProjectsResponse = ApiResponse<CompanyProject[]>;
 
+export type ProjectProfileClient = {
+  companyId: string;
+  companyName: string;
+  logoUrl: string | null;
+  phone: string;
+  email: string;
+  website: string;
+  address: string;
+  primaryContact: string | null;
+};
+
+export type ProjectProfile = {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  priority: "LOW" | "MEDIUM" | "HIGH";
+  progress: number;
+  startDate: string;
+  endDate: string;
+  location: string;
+  description: string;
+  numFloors: number;
+  roomsPerFloor: number;
+  budget: number;
+  spent: number;
+  remaining: number;
+  client: ProjectProfileClient;
+  counts: {
+    tasks: number;
+    teamMembers: number;
+    floors: number;
+  };
+};
+
+export type ProjectProfileResponse = ApiResponse<ProjectProfile>;
+
 export type CompanyContactProject = {
   id: string;
   name: string;

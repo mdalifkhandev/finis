@@ -10,6 +10,7 @@ import type {
   CompanyContactsResponse,
   CompanyProjectsResponse,
   CreateCompanyResponse,
+  ProjectProfileResponse,
   UpdateCompanyPayload,
 } from "@/types/company.types";
 
@@ -223,6 +224,25 @@ export async function createProject(payload: CreateProjectPayload) {
   }
 
   return data.data;
+}
+
+export async function getProjectProfile(id: string) {
+  const { data } = await api.get<ProjectProfileResponse>(
+    `/admin/projects/${id}/profile`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load project profile");
+  }
+
+  return {
+    ...data.data,
+    priority: normalizeProjectPriority(data.data.priority, data.data.status),
+    client: {
+      ...data.data.client,
+      logoUrl: resolveMediaUrl(data.data.client.logoUrl),
+    },
+  };
 }
 
 const projectDocuments: Record<string, DocumentItem[]> = {

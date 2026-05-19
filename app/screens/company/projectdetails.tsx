@@ -1,9 +1,10 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import ProjectDetailsMenu from "@/components/company/projectdetails/ProjectDetailsMenu";
 import ProjectOverviewCard from "@/components/company/projectdetails/ProjectOverviewCard";
-import { router } from "expo-router";
+import { useProjectProfileQuery } from "@/hooks/company/company";
+import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const MENU_ROUTES: Record<
@@ -22,6 +23,22 @@ const MENU_ROUTES: Record<
 };
 
 export default function ProjectDetailsRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const projectId = typeof id === "string" ? id : undefined;
+  const { data, isLoading } = useProjectProfileQuery(projectId);
+
+  const formattedDateRange = data
+    ? `${new Date(data.startDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })} - ${new Date(data.endDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })}`
+    : undefined;
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
@@ -33,16 +50,48 @@ export default function ProjectDetailsRoute() {
           onBack={() => router.back()}
         />
 
-        <ProjectOverviewCard
-          onPressFloorPlan={() => router.push("/screens/company/floorplan")}
-          onPressEditProject={() => router.push("/screens/company/editproject")}
-        />
+        {isLoading ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="small" color="#1d4f6d" />
+            <Text className="mt-2 text-xs text-slate-500">
+              Loading project details...
+            </Text>
+          </View>
+        ) : (
+          <ProjectOverviewCard
+            projectName={data?.name}
+            projectCompany={data?.client.companyName}
+            projectLocation={data?.location}
+            dateRange={formattedDateRange}
+            projectLogoUrl={data?.client.logoUrl}
+            onPressFloorPlan={() =>
+              projectId
+                ? router.push({
+                    pathname: "/screens/company/floorplan",
+                    params: { id: projectId },
+                  })
+                : router.push("/screens/company/floorplan")
+            }
+            onPressEditProject={() =>
+              projectId
+                ? router.push({
+                    pathname: "/screens/company/editproject",
+                    params: { id: projectId },
+                  })
+                : router.push("/screens/company/editproject")
+            }
+          />
+        )}
 
         <ProjectDetailsMenu
           onPressItem={(item) => {
             const route = MENU_ROUTES[item];
             if (route) {
-              router.push(route);
+              if (projectId) {
+                router.push({ pathname: route, params: { id: projectId } });
+              } else {
+                router.push(route);
+              }
             }
           }}
         />

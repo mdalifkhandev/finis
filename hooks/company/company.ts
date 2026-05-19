@@ -4,6 +4,7 @@ import { toast } from "sonner-native";
 import {
   createProject,
   createCompany,
+  getProjectProfile,
   getCompanyContacts,
   getCompanies,
   getCompany,
@@ -16,6 +17,7 @@ import type {
   CreateProjectPayload,
   CreateCompanyPayload,
   CompanyProject,
+  ProjectProfile,
   UpdateCompanyPayload,
 } from "@/types/company.types";
 
@@ -203,6 +205,30 @@ export function useCompanyContactsQuery(id?: string) {
         query.error instanceof Error
           ? query.error.message
           : "Failed to load contacts",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useProjectProfileQuery(id?: string) {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+  const query = useQuery<ProjectProfile>({
+    queryKey: ["project", "profile", id, token],
+    queryFn: () => getProjectProfile(id as string),
+    enabled: !!id && !!token && role === "admin",
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load project profile",
       );
     }
   }, [query.error, query.isError]);
