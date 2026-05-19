@@ -2,9 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { useProjectData } from "../project/projectStore";
-
-const avatarUrl =
-  "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?q=80&w=256&auto=format&fit=crop";
+const placeholderImage = require("../../../assets/images/placeholder-image.png");
 
 type ProjectOverviewCardProps = {
   projectName?: string;
@@ -37,7 +35,9 @@ export default function ProjectOverviewCard({
   const resolvedDateRange =
     dateRange ||
     `${project.startDate || "2025-08-01"} - ${project.endDate || "Ongoing"}`;
-  const resolvedAvatar = projectLogoUrl || avatarUrl;
+  const resolvedAvatar = projectLogoUrl
+    ? { uri: projectLogoUrl }
+    : placeholderImage;
 
   return (
     <View className="mx-5 mt-6 overflow-hidden rounded-[14px] bg-[#225879] p-3">
@@ -47,7 +47,7 @@ export default function ProjectOverviewCard({
 
       <View className="flex-row items-center">
         <Image
-          source={{ uri: resolvedAvatar }}
+          source={resolvedAvatar}
           className="h-14 w-14 rounded-full"
         />
         <View className="ml-3">

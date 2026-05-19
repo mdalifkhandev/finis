@@ -31,6 +31,12 @@ function formatDate(value: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function mapSectionToApiValue(section: string) {
+  const normalized = section.trim().toLowerCase();
+  if (normalized === "main floor") return "main_floor";
+  return normalized.replace(/\s+/g, "_");
+}
+
 export default function CreateProjectRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const companyId = typeof id === "string" ? id : undefined;
@@ -112,6 +118,7 @@ export default function CreateProjectRoute() {
 
     const floorsNumber = isApartment ? Number(floors) : 1;
     const roomsNumber = isApartment ? Number(roomsPerFloor) : 1;
+    const mappedHouseSections = selectedSections.map(mapSectionToApiValue);
 
     if (
       Number.isNaN(floorsNumber) ||
@@ -123,17 +130,35 @@ export default function CreateProjectRoute() {
       return;
     }
 
-    await createProject({
+    if (!isApartment && houseScope === "sections" && !mappedHouseSections.length) {
+      toast.error("Please select at least one house section.");
+      return;
+    }
+
+    const type = projectType === "Apartment Building" ? "apartment" : "house";
+
+    const createdProject = await createProject({
       name: projectName.trim(),
       companyId,
-      type: "residential",
+      type,
       startDate: startDate.trim(),
       endDate: endDate.trim(),
       budget: budgetNumber,
       location: location.trim(),
       description: description.trim(),
-      numFloors: floorsNumber,
-      roomsPerFloor: roomsNumber,
+      ...(type === "apartment"
+        ? {
+            numFloors: floorsNumber,
+            roomsPerFloor: roomsNumber,
+          }
+        : {
+            isWholeHouse: houseScope === "whole",
+            ...(houseScope === "sections"
+              ? {
+                  houseSections: mappedHouseSections,
+                }
+              : {}),
+          }),
       autoGenerateFloors: true,
     });
 
@@ -155,6 +180,14 @@ export default function CreateProjectRoute() {
           ? selectedSections
           : [],
     });
+
+    if (createdProject?.id) {
+      router.push({
+        pathname: "/screens/company/projectdetails",
+        params: { id: createdProject.id },
+      });
+      return;
+    }
 
     router.push("/screens/company/projectdetails");
   };

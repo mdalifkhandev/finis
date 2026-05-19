@@ -12,6 +12,9 @@ import {
   useProjectProfileQuery,
   useUpdateProjectMutation,
 } from "@/hooks/company/company";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -27,12 +30,51 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 
+type ProjectStatus =
+  | "planning"
+  | "active"
+  | "on_hold"
+  | "completed"
+  | "cancelled"
+  | "delayed";
+
+const PROJECT_STATUS_OPTIONS: ProjectStatus[] = [
+  "planning",
+  "active",
+  "on_hold",
+  "completed",
+  "cancelled",
+  "delayed",
+];
+
 function formatDate(value: string) {
   const date = new Date(value);
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
   const day = `${date.getDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function formatDateFromObject(value: Date) {
+  const year = value.getFullYear();
+  const month = `${value.getMonth() + 1}`.padStart(2, "0");
+  const day = `${value.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function mapSectionToApiValue(section: string) {
+  const normalized = section.trim().toLowerCase();
+  if (normalized === "main floor") return "main_floor";
+  return normalized.replace(/\s+/g, "_");
+}
+
+function mapApiSectionToLabel(section: string) {
+  const normalized = section.trim().toLowerCase();
+  if (normalized === "main_floor") return "Main floor";
+  if (normalized === "basement") return "Basement";
+  if (normalized === "upstairs") return "Upstairs";
+  if (normalized === "exterior") return "Exterior";
+  return section;
 }
 
 export default function EditProjectRoute() {
@@ -72,6 +114,12 @@ export default function EditProjectRoute() {
   const [status, setStatus] = useState("active");
   const [spent, setSpent] = useState("0");
   const [progress, setProgress] = useState("0");
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<"start" | "end" | null>(
+    null,
+  );
+  const [startDateValue, setStartDateValue] = useState(new Date());
+  const [endDateValue, setEndDateValue] = useState(new Date());
 
   const isApartment = projectType === "Apartment Building";
   const houseSectionOptions = [
@@ -109,23 +157,73 @@ export default function EditProjectRoute() {
 
     setProjectName(projectProfile.name ?? "");
     setCompany(projectProfile.client.companyName ?? "CC.LTD");
+    const parsedStartDate = new Date(projectProfile.startDate);
+    const parsedEndDate = new Date(projectProfile.endDate);
+    setStartDateValue(parsedStartDate);
+    setEndDateValue(parsedEndDate);
     setStartDate(formatDate(projectProfile.startDate));
     setEndDate(formatDate(projectProfile.endDate));
     setProjectType(
-      projectProfile.type?.toLowerCase() === "residential"
+      projectProfile.type?.toLowerCase() === "apartment"
         ? "Apartment Building"
         : "House",
     );
+    if (projectProfile.type?.toLowerCase() === "house") {
+      const wholeHouse = projectProfile.isWholeHouse !== false;
+      setHouseScope(wholeHouse ? "whole" : "sections");
+      setSelectedSections(
+        wholeHouse
+          ? []
+          : (projectProfile.houseSections ?? []).map(mapApiSectionToLabel),
+      );
+    } else {
+      setHouseScope("whole");
+      setSelectedSections([]);
+    }
     setFloors(String(projectProfile.numFloors ?? ""));
     setRoomsPerFloor(String(projectProfile.roomsPerFloor ?? ""));
     setBudget(String(projectProfile.budget ?? ""));
     setLocation(projectProfile.location ?? "");
     setDescription(projectProfile.description ?? "");
     setBudgetEnabled(Boolean(projectProfile.budget && projectProfile.budget > 0));
-    setStatus(projectProfile.status ?? "active");
+    const incomingStatus = (projectProfile.status ?? "active") as ProjectStatus;
+    setStatus(
+      PROJECT_STATUS_OPTIONS.includes(incomingStatus)
+        ? incomingStatus
+        : "active",
+    );
     setSpent(String(projectProfile.spent ?? 0));
     setProgress(String(projectProfile.progress ?? 0));
   }, [projectProfile]);
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    selectedDate?: Date,
+  ) => {
+    if (event.type === "dismissed") {
+      setPickerTarget(null);
+      return;
+    }
+
+    if (!selectedDate || !pickerTarget) {
+      setPickerTarget(null);
+      return;
+    }
+
+    if (pickerTarget === "start") {
+      setStartDateValue(selectedDate);
+      setStartDate(formatDateFromObject(selectedDate));
+      if (selectedDate > endDateValue) {
+        setEndDateValue(selectedDate);
+        setEndDate(formatDateFromObject(selectedDate));
+      }
+    } else {
+      setEndDateValue(selectedDate);
+      setEndDate(formatDateFromObject(selectedDate));
+    }
+
+    setPickerTarget(null);
+  };
 
   const handleSave = async () => {
     if (!projectId) {
@@ -148,6 +246,8 @@ export default function EditProjectRoute() {
     const progressNumber = Number(progress || "0");
     const floorsNumber = Number(floors || "0");
     const roomsNumber = Number(roomsPerFloor || "0");
+    const type = projectType === "Apartment Building" ? "apartment" : "house";
+    const mappedHouseSections = selectedSections.map(mapSectionToApiValue);
 
     if (
       Number.isNaN(budgetNumber) ||
@@ -159,22 +259,37 @@ export default function EditProjectRoute() {
       return;
     }
 
+    if (type === "house" && houseScope === "sections" && !mappedHouseSections.length) {
+      toast.error("Please select at least one house section.");
+      return;
+    }
+
     await updateProject({
       id: projectId,
       payload: {
         name: projectName.trim(),
-        status: status.trim() || "active",
+        status: (status.trim() || "active") as ProjectStatus,
         spent: spent.trim() || "0",
         progress: Math.max(0, Math.min(100, progressNumber)),
-        type: projectType === "Apartment Building" ? "residential" : "house",
+        type,
         startDate: startDate.trim(),
         endDate: endDate.trim(),
         budget: budgetEnabled ? budgetNumber : 0,
         location: location.trim(),
         description: description.trim(),
-        numFloors: projectType === "Apartment Building" ? floorsNumber : 1,
-        roomsPerFloor:
-          projectType === "Apartment Building" ? roomsNumber : 1,
+        ...(type === "apartment"
+          ? {
+              numFloors: floorsNumber,
+              roomsPerFloor: roomsNumber,
+            }
+          : {
+              isWholeHouse: houseScope === "whole",
+              ...(houseScope === "sections"
+                ? {
+                    houseSections: mappedHouseSections,
+                  }
+                : {}),
+            }),
       },
     });
 
@@ -237,17 +352,19 @@ export default function EditProjectRoute() {
               <View className="flex-1">
                 <ProjectInputField
                   label="Start Date"
-                  placeholder=""
+                  placeholder="YYYY-MM-DD"
                   value={startDate}
-                  onChangeText={setStartDate}
+                  onPress={() => setPickerTarget("start")}
+                  rightIconName="calendar-outline"
                 />
               </View>
               <View className="flex-1">
                 <ProjectInputField
                   label="End Date"
-                  placeholder=""
+                  placeholder="YYYY-MM-DD"
                   value={endDate}
-                  onChangeText={setEndDate}
+                  onPress={() => setPickerTarget("end")}
+                  rightIconName="calendar-outline"
                 />
               </View>
             </View>
@@ -365,10 +482,38 @@ export default function EditProjectRoute() {
             <View className="mt-4">
               <ProjectInputField
                 label="Status"
-                placeholder="active"
+                placeholder="Select status"
                 value={status}
-                onChangeText={setStatus}
+                onPress={() => setStatusOpen((prev) => !prev)}
+                rightIconName={statusOpen ? "chevron-up" : "chevron-down"}
               />
+              {statusOpen ? (
+                <View className="mt-2 overflow-hidden rounded-xl border border-[#D5DBE2] bg-[#F8FAFC]">
+                  {PROJECT_STATUS_OPTIONS.map((option) => (
+                    <TouchableOpacity
+                      key={option}
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        setStatus(option);
+                        setStatusOpen(false);
+                      }}
+                      className={`h-11 flex-row items-center px-3 ${
+                        option === status ? "bg-[#E9F2F8]" : "bg-[#F8FAFC]"
+                      }`}
+                    >
+                      <Text
+                        className={`text-[15px] ${
+                          option === status
+                            ? "font-medium text-[#1D4F6D]"
+                            : "text-[#374151]"
+                        }`}
+                      >
+                        {option}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : null}
             </View>
 
             <View className="mt-4">
@@ -413,6 +558,15 @@ export default function EditProjectRoute() {
             )}
           </View>
         </ScrollView>
+        {pickerTarget ? (
+          <DateTimePicker
+            value={pickerTarget === "start" ? startDateValue : endDateValue}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={handleDateChange}
+            minimumDate={pickerTarget === "end" ? startDateValue : undefined}
+          />
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

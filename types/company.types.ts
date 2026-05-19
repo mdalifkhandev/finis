@@ -33,8 +33,10 @@ export type CreateProjectPayload = {
   budget: number;
   location: string;
   description: string;
-  numFloors: number;
-  roomsPerFloor: number;
+  numFloors?: number;
+  roomsPerFloor?: number;
+  isWholeHouse?: boolean;
+  houseSections?: string[];
   autoGenerateFloors: boolean;
 };
 
@@ -96,6 +98,8 @@ export type ProjectProfile = {
   endDate: string;
   location: string;
   description: string;
+  isWholeHouse?: boolean;
+  houseSections?: string[];
   numFloors: number;
   roomsPerFloor: number;
   budget: number;
@@ -124,6 +128,8 @@ export type UpdateProjectPayload = {
   description?: string;
   numFloors?: number;
   roomsPerFloor?: number;
+  isWholeHouse?: boolean;
+  houseSections?: string[];
 };
 
 export type CompanyContactProject = {
