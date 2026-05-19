@@ -29,6 +29,25 @@ type CompaniesParams = {
   limit?: number;
 };
 
+type ProjectPriority = "LOW" | "MEDIUM" | "HIGH";
+
+function normalizeProjectPriority(
+  priority: string | undefined,
+  status: string,
+): ProjectPriority {
+  const normalized = (priority ?? "").trim().toUpperCase();
+
+  if (normalized === "HIGH") return "HIGH";
+  if (normalized === "LOW") return "LOW";
+  if (normalized === "MEDIUM" || normalized === "MEDUIM") return "MEDIUM";
+
+  const normalizedStatus = (status ?? "").trim().toLowerCase();
+  if (normalizedStatus === "active") return "HIGH";
+  if (normalizedStatus === "pending") return "MEDIUM";
+
+  return "LOW";
+}
+
 type CompanyDocumentApiItem = {
   id: string;
   fileName: string;
@@ -111,6 +130,10 @@ export async function getCompanyProjects(id: string) {
 
   return data.data.map((project) => ({
     ...project,
+    priority: normalizeProjectPriority(
+      (project as { priority?: string }).priority,
+      project.status,
+    ),
     teamMembers: project.teamMembers.map((member) => ({
       ...member,
       user: {
