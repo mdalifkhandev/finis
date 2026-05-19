@@ -5,4 +5,5 @@ export type DocumentItem = {
   fileSize: string;
   uploadedBy: string;
   uploadedDate: string;
+  fileUrl?: string;
 };

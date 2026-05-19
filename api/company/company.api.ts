@@ -1,4 +1,5 @@
 import type { DocumentItem } from "@/components/company/documents/types";
+import { AxiosError } from "axios";
 import { api } from "@/lib/api/client";
 import { API_BASE_URL } from "@/lib/config";
 import type { AdminCompaniesResponse } from "@/types/admin.types";
@@ -26,6 +27,19 @@ function resolveMediaUrl(path: string | null) {
 type CompaniesParams = {
   page?: number;
   limit?: number;
+};
+
+type CompanyDocumentApiItem = {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSizeMb: number;
+  uploadedAt: string;
+  uploadedByUser: {
+    id: string;
+    fullName: string;
+  } | null;
 };
 
 function buildCompanyFormData(payload: CreateCompanyPayload | UpdateCompanyPayload) {
@@ -173,41 +187,6 @@ export async function updateCompany(
   }
 }
 
-const companyDocuments: DocumentItem[] = [
-  {
-    id: "company-doc-1",
-    fileName: "Project Blueprint.pdf",
-    fileType: "PDF",
-    fileSize: "2.4 MB",
-    uploadedBy: "John Smith",
-    uploadedDate: "1/15/2025",
-  },
-  {
-    id: "company-doc-2",
-    fileName: "Safety Guidelines.docx",
-    fileType: "DOCX",
-    fileSize: "856 KB",
-    uploadedBy: "Emily Chen",
-    uploadedDate: "1/16/2025",
-  },
-  {
-    id: "company-doc-3",
-    fileName: "Budget Breakdown.xlsx",
-    fileType: "XLSX",
-    fileSize: "1.2 MB",
-    uploadedBy: "Sarah Johnson",
-    uploadedDate: "1/17/2025",
-  },
-  {
-    id: "company-doc-4",
-    fileName: "Site Photos.zip",
-    fileType: "ZIP",
-    fileSize: "15.8 MB",
-    uploadedBy: "Mike Davis",
-    uploadedDate: "1/18/2025",
-  },
-];
-
 const projectDocuments: Record<string, DocumentItem[]> = {
   "riverside-tower": [
     {
@@ -242,8 +221,43 @@ const simulateNetwork = async <T>(value: T, delayMs = 200): Promise<T> =>
     setTimeout(() => resolve(value), delayMs);
   });
 
-export async function getCompanyDocuments(): Promise<DocumentItem[]> {
-  return simulateNetwork(companyDocuments);
+export async function getCompanyDocuments(id: string): Promise<DocumentItem[]> {
+  try {
+    const { data } = await api.get<{
+      success: boolean;
+      statusCode: number;
+      message: string;
+      data: CompanyDocumentApiItem[];
+    }>(`/admin/companies/${id}/documents`);
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to load company documents");
+    }
+
+    return data.data.map((document) => ({
+      id: document.id,
+      fileName: document.fileName,
+      fileType: document.fileType,
+      fileSize: `${document.fileSizeMb} MB`,
+      uploadedBy: document.uploadedByUser?.fullName ?? "Unknown",
+      uploadedDate: new Date(document.uploadedAt).toLocaleDateString("en-US", {
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+      }),
+      fileUrl: resolveMediaUrl(document.fileUrl) ?? "",
+    }));
+  } catch (error) {
+    if (error instanceof AxiosError) {
+      const message =
+        (error.response?.data as { message?: string } | undefined)?.message ||
+        error.message ||
+        "Failed to load company documents";
+      throw new Error(message);
+    }
+
+    throw error;
+  }
 }
 
 export async function getProjectDocuments(
