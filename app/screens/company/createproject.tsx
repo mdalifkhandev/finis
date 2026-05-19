@@ -5,9 +5,14 @@ import ProjectTypeDropdown, {
   ProjectTypeValue,
 } from "@/components/company/project/ProjectTypeDropdown";
 import { saveProject } from "@/components/company/project/projectStore";
-import { router } from "expo-router";
+import { useCompanyQuery, useCreateProjectMutation } from "@/hooks/company/company";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -17,10 +22,22 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
+
+function formatDate(value: Date) {
+  const year = value.getFullYear();
+  const month = `${value.getMonth() + 1}`.padStart(2, "0");
+  const day = `${value.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function CreateProjectRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const companyId = typeof id === "string" ? id : undefined;
+  const { data: company } = useCompanyQuery(companyId);
+  const { createProject, isPending } = useCreateProjectMutation(companyId);
+
   const [projectName, setProjectName] = useState("");
-  const [company] = useState("CC.LTD");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [projectType, setProjectType] =
@@ -33,6 +50,11 @@ export default function CreateProjectRoute() {
   const [budgetEnabled, setBudgetEnabled] = useState(false);
   const [houseScope, setHouseScope] = useState<"whole" | "sections">("whole");
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
+  const [pickerTarget, setPickerTarget] = useState<"start" | "end" | null>(
+    null,
+  );
+  const [startDateValue, setStartDateValue] = useState(new Date());
+  const [endDateValue, setEndDateValue] = useState(new Date());
 
   const isApartment = projectType === "Apartment Building";
   const houseSectionOptions = [
@@ -65,10 +87,59 @@ export default function CreateProjectRoute() {
     });
   };
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
+    if (!companyId) {
+      toast.error("Company not found");
+      return;
+    }
+
+    if (
+      !projectName.trim() ||
+      !startDate.trim() ||
+      !endDate.trim() ||
+      !location.trim() ||
+      !description.trim()
+    ) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    const budgetNumber = budgetEnabled ? Number(budget) : 0;
+    if (budgetEnabled && Number.isNaN(budgetNumber)) {
+      toast.error("Please enter a valid budget.");
+      return;
+    }
+
+    const floorsNumber = isApartment ? Number(floors) : 1;
+    const roomsNumber = isApartment ? Number(roomsPerFloor) : 1;
+
+    if (
+      Number.isNaN(floorsNumber) ||
+      Number.isNaN(roomsNumber) ||
+      floorsNumber <= 0 ||
+      roomsNumber <= 0
+    ) {
+      toast.error("Please enter valid floor and room counts.");
+      return;
+    }
+
+    await createProject({
+      name: projectName.trim(),
+      companyId,
+      type: "residential",
+      startDate: startDate.trim(),
+      endDate: endDate.trim(),
+      budget: budgetNumber,
+      location: location.trim(),
+      description: description.trim(),
+      numFloors: floorsNumber,
+      roomsPerFloor: roomsNumber,
+      autoGenerateFloors: true,
+    });
+
     saveProject({
       projectName,
-      company,
+      company: company?.name ?? "",
       startDate,
       endDate,
       projectType,
@@ -86,6 +157,31 @@ export default function CreateProjectRoute() {
     });
 
     router.push("/screens/company/projectdetails");
+  };
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    selectedDate?: Date,
+  ) => {
+    if (event.type === "dismissed") {
+      setPickerTarget(null);
+      return;
+    }
+
+    if (!selectedDate || !pickerTarget) {
+      setPickerTarget(null);
+      return;
+    }
+
+    if (pickerTarget === "start") {
+      setStartDateValue(selectedDate);
+      setStartDate(formatDate(selectedDate));
+    } else {
+      setEndDateValue(selectedDate);
+      setEndDate(formatDate(selectedDate));
+    }
+
+    setPickerTarget(null);
   };
 
   return (
@@ -116,7 +212,7 @@ export default function CreateProjectRoute() {
             <View className="mt-4">
               <ProjectInputField
                 label="Company"
-                value={company}
+                value={company?.name ?? "Company"}
                 rightIconName="chevron-down"
                 onPress={() => {}}
               />
@@ -126,17 +222,19 @@ export default function CreateProjectRoute() {
               <View className="flex-1">
                 <ProjectInputField
                   label="Start Date"
-                  placeholder=""
+                  placeholder="YYYY-MM-DD"
                   value={startDate}
-                  onChangeText={setStartDate}
+                  onPress={() => setPickerTarget("start")}
+                  rightIconName="calendar-outline"
                 />
               </View>
               <View className="flex-1">
                 <ProjectInputField
                   label="End Date"
-                  placeholder=""
+                  placeholder="YYYY-MM-DD"
                   value={endDate}
-                  onChangeText={setEndDate}
+                  onPress={() => setPickerTarget("end")}
+                  rightIconName="calendar-outline"
                 />
               </View>
             </View>
@@ -253,15 +351,29 @@ export default function CreateProjectRoute() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={handleCreateProject}
+              onPress={() => void handleCreateProject()}
+              disabled={isPending}
               className="mt-6 h-[52px] items-center justify-center rounded-[12px] bg-[#1D4F6D] px-8"
             >
-              <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">
-                Create Project & Setup Floors
-              </Text>
+              {isPending ? (
+                <ActivityIndicator size="small" color="#EAEFE9" />
+              ) : (
+                <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">
+                  Create Project & Setup Floors
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
+        {pickerTarget ? (
+          <DateTimePicker
+            value={pickerTarget === "start" ? startDateValue : endDateValue}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={handleDateChange}
+            minimumDate={pickerTarget === "end" ? startDateValue : undefined}
+          />
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

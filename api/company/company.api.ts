@@ -6,6 +6,7 @@ import type { AdminCompaniesResponse } from "@/types/admin.types";
 import type { AdminCompanyDetailResponse } from "@/types/admin.types";
 import type {
   CreateCompanyPayload,
+  CreateProjectPayload,
   CompanyContactsResponse,
   CompanyProjectsResponse,
   CreateCompanyResponse,
@@ -208,6 +209,20 @@ export async function updateCompany(
   } catch (error) {
     throw error;
   }
+}
+
+export async function createProject(payload: CreateProjectPayload) {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    data: { id: string };
+  }>("/admin/projects", payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to create project");
+  }
+
+  return data.data;
 }
 
 const projectDocuments: Record<string, DocumentItem[]> = {
