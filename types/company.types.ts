@@ -111,6 +111,21 @@ export type ProjectProfile = {
 
 export type ProjectProfileResponse = ApiResponse<ProjectProfile>;
 
+export type UpdateProjectPayload = {
+  name: string;
+  status: string;
+  spent: string;
+  progress: number;
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+  budget?: number;
+  location?: string;
+  description?: string;
+  numFloors?: number;
+  roomsPerFloor?: number;
+};
+
 export type CompanyContactProject = {
   id: string;
   name: string;

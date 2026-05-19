@@ -8,9 +8,14 @@ import {
   saveProject,
   useProjectData,
 } from "@/components/company/project/projectStore";
-import { router } from "expo-router";
-import React, { useState } from "react";
 import {
+  useProjectProfileQuery,
+  useUpdateProjectMutation,
+} from "@/hooks/company/company";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -20,12 +25,29 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function EditProjectRoute() {
+  const { id, companyId } = useLocalSearchParams<{ id?: string; companyId?: string }>();
+  const projectId = typeof id === "string" ? id : undefined;
+  const companyIdValue = typeof companyId === "string" ? companyId : undefined;
+  const { data: projectProfile, isLoading } = useProjectProfileQuery(projectId);
+  const { updateProject, isPending } = useUpdateProjectMutation(
+    projectId,
+    companyIdValue,
+  );
   const currentProject = useProjectData();
 
   const [projectName, setProjectName] = useState(currentProject.projectName);
-  const [company] = useState(currentProject.company || "CC.LTD");
+  const [company, setCompany] = useState(currentProject.company || "CC.LTD");
   const [startDate, setStartDate] = useState(currentProject.startDate);
   const [endDate, setEndDate] = useState(currentProject.endDate);
   const [projectType, setProjectType] = useState<ProjectTypeValue>(
@@ -47,6 +69,9 @@ export default function EditProjectRoute() {
   const [selectedSections, setSelectedSections] = useState<string[]>(
     currentProject.selectedSections,
   );
+  const [status, setStatus] = useState("active");
+  const [spent, setSpent] = useState("0");
+  const [progress, setProgress] = useState("0");
 
   const isApartment = projectType === "Apartment Building";
   const houseSectionOptions = [
@@ -79,7 +104,80 @@ export default function EditProjectRoute() {
     });
   };
 
-  const handleSave = () => {
+  useEffect(() => {
+    if (!projectProfile) return;
+
+    setProjectName(projectProfile.name ?? "");
+    setCompany(projectProfile.client.companyName ?? "CC.LTD");
+    setStartDate(formatDate(projectProfile.startDate));
+    setEndDate(formatDate(projectProfile.endDate));
+    setProjectType(
+      projectProfile.type?.toLowerCase() === "residential"
+        ? "Apartment Building"
+        : "House",
+    );
+    setFloors(String(projectProfile.numFloors ?? ""));
+    setRoomsPerFloor(String(projectProfile.roomsPerFloor ?? ""));
+    setBudget(String(projectProfile.budget ?? ""));
+    setLocation(projectProfile.location ?? "");
+    setDescription(projectProfile.description ?? "");
+    setBudgetEnabled(Boolean(projectProfile.budget && projectProfile.budget > 0));
+    setStatus(projectProfile.status ?? "active");
+    setSpent(String(projectProfile.spent ?? 0));
+    setProgress(String(projectProfile.progress ?? 0));
+  }, [projectProfile]);
+
+  const handleSave = async () => {
+    if (!projectId) {
+      toast.error("Project not found");
+      return;
+    }
+
+    if (
+      !projectName.trim() ||
+      !startDate.trim() ||
+      !endDate.trim() ||
+      !location.trim() ||
+      !description.trim()
+    ) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    const budgetNumber = Number(budget || "0");
+    const progressNumber = Number(progress || "0");
+    const floorsNumber = Number(floors || "0");
+    const roomsNumber = Number(roomsPerFloor || "0");
+
+    if (
+      Number.isNaN(budgetNumber) ||
+      Number.isNaN(progressNumber) ||
+      Number.isNaN(floorsNumber) ||
+      Number.isNaN(roomsNumber)
+    ) {
+      toast.error("Please enter valid numeric values.");
+      return;
+    }
+
+    await updateProject({
+      id: projectId,
+      payload: {
+        name: projectName.trim(),
+        status: status.trim() || "active",
+        spent: spent.trim() || "0",
+        progress: Math.max(0, Math.min(100, progressNumber)),
+        type: projectType === "Apartment Building" ? "residential" : "house",
+        startDate: startDate.trim(),
+        endDate: endDate.trim(),
+        budget: budgetEnabled ? budgetNumber : 0,
+        location: location.trim(),
+        description: description.trim(),
+        numFloors: projectType === "Apartment Building" ? floorsNumber : 1,
+        roomsPerFloor:
+          projectType === "Apartment Building" ? roomsNumber : 1,
+      },
+    });
+
     saveProject({
       projectName,
       company,
@@ -99,6 +197,7 @@ export default function EditProjectRoute() {
           : [],
     });
 
+    toast.success("Project updated");
     router.back();
   };
 
@@ -130,6 +229,7 @@ export default function EditProjectRoute() {
                 value={company}
                 rightIconName="chevron-down"
                 onPress={() => {}}
+                editable={false}
               />
             </View>
 
@@ -262,15 +362,55 @@ export default function EditProjectRoute() {
               />
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleSave}
-              className="mt-6 h-[52px] items-center justify-center rounded-[12px] bg-[#1D4F6D] px-8"
-            >
-              <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">
-                Save
-              </Text>
-            </TouchableOpacity>
+            <View className="mt-4">
+              <ProjectInputField
+                label="Status"
+                placeholder="active"
+                value={status}
+                onChangeText={setStatus}
+              />
+            </View>
+
+            <View className="mt-4">
+              <ProjectInputField
+                label="Spent"
+                placeholder="0"
+                value={spent}
+                onChangeText={setSpent}
+                keyboardType="decimal-pad"
+              />
+            </View>
+
+            <View className="mt-4">
+              <ProjectInputField
+                label="Progress (%)"
+                placeholder="0"
+                value={progress}
+                onChangeText={setProgress}
+                keyboardType="number-pad"
+              />
+            </View>
+
+            {isLoading ? (
+              <View className="mt-6 items-center">
+                <ActivityIndicator size="small" color="#1D4F6D" />
+              </View>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => void handleSave()}
+                disabled={isPending}
+                className="mt-6 h-[52px] items-center justify-center rounded-[12px] bg-[#1D4F6D] px-8"
+              >
+                {isPending ? (
+                  <ActivityIndicator size="small" color="#EAEFE9" />
+                ) : (
+                  <Text className="text-[16px] font-medium leading-6 text-[#EAEFE9]">
+                    Save
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

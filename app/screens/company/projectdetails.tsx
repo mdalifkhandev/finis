@@ -59,6 +59,7 @@ export default function ProjectDetailsRoute() {
           </View>
         ) : (
           <ProjectOverviewCard
+            status={data?.status}
             projectName={data?.name}
             projectCompany={data?.client.companyName}
             projectLocation={data?.location}
@@ -76,7 +77,10 @@ export default function ProjectDetailsRoute() {
               projectId
                 ? router.push({
                     pathname: "/screens/company/editproject",
-                    params: { id: projectId },
+                    params: {
+                      id: projectId,
+                      companyId: data?.client.companyId,
+                    },
                   })
                 : router.push("/screens/company/editproject")
             }
