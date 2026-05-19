@@ -1,32 +1,50 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import ContactCard from "@/components/company/contacts/ContactCard";
-import { router } from "expo-router";
+import { useCompanyContactsQuery } from "@/hooks/company/company";
+import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, View } from "react-native";
+import { ActivityIndicator, Linking, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const contacts = [
-  {
-    name: "John Smith",
-    designation: "Site Engineer",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    name: "Emily Chen",
-    designation: "Project Coordinator",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    name: "Michael Davis",
-    designation: "Safety Officer",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1546961329-78bef0414d7c?q=80&w=256&auto=format&fit=crop",
-  },
-];
+const fallbackAvatar =
+  "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=256&auto=format&fit=crop";
 
 export default function ContactsRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const companyId = typeof id === "string" ? id : undefined;
+  const { data, isLoading } = useCompanyContactsQuery(companyId);
+
+  const handleCallPress = async (phone: string | null) => {
+    if (!phone) {
+      return;
+    }
+
+    const sanitizedPhone = phone.replace(/[^\d+]/g, "");
+    if (!sanitizedPhone) {
+      return;
+    }
+
+    await Linking.openURL(`tel:${sanitizedPhone}`);
+  };
+
+  const handleEmailPress = async (
+    email: string,
+    fullName: string,
+    role: string,
+    projectName?: string,
+  ) => {
+    const subject = projectName
+      ? `Quick check-in about ${projectName}`
+      : `Hello ${fullName}, quick update`;
+    const body = projectName
+      ? `Hi ${fullName},\n\nHope you are doing well. I wanted a quick update regarding your ${role} responsibilities for ${projectName}.\n\nThanks.`
+      : `Hi ${fullName},\n\nHope you are doing well. I wanted a quick update regarding your ${role} responsibilities.\n\nThanks.`;
+
+    await Linking.openURL(
+      `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+    );
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#e9edf1]">
       <ScrollView
@@ -34,20 +52,42 @@ export default function ContactsRoute() {
         contentContainerStyle={{ paddingBottom: 48 }}
       >
         <BackTitleHeader title="Contacts" onBack={() => router.back()} />
-        <View className="mt-6 px-5">
-          {contacts.map((contact, index) => (
-            <View
-              key={`${contact.name}-${index}`}
-              className={index > 0 ? "mt-4" : ""}
-            >
-              <ContactCard
-                name={contact.name}
-                designation={contact.designation}
-                avatarUrl={contact.avatarUrl}
-              />
-            </View>
-          ))}
-        </View>
+        {isLoading ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="small" color="#1d4f6d" />
+            <Text className="mt-2 text-xs text-slate-500">
+              Loading contacts...
+            </Text>
+          </View>
+        ) : data?.length ? (
+          <View className="mt-6 px-5">
+            {data.map((contact, index) => (
+              <View
+                key={contact.userId}
+                className={index > 0 ? "mt-4" : ""}
+              >
+                <ContactCard
+                  name={contact.fullName}
+                  designation={contact.projects[0]?.role ?? contact.systemRole}
+                  avatarUrl={contact.avatarUrl ?? fallbackAvatar}
+                  onCallPress={() => handleCallPress(contact.phone)}
+                  onEmailPress={() =>
+                    handleEmailPress(
+                      contact.email,
+                      contact.fullName,
+                      contact.projects[0]?.role ?? contact.systemRole,
+                      contact.projects[0]?.name,
+                    )
+                  }
+                />
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View className="mt-10 items-center px-5">
+            <Text className="text-sm text-slate-500">No contacts found.</Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

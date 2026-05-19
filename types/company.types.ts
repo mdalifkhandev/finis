@@ -58,3 +58,22 @@ export type CompanyProject = {
 };
 
 export type CompanyProjectsResponse = ApiResponse<CompanyProject[]>;
+
+export type CompanyContactProject = {
+  id: string;
+  name: string;
+  role: string;
+  joinedAt: string;
+};
+
+export type CompanyContact = {
+  userId: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  systemRole: string;
+  projects: CompanyContactProject[];
+};
+
+export type CompanyContactsResponse = ApiResponse<CompanyContact[]>;

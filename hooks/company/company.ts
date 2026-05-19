@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import {
   createCompany,
+  getCompanyContacts,
   getCompanies,
   getCompany,
   getCompanyProjects,
@@ -10,6 +11,7 @@ import {
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
+  CompanyContact,
   CreateCompanyPayload,
   CompanyProject,
   UpdateCompanyPayload,
@@ -142,6 +144,30 @@ export function useCompanyProjectsQuery(id?: string) {
         query.error instanceof Error
           ? query.error.message
           : "Failed to load projects",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useCompanyContactsQuery(id?: string) {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+  const query = useQuery<CompanyContact[]>({
+    queryKey: ["company", "contacts", id, token],
+    queryFn: () => getCompanyContacts(id as string),
+    enabled: !!id && !!token && role === "admin",
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load contacts",
       );
     }
   }, [query.error, query.isError]);
