@@ -1,5 +1,5 @@
-import type { ApiResponse } from "./auth.types";
 import type { AdminCompany } from "./admin.types";
+import type { ApiResponse } from "./auth.types";
 
 export type CompanyLogoFile = {
   uri: string;
@@ -50,6 +50,7 @@ export type CompanyProject = {
   endDate: string;
   budget: number;
   location: string;
+  priority: "LOW" | "MEDIUM" | "HIGH";
   _count: {
     teamMembers: number;
     tasks: number;

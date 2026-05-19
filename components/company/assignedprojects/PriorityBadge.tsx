@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View } from "react-native";
 
 type PriorityBadgeProps = {
-  level: "MEDIUM" | "HIGH" | "LOW";
+  level: "MEDIUM" | "HIGH" | "LOW" | string | undefined;
 };
 
 const stylesByPriority = {
@@ -21,7 +21,14 @@ const stylesByPriority = {
 } as const;
 
 export default function PriorityBadge({ level }: PriorityBadgeProps) {
-  const styles = stylesByPriority[level];
+  const normalizedLevel = (level ?? "").toUpperCase();
+  const safeLevel =
+    normalizedLevel === "HIGH"
+      ? "HIGH"
+      : normalizedLevel === "LOW"
+        ? "LOW"
+        : "MEDIUM";
+  const styles = stylesByPriority[safeLevel];
 
   return (
     <View
@@ -30,7 +37,7 @@ export default function PriorityBadge({ level }: PriorityBadgeProps) {
       <Text
         className={`text-[12px] font-semibold leading-[18px] ${styles.text}`}
       >
-        {level}
+        {safeLevel}
       </Text>
     </View>
   );

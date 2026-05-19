@@ -2,6 +2,7 @@ import BackTitleHeader from "@/components/common/BackTitleHeader";
 import AssignedProjectCard from "@/components/company/assignedprojects/AssignedProjectCard";
 import { useCompanyProjectsQuery } from "@/hooks/company/company";
 import { API_BASE_URL } from "@/lib/config";
+import type { CompanyProjectTeamMember } from "@/types/company.types";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
@@ -40,10 +41,16 @@ function formatDate(date: string) {
   });
 }
 
-function getPriority(status: string): "MEDIUM" | "HIGH" | "LOW" {
-  const normalized = status.toLowerCase();
-  if (normalized === "active") return "HIGH";
-  if (normalized === "pending") return "MEDIUM";
+function getPriority(value?: string): "MEDIUM" | "HIGH" | "LOW" {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized === "high" || normalized === "active") return "HIGH";
+  if (
+    normalized === "medium" ||
+    normalized === "meduim" ||
+    normalized === "pending"
+  )
+    return "MEDIUM";
+  if (normalized === "low") return "LOW";
   return "LOW";
 }
 
@@ -70,17 +77,21 @@ export default function AssignedProjectsRoute() {
               Loading projects...
             </Text>
           </View>
-        ) : data?.length ? (
+        ) : Array.isArray(data) && data.length > 0 ? (
           <View className="mt-6 px-5">
             {data.map((project) => {
               const avatars = project.teamMembers
-                .map((member) => resolveAvatarUrl(member.user.avatarUrl))
-                .filter((avatar): avatar is string => Boolean(avatar));
+                .map((member: CompanyProjectTeamMember) =>
+                  resolveAvatarUrl(member.user.avatarUrl),
+                )
+                .filter((avatar: string | null): avatar is string =>
+                  Boolean(avatar),
+                );
 
               return (
                 <AssignedProjectCard
                   key={project.id}
-                  priority={getPriority(project.status)}
+                  priority={getPriority(project.priority ?? project.status)}
                   title={project.name}
                   site={project.location}
                   date={formatDate(project.startDate)}
