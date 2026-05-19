@@ -1,18 +1,22 @@
 import React from "react";
 import { Image, Text, View } from "react-native";
+const placeholderImage = require("../../../assets/images/placeholder-image.png");
 
 type AvatarStackProps = {
-  avatars: string[];
+  avatars: Array<string | null>;
   extraCount: string;
 };
 
 export default function AvatarStack({ avatars, extraCount }: AvatarStackProps) {
+  const visibleAvatars =
+    avatars.length >= 3 ? avatars.slice(0, 3) : [...avatars, null, null].slice(0, 3);
+
   return (
     <View className="flex-row items-center">
-      {avatars.slice(0, 3).map((avatar, index) => (
+      {visibleAvatars.map((avatar, index) => (
         <Image
-          key={`${avatar}-${index}`}
-          source={{ uri: avatar }}
+          key={`${avatar ?? "placeholder"}-${index}`}
+          source={avatar ? { uri: avatar } : placeholderImage}
           className={`h-9 w-9 rounded-full border-[1.5px] border-white ${
             index === 0 ? "" : "-ml-2"
           }`}

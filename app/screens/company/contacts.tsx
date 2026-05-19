@@ -6,9 +6,6 @@ import React from "react";
 import { ActivityIndicator, Linking, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const fallbackAvatar =
-  "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=256&auto=format&fit=crop";
-
 export default function ContactsRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const companyId = typeof id === "string" ? id : undefined;
@@ -69,7 +66,7 @@ export default function ContactsRoute() {
                 <ContactCard
                   name={contact.fullName}
                   designation={contact.projects[0]?.role ?? contact.systemRole}
-                  avatarUrl={contact.avatarUrl ?? fallbackAvatar}
+                  avatarUrl={contact.avatarUrl}
                   onCallPress={() => handleCallPress(contact.phone)}
                   onEmailPress={() =>
                     handleEmailPress(

@@ -1,11 +1,12 @@
 import React from "react";
 import { Image, Text, View } from "react-native";
 import ContactActionButton from "./ContactActionButton";
+const placeholderImage = require("../../../assets/images/placeholder-image.png");
 
 type ContactCardProps = {
   name: string;
   designation: string;
-  avatarUrl: string;
+  avatarUrl?: string | null;
   onEmailPress?: () => void;
   onCallPress?: () => void;
 };
@@ -17,6 +18,8 @@ export default function ContactCard({
   onEmailPress,
   onCallPress,
 }: ContactCardProps) {
+  const avatarSource = avatarUrl ? { uri: avatarUrl } : placeholderImage;
+
   return (
     <View
       className="w-full self-stretch rounded-3xl border border-[#E5E7EB] bg-white p-4"
@@ -29,7 +32,7 @@ export default function ContactCard({
       }}
     >
       <View className="flex-row items-center">
-        <Image source={{ uri: avatarUrl }} className="h-12 w-12 rounded-full" />
+        <Image source={avatarSource} className="h-12 w-12 rounded-full" />
         <View className="ml-3 flex-1">
           <Text
             className="text-[16px] font-medium leading-6 text-[#1F2937]"

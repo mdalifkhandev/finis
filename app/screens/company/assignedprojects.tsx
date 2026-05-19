@@ -15,12 +15,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const fallbackAvatars = [
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1546961329-78bef0414d7c?q=80&w=256&auto=format&fit=crop",
-];
-
 function resolveAvatarUrl(avatarUrl: string | null) {
   if (!avatarUrl) {
     return null;
@@ -83,9 +77,6 @@ export default function AssignedProjectsRoute() {
               const avatars = project.teamMembers
                 .map((member: CompanyProjectTeamMember) =>
                   resolveAvatarUrl(member.user.avatarUrl),
-                )
-                .filter((avatar: string | null): avatar is string =>
-                  Boolean(avatar),
                 );
 
               return (
@@ -98,7 +89,7 @@ export default function AssignedProjectsRoute() {
                   checklist={`0/${project._count.tasks}`}
                   links={String(project._count.tasks)}
                   extraMembers={`${project._count.teamMembers}+`}
-                  avatars={avatars.length ? avatars : fallbackAvatars}
+                  avatars={avatars}
                   onPress={() =>
                     router.push({
                       pathname: "/screens/company/projectdetails",

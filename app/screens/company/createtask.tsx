@@ -1,6 +1,9 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import TaskFormField from "@/components/company/task/TaskFormField";
 import { setTaskDraft } from "@/components/company/task/taskStore";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -13,12 +16,37 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+function formatDate(value: Date) {
+  const year = value.getFullYear();
+  const month = `${value.getMonth() + 1}`.padStart(2, "0");
+  const day = `${value.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function CreateTaskRoute() {
   const [title, setTitle] = useState("");
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+  const [dueDateValue, setDueDateValue] = useState(new Date());
+
+  const handleDueDateChange = (
+    event: DateTimePickerEvent,
+    selectedDate?: Date,
+  ) => {
+    if (event.type === "dismissed") {
+      setShowDueDatePicker(false);
+      return;
+    }
+
+    if (selectedDate) {
+      setDueDateValue(selectedDate);
+      setDueDate(formatDate(selectedDate));
+    }
+    setShowDueDatePicker(false);
+  };
 
   const handleNext = () => {
     setTaskDraft({
@@ -87,8 +115,10 @@ export default function CreateTaskRoute() {
               <View className="flex-1">
                 <TaskFormField
                   label="Due Date"
+                  placeholder="YYYY-MM-DD"
                   value={dueDate}
                   onChangeText={setDueDate}
+                  onPress={() => setShowDueDatePicker(true)}
                 />
               </View>
             </View>
@@ -104,6 +134,14 @@ export default function CreateTaskRoute() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+        {showDueDatePicker ? (
+          <DateTimePicker
+            value={dueDateValue}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={handleDueDateChange}
+          />
+        ) : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
