@@ -12,7 +12,7 @@ type AssignedProjectCardProps = {
   checklist: string;
   links: string;
   extraMembers: string;
-  avatars: string[];
+  avatars: Array<string | null>;
   onPress?: () => void;
 };
 

@@ -5,62 +5,21 @@ import FloorSetupCard, {
   RoomInfo,
 } from "@/components/company/floorplan/FloorSetupCard";
 import { FloorStatus } from "@/components/company/floorplan/FloorStatusBadge";
+import { useProjectFloorPlanQuery } from "@/hooks/company/company";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useState } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const groundFloorRooms: RoomInfo[] = [
-  {
-    id: "1",
-    roomNumber: "1",
-    details: "Common • 450 sq ft",
-    status: "Completed",
-  },
-  {
-    id: "2",
-    roomNumber: "2",
-    details: "Office • 120 sq ft",
-    status: "Completed",
-  },
-  {
-    id: "3",
-    roomNumber: "3",
-    details: "Common • 200 sq ft",
-    status: "Completed",
-  },
-  {
-    id: "4",
-    roomNumber: "4",
-    details: "Common • 80 sq ft",
-    status: "Completed",
-  },
-  {
-    id: "5",
-    roomNumber: "5",
-    details: "Utility • 60 sq ft",
-    status: "Completed",
-  },
-  {
-    id: "6",
-    roomNumber: "6",
-    details: "Utility • 60 sq ft",
-    status: "In Progress",
-  },
-  {
-    id: "7",
-    roomNumber: "7",
-    details: "Utility • 100 sq ft",
-    status: "Not Started",
-  },
-  {
-    id: "8",
-    roomNumber: "8",
-    details: "Utility • 90 sq ft",
-    status: "Completed",
-  },
-];
 
 const roomRangePattern = /^([A-Za-z]+)(\d+)$/;
 
@@ -80,38 +39,74 @@ type FloorInfo = {
   fixedStats?: FloorStats;
 };
 
-const initialFloors: FloorInfo[] = [
-  {
-    id: "ground-1",
-    floorName: "Ground Floor",
-    status: "Completed",
-    rooms: groundFloorRooms,
-    allowRoomManagement: true,
-  },
-  {
-    id: "ground-2",
-    floorName: "Ground Floor",
-    status: "In Progress",
-    rooms: [],
-    allowRoomManagement: false,
-    fixedRoomCount: 8,
-    fixedStats: { completed: 8, inProgress: 0, notStarted: 0 },
-  },
-];
-
 const buildStatsFromRooms = (rooms: RoomInfo[]): FloorStats => ({
   completed: rooms.filter((room) => room.status === "Completed").length,
   inProgress: rooms.filter((room) => room.status === "In Progress").length,
   notStarted: rooms.filter((room) => room.status === "Not Started").length,
 });
 
+function normalizeStatus(value?: string): FloorStatus {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized === "completed") return "Completed";
+  if (normalized === "in_progress" || normalized === "in progress") {
+    return "In Progress";
+  }
+  return "Not Started";
+}
+
+function toRoomInfo(
+  room: {
+    id: string;
+    name: string;
+    type: string | null;
+    sizeSqft: number | null;
+    status: string;
+  },
+  index: number,
+): RoomInfo {
+  const details = `${room.type ?? "Utility"}${
+    room.sizeSqft ? ` • ${room.sizeSqft} sq ft` : ""
+  }`;
+
+  return {
+    id: room.id,
+    roomNumber: room.name?.replace(/^Room\s*/i, "") || String(index + 1),
+    details,
+    status: normalizeStatus(room.status),
+  };
+}
+
 export default function FloorPlanRoute() {
-  const [floors, setFloors] = useState<FloorInfo[]>(initialFloors);
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const projectId = typeof id === "string" ? id : undefined;
+  const { data, isLoading } = useProjectFloorPlanQuery(projectId);
+  const { refreshing, onRefresh } = usePullToRefresh();
+  const [floors, setFloors] = useState<FloorInfo[]>([]);
   const [activeFloorId, setActiveFloorId] = useState<string | null>(null);
   const [roomDetailsVisibleByFloorId, setRoomDetailsVisibleByFloorId] =
     useState<Record<string, boolean>>({});
   const [showAddFloorModal, setShowAddFloorModal] = useState(false);
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
+
+  useEffect(() => {
+    if (!data) return;
+
+    const nextFloors: FloorInfo[] = data.map((floor) => ({
+      id: floor.id,
+      floorName: floor.name,
+      status: normalizeStatus(floor.status),
+      rooms: floor.rooms.map((room, index) => toRoomInfo(room, index)),
+      allowRoomManagement: true,
+      fixedRoomCount: floor.totalRooms,
+      fixedStats: {
+        completed: floor.taskCounts.completed,
+        inProgress: floor.taskCounts.inProgress,
+        notStarted: floor.taskCounts.notStarted,
+      },
+    }));
+
+    setFloors(nextFloors);
+  }, [data]);
 
   const handleAddFloor = (floorName: string) => {
     const newFloor: FloorInfo = {
@@ -217,6 +212,14 @@ export default function FloorPlanRoute() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 44 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
       >
         <BackTitleHeader
           title="Floor & Room Setup"
@@ -241,7 +244,19 @@ export default function FloorPlanRoute() {
         </View>
 
         <View className="mt-4 px-5">
-          {floors.map((floor) => {
+          {isLoading ? (
+            <View className="mt-6 items-center">
+              <ActivityIndicator size="small" color="#1d4f6d" />
+              <Text className="mt-2 text-xs text-slate-500">
+                Loading floor plan...
+              </Text>
+            </View>
+          ) : floors.length === 0 ? (
+            <View className="mt-6 items-center">
+              <Text className="text-sm text-slate-500">No floors found.</Text>
+            </View>
+          ) : (
+            floors.map((floor) => {
             const stats = floor.allowRoomManagement
               ? buildStatsFromRooms(floor.rooms)
               : (floor.fixedStats ?? buildStatsFromRooms(floor.rooms));
@@ -280,7 +295,7 @@ export default function FloorPlanRoute() {
                 }
               />
             );
-          })}
+          }))}
         </View>
       </ScrollView>
 

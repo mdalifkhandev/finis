@@ -1,6 +1,7 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import DocumentsList from "@/components/company/documents/DocumentsList";
 import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { getCompanyDocuments } from "@/api/company/company.api";
 import { DocumentItem } from "@/components/company/documents/types";
 import * as FileSystem from "expo-file-system/legacy";
@@ -8,7 +9,7 @@ import RNBlobUtil from "react-native-blob-util";
 import * as Sharing from "expo-sharing";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, Platform, ScrollView } from "react-native";
+import { Alert, Platform, RefreshControl, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 
@@ -16,6 +17,11 @@ export default function DocumentsRoute() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const companyId = typeof id === "string" ? id : undefined;
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    if (!companyId) return;
+    const result = await getCompanyDocuments(companyId);
+    setDocuments(result);
+  });
 
   useEffect(() => {
     let isActive = true;
@@ -118,6 +124,14 @@ export default function DocumentsRoute() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 48 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
       >
         <BackTitleHeader title="Documents" onBack={() => router.back()} />
         <DocumentsList

@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,6 +15,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 
 function resolveAvatarUrl(avatarUrl: string | null) {
   if (!avatarUrl) {
@@ -52,12 +54,21 @@ export default function AssignedProjectsRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const companyId = typeof id === "string" ? id : undefined;
   const { data, isLoading } = useCompanyProjectsQuery(companyId);
+  const { refreshing, onRefresh } = usePullToRefresh();
 
   return (
     <SafeAreaView className="flex-1 bg-[#e9edf1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 48 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
       >
         <BackTitleHeader
           title="Assigned Projects"

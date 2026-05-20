@@ -10,6 +10,7 @@ import type {
   CompanyContactsResponse,
   CompanyProjectsResponse,
   CreateCompanyResponse,
+  ProjectFloorPlanResponse,
   ProjectProfileResponse,
   UpdateProjectPayload,
   UpdateCompanyPayload,
@@ -244,6 +245,18 @@ export async function getProjectProfile(id: string) {
       logoUrl: resolveMediaUrl(data.data.client.logoUrl),
     },
   };
+}
+
+export async function getProjectFloorPlan(id: string) {
+  const { data } = await api.get<ProjectFloorPlanResponse>(
+    `/admin/projects/${id}/floor-plan`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load floor plan");
+  }
+
+  return data.data;
 }
 
 export async function updateProject(id: string, payload: UpdateProjectPayload) {

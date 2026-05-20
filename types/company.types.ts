@@ -115,6 +115,36 @@ export type ProjectProfile = {
 
 export type ProjectProfileResponse = ApiResponse<ProjectProfile>;
 
+export type ProjectFloorPlanTaskCounts = {
+  total: number;
+  completed: number;
+  inProgress: number;
+  notStarted: number;
+};
+
+export type ProjectFloorPlanRoom = {
+  id: string;
+  name: string;
+  type: string | null;
+  sizeSqft: number | null;
+  status: string;
+  progress: number;
+  taskCounts: ProjectFloorPlanTaskCounts;
+};
+
+export type ProjectFloorPlanFloor = {
+  id: string;
+  name: string;
+  floorNumber: number;
+  status: string;
+  progress: number;
+  totalRooms: number;
+  taskCounts: ProjectFloorPlanTaskCounts;
+  rooms: ProjectFloorPlanRoom[];
+};
+
+export type ProjectFloorPlanResponse = ApiResponse<ProjectFloorPlanFloor[]>;
+
 export type UpdateProjectPayload = {
   name: string;
   status: string;
@@ -130,6 +160,7 @@ export type UpdateProjectPayload = {
   roomsPerFloor?: number;
   isWholeHouse?: boolean;
   houseSections?: string[];
+  autoGenerateFloors?: boolean;
 };
 
 export type CompanyContactProject = {

@@ -1,10 +1,11 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import ProjectDetailsMenu from "@/components/company/projectdetails/ProjectDetailsMenu";
 import ProjectOverviewCard from "@/components/company/projectdetails/ProjectOverviewCard";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useProjectProfileQuery } from "@/hooks/company/company";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const MENU_ROUTES: Record<
@@ -26,6 +27,7 @@ export default function ProjectDetailsRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const projectId = typeof id === "string" ? id : undefined;
   const { data, isLoading } = useProjectProfileQuery(projectId);
+  const { refreshing, onRefresh } = usePullToRefresh();
 
   const formattedDateRange = data
     ? `${new Date(data.startDate).toLocaleDateString("en-US", {
@@ -44,6 +46,14 @@ export default function ProjectDetailsRoute() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 34 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
       >
         <BackTitleHeader
           title="Projects details"
