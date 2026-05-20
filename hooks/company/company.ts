@@ -14,6 +14,8 @@ import {
   updateTaskStatusApi,
   createProjectFloor,
   createProjectFloorRooms,
+  updateProjectFloor,
+  updateProjectRoom,
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
@@ -457,5 +459,68 @@ export function useCreateFloorRoomsMutation(projectId?: string) {
   });
 }
 
+export function useUpdateFloorMutation(projectId?: string) {
+  const queryClient = useQueryClient();
 
+  return useMutation({
+    mutationFn: ({
+      floorId,
+      payload,
+    }: {
+      floorId: string;
+      payload: { name: string; status: string; progress: number };
+    }) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return updateProjectFloor(projectId, floorId, payload);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "floor-plan", projectId],
+        });
+      }
+      toast.success("Floor updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update floor",
+      );
+    },
+  });
+}
 
+export function useUpdateRoomMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      roomId,
+      payload,
+    }: {
+      roomId: string;
+      payload: {
+        name: string;
+        type: string;
+        sizeSqft: number;
+        status: string;
+        progress: number;
+      };
+    }) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return updateProjectRoom(projectId, roomId, payload);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "floor-plan", projectId],
+        });
+      }
+      toast.success("Room updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update room",
+      );
+    },
+  });
+}

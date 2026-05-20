@@ -7,9 +7,14 @@ import FloorStatusBadge, { FloorStatus } from "./FloorStatusBadge";
 
 export type RoomInfo = {
   id: string;
+  floorId: string;
   roomNumber?: string;
+  rawName?: string;
   details: string;
   status: FloorStatus;
+  type?: string;
+  sizeSqft?: number;
+  progress?: number;
 };
 
 type FloorSetupCardProps = {
@@ -21,7 +26,9 @@ type FloorSetupCardProps = {
   notStarted: number;
   rooms?: RoomInfo[];
   onPressAddRoom?: () => void;
+  onEditFloor?: () => void;
   onDeleteFloor?: () => void;
+  onEditRoom?: (room: RoomInfo) => void;
   onDeleteRoom?: (roomId: string) => void;
   roomDetailsVisible?: boolean;
   onToggleRoomDetails?: () => void;
@@ -36,7 +43,9 @@ export default function FloorSetupCard({
   notStarted,
   rooms,
   onPressAddRoom,
+  onEditFloor,
   onDeleteFloor,
+  onEditRoom,
   onDeleteRoom,
   roomDetailsVisible = false,
   onToggleRoomDetails,
@@ -59,6 +68,13 @@ export default function FloorSetupCard({
 
         <View className="flex-row items-center pt-1">
           <FloorStatusBadge status={status} />
+          {/* <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={onEditFloor}
+            className="ml-3 h-7 w-7 items-center justify-center"
+          >
+            <Ionicons name="pencil-outline" size={18} color="#2A5F83" />
+          </TouchableOpacity> */}
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={onDeleteFloor}
@@ -104,6 +120,7 @@ export default function FloorSetupCard({
               name={`Room : ${room.roomNumber ?? index + 1}`}
               details={room.details}
               status={room.status}
+              onEdit={() => onEditRoom?.(room)}
               onDelete={() => onDeleteRoom?.(room.id)}
             />
           ))}
