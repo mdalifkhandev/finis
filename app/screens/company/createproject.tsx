@@ -144,30 +144,34 @@ export default function CreateProjectRoute() {
 
     const type = projectType === "Apartment Building" ? "apartment" : "house";
 
-    const createdProject = await createProject({
-      name: projectName.trim(),
-      companyId,
-      type,
-      startDate: startDate.trim(),
-      endDate: endDate.trim(),
-      budget: budgetNumber,
-      location: location.trim(),
-      description: description.trim(),
-      ...(type === "apartment"
-        ? {
-            numFloors: floorsNumber,
-            roomsPerFloor: roomsNumber,
-          }
-        : {
-            isWholeHouse: houseScope === "whole",
-            ...(houseScope === "sections"
-              ? {
-                  houseSections: mappedHouseSections,
-                }
-              : {}),
-          }),
-      autoGenerateFloors: type === "apartment",
-    });
+    try {
+      await createProject({
+        name: projectName.trim(),
+        companyId,
+        type,
+        startDate: startDate.trim(),
+        endDate: endDate.trim(),
+        budget: budgetNumber,
+        location: location.trim(),
+        description: description.trim(),
+        ...(type === "apartment"
+          ? {
+              numFloors: floorsNumber,
+              roomsPerFloor: roomsNumber,
+            }
+          : {
+              isWholeHouse: houseScope === "whole",
+              ...(houseScope === "sections"
+                ? {
+                    houseSections: mappedHouseSections,
+                  }
+                : {}),
+            }),
+        autoGenerateFloors: type === "apartment",
+      });
+    } catch {
+      return;
+    }
 
     saveProject({
       projectName,
@@ -187,14 +191,6 @@ export default function CreateProjectRoute() {
           ? selectedSections
           : [],
     });
-
-    if (createdProject?.id) {
-      router.push({
-        pathname: "/screens/company/assignedprojects",
-        params: { id: companyId },
-      });
-      return;
-    }
 
     router.push({
       pathname: "/screens/company/assignedprojects",
