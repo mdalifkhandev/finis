@@ -1,11 +1,14 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import TeamScreen from "@/components/company/team/TeamScreen";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TeamRoute() {
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const projectId = typeof id === "string" ? id : undefined;
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
@@ -13,7 +16,7 @@ export default function TeamRoute() {
         contentContainerStyle={{ paddingBottom: 28 }}
       >
         <BackTitleHeader title="Team" onBack={() => router.back()} />
-        <TeamScreen />
+        <TeamScreen projectId={projectId} />
       </ScrollView>
     </SafeAreaView>
   );

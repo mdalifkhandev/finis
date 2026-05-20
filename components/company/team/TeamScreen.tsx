@@ -1,57 +1,15 @@
 import React, { useMemo, useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import AddTeamMemberSheet, { TeamMemberOption } from "./AddTeamMemberSheet";
 import TeamMemberCard from "./TeamMemberCard";
 import TeamWorkerCard from "./TeamWorkerCard";
+import {
+  useAvailableManagersQuery,
+  useProjectTeamQuery,
+  useAddProjectManagerMutation,
+} from "@/hooks/company/company";
 
-const allManagers: TeamMemberOption[] = [
-  {
-    id: "john",
-    name: "John Smith",
-    role: "Project Manager",
-    email: "john@example.com",
-    phone: "(555) 123-4567",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    id: "sarah",
-    name: "Sarah Johnson",
-    role: "Site Engineer",
-    email: "sarah@example.com",
-    phone: "(555) 234-5678",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    id: "mike",
-    name: "Mike Davis",
-    role: "Foreman",
-    email: "mike@example.com",
-    phone: "(555) 345-6789",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    id: "emily",
-    name: "Emily Chen",
-    role: "Safety Officer",
-    email: "emily@example.com",
-    phone: "(555) 456-7890",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    id: "lisa",
-    name: "Rokeya Sultana",
-    role: "Operations Lead",
-    email: "rokeya@example.com",
-    phone: "(555) 654-7890",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1542204625-de293a501df4?q=80&w=256&auto=format&fit=crop",
-  },
-];
-
+// Keep workers hardcoded for now as requested
 const allWorkers: TeamMemberOption[] = [
   {
     id: "worker-emily",
@@ -80,57 +38,37 @@ const allWorkers: TeamMemberOption[] = [
     avatarUrl:
       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=256&auto=format&fit=crop",
   },
-  {
-    id: "worker-maria",
-    name: "Maria Garcia",
-    role: "Foreman",
-    email: "maria@example.com",
-    phone: "(555) 221-9988",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1504257432389-52343af06ae3?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    id: "worker-jacob",
-    name: "Jacob Miller",
-    role: "Safety Officer",
-    email: "jacob@example.com",
-    phone: "(555) 112-3344",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop",
-  },
 ];
 
 const initialAssignments: Record<string, string[]> = {
-  john: [
-    "worker-emily",
-    "worker-sophia",
-    "worker-daniel",
-    "worker-maria",
-    "worker-jacob",
-  ],
-  sarah: ["worker-sophia", "worker-daniel"],
-  mike: ["worker-emily", "worker-maria"],
-  emily: ["worker-jacob"],
-  lisa: ["worker-daniel", "worker-jacob"],
+  // Hardcoded assignments for demo purposes
 };
 
-export default function TeamScreen() {
+type TeamScreenProps = {
+  projectId?: string;
+};
+
+export default function TeamScreen({ projectId }: TeamScreenProps) {
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [activeManagerId, setActiveManagerId] = useState<string | null>(null);
-  const [managerIds, setManagerIds] = useState<string[]>([
-    "john",
-    "sarah",
-    "mike",
-    "emily",
-    "lisa",
-  ]);
   const [workerAssignments, setWorkerAssignments] =
     useState<Record<string, string[]>>(initialAssignments);
 
-  const selectedManagers = useMemo(
-    () => allManagers.filter((manager) => managerIds.includes(manager.id)),
-    [managerIds],
-  );
+  const { data: teamData, isLoading: isLoadingTeam } = useProjectTeamQuery(projectId);
+  const { data: availableManagersData, isLoading: isLoadingManagers } = useAvailableManagersQuery();
+  const addManagerMutation = useAddProjectManagerMutation(projectId);
+
+  const selectedManagers = useMemo(() => {
+    if (!teamData) return [];
+    return teamData.managers.map((m) => ({
+      id: m.userId,
+      name: m.user.fullName,
+      role: m.role || "Manager",
+      email: m.user.email,
+      phone: m.user.phone,
+      avatarUrl: m.user.avatarUrl,
+    }));
+  }, [teamData]);
 
   const activeManager = useMemo(
     () =>
@@ -143,41 +81,43 @@ export default function TeamScreen() {
     if (!activeManagerId) {
       return [];
     }
-
     const assignedIds = workerAssignments[activeManagerId] ?? [];
     return allWorkers.filter((worker) => assignedIds.includes(worker.id));
   }, [activeManagerId, workerAssignments]);
 
-  const availableManagers = useMemo(
-    () => allManagers.filter((manager) => !managerIds.includes(manager.id)),
-    [managerIds],
-  );
+  const availableManagers = useMemo(() => {
+    if (!availableManagersData) return [];
+    const assignedUserIds = teamData?.managers.map((m) => m.userId) || [];
+    return availableManagersData
+      .filter((m) => !assignedUserIds.includes(m.id))
+      .map((m) => ({
+        id: m.id,
+        name: m.fullName,
+        role: m.role || "Manager",
+        email: m.email,
+        phone: m.phone || "",
+        avatarUrl: m.avatarUrl,
+      }));
+  }, [availableManagersData, teamData]);
 
   const availableWorkers = useMemo(() => {
     if (!activeManagerId) {
       return [];
     }
-
     const assignedIds = workerAssignments[activeManagerId] ?? [];
     return allWorkers.filter((worker) => !assignedIds.includes(worker.id));
   }, [activeManagerId, workerAssignments]);
 
   const handleAddManager = (member: TeamMemberOption) => {
-    setManagerIds((previous) =>
-      previous.includes(member.id) ? previous : [...previous, member.id],
-    );
-    setWorkerAssignments((previous) => ({
-      ...previous,
-      [member.id]: previous[member.id] ?? [],
-    }));
-    setShowAddSheet(false);
+    addManagerMutation.mutate(member.id, {
+      onSuccess: () => {
+        setShowAddSheet(false);
+      },
+    });
   };
 
   const handleAddWorker = (worker: TeamMemberOption) => {
-    if (!activeManagerId) {
-      return;
-    }
-
+    if (!activeManagerId) return;
     setWorkerAssignments((previous) => ({
       ...previous,
       [activeManagerId]: [...(previous[activeManagerId] ?? []), worker.id],
@@ -186,25 +126,12 @@ export default function TeamScreen() {
   };
 
   const handleDeleteManager = (id: string) => {
-    setManagerIds((previous) =>
-      previous.filter((managerId) => managerId !== id),
-    );
-    setWorkerAssignments((previous) => {
-      const next = { ...previous };
-      delete next[id];
-      return next;
-    });
-
-    if (activeManagerId === id) {
-      setActiveManagerId(null);
-    }
+    // Optimistic or real deletion logic can be added here once API is available
+    console.log("Delete manager not implemented yet");
   };
 
   const handleDeleteWorker = (workerId: string) => {
-    if (!activeManagerId) {
-      return;
-    }
-
+    if (!activeManagerId) return;
     setWorkerAssignments((previous) => ({
       ...previous,
       [activeManagerId]: (previous[activeManagerId] ?? []).filter(
@@ -224,6 +151,8 @@ export default function TeamScreen() {
   const sheetMembers = activeManager ? availableWorkers : availableManagers;
   const handleSelectMember = activeManager ? handleAddWorker : handleAddManager;
 
+  const isLoading = isLoadingTeam || (showAddSheet && isLoadingManagers);
+
   return (
     <>
       <View className="mt-5 px-4">
@@ -234,18 +163,30 @@ export default function TeamScreen() {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleOpenAddSheet}
+            disabled={isLoading}
             className="h-[40px] min-w-[128px] flex-row items-center justify-center rounded-[8px] border border-[#D3D9E1] bg-[#FFFFFF] px-4"
           >
-            <Text className="mr-1 text-[18px] font-medium text-[#1F2937]">
-              +
-            </Text>
-            <Text className="text-[15px] font-medium text-[#1F2937]">
-              {buttonLabel}
-            </Text>
+            {addManagerMutation.isPending ? (
+              <ActivityIndicator size="small" color="#1F2937" />
+            ) : (
+              <>
+                <Text className="mr-1 text-[18px] font-medium text-[#1F2937]">
+                  +
+                </Text>
+                <Text className="text-[15px] font-medium text-[#1F2937]">
+                  {buttonLabel}
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
 
-        {activeManager ? (
+        {isLoadingTeam ? (
+          <View className="mt-10 items-center justify-center">
+            <ActivityIndicator size="large" color="#1d4f6d" />
+            <Text className="mt-2 text-[14px] text-slate-500">Loading team...</Text>
+          </View>
+        ) : activeManager ? (
           <>
             <TeamMemberCard
               avatarUrl={activeManager.avatarUrl}
@@ -293,6 +234,7 @@ export default function TeamScreen() {
         members={sheetMembers}
         onClose={() => setShowAddSheet(false)}
         onSelectMember={handleSelectMember}
+        isLoading={isLoadingManagers}
       />
     </>
   );

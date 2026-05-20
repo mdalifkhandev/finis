@@ -44,6 +44,8 @@ export type CompanyProjectTeamMemberUser = {
   id: string;
   fullName: string;
   avatarUrl: string | null;
+  email: string;
+  phone: string | null;
 };
 
 export type CompanyProjectTeamMember = {
@@ -75,6 +77,25 @@ export type CompanyProject = {
 };
 
 export type CompanyProjectsResponse = ApiResponse<CompanyProject[]>;
+
+export type AvailableManager = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  role: string;
+  department: string | null;
+};
+
+export type AvailableManagersResponse = ApiResponse<AvailableManager[]> & {
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+};
 
 export type ProjectProfileClient = {
   companyId: string;

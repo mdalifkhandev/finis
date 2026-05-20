@@ -3,11 +3,11 @@ import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 type TeamMemberCardProps = {
-  avatarUrl: string;
+  avatarUrl: string | null;
   name: string;
   role: string;
   email: string;
-  phone: string;
+  phone: string | null;
   onDelete?: () => void;
   onPress?: () => void;
   hideDelete?: boolean;
@@ -32,12 +32,18 @@ export default function TeamMemberCard({
           className="flex-1 flex-row"
           disabled={!onPress}
         >
-          <Image source={{ uri: avatarUrl }} className="h-10 w-10 rounded-full" />
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} className="h-10 w-10 rounded-full" />
+          ) : (
+            <View className="h-10 w-10 rounded-full bg-[#E9EDF1] items-center justify-center">
+              <Ionicons name="person" size={18} color="#9CA3AF" />
+            </View>
+          )}
           <View className="ml-2.5 flex-1 pr-2">
             <Text className="text-[16px] font-medium text-[#1B2028]">{name}</Text>
             <Text className="mt-0.5 text-[14px] text-[#687385]">{role}</Text>
             <Text className="mt-1 text-[12px] text-[#687385]">{email}</Text>
-            <Text className="text-[12px] text-[#687385]">{phone}</Text>
+            {phone ? <Text className="text-[12px] text-[#687385]">{phone}</Text> : null}
           </View>
         </TouchableOpacity>
 

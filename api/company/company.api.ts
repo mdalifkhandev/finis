@@ -16,8 +16,9 @@ import type {
   UpdateCompanyPayload,
   ProjectAnalysisResponse,
   TasksListResponse,
+  AvailableManagersResponse,
+  CompanyProjectTeamMember,
 } from "@/types/company.types";
-
 function resolveMediaUrl(path: string | null) {
   if (!path) {
     return null;
@@ -509,6 +510,58 @@ export async function deleteProjectRoom(projectId: string, roomId: string) {
 
   if (!data.success) {
     throw new Error(data.message || "Failed to delete room");
+  }
+
+  return data.data;
+}
+
+export async function getAvailableManagers() {
+  const { data } = await api.get<AvailableManagersResponse>(
+    "/admin/team/available-managers"
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load available managers");
+  }
+
+  return data.data.map((manager) => ({
+    ...manager,
+    avatarUrl: resolveMediaUrl(manager.avatarUrl),
+  }));
+}
+
+export async function getProjectTeam(projectId: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: { managers: CompanyProjectTeamMember[], workers: any[] };
+  }>(`/admin/projects/${projectId}/team`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load project team");
+  }
+
+  return {
+    managers: data.data.managers.map((member) => ({
+      ...member,
+      user: {
+        ...member.user,
+        avatarUrl: resolveMediaUrl(member.user.avatarUrl),
+      },
+    })),
+    workers: data.data.workers,
+  };
+}
+
+export async function addProjectManager(projectId: string, userId: string) {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/team/managers`, { userId });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to add manager");
   }
 
   return data.data;

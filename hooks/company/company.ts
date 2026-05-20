@@ -18,6 +18,9 @@ import {
   updateProjectRoom,
   deleteProjectFloor,
   deleteProjectRoom,
+  getAvailableManagers,
+  getProjectTeam,
+  addProjectManager,
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
@@ -570,6 +573,48 @@ export function useDeleteRoomMutation(projectId?: string) {
     onError: (error: any) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to delete room",
+      );
+    },
+  });
+}
+
+export function useAvailableManagersQuery() {
+  return useQuery({
+    queryKey: ["team", "available-managers"],
+    queryFn: () => getAvailableManagers(),
+  });
+}
+
+export function useProjectTeamQuery(projectId?: string) {
+  return useQuery({
+    queryKey: ["project", "team", projectId],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return getProjectTeam(projectId);
+    },
+    enabled: !!projectId,
+  });
+}
+
+export function useAddProjectManagerMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return addProjectManager(projectId, userId);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "team", projectId],
+        });
+      }
+      toast.success("Manager added successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to add manager",
       );
     },
   });
