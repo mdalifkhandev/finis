@@ -290,6 +290,7 @@ export default function EditProjectRoute() {
                   }
                 : {}),
             }),
+        autoGenerateFloors: type === "apartment",
       },
     });
 

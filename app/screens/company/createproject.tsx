@@ -5,7 +5,10 @@ import ProjectTypeDropdown, {
   ProjectTypeValue,
 } from "@/components/company/project/ProjectTypeDropdown";
 import { saveProject } from "@/components/company/project/projectStore";
-import { useCompanyQuery, useCreateProjectMutation } from "@/hooks/company/company";
+import {
+  useCompanyQuery,
+  useCreateProjectMutation,
+} from "@/hooks/company/company";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
@@ -130,7 +133,11 @@ export default function CreateProjectRoute() {
       return;
     }
 
-    if (!isApartment && houseScope === "sections" && !mappedHouseSections.length) {
+    if (
+      !isApartment &&
+      houseScope === "sections" &&
+      !mappedHouseSections.length
+    ) {
       toast.error("Please select at least one house section.");
       return;
     }
@@ -159,7 +166,7 @@ export default function CreateProjectRoute() {
                 }
               : {}),
           }),
-      autoGenerateFloors: true,
+      autoGenerateFloors: type === "apartment",
     });
 
     saveProject({
@@ -183,13 +190,16 @@ export default function CreateProjectRoute() {
 
     if (createdProject?.id) {
       router.push({
-        pathname: "/screens/company/projectdetails",
-        params: { id: createdProject.id },
+        pathname: "/screens/company/assignedprojects",
+        params: { id: companyId },
       });
       return;
     }
 
-    router.push("/screens/company/projectdetails");
+    router.push({
+      pathname: "/screens/company/assignedprojects",
+      params: { id: companyId },
+    });
   };
 
   const handleDateChange = (

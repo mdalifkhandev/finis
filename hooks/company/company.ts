@@ -5,6 +5,7 @@ import {
   getCompany,
   getCompanyContacts,
   getCompanyProjects,
+  getProjectFloorPlan,
   getProjectProfile,
   updateCompany,
   updateProject,
@@ -15,6 +16,7 @@ import type {
   CompanyProject,
   CreateCompanyPayload,
   CreateProjectPayload,
+  ProjectFloorPlanFloor,
   ProjectProfile,
   UpdateCompanyPayload,
   UpdateProjectPayload,
@@ -242,6 +244,30 @@ export function useProjectProfileQuery(id?: string) {
         query.error instanceof Error
           ? query.error.message
           : "Failed to load project profile",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useProjectFloorPlanQuery(id?: string) {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+  const query = useQuery<ProjectFloorPlanFloor[]>({
+    queryKey: ["project", "floor-plan", id, token],
+    queryFn: () => getProjectFloorPlan(id as string),
+    enabled: !!id && !!token && role === "admin",
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load floor plan",
       );
     }
   }, [query.error, query.isError]);
