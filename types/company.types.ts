@@ -181,3 +181,22 @@ export type CompanyContact = {
 };
 
 export type CompanyContactsResponse = ApiResponse<CompanyContact[]>;
+
+export type ProjectAnalysisTask = {
+  taskId: string;
+  taskName: string;
+  taskStatus: string;
+};
+
+export type ProjectAnalysisFloor = {
+  floorId: string;
+  floorName: string;
+  floorStatus: string;
+  tasks: ProjectAnalysisTask[];
+};
+
+export type ProjectAnalysisData = {
+  checklist: ProjectAnalysisFloor[];
+};
+
+export type ProjectAnalysisResponse = ApiResponse<ProjectAnalysisData>;

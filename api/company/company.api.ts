@@ -14,6 +14,7 @@ import type {
   ProjectProfileResponse,
   UpdateProjectPayload,
   UpdateCompanyPayload,
+  ProjectAnalysisResponse,
 } from "@/types/company.types";
 
 function resolveMediaUrl(path: string | null) {
@@ -350,4 +351,16 @@ export async function getProjectDocuments(
   projectId: string,
 ): Promise<DocumentItem[]> {
   return simulateNetwork(projectDocuments[projectId] ?? []);
+}
+
+export async function getProjectAnalysis(id: string) {
+  const { data } = await api.get<ProjectAnalysisResponse>(
+    `/admin/projects/${id}/analysis`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load project analysis");
+  }
+
+  return data.data;
 }

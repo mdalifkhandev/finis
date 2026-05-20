@@ -9,6 +9,7 @@ import {
   getProjectProfile,
   updateCompany,
   updateProject,
+  getProjectAnalysis,
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
@@ -20,6 +21,7 @@ import type {
   ProjectProfile,
   UpdateCompanyPayload,
   UpdateProjectPayload,
+  ProjectAnalysisData,
 } from "@/types/company.types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -322,4 +324,28 @@ export function useUpdateProjectMutation(
     isPending: mutation.isPending,
     error: mutation.error,
   };
+}
+
+export function useProjectAnalysisQuery(id?: string) {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+  const query = useQuery<ProjectAnalysisData>({
+    queryKey: ["project", "analysis", id, token],
+    queryFn: () => getProjectAnalysis(id as string),
+    enabled: !!id && !!token && role === "admin",
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load project analysis",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
 }
