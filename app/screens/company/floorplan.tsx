@@ -1,12 +1,14 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import AddFloorModal from "@/components/company/floorplan/AddFloorModal";
 import AddRoomRangeModal from "@/components/company/floorplan/AddRoomRangeModal";
+import UpdateFloorModal, { UpdateFloorPayload } from "@/components/company/floorplan/UpdateFloorModal";
+import UpdateRoomModal, { UpdateRoomPayload } from "@/components/company/floorplan/UpdateRoomModal";
 import FloorSetupCard, {
   RoomInfo,
 } from "@/components/company/floorplan/FloorSetupCard";
 import { FloorStatus } from "@/components/company/floorplan/FloorStatusBadge";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
-import { useProjectFloorPlanQuery, useCreateFloorMutation, useCreateFloorRoomsMutation } from "@/hooks/company/company";
+import { useProjectFloorPlanQuery, useCreateFloorMutation, useCreateFloorRoomsMutation, useUpdateFloorMutation, useUpdateRoomMutation } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -33,6 +35,7 @@ type FloorInfo = {
   id: string;
   floorName: string;
   status: FloorStatus;
+  progress?: number;
   rooms: RoomInfo[];
   allowRoomManagement: boolean;
   fixedRoomCount?: number;
@@ -55,24 +58,26 @@ function normalizeStatus(value?: string): FloorStatus {
   return "Not Started";
 }
 
+import type { ProjectFloorPlanRoom } from "@/types/company.types";
+
 function toRoomInfo(
-  room: {
-    id: string;
-    name: string;
-    type: string | null;
-    sizeSqft: number | null;
-    status: string;
-  },
+  room: ProjectFloorPlanRoom,
   index: number,
+  floorId: string,
 ): RoomInfo {
   const details = `${room.type ?? "Utility"}${room.sizeSqft ? ` • ${room.sizeSqft} sq ft` : ""
     }`;
 
   return {
     id: room.id,
+    floorId,
     roomNumber: room.name?.replace(/^Room\s*/i, "") || String(index + 1),
+    rawName: room.name,
     details,
     status: normalizeStatus(room.status),
+    type: room.type || "",
+    sizeSqft: room.sizeSqft || 0,
+    progress: room.progress || 0,
   };
 }
 
@@ -82,6 +87,8 @@ export default function FloorPlanRoute() {
   const { data, isLoading } = useProjectFloorPlanQuery(projectId);
   const createFloorMutation = useCreateFloorMutation(projectId);
   const createFloorRoomsMutation = useCreateFloorRoomsMutation(projectId);
+  const updateFloorMutation = useUpdateFloorMutation(projectId);
+  const updateRoomMutation = useUpdateRoomMutation(projectId);
   const { refreshing, onRefresh } = usePullToRefresh();
   const [floors, setFloors] = useState<FloorInfo[]>([]);
   const [activeFloorId, setActiveFloorId] = useState<string | null>(null);
@@ -89,6 +96,8 @@ export default function FloorPlanRoute() {
     useState<Record<string, boolean>>({});
   const [showAddFloorModal, setShowAddFloorModal] = useState(false);
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
+  const [editingFloor, setEditingFloor] = useState<FloorInfo | null>(null);
+  const [editingRoom, setEditingRoom] = useState<RoomInfo | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -97,7 +106,8 @@ export default function FloorPlanRoute() {
       id: floor.id,
       floorName: floor.name,
       status: normalizeStatus(floor.status),
-      rooms: floor.rooms.map((room, index) => toRoomInfo(room, index)),
+      progress: floor.progress,
+      rooms: floor.rooms.map((room, index) => toRoomInfo(room, index, floor.id)),
       allowRoomManagement: true,
       fixedRoomCount: floor.totalRooms,
       fixedStats: {
@@ -114,6 +124,19 @@ export default function FloorPlanRoute() {
     createFloorMutation.mutate({ name: floorName });
     setShowAddFloorModal(false);
   };
+
+  const handleUpdateFloorSubmit = (payload: UpdateFloorPayload) => {
+    if (!editingFloor) return;
+    updateFloorMutation.mutate({ floorId: editingFloor.id, payload });
+    setEditingFloor(null);
+  };
+
+  const handleUpdateRoomSubmit = (payload: UpdateRoomPayload) => {
+    if (!editingRoom) return;
+    updateRoomMutation.mutate({ roomId: editingRoom.id, payload });
+    setEditingRoom(null);
+  };
+
 
   const handleAddRoomRange = (fromCode: string, toCode: string) => {
     const targetFloorId = activeFloorId;
@@ -242,6 +265,8 @@ export default function FloorPlanRoute() {
                       : undefined
                   }
                   onDeleteFloor={() => handleDeleteFloor(floor.id)}
+                  onEditFloor={() => setEditingFloor(floor)}
+                  onEditRoom={(room) => setEditingRoom(room)}
                   onDeleteRoom={(roomId) => handleDeleteRoom(floor.id, roomId)}
                   roomDetailsVisible={Boolean(
                     roomDetailsVisibleByFloorId[floor.id],
@@ -262,6 +287,26 @@ export default function FloorPlanRoute() {
         visible={showAddFloorModal}
         onClose={() => setShowAddFloorModal(false)}
         onSubmit={handleAddFloor}
+      />
+
+      <UpdateFloorModal
+        visible={!!editingFloor}
+        initialName={editingFloor?.floorName || ""}
+        initialStatus={editingFloor?.status || "Not Started"}
+        initialProgress={editingFloor?.progress || 0}
+        onClose={() => setEditingFloor(null)}
+        onSubmit={handleUpdateFloorSubmit}
+      />
+
+      <UpdateRoomModal
+        visible={!!editingRoom}
+        initialName={editingRoom?.rawName || editingRoom?.roomNumber || ""}
+        initialType={editingRoom?.type || ""}
+        initialSizeSqft={editingRoom?.sizeSqft || 0}
+        initialStatus={editingRoom?.status || "Not Started"}
+        initialProgress={editingRoom?.progress || 0}
+        onClose={() => setEditingRoom(null)}
+        onSubmit={handleUpdateRoomSubmit}
       />
 
       <AddRoomRangeModal

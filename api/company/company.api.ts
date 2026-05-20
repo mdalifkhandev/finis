@@ -444,6 +444,47 @@ export async function createProjectFloorRooms(
   return data.data;
 }
 
+export async function updateProjectFloor(
+  projectId: string,
+  floorId: string,
+  payload: { name: string; status: string; progress: number }
+) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/floors/${floorId}`, payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update floor");
+  }
+
+  return data.data;
+}
+
+export async function updateProjectRoom(
+  projectId: string,
+  roomId: string,
+  payload: {
+    name: string;
+    type: string;
+    sizeSqft: number;
+    status: string;
+    progress: number;
+  }
+) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/rooms/${roomId}`, payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update room");
+  }
+
+  return data.data;
+}
 
 
 
