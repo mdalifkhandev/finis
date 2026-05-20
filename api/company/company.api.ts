@@ -408,4 +408,42 @@ export async function updateTaskStatusApi(id: string, status: string) {
   return data.data;
 }
 
+export async function createProjectFloor(projectId: string, name: string) {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/floors`, { name });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to add floor");
+  }
+
+  return data.data;
+}
+
+export async function createProjectFloorRooms(
+  projectId: string,
+  floorId: string,
+  startRoomNumber: string,
+  endRoomNumber: string,
+) {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/floors/${floorId}/rooms`, {
+    startRoomNumber,
+    endRoomNumber,
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to add rooms");
+  }
+
+  return data.data;
+}
+
+
+
 

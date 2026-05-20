@@ -31,7 +31,7 @@ export default function TaskCard({
       <View className="mt-2 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Ionicons name="location-outline" size={16} color="#536174" />
-          <Text className="ml-1.5 text-[14px] text-[#4C596C]">
+          <Text className="ml-1.5 text-[14px] text-[#4C596C] max-w-[210px]">
             {task.location}
           </Text>
         </View>
