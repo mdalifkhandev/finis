@@ -62,3 +62,36 @@ export function saveProject(nextProjectData: ProjectData) {
 export function getDefaultProjectData() {
   return DEFAULT_PROJECT_DATA;
 }
+
+// Maps API response data into the store's ProjectData shape
+export function mapApiToProjectData(apiData: {
+  name: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  numFloors: number;
+  roomsPerFloor: number;
+  budget: number;
+  location: string;
+  description: string;
+  isWholeHouse: boolean;
+  houseSections: string[];
+  client?: { companyName?: string };
+}): ProjectData {
+  return {
+    projectName: apiData.name,
+    company: apiData.client?.companyName ?? "",
+    startDate: apiData.startDate,
+    endDate: apiData.endDate,
+    projectType:
+      apiData.type === "apartment" ? "Apartment Building" : "House",
+    floors: String(apiData.numFloors),
+    roomsPerFloor: String(apiData.roomsPerFloor),
+    budgetEnabled: apiData.budget > 0,
+    budget: String(apiData.budget),
+    location: apiData.location,
+    description: apiData.description,
+    houseScope: apiData.isWholeHouse ? "whole" : "sections",
+    selectedSections: apiData.houseSections ?? [],
+  };
+}

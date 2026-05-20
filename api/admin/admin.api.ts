@@ -7,6 +7,7 @@ import type {
   AdminDashboardData,
   AdminDashboardResponse,
   AdminDashboardWorker,
+  AdminProjectProfileResponse,
 } from "@/types/admin.types";
 
 function resolveMediaUrl(path: string | null) {
@@ -80,6 +81,18 @@ export async function getActiveProjects(params: ActiveProjectsParams = {}) {
 
   if (!data.success) {
     throw new Error(data.message || "Failed to load projects");
+  }
+
+  return data.data;
+}
+
+export async function getProjectProfile(id: string) {
+  const { data } = await api.get<AdminProjectProfileResponse>(
+    `/admin/projects/${id}/profile`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load project profile");
   }
 
   return data.data;

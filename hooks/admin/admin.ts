@@ -5,6 +5,7 @@ import {
   getActiveProjects,
   getActiveWorkers,
   getAdminDashboard,
+  getProjectProfile,
 } from "@/api/admin/admin.api";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -73,6 +74,30 @@ export function useActiveProjectsQuery(page: number, limit: number) {
         query.error instanceof Error
           ? query.error.message
           : "Failed to load projects",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useProjectProfileQuery(id: string) {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+  const query = useQuery({
+    queryKey: ["admin", "project-profile", id, token],
+    queryFn: () => getProjectProfile(id),
+    enabled: !!token && !!id && role === "admin",
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load project profile",
       );
     }
   }, [query.error, query.isError]);
