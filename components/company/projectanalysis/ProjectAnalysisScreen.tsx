@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { View } from "react-native";
+import { useProjectAnalysisQuery } from "@/hooks/company/company";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
 import ProjectAnalysisTaskCard from "./ProjectAnalysisTaskCard";
 
 type AnalysisTaskStatus =
@@ -17,51 +18,37 @@ type AnalysisTask = {
   status: AnalysisTaskStatus;
 };
 
-const initialTasks = [
-  {
-    id: "task-1",
-    title: "Lobby",
-    subtitle: "Redesigne -Commerce Dashboard",
-    units: "2 Unites",
-    date: "Today",
-    status: "Completed",
-  },
-  {
-    id: "task-2",
-    title: "Second Floor",
-    subtitle: "Redesigne -Commerce Dashboard",
-    units: "2 Unites",
-    date: "today",
-    status: "Completed",
-  },
-  {
-    id: "task-3",
-    title: "Lobby",
-    subtitle: "Analytics Dashboard UI Update",
-    units: "2 Unites",
-    date: "today",
-    status: "Pending",
-  },
-  {
-    id: "task-4",
-    title: "Lobby",
-    subtitle: "Design System Creation",
-    units: "2 Unites",
-    date: "today",
-    status: "In Progress",
-  },
-  {
-    id: "task-5",
-    title: "Lobby",
-    subtitle: "Mental Health App",
-    units: "2 Unites",
-    date: "today",
-    status: "Pending",
-  },
-] satisfies AnalysisTask[];
+type ProjectAnalysisScreenProps = {
+  projectId?: string;
+};
 
-export default function ProjectAnalysisScreen() {
-  const [tasks, setTasks] = useState(initialTasks);
+function mapStatus(status: string): AnalysisTaskStatus {
+  const norm = status.toLowerCase();
+  if (norm === "completed") return "Completed";
+  if (norm === "in_progress") return "In Progress";
+  if (norm === "pending") return "Pending";
+  return "Not Started";
+}
+
+export default function ProjectAnalysisScreen({
+  projectId,
+}: ProjectAnalysisScreenProps) {
+  const { data, isLoading } = useProjectAnalysisQuery(projectId);
+  const [tasks, setTasks] = useState<AnalysisTask[]>([]);
+
+  useEffect(() => {
+    if (data?.checklist) {
+      const mappedTasks = data.checklist.map((item) => ({
+        id: item.floorId,
+        title: item.floorName,
+        subtitle: item.tasks.map((t) => t.taskName).join(", ") || "No tasks",
+        units: `${item.tasks.length} Tasks`,
+        date: "Today",
+        status: mapStatus(item.floorStatus),
+      }));
+      setTasks(mappedTasks);
+    }
+  }, [data]);
 
   const handleToggleTask = (id: string) => {
     setTasks((previous) =>
@@ -75,6 +62,14 @@ export default function ProjectAnalysisScreen() {
       ),
     );
   };
+
+  if (isLoading) {
+    return (
+      <View className="mt-10 items-center justify-center">
+        <ActivityIndicator size="large" color="#1F506D" />
+      </View>
+    );
+  }
 
   return (
     <View className="mt-6 px-5">
