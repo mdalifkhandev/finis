@@ -3,7 +3,7 @@ import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 
 type TeamWorkerCardProps = {
-  avatarUrl: string;
+  avatarUrl: string | null;
   name: string;
   role: string;
   onDelete?: () => void;
@@ -19,10 +19,13 @@ export default function TeamWorkerCard({
     <View className="mt-2.5 rounded-[10px] border border-[#E0E4E9] bg-[#FFFFFF] px-3 py-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-1 flex-row items-center">
-          <Image
-            source={{ uri: avatarUrl }}
-            className="h-10 w-10 rounded-full"
-          />
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} className="h-10 w-10 rounded-full" />
+          ) : (
+            <View className="h-10 w-10 rounded-full bg-[#E9EDF1] items-center justify-center">
+              <Ionicons name="person" size={18} color="#9CA3AF" />
+            </View>
+          )}
           <View className="ml-2.5 flex-1 pr-2">
             <Text className="text-[16px] font-medium text-[#1B2028]">
               {name}
