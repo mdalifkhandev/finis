@@ -1,24 +1,47 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
-import { useProjectData } from "@/components/company/project/projectStore";
+import {
+  mapApiToProjectData,
+  saveProject,
+  useProjectData,
+} from "@/components/company/project/projectStore";
 import ProjectBudgetCard from "@/components/company/projectinfo/ProjectBudgetCard";
 import ProjectDetailsInfoCard from "@/components/company/projectinfo/ProjectDetailsInfoCard";
-import { router } from "expo-router";
-import React from "react";
-import { ScrollView, View } from "react-native";
+import { useProjectProfileQuery } from "@/hooks/admin/admin";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const formatCurrency = (value: number) =>
   `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
 export default function ProjectInfoRoute() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: apiProject, isLoading } = useProjectProfileQuery(id as string);
   const project = useProjectData();
+
+  // When API responds, push data into the store
+  useEffect(() => {
+    if (apiProject) {
+      saveProject(mapApiToProjectData(apiProject));
+    }
+  }, [apiProject]);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#E9EDF1] items-center justify-center">
+        <ActivityIndicator size="large" color="#1F506D" />
+      </SafeAreaView>
+    );
+  }
+
   const budgetNumber =
     Number((project.budget || "").replace(/[^\d.]/g, "")) || 0;
   const showBudgetCards = project.budgetEnabled && budgetNumber > 0;
-  const spentAmount = showBudgetCards
-    ? Math.round(budgetNumber * 0.75)
-    : 1875000;
-  const remainingAmount = Math.max(budgetNumber - spentAmount, 0);
+  const spentAmount = apiProject?.spent ?? 0;
+  const remainingAmount = apiProject?.remaining ?? 0;
+  const usagePercent =
+    budgetNumber > 0 ? (spentAmount / budgetNumber) * 100 : 0;
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -40,8 +63,8 @@ export default function ProjectInfoRoute() {
             title="Spent"
             amount={formatCurrency(spentAmount)}
             amountColor="#F24800"
-            usagePercent={75}
-            usageLabel="75.0% of budget used"
+            usagePercent={usagePercent}
+            usageLabel={`${usagePercent.toFixed(1)}% of budget used`}
           />
           {showBudgetCards ? (
             <ProjectBudgetCard

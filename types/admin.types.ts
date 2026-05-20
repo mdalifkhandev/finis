@@ -97,3 +97,40 @@ export type AdminCompanyDetail = AdminCompany & {
 };
 
 export type AdminCompanyDetailResponse = ApiResponse<AdminCompanyDetail>;
+
+export type AdminProjectProfile = {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  priority: string | null;
+  isWholeHouse: boolean;
+  houseSections: any[];
+  progress: number;
+  startDate: string;
+  endDate: string;
+  location: string;
+  description: string;
+  numFloors: number;
+  roomsPerFloor: number;
+  budget: number;
+  spent: number;
+  remaining: number;
+  client: {
+    companyId: string;
+    companyName: string;
+    logoUrl: string | null;
+    phone: string;
+    email: string;
+    website: string;
+    address: string;
+    primaryContact: string | null;
+  };
+  counts: {
+    tasks: number;
+    teamMembers: number;
+    floors: number;
+  };
+};
+
+export type AdminProjectProfileResponse = ApiResponse<AdminProjectProfile>;
