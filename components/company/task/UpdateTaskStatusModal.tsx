@@ -23,6 +23,12 @@ type UpdateTaskStatusModalProps = {
   onSelectStatus: (status: TaskStatus) => void;
 };
 
+function isTransitionDisabled(currentStatus: TaskStatus | undefined, targetStatus: TaskStatus): boolean {
+  if (!currentStatus) return true;
+  return currentStatus === targetStatus;
+}
+
+
 export default function UpdateTaskStatusModal({
   visible,
   task,
@@ -46,21 +52,24 @@ export default function UpdateTaskStatusModal({
                 {statusOptions.map((status) => {
                   const active = task?.status === status;
                   const tone = tones[status];
+                  const isOptionDisabled = isTransitionDisabled(task?.status, status);
 
                   return (
                     <TouchableOpacity
                       key={status}
                       activeOpacity={0.85}
+                      disabled={isOptionDisabled}
                       onPress={() => onSelectStatus(status)}
                       className="rounded-[14px] border px-4 py-3"
                       style={{
                         borderColor: active ? tone.border : "#D6DCE3",
-                        backgroundColor: active ? tone.bg : "#F8FAFC",
+                        backgroundColor: active ? tone.bg : isOptionDisabled ? "#F1F5F9" : "#F8FAFC",
+                        opacity: isOptionDisabled && !active ? 0.45 : 1,
                       }}
                     >
                       <Text
                         className="text-[15px] font-medium"
-                        style={{ color: active ? tone.text : "#2B2B2B" }}
+                        style={{ color: active ? tone.text : isOptionDisabled ? "#94A3B8" : "#2B2B2B" }}
                       >
                         {status}
                       </Text>
