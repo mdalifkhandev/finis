@@ -200,3 +200,62 @@ export type ProjectAnalysisData = {
 };
 
 export type ProjectAnalysisResponse = ApiResponse<ProjectAnalysisData>;
+
+export type TaskAssignee = {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  role: string;
+};
+
+export type TaskProject = {
+  id: string;
+  name: string;
+};
+
+export type TaskFloor = {
+  id: string;
+  name: string;
+};
+
+export type TaskRoom = {
+  id: string;
+  name: string;
+};
+
+export type TaskListItem = {
+  id: string;
+  projectId: string;
+  floorId: string;
+  roomId: string;
+  assignedTo: string;
+  createdBy: string;
+  title: string;
+  description: string;
+  priority: string;
+  status: string;
+  dueDate: string;
+  estimatedHours: number | null;
+  actualHours: number | null;
+  createdAt: string;
+  updatedAt: string;
+  project: TaskProject;
+  floor: TaskFloor;
+  room: TaskRoom;
+  assignee: TaskAssignee;
+  _count: {
+    reports: number;
+  };
+};
+
+export type TasksListMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+};
+
+export type TasksListResponse = ApiResponse<TaskListItem[]> & {
+  meta: TasksListMeta;
+};
+

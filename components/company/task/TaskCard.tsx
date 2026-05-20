@@ -63,23 +63,17 @@ export default function TaskCard({
       <View className="mt-4 flex-row items-center justify-between">
         <TaskStatusPill status={task.status} />
 
-        {task.status === "Completed" ? (
-          <Text className="text-[16px] font-medium text-[#0F8A61]">
-            Completed Task
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={(event) => {
+            event.stopPropagation();
+            onPressUpdateStatus?.();
+          }}
+        >
+          <Text className="text-[16px] font-medium text-[#1B5A83]">
+            Update Status
           </Text>
-        ) : (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={(event) => {
-              event.stopPropagation();
-              onPressUpdateStatus?.();
-            }}
-          >
-            <Text className="text-[16px] font-medium text-[#1B5A83]">
-              Update Status
-            </Text>
-          </TouchableOpacity>
-        )}
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );

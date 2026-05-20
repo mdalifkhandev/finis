@@ -12,7 +12,7 @@ export default function TaskRoute() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 36 }}
       >
-        <BackTitleHeader title="Task" onBack={() => router.back()} />
+        <BackTitleHeader title="Task " onBack={() => router.back()} />
         <TaskScreen />
       </ScrollView>
     </SafeAreaView>

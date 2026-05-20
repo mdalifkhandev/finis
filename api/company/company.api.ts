@@ -15,6 +15,7 @@ import type {
   UpdateProjectPayload,
   UpdateCompanyPayload,
   ProjectAnalysisResponse,
+  TasksListResponse,
 } from "@/types/company.types";
 
 function resolveMediaUrl(path: string | null) {
@@ -364,3 +365,47 @@ export async function getProjectAnalysis(id: string) {
 
   return data.data;
 }
+
+type GetTasksParams = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+};
+
+export async function getTasks(params: GetTasksParams = {}) {
+  const { data } = await api.get<TasksListResponse>("/admin/tasks", {
+    params,
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load tasks");
+  }
+
+  return {
+    data: data.data.map((task) => ({
+      ...task,
+      assignee: {
+        ...task.assignee,
+        avatarUrl: resolveMediaUrl(task.assignee.avatarUrl),
+      },
+    })),
+    meta: data.meta,
+  };
+}
+
+export async function updateTaskStatusApi(id: string, status: string) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/tasks/${id}/status`, { status });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update task status");
+  }
+
+  return data.data;
+}
+
+

@@ -10,6 +10,8 @@ import {
   updateCompany,
   updateProject,
   getProjectAnalysis,
+  getTasks,
+  updateTaskStatusApi,
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
@@ -349,3 +351,52 @@ export function useProjectAnalysisQuery(id?: string) {
 
   return query;
 }
+
+export function useTasksQuery(params: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+}) {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+  const query = useQuery({
+    queryKey: ["project", "tasks", params, token],
+    queryFn: () => getTasks(params),
+    enabled: !!token && role === "admin",
+    staleTime: 10 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load tasks",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useUpdateTaskStatusMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      updateTaskStatusApi(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+      toast.success("Task status updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update task status",
+      );
+    },
+  });
+}
+
+

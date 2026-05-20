@@ -95,6 +95,12 @@ export function updateTaskStatus(taskId: string, status: TaskStatus) {
   notify();
 }
 
+export function setTasks(newTasks: TaskItem[]) {
+  tasks = newTasks;
+  notify();
+}
+
+
 export function setTaskDraft(draft: TaskDraft) {
   taskDraft = draft;
 }
