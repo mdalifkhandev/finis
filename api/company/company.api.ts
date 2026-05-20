@@ -486,5 +486,33 @@ export async function updateProjectRoom(
   return data.data;
 }
 
+export async function deleteProjectFloor(projectId: string, floorId: string) {
+  const { data } = await api.delete<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/floors/${floorId}`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete floor");
+  }
+
+  return data.data;
+}
+
+export async function deleteProjectRoom(projectId: string, roomId: string) {
+  const { data } = await api.delete<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/rooms/${roomId}`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete room");
+  }
+
+  return data.data;
+}
+
 
 

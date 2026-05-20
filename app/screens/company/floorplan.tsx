@@ -3,12 +3,13 @@ import AddFloorModal from "@/components/company/floorplan/AddFloorModal";
 import AddRoomRangeModal from "@/components/company/floorplan/AddRoomRangeModal";
 import UpdateFloorModal, { UpdateFloorPayload } from "@/components/company/floorplan/UpdateFloorModal";
 import UpdateRoomModal, { UpdateRoomPayload } from "@/components/company/floorplan/UpdateRoomModal";
+import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 import FloorSetupCard, {
   RoomInfo,
 } from "@/components/company/floorplan/FloorSetupCard";
 import { FloorStatus } from "@/components/company/floorplan/FloorStatusBadge";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
-import { useProjectFloorPlanQuery, useCreateFloorMutation, useCreateFloorRoomsMutation, useUpdateFloorMutation, useUpdateRoomMutation } from "@/hooks/company/company";
+import { useProjectFloorPlanQuery, useCreateFloorMutation, useCreateFloorRoomsMutation, useUpdateFloorMutation, useUpdateRoomMutation, useDeleteFloorMutation, useDeleteRoomMutation } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -89,6 +90,8 @@ export default function FloorPlanRoute() {
   const createFloorRoomsMutation = useCreateFloorRoomsMutation(projectId);
   const updateFloorMutation = useUpdateFloorMutation(projectId);
   const updateRoomMutation = useUpdateRoomMutation(projectId);
+  const deleteFloorMutation = useDeleteFloorMutation(projectId);
+  const deleteRoomMutation = useDeleteRoomMutation(projectId);
   const { refreshing, onRefresh } = usePullToRefresh();
   const [floors, setFloors] = useState<FloorInfo[]>([]);
   const [activeFloorId, setActiveFloorId] = useState<string | null>(null);
@@ -98,6 +101,8 @@ export default function FloorPlanRoute() {
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
   const [editingFloor, setEditingFloor] = useState<FloorInfo | null>(null);
   const [editingRoom, setEditingRoom] = useState<RoomInfo | null>(null);
+  const [deletingFloorId, setDeletingFloorId] = useState<string | null>(null);
+  const [deletingRoom, setDeletingRoom] = useState<{ floorId: string; roomId: string } | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -164,6 +169,13 @@ export default function FloorPlanRoute() {
   };
 
   const handleDeleteFloor = (floorId: string) => {
+    setDeletingFloorId(floorId);
+  };
+
+  const confirmDeleteFloor = () => {
+    if (!deletingFloorId) return;
+    const floorId = deletingFloorId;
+    deleteFloorMutation.mutate(floorId);
     setFloors((previous) => previous.filter((floor) => floor.id !== floorId));
     setRoomDetailsVisibleByFloorId((previous) => {
       const updated = { ...previous };
@@ -174,9 +186,17 @@ export default function FloorPlanRoute() {
       setActiveFloorId(null);
       setShowAddRoomModal(false);
     }
+    setDeletingFloorId(null);
   };
 
   const handleDeleteRoom = (floorId: string, roomId: string) => {
+    setDeletingRoom({ floorId, roomId });
+  };
+
+  const confirmDeleteRoom = () => {
+    if (!deletingRoom) return;
+    const { floorId, roomId } = deletingRoom;
+    deleteRoomMutation.mutate(roomId);
     setFloors((previous) =>
       previous.map((floor) =>
         floor.id === floorId
@@ -187,6 +207,7 @@ export default function FloorPlanRoute() {
           : floor,
       ),
     );
+    setDeletingRoom(null);
   };
 
   return (
@@ -316,6 +337,22 @@ export default function FloorPlanRoute() {
           setActiveFloorId(null);
         }}
         onSubmit={handleAddRoomRange}
+      />
+
+      <DeleteConfirmationModal
+        visible={!!deletingFloorId}
+        title="Delete Floor"
+        description="Are you sure you want to delete this floor? This action cannot be undone."
+        onClose={() => setDeletingFloorId(null)}
+        onConfirm={confirmDeleteFloor}
+      />
+
+      <DeleteConfirmationModal
+        visible={!!deletingRoom}
+        title="Delete Room"
+        description="Are you sure you want to delete this room? This action cannot be undone."
+        onClose={() => setDeletingRoom(null)}
+        onConfirm={confirmDeleteRoom}
       />
     </SafeAreaView>
   );

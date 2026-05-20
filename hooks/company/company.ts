@@ -16,6 +16,8 @@ import {
   createProjectFloorRooms,
   updateProjectFloor,
   updateProjectRoom,
+  deleteProjectFloor,
+  deleteProjectRoom,
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
@@ -520,6 +522,54 @@ export function useUpdateRoomMutation(projectId?: string) {
     onError: (error: any) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to update room",
+      );
+    },
+  });
+}
+
+export function useDeleteFloorMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (floorId: string) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return deleteProjectFloor(projectId, floorId);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "floor-plan", projectId],
+        });
+      }
+      toast.success("Floor deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete floor",
+      );
+    },
+  });
+}
+
+export function useDeleteRoomMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (roomId: string) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return deleteProjectRoom(projectId, roomId);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "floor-plan", projectId],
+        });
+      }
+      toast.success("Room deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete room",
       );
     },
   });
