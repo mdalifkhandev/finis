@@ -7,6 +7,7 @@ import {
   Pressable,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -102,6 +103,16 @@ export default function AddRoomRangeModal({
           className="h-12 flex-1 rounded-md border border-[#D1D5DB] bg-[#F9FAFB] px-3.5 text-[16px] text-[#111827]"
         />
       </View>
+
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={handleSubmit}
+        className="mt-4 h-12 items-center justify-center rounded-md bg-[#1E5371]"
+      >
+        <Text className="text-[16px] font-semibold text-white">
+          Add Room
+        </Text>
+      </TouchableOpacity>
     </>
   );
 

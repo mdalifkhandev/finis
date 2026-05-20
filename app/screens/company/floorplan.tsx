@@ -5,8 +5,8 @@ import FloorSetupCard, {
   RoomInfo,
 } from "@/components/company/floorplan/FloorSetupCard";
 import { FloorStatus } from "@/components/company/floorplan/FloorStatusBadge";
-import { useProjectFloorPlanQuery } from "@/hooks/company/company";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
+import { useProjectFloorPlanQuery, useCreateFloorMutation, useCreateFloorRoomsMutation } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -51,6 +51,7 @@ function normalizeStatus(value?: string): FloorStatus {
   if (normalized === "in_progress" || normalized === "in progress") {
     return "In Progress";
   }
+  if (normalized === "pending") return "Pending";
   return "Not Started";
 }
 
@@ -64,9 +65,8 @@ function toRoomInfo(
   },
   index: number,
 ): RoomInfo {
-  const details = `${room.type ?? "Utility"}${
-    room.sizeSqft ? ` • ${room.sizeSqft} sq ft` : ""
-  }`;
+  const details = `${room.type ?? "Utility"}${room.sizeSqft ? ` • ${room.sizeSqft} sq ft` : ""
+    }`;
 
   return {
     id: room.id,
@@ -80,6 +80,8 @@ export default function FloorPlanRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const projectId = typeof id === "string" ? id : undefined;
   const { data, isLoading } = useProjectFloorPlanQuery(projectId);
+  const createFloorMutation = useCreateFloorMutation(projectId);
+  const createFloorRoomsMutation = useCreateFloorRoomsMutation(projectId);
   const { refreshing, onRefresh } = usePullToRefresh();
   const [floors, setFloors] = useState<FloorInfo[]>([]);
   const [activeFloorId, setActiveFloorId] = useState<string | null>(null);
@@ -109,74 +111,31 @@ export default function FloorPlanRoute() {
   }, [data]);
 
   const handleAddFloor = (floorName: string) => {
-    const newFloor: FloorInfo = {
-      id: `floor-${Date.now()}`,
-      floorName,
-      status: "Not Started",
-      rooms: [],
-      allowRoomManagement: true,
-    };
-
-    setFloors((previous) => [...previous, newFloor]);
+    createFloorMutation.mutate({ name: floorName });
     setShowAddFloorModal(false);
   };
 
   const handleAddRoomRange = (fromCode: string, toCode: string) => {
     const targetFloorId = activeFloorId;
-    const targetFloor = floors.find((floor) => floor.id === targetFloorId);
-
-    if (!targetFloor || !targetFloor.allowRoomManagement) {
+    if (!targetFloorId) {
       setShowAddRoomModal(false);
       return;
     }
 
-    const fromMatch = fromCode.match(roomRangePattern);
-    const toMatch = toCode.match(roomRangePattern);
+    const startRoomNumber = fromCode.trim();
+    const endRoomNumber = toCode.trim();
 
-    if (!fromMatch || !toMatch) {
-      Alert.alert("Invalid input", "Use format like A100 to A106.");
+    if (!startRoomNumber || !endRoomNumber) {
+      Alert.alert("Invalid input", "Please enter start and end room numbers.");
       return;
     }
 
-    const fromPrefix = fromMatch[1].toUpperCase();
-    const toPrefix = toMatch[1].toUpperCase();
-    const fromNumber = Number(fromMatch[2]);
-    const toNumber = Number(toMatch[2]);
+    createFloorRoomsMutation.mutate({
+      floorId: targetFloorId,
+      startRoomNumber,
+      endRoomNumber,
+    });
 
-    if (fromPrefix !== toPrefix) {
-      Alert.alert(
-        "Invalid range",
-        "Both values must use the same letter prefix.",
-      );
-      return;
-    }
-
-    if (toNumber <= fromNumber) {
-      Alert.alert(
-        "Invalid range",
-        "Second value must be greater than the first value.",
-      );
-      return;
-    }
-
-    const numberOfRoomsToCreate = toNumber - fromNumber;
-    const newRooms: RoomInfo[] = Array.from(
-      { length: numberOfRoomsToCreate },
-      (_, index) => ({
-        id: `${Date.now()}-${index}`,
-        roomNumber: `${fromPrefix}${fromNumber + index}`,
-        details: "Utility • 60 sq ft",
-        status: "Completed",
-      }),
-    );
-
-    setFloors((previous) =>
-      previous.map((floor) =>
-        floor.id === targetFloorId
-          ? { ...floor, rooms: [...floor.rooms, ...newRooms] }
-          : floor,
-      ),
-    );
     setShowAddRoomModal(false);
     setActiveFloorId(null);
   };
@@ -199,9 +158,9 @@ export default function FloorPlanRoute() {
       previous.map((floor) =>
         floor.id === floorId
           ? {
-              ...floor,
-              rooms: floor.rooms.filter((room) => room.id !== roomId),
-            }
+            ...floor,
+            rooms: floor.rooms.filter((room) => room.id !== roomId),
+          }
           : floor,
       ),
     );
@@ -238,7 +197,7 @@ export default function FloorPlanRoute() {
           >
             <Ionicons name="add" size={20} color="#1F252E" />
             <Text className="ml-1.5 text-[16px] font-semibold text-[#1F252E]">
-              Add Floor
+              Add Floors
             </Text>
           </TouchableOpacity>
         </View>
@@ -257,45 +216,45 @@ export default function FloorPlanRoute() {
             </View>
           ) : (
             floors.map((floor) => {
-            const stats = floor.allowRoomManagement
-              ? buildStatsFromRooms(floor.rooms)
-              : (floor.fixedStats ?? buildStatsFromRooms(floor.rooms));
-            const roomCount = floor.allowRoomManagement
-              ? floor.rooms.length
-              : (floor.fixedRoomCount ?? floor.rooms.length);
+              const stats = floor.allowRoomManagement
+                ? buildStatsFromRooms(floor.rooms)
+                : (floor.fixedStats ?? buildStatsFromRooms(floor.rooms));
+              const roomCount = floor.allowRoomManagement
+                ? floor.rooms.length
+                : (floor.fixedRoomCount ?? floor.rooms.length);
 
-            return (
-              <FloorSetupCard
-                key={floor.id}
-                floorName={floor.floorName}
-                roomCount={roomCount}
-                status={floor.status}
-                completed={stats.completed}
-                inProgress={stats.inProgress}
-                notStarted={stats.notStarted}
-                rooms={floor.allowRoomManagement ? floor.rooms : undefined}
-                onPressAddRoom={
-                  floor.allowRoomManagement
-                    ? () => {
+              return (
+                <FloorSetupCard
+                  key={floor.id}
+                  floorName={floor.floorName}
+                  roomCount={roomCount}
+                  status={floor.status}
+                  completed={stats.completed}
+                  inProgress={stats.inProgress}
+                  notStarted={stats.notStarted}
+                  rooms={floor.allowRoomManagement ? floor.rooms : undefined}
+                  onPressAddRoom={
+                    floor.allowRoomManagement
+                      ? () => {
                         setActiveFloorId(floor.id);
                         setShowAddRoomModal(true);
                       }
-                    : undefined
-                }
-                onDeleteFloor={() => handleDeleteFloor(floor.id)}
-                onDeleteRoom={(roomId) => handleDeleteRoom(floor.id, roomId)}
-                roomDetailsVisible={Boolean(
-                  roomDetailsVisibleByFloorId[floor.id],
-                )}
-                onToggleRoomDetails={() =>
-                  setRoomDetailsVisibleByFloorId((previous) => ({
-                    ...previous,
-                    [floor.id]: !previous[floor.id],
-                  }))
-                }
-              />
-            );
-          }))}
+                      : undefined
+                  }
+                  onDeleteFloor={() => handleDeleteFloor(floor.id)}
+                  onDeleteRoom={(roomId) => handleDeleteRoom(floor.id, roomId)}
+                  roomDetailsVisible={Boolean(
+                    roomDetailsVisibleByFloorId[floor.id],
+                  )}
+                  onToggleRoomDetails={() =>
+                    setRoomDetailsVisibleByFloorId((previous) => ({
+                      ...previous,
+                      [floor.id]: !previous[floor.id],
+                    }))
+                  }
+                />
+              );
+            }))}
         </View>
       </ScrollView>
 

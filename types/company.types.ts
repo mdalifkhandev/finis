@@ -259,3 +259,9 @@ export type TasksListResponse = ApiResponse<TaskListItem[]> & {
   meta: TasksListMeta;
 };
 
+
+export enum RoomStatus {
+  pending = "pending",
+  in_progress = "in_progress",
+  completed = "completed",
+}

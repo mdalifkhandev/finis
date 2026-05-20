@@ -12,6 +12,8 @@ import {
   getProjectAnalysis,
   getTasks,
   updateTaskStatusApi,
+  createProjectFloor,
+  createProjectFloorRooms,
 } from "@/api/company/company.api";
 import { useAuthStore } from "@/store/auth.store";
 import type {
@@ -398,5 +400,62 @@ export function useUpdateTaskStatusMutation() {
     },
   });
 }
+
+export function useCreateFloorMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ name }: { name: string }) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return createProjectFloor(projectId, name);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "floor-plan", projectId],
+        });
+      }
+      toast.success("Floor added successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to add floor",
+      );
+    },
+  });
+}
+
+export function useCreateFloorRoomsMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      floorId,
+      startRoomNumber,
+      endRoomNumber,
+    }: {
+      floorId: string;
+      startRoomNumber: string;
+      endRoomNumber: string;
+    }) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return createProjectFloorRooms(projectId, floorId, startRoomNumber, endRoomNumber);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "floor-plan", projectId],
+        });
+      }
+      toast.success("Rooms added successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to add rooms",
+      );
+    },
+  });
+}
+
 
 
