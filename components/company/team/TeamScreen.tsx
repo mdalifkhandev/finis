@@ -1,48 +1,14 @@
 import {
   useAddProjectManagerMutation,
+  useRemoveProjectManagerMutation,
   useAvailableManagersQuery,
-  useProjectTeamQuery,
+  useProjectManagersQuery,
 } from "@/hooks/company/company";
 import React, { useMemo, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import AddTeamMemberSheet, { TeamMemberOption } from "./AddTeamMemberSheet";
 import TeamMemberCard from "./TeamMemberCard";
-import TeamWorkerCard from "./TeamWorkerCard";
-
-// Keep workers hardcoded for now as requested
-const allWorkers: TeamMemberOption[] = [
-  {
-    id: "worker-emily",
-    name: "Emily Chen",
-    role: "Electrician",
-    email: "emily@example.com",
-    phone: "(555) 456-7890",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    id: "worker-sophia",
-    name: "Sophia Lee",
-    role: "Electrician",
-    email: "sophia@example.com",
-    phone: "(555) 345-1200",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    id: "worker-daniel",
-    name: "Daniel Ross",
-    role: "Safety Officer",
-    email: "daniel@example.com",
-    phone: "(555) 890-1122",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=256&auto=format&fit=crop",
-  },
-];
-
-const initialAssignments: Record<string, string[]> = {
-  // Hardcoded assignments for demo purposes
-};
+import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 
 type TeamScreenProps = {
   projectId?: string;
@@ -50,49 +16,34 @@ type TeamScreenProps = {
 
 export default function TeamScreen({ projectId }: TeamScreenProps) {
   const [showAddSheet, setShowAddSheet] = useState(false);
-  const [activeManagerId, setActiveManagerId] = useState<string | null>(null);
-  const [workerAssignments, setWorkerAssignments] =
-    useState<Record<string, string[]>>(initialAssignments);
+  const [deletingManagerId, setDeletingManagerId] = useState<string | null>(null);
 
-  const { data: teamData, isLoading: isLoadingTeam } =
-    useProjectTeamQuery(projectId);
+  const { data: managersData, isLoading: isLoadingTeam } =
+    useProjectManagersQuery(projectId);
   const { data: availableManagersData, isLoading: isLoadingManagers } =
     useAvailableManagersQuery();
   const addManagerMutation = useAddProjectManagerMutation(projectId);
+  const removeManagerMutation = useRemoveProjectManagerMutation(projectId);
 
   const selectedManagers = useMemo(() => {
-    if (!teamData) return [];
-    return teamData.managers.map((m) => ({
-      id: m.userId,
-      name: m.user.fullName,
+    if (!managersData) return [];
+    return managersData.map((m: any) => ({
+      id: m.id,
+      userId: m.userId || m.memberId,
+      name: m.fullName || m.name,
       role: m.role || "Manager",
-      email: m.user.email,
-      phone: m.user.phone,
-      avatarUrl: m.user.avatarUrl,
+      email: m.email,
+      phone: m.phone,
+      avatarUrl: m.avatarUrl,
     }));
-  }, [teamData]);
-
-  const activeManager = useMemo(
-    () =>
-      selectedManagers.find((manager) => manager.id === activeManagerId) ??
-      null,
-    [activeManagerId, selectedManagers],
-  );
-
-  const activeWorkers = useMemo(() => {
-    if (!activeManagerId) {
-      return [];
-    }
-    const assignedIds = workerAssignments[activeManagerId] ?? [];
-    return allWorkers.filter((worker) => assignedIds.includes(worker.id));
-  }, [activeManagerId, workerAssignments]);
+  }, [managersData]);
 
   const availableManagers = useMemo(() => {
     if (!availableManagersData) return [];
-    const assignedUserIds = teamData?.managers.map((m) => m.userId) || [];
+    const assignedUserIds = selectedManagers.map((m: any) => m.userId) || [];
     return availableManagersData
-      .filter((m) => !assignedUserIds.includes(m.id))
-      .map((m) => ({
+      .filter((m: any) => !assignedUserIds.includes(m.id))
+      .map((m: any) => ({
         id: m.id,
         name: m.fullName,
         role: m.role || "Manager",
@@ -100,15 +51,7 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
         phone: m.phone || "",
         avatarUrl: m.avatarUrl,
       }));
-  }, [availableManagersData, teamData]);
-
-  const availableWorkers = useMemo(() => {
-    if (!activeManagerId) {
-      return [];
-    }
-    const assignedIds = workerAssignments[activeManagerId] ?? [];
-    return allWorkers.filter((worker) => !assignedIds.includes(worker.id));
-  }, [activeManagerId, workerAssignments]);
+  }, [availableManagersData, selectedManagers]);
 
   const handleAddManager = (member: TeamMemberOption) => {
     addManagerMutation.mutate(member.id, {
@@ -118,40 +61,17 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
     });
   };
 
-  const handleAddWorker = (worker: TeamMemberOption) => {
-    if (!activeManagerId) return;
-    setWorkerAssignments((previous) => ({
-      ...previous,
-      [activeManagerId]: [...(previous[activeManagerId] ?? []), worker.id],
-    }));
-    setShowAddSheet(false);
-  };
-
   const handleDeleteManager = (id: string) => {
-    // Optimistic or real deletion logic can be added here once API is available
-    console.log("Delete manager not implemented yet");
+    setDeletingManagerId(id);
   };
 
-  const handleDeleteWorker = (workerId: string) => {
-    if (!activeManagerId) return;
-    setWorkerAssignments((previous) => ({
-      ...previous,
-      [activeManagerId]: (previous[activeManagerId] ?? []).filter(
-        (id) => id !== workerId,
-      ),
-    }));
+  const confirmDeleteManager = () => {
+    if (!deletingManagerId) return;
+    removeManagerMutation.mutate(deletingManagerId);
+    setDeletingManagerId(null);
   };
 
   const handleOpenAddSheet = () => setShowAddSheet(true);
-
-  const headerCount = activeManager
-    ? activeWorkers.length
-    : selectedManagers.length;
-  const headerLabel = activeManager ? "Workers" : "Managers";
-  const buttonLabel = activeManager ? "Add Worker" : "Add Managers";
-  const sheetTitle = activeManager ? "Add Team Worker" : "Add Team Managers";
-  const sheetMembers = activeManager ? availableWorkers : availableManagers;
-  const handleSelectMember = activeManager ? handleAddWorker : handleAddManager;
 
   const isLoading = isLoadingTeam || (showAddSheet && isLoadingManagers);
 
@@ -160,7 +80,7 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
       <View className="mt-5 px-4">
         <View className="mb-2 flex-row items-center justify-between">
           <Text className="text-[16px] font-medium text-[#283443]">
-            {headerLabel} ({headerCount})
+            Managers ({selectedManagers.length})
           </Text>
           <TouchableOpacity
             activeOpacity={0.85}
@@ -176,7 +96,7 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
                   +
                 </Text>
                 <Text className="text-[15px] font-medium text-[#1F2937]">
-                  {buttonLabel}
+                  Add Managers
                 </Text>
               </>
             )}
@@ -187,37 +107,11 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
           <View className="mt-10 items-center justify-center">
             <ActivityIndicator size="large" color="#1d4f6d" />
             <Text className="mt-2 text-[14px] text-slate-500">
-              Loading team...
+              Loading managers...
             </Text>
           </View>
-        ) : activeManager ? (
-          <>
-            <TeamMemberCard
-              avatarUrl={activeManager.avatarUrl}
-              name={activeManager.name}
-              role={activeManager.role}
-              email={activeManager.email}
-              phone={activeManager.phone}
-              onPress={() => setActiveManagerId(null)}
-              hideDelete
-            />
-
-            <Text className="mt-3 text-[15px] font-medium text-[#283443]">
-              All Worker
-            </Text>
-
-            {activeWorkers.map((worker) => (
-              <TeamWorkerCard
-                key={worker.id}
-                avatarUrl={worker.avatarUrl}
-                name={worker.name}
-                role={worker.role}
-                onDelete={() => handleDeleteWorker(worker.id)}
-              />
-            ))}
-          </>
         ) : (
-          selectedManagers.map((manager) => (
+          selectedManagers.map((manager: any) => (
             <TeamMemberCard
               key={manager.id}
               avatarUrl={manager.avatarUrl}
@@ -226,7 +120,6 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
               email={manager.email}
               phone={manager.phone}
               onDelete={() => handleDeleteManager(manager.id)}
-              onPress={() => setActiveManagerId(manager.id)}
             />
           ))
         )}
@@ -234,11 +127,19 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
 
       <AddTeamMemberSheet
         visible={showAddSheet}
-        title={sheetTitle}
-        members={sheetMembers}
+        title="Add Team Managers"
+        members={availableManagers}
         onClose={() => setShowAddSheet(false)}
-        onSelectMember={handleSelectMember}
+        onSelectMember={handleAddManager}
         isLoading={isLoadingManagers}
+      />
+
+      <DeleteConfirmationModal
+        visible={!!deletingManagerId}
+        title="Remove Manager"
+        description="Are you sure you want to remove this manager from the project? This action cannot be undone."
+        onClose={() => setDeletingManagerId(null)}
+        onConfirm={confirmDeleteManager}
       />
     </>
   );

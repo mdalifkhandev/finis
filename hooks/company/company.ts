@@ -20,7 +20,9 @@ import {
   deleteProjectRoom,
   getAvailableManagers,
   getProjectTeam,
+  getProjectManagers,
   addProjectManager,
+  removeProjectManager,
   getProjectFloors,
   getFloorRooms,
   createTask,
@@ -601,6 +603,18 @@ export function useProjectTeamQuery(projectId?: string) {
   });
 }
 
+export function useProjectManagersQuery(projectId?: string) {
+  return useQuery({
+    queryKey: ["project", "managers", projectId],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return getProjectManagers(projectId);
+    },
+    enabled: !!projectId,
+  });
+}
+
+
 export function useAddProjectManagerMutation(projectId?: string) {
   const queryClient = useQueryClient();
 
@@ -613,6 +627,12 @@ export function useAddProjectManagerMutation(projectId?: string) {
       if (projectId) {
         void queryClient.invalidateQueries({
           queryKey: ["project", "team", projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "managers", projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["team", "available-managers"],
         });
       }
       toast.success("Manager added successfully");
@@ -660,6 +680,36 @@ export function useCreateTaskMutation() {
     onError: (error: any) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to create task",
+      );
+    },
+  });
+}
+
+export function useRemoveProjectManagerMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return removeProjectManager(projectId, userId);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "team", projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "managers", projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["team", "available-managers"],
+        });
+      }
+      toast.success("Manager removed successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to remove manager",
       );
     },
   });
