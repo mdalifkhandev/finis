@@ -21,7 +21,11 @@ import {
   getAvailableManagers,
   getProjectTeam,
   addProjectManager,
+  getProjectFloors,
+  getFloorRooms,
+  createTask,
 } from "@/api/company/company.api";
+import type { CreateTaskPayload } from "@/types/company.types";
 import { useAuthStore } from "@/store/auth.store";
 import type {
   CompanyContact,
@@ -366,6 +370,7 @@ export function useTasksQuery(params: {
   limit?: number;
   status?: string;
   search?: string;
+  projectId?: string;
 }) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
@@ -615,6 +620,46 @@ export function useAddProjectManagerMutation(projectId?: string) {
     onError: (error: any) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to add manager",
+      );
+    },
+  });
+}
+
+export function useProjectFloorsQuery(projectId?: string) {
+  return useQuery({
+    queryKey: ["project", "floors", projectId],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return getProjectFloors(projectId);
+    },
+    enabled: !!projectId,
+  });
+}
+
+export function useFloorRoomsQuery(projectId?: string, floorId?: string) {
+  return useQuery({
+    queryKey: ["project", "floor", "rooms", projectId, floorId],
+    queryFn: () => {
+      if (!projectId || !floorId) throw new Error("Project ID and Floor ID are required");
+      return getFloorRooms(projectId, floorId);
+    },
+    enabled: !!projectId && !!floorId,
+  });
+}
+
+export function useCreateTaskMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateTaskPayload) => createTask(payload),
+    onSuccess: (data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["tasks", variables.projectId],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create task",
       );
     },
   });

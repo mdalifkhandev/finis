@@ -286,3 +286,40 @@ export enum RoomStatus {
   in_progress = "in_progress",
   completed = "completed",
 }
+
+export type ProjectFloor = {
+  id: string;
+  floorNumber: number;
+  name: string;
+  status: string;
+  progress: number;
+};
+
+export type ProjectFloorsResponse = ApiResponse<ProjectFloor[]>;
+
+export type ProjectRoom = {
+  id: string;
+  roomNumber: number;
+  name: string;
+  status: string;
+  progress: number;
+  type: string | null;
+};
+
+export type ProjectRoomsResponse = ApiResponse<ProjectRoom[]>;
+
+export type Floor = ProjectFloor;
+export type Room = ProjectRoom;
+
+export type CreateTaskPayload = {
+  projectId: string;
+  title: string;
+  description: string;
+  priority: string;
+  dueDate: string;
+  floorId: string;
+  roomId: string;
+  estimatedHours?: number;
+};
+
+export type CreateTaskResponse = ApiResponse<{ id: string }>;

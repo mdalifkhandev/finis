@@ -18,6 +18,10 @@ import type {
   TasksListResponse,
   AvailableManagersResponse,
   CompanyProjectTeamMember,
+  ProjectFloorsResponse,
+  ProjectRoomsResponse,
+  CreateTaskPayload,
+  CreateTaskResponse,
 } from "@/types/company.types";
 function resolveMediaUrl(path: string | null) {
   if (!path) {
@@ -372,6 +376,7 @@ type GetTasksParams = {
   limit?: number;
   status?: string;
   search?: string;
+  projectId?: string;
 };
 
 export async function getTasks(params: GetTasksParams = {}) {
@@ -386,10 +391,10 @@ export async function getTasks(params: GetTasksParams = {}) {
   return {
     data: data.data.map((task) => ({
       ...task,
-      assignee: {
+      assignee: task.assignee ? {
         ...task.assignee,
         avatarUrl: resolveMediaUrl(task.assignee.avatarUrl),
-      },
+      } : null,
     })),
     meta: data.meta,
   };
@@ -567,5 +572,39 @@ export async function addProjectManager(projectId: string, userId: string) {
   return data.data;
 }
 
+export async function getProjectFloors(projectId: string) {
+  const { data } = await api.get<ProjectFloorsResponse>(
+    `/admin/projects/${projectId}/floors`
+  );
 
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load floors");
+  }
 
+  return data.data;
+}
+
+export async function getFloorRooms(projectId: string, floorId: string) {
+  const { data } = await api.get<ProjectRoomsResponse>(
+    `/admin/projects/${projectId}/floors/${floorId}/rooms`
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load rooms");
+  }
+
+  return data.data;
+}
+
+export async function createTask(payload: CreateTaskPayload) {
+  const { data } = await api.post<CreateTaskResponse>(
+    `/admin/tasks`,
+    payload
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to create task");
+  }
+
+  return data.data;
+}
