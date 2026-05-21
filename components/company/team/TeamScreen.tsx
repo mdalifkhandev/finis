@@ -1,13 +1,13 @@
+import {
+  useAddProjectManagerMutation,
+  useAvailableManagersQuery,
+  useProjectTeamQuery,
+} from "@/hooks/company/company";
 import React, { useMemo, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import AddTeamMemberSheet, { TeamMemberOption } from "./AddTeamMemberSheet";
 import TeamMemberCard from "./TeamMemberCard";
 import TeamWorkerCard from "./TeamWorkerCard";
-import {
-  useAvailableManagersQuery,
-  useProjectTeamQuery,
-  useAddProjectManagerMutation,
-} from "@/hooks/company/company";
 
 // Keep workers hardcoded for now as requested
 const allWorkers: TeamMemberOption[] = [
@@ -54,8 +54,10 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
   const [workerAssignments, setWorkerAssignments] =
     useState<Record<string, string[]>>(initialAssignments);
 
-  const { data: teamData, isLoading: isLoadingTeam } = useProjectTeamQuery(projectId);
-  const { data: availableManagersData, isLoading: isLoadingManagers } = useAvailableManagersQuery();
+  const { data: teamData, isLoading: isLoadingTeam } =
+    useProjectTeamQuery(projectId);
+  const { data: availableManagersData, isLoading: isLoadingManagers } =
+    useAvailableManagersQuery();
   const addManagerMutation = useAddProjectManagerMutation(projectId);
 
   const selectedManagers = useMemo(() => {
@@ -184,7 +186,9 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
         {isLoadingTeam ? (
           <View className="mt-10 items-center justify-center">
             <ActivityIndicator size="large" color="#1d4f6d" />
-            <Text className="mt-2 text-[14px] text-slate-500">Loading team...</Text>
+            <Text className="mt-2 text-[14px] text-slate-500">
+              Loading team...
+            </Text>
           </View>
         ) : activeManager ? (
           <>

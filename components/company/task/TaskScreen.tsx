@@ -150,6 +150,12 @@ export default function TaskScreen({ projectId }: { projectId?: string }) {
                   })
                 }
                 onPressUpdateStatus={() => setSelectedTaskId(task.id)}
+                onPressAssignWorker={() => {
+                  router.push({
+                    pathname: "/screens/company/assigntask",
+                    params: { taskId: task.id, projectId },
+                  });
+                }}
               />
             ))
           )}

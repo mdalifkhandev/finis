@@ -1,11 +1,11 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import TaskFormField from "@/components/company/task/TaskFormField";
 import { setTaskDraft } from "@/components/company/task/taskStore";
-import { 
-  useCreateTaskMutation, 
-  useFloorRoomsQuery, 
-  useProjectFloorsQuery, 
-  useProjectProfileQuery 
+import {
+  useCreateTaskMutation,
+  useFloorRoomsQuery,
+  useProjectFloorsQuery,
+  useProjectProfileQuery
 } from "@/hooks/company/company";
 import type { Floor, Room } from "@/types/company.types";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,17 +13,17 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
-  Modal,
-  Pressable,
-  ActivityIndicator
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
@@ -37,16 +37,16 @@ function formatDate(value: Date) {
 
 export default function CreateTaskRoute() {
   const { projectId } = useLocalSearchParams<{ projectId?: string }>();
-  
+
   const { data: projectProfile, isLoading: isProjectLoading } = useProjectProfileQuery(projectId);
   const { data: floors, isLoading: isFloorsLoading } = useProjectFloorsQuery(projectId);
-  
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  
+
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
   const [showPrioritySheet, setShowPrioritySheet] = useState(false);
-  
+
   const [dueDate, setDueDate] = useState("");
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [dueDateValue, setDueDateValue] = useState(new Date());
@@ -132,7 +132,7 @@ export default function CreateTaskRoute() {
 
       // You can pass the newly created taskId to the next screen if needed
       router.push({
-        pathname: "/screens/company/assigntask",
+        pathname: "/screens/company/task",
         params: { taskId: response.id, projectId },
       });
     } catch (error: any) {
@@ -172,7 +172,7 @@ export default function CreateTaskRoute() {
                 label="Project"
                 placeholder={isProjectLoading ? "Loading..." : "Project title"}
                 value={projectName}
-                onChangeText={() => {}} // Read-only based on project context
+                onChangeText={() => { }} // Read-only based on project context
               />
             </View>
 
@@ -182,7 +182,7 @@ export default function CreateTaskRoute() {
                 placeholder={selectedFloor ? selectedFloor.name : "Select Floor"}
                 value={selectedFloor?.name || ""}
                 onPress={() => setShowFloorSheet(true)}
-                onChangeText={() => {}}
+                onChangeText={() => { }}
               />
             </View>
 
@@ -197,7 +197,7 @@ export default function CreateTaskRoute() {
                   }
                   value={selectedRoom?.name || ""}
                   onPress={() => setShowRoomSheet(true)}
-                  onChangeText={() => {}}
+                  onChangeText={() => { }}
                 />
               </View>
             )}
@@ -218,7 +218,7 @@ export default function CreateTaskRoute() {
                   label="Priority"
                   value={priority}
                   onPress={() => setShowPrioritySheet(true)}
-                  onChangeText={() => {}}
+                  onChangeText={() => { }}
                 />
               </View>
               <View className="flex-1">
@@ -236,15 +236,14 @@ export default function CreateTaskRoute() {
               activeOpacity={0.85}
               onPress={handleNext}
               disabled={createTaskMutation.isPending}
-              className={`mt-5 h-[56px] items-center justify-center rounded-[10px] ${
-                createTaskMutation.isPending ? "bg-[#1E5371]/70" : "bg-[#1E5371]"
-              }`}
+              className={`mt-5 h-[56px] items-center justify-center rounded-[10px] ${createTaskMutation.isPending ? "bg-[#1E5371]/70" : "bg-[#1E5371]"
+                }`}
             >
               {createTaskMutation.isPending ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text className="text-[16px] font-medium text-[#F4F8FA]">
-                  Next: Assign Task
+                  Create Task
                 </Text>
               )}
             </TouchableOpacity>
@@ -280,7 +279,7 @@ export default function CreateTaskRoute() {
                 <Ionicons name="close" size={24} color="#6B7280" />
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView showsVerticalScrollIndicator={false}>
               {isFloorsLoading ? (
                 <ActivityIndicator size="large" color="#1E5371" className="my-6" />
@@ -289,11 +288,10 @@ export default function CreateTaskRoute() {
                   <TouchableOpacity
                     key={floor.id}
                     onPress={() => handleFloorSelect(floor)}
-                    className={`p-4 rounded-xl mb-3 flex-row items-center justify-between border ${
-                      selectedFloor?.id === floor.id
-                        ? "border-[#1E5371] bg-[#1E5371]/5"
-                        : "border-[#E5E7EB]"
-                    }`}
+                    className={`p-4 rounded-xl mb-3 flex-row items-center justify-between border ${selectedFloor?.id === floor.id
+                      ? "border-[#1E5371] bg-[#1E5371]/5"
+                      : "border-[#E5E7EB]"
+                      }`}
                   >
                     <Text className="text-[16px] font-medium text-[#374151]">
                       {floor.name}
@@ -344,11 +342,10 @@ export default function CreateTaskRoute() {
                     <TouchableOpacity
                       key={room.id}
                       onPress={() => handleRoomSelect(room)}
-                      className={`p-4 rounded-xl mb-3 flex-row items-center justify-between border ${
-                        isSelected
-                          ? "border-[#1E5371] bg-[#1E5371]/5"
-                          : "border-[#E5E7EB]"
-                      }`}
+                      className={`p-4 rounded-xl mb-3 flex-row items-center justify-between border ${isSelected
+                        ? "border-[#1E5371] bg-[#1E5371]/5"
+                        : "border-[#E5E7EB]"
+                        }`}
                     >
                       <Text className="text-[16px] font-medium text-[#374151]">
                         {room.name} {room.type ? `(${room.type})` : ""}
@@ -384,7 +381,7 @@ export default function CreateTaskRoute() {
             <Text className="text-[18px] font-semibold text-[#1A212B] mb-5 text-center">
               Select Priority
             </Text>
-            
+
             {(["LOW", "MEDIUM", "HIGH"] as const).map((level) => (
               <TouchableOpacity
                 key={level}
@@ -392,15 +389,13 @@ export default function CreateTaskRoute() {
                   setPriority(level);
                   setShowPrioritySheet(false);
                 }}
-                className={`py-4 rounded-xl mb-3 items-center border ${
-                  priority === level
-                    ? "border-[#1E5371] bg-[#1E5371]/10"
-                    : "border-[#E5E7EB]"
-                }`}
+                className={`py-4 rounded-xl mb-3 items-center border ${priority === level
+                  ? "border-[#1E5371] bg-[#1E5371]/10"
+                  : "border-[#E5E7EB]"
+                  }`}
               >
-                <Text className={`text-[16px] font-medium ${
-                  priority === level ? "text-[#1E5371]" : "text-[#4B5563]"
-                }`}>
+                <Text className={`text-[16px] font-medium ${priority === level ? "text-[#1E5371]" : "text-[#4B5563]"
+                  }`}>
                   {level}
                 </Text>
               </TouchableOpacity>
