@@ -31,14 +31,14 @@ export default function ProjectDetailsRoute() {
 
   const formattedDateRange = data
     ? `${new Date(data.startDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })} - ${new Date(data.endDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })}`
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })} - ${new Date(data.endDate).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })}`
     : undefined;
 
   return (
@@ -78,20 +78,20 @@ export default function ProjectDetailsRoute() {
             onPressFloorPlan={() =>
               projectId
                 ? router.push({
-                    pathname: "/screens/company/floorplan",
-                    params: { id: projectId },
-                  })
+                  pathname: "/screens/company/floorplan",
+                  params: { id: projectId },
+                })
                 : router.push("/screens/company/floorplan")
             }
             onPressEditProject={() =>
               projectId
                 ? router.push({
-                    pathname: "/screens/company/editproject",
-                    params: {
-                      id: projectId,
-                      companyId: data?.client.companyId,
-                    },
-                  })
+                  pathname: "/screens/company/editproject",
+                  params: {
+                    id: projectId,
+                    companyId: data?.client.companyId,
+                  },
+                })
                 : router.push("/screens/company/editproject")
             }
           />

@@ -1,11 +1,11 @@
+import { useTasksQuery, useUpdateTaskStatusMutation } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from "react-native";
 import TaskCard from "./TaskCard";
 import TaskFilterTabs, { TaskFilter } from "./TaskFilterTabs";
-import { useTasksQuery, useUpdateTaskStatusMutation } from "@/hooks/company/company";
-import { updateTaskStatus, useTaskItems, setTasks } from "./taskStore";
+import { setTasks, updateTaskStatus, useTaskItems } from "./taskStore";
 import type { TaskItem, TaskStatus } from "./types";
 import UpdateTaskStatusModal from "./UpdateTaskStatusModal";
 
@@ -30,7 +30,7 @@ function mapStatusToApi(status: TaskStatus): string {
 }
 
 
-export default function TaskScreen() {
+export default function TaskScreen({ projectId }: { projectId?: string }) {
   const [filter, setFilter] = useState<TaskFilter>("All");
   const [searchText, setSearchText] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -42,6 +42,7 @@ export default function TaskScreen() {
     limit,
     status: mapFilterToStatus(filter),
     search: searchText.trim() || undefined,
+    projectId,
   });
 
   const tasks = useTaskItems();
@@ -100,7 +101,10 @@ export default function TaskScreen() {
     <View className="mt-6 px-5">
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => router.push("/screens/company/createtask")}
+        onPress={() => router.push({
+          pathname: "/screens/company/createtask",
+          params: { projectId }
+        })}
         className="h-[52px] flex-row items-center justify-center rounded-[10px] bg-[#1E5371]"
       >
         <Ionicons name="add" size={22} color="#F4F8FA" />
@@ -158,16 +162,14 @@ export default function TaskScreen() {
           <TouchableOpacity
             disabled={page === 1}
             onPress={() => setPage((p) => Math.max(1, p - 1))}
-            className={`h-10 items-center justify-center rounded-[9px] border px-4 ${
-              page === 1
+            className={`h-10 items-center justify-center rounded-[9px] border px-4 ${page === 1
                 ? "border-[#D2DAE1] bg-[#DFE6EA]/50 opacity-50"
                 : "border-[#1F5777] bg-[#1F5777]"
-            }`}
+              }`}
           >
             <Text
-              className={`text-[15px] font-medium ${
-                page === 1 ? "text-[#3E4B59]" : "text-white"
-              }`}
+              className={`text-[15px] font-medium ${page === 1 ? "text-[#3E4B59]" : "text-white"
+                }`}
             >
               Previous
             </Text>
@@ -180,16 +182,14 @@ export default function TaskScreen() {
           <TouchableOpacity
             disabled={page === totalPages}
             onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className={`h-10 items-center justify-center rounded-[9px] border px-4 ${
-              page === totalPages
+            className={`h-10 items-center justify-center rounded-[9px] border px-4 ${page === totalPages
                 ? "border-[#D2DAE1] bg-[#DFE6EA]/50 opacity-50"
                 : "border-[#1F5777] bg-[#1F5777]"
-            }`}
+              }`}
           >
             <Text
-              className={`text-[15px] font-medium ${
-                page === totalPages ? "text-[#3E4B59]" : "text-white"
-              }`}
+              className={`text-[15px] font-medium ${page === totalPages ? "text-[#3E4B59]" : "text-white"
+                }`}
             >
               Next
             </Text>
