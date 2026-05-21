@@ -43,7 +43,7 @@ const workers: WorkerItem[] = [
   },
 ];
 
-export default function AssignTaskScreen() {
+export default function AssignTaskScreen({ projectId, taskId }: { projectId?: string; taskId?: string }) {
   const [searchText, setSearchText] = useState("");
   const [assignedIds, setAssignedIds] = useState<string[]>([]);
 
@@ -68,7 +68,10 @@ export default function AssignTaskScreen() {
   const handleConfirmAssignment = () => {
     const draft = getTaskDraft();
     if (!draft) {
-      router.replace("/screens/company/task");
+      router.replace({
+        pathname: "/screens/company/task",
+        params: { id: projectId }
+      });
       return;
     }
 
@@ -97,7 +100,10 @@ export default function AssignTaskScreen() {
     });
 
     clearTaskDraft();
-    router.replace("/screens/company/task");
+    router.replace({
+      pathname: "/screens/company/task",
+      params: { id: projectId }
+    });
   };
 
   return (
