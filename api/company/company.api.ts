@@ -559,17 +559,24 @@ export async function getProjectTeam(projectId: string) {
 }
 
 export async function addProjectManager(projectId: string, userId: string) {
-  const { data } = await api.post<{
-    success: boolean;
-    message: string;
-    data: any;
-  }>(`/admin/projects/${projectId}/team/managers`, { userId });
+  try {
+    const { data } = await api.post<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(`/admin/projects/${projectId}/team/managers`, { userId });
 
-  if (!data.success) {
-    throw new Error(data.message || "Failed to add manager");
+    if (!data.success) {
+      throw new Error(data.message || "Failed to add manager");
+    }
+
+    return data.data;
+  } catch (error: any) {
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw error;
   }
-
-  return data.data;
 }
 
 export async function getProjectFloors(projectId: string) {
@@ -607,4 +614,35 @@ export async function createTask(payload: CreateTaskPayload) {
   }
 
   return data.data;
+}
+
+export async function removeProjectManager(projectId: string, userId: string) {
+  const { data } = await api.delete<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/team/${userId}`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to remove manager");
+  }
+
+  return data.data;
+}
+
+export async function getProjectManagers(projectId: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: any[];
+  }>(`/admin/projects/${projectId}/team/managers`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load project managers");
+  }
+
+  return data.data.map((manager: any) => ({
+    ...manager,
+    avatarUrl: resolveMediaUrl(manager.avatarUrl),
+  }));
 }
