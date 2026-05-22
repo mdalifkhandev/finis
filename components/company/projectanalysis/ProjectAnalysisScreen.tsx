@@ -81,7 +81,6 @@ export default function ProjectAnalysisScreen({
           units={task.units}
           date={task.date}
           status={task.status}
-          onPressCheck={() => handleToggleTask(task.id)}
         />
       ))}
     </View>

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useRouter } from "expo-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import {
@@ -50,6 +51,8 @@ export function useInviteMutation() {
 export function useAuthMeQuery() {
   const token = useAuthStore((state) => state.token);
   const setUser = useAuthStore((state) => state.setUser);
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const router = useRouter();
 
   const query = useQuery({
     queryKey: ["auth", "me", token],
@@ -71,8 +74,10 @@ export function useAuthMeQuery() {
           ? query.error.message
           : "Failed to load profile",
       );
+      clearSession();
+      router.replace("/screens/auth/privacy");
     }
-  }, [query.error, query.isError]);
+  }, [query.error, query.isError, clearSession, router]);
 
   return query;
 }

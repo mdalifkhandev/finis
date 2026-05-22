@@ -739,12 +739,12 @@ export async function getTaskAvailableWorkers(taskId: string, search?: string) {
   };
 }
 
-export async function assignTaskWorker(taskId: string, userId: string) {
+export async function assignTaskWorker(taskId: string, userIds: string[]) {
   const { data } = await api.post<{
     success: boolean;
     message: string;
     data: any;
-  }>(`/admin/tasks/${taskId}/assign`, { userId });
+  }>(`/admin/tasks/${taskId}/assign`, { userIds });
 
   if (!data.success) {
     throw new Error(data.message || "Failed to assign worker");

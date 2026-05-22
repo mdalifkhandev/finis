@@ -1,15 +1,27 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
+import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 import AddFloorModal from "@/components/company/floorplan/AddFloorModal";
 import AddRoomRangeModal from "@/components/company/floorplan/AddRoomRangeModal";
-import UpdateFloorModal, { UpdateFloorPayload } from "@/components/company/floorplan/UpdateFloorModal";
-import UpdateRoomModal, { UpdateRoomPayload } from "@/components/company/floorplan/UpdateRoomModal";
-import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
 import FloorSetupCard, {
   RoomInfo,
 } from "@/components/company/floorplan/FloorSetupCard";
 import { FloorStatus } from "@/components/company/floorplan/FloorStatusBadge";
+import UpdateFloorModal, {
+  UpdateFloorPayload,
+} from "@/components/company/floorplan/UpdateFloorModal";
+import UpdateRoomModal, {
+  UpdateRoomPayload,
+} from "@/components/company/floorplan/UpdateRoomModal";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
-import { useProjectFloorPlanQuery, useCreateFloorMutation, useCreateFloorRoomsMutation, useUpdateFloorMutation, useUpdateRoomMutation, useDeleteFloorMutation, useDeleteRoomMutation } from "@/hooks/company/company";
+import {
+  useCreateFloorMutation,
+  useCreateFloorRoomsMutation,
+  useDeleteFloorMutation,
+  useDeleteRoomMutation,
+  useProjectFloorPlanQuery,
+  useUpdateFloorMutation,
+  useUpdateRoomMutation,
+} from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -29,7 +41,7 @@ const roomRangePattern = /^([A-Za-z]+)(\d+)$/;
 type FloorStats = {
   completed: number;
   inProgress: number;
-  notStarted: number;
+  pending: number;
 };
 
 type FloorInfo = {
@@ -46,7 +58,7 @@ type FloorInfo = {
 const buildStatsFromRooms = (rooms: RoomInfo[]): FloorStats => ({
   completed: rooms.filter((room) => room.status === "Completed").length,
   inProgress: rooms.filter((room) => room.status === "In Progress").length,
-  notStarted: rooms.filter((room) => room.status === "Not Started").length,
+  pending: rooms.filter((room) => room.status === "Pending").length,
 });
 
 function normalizeStatus(value?: string): FloorStatus {
@@ -55,8 +67,9 @@ function normalizeStatus(value?: string): FloorStatus {
   if (normalized === "in_progress" || normalized === "in progress") {
     return "In Progress";
   }
-  if (normalized === "pending") return "Pending";
-  return "Not Started";
+  // The backend uses pending, we map everything else to Pending
+  if (normalized === "pending" || normalized === "not started" || normalized === "not_started") return "Pending";
+  return "Pending";
 }
 
 import type { ProjectFloorPlanRoom } from "@/types/company.types";
@@ -66,8 +79,9 @@ function toRoomInfo(
   index: number,
   floorId: string,
 ): RoomInfo {
-  const details = `${room.type ?? "Utility"}${room.sizeSqft ? ` • ${room.sizeSqft} sq ft` : ""
-    }`;
+  const details = `${room.type ?? "Utility"}${
+    room.sizeSqft ? ` • ${room.sizeSqft} sq ft` : ""
+  }`;
 
   return {
     id: room.id,
@@ -102,7 +116,10 @@ export default function FloorPlanRoute() {
   const [editingFloor, setEditingFloor] = useState<FloorInfo | null>(null);
   const [editingRoom, setEditingRoom] = useState<RoomInfo | null>(null);
   const [deletingFloorId, setDeletingFloorId] = useState<string | null>(null);
-  const [deletingRoom, setDeletingRoom] = useState<{ floorId: string; roomId: string } | null>(null);
+  const [deletingRoom, setDeletingRoom] = useState<{
+    floorId: string;
+    roomId: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!data) return;
@@ -112,13 +129,15 @@ export default function FloorPlanRoute() {
       floorName: floor.name,
       status: normalizeStatus(floor.status),
       progress: floor.progress,
-      rooms: floor.rooms.map((room, index) => toRoomInfo(room, index, floor.id)),
+      rooms: floor.rooms.map((room, index) =>
+        toRoomInfo(room, index, floor.id),
+      ),
       allowRoomManagement: true,
       fixedRoomCount: floor.totalRooms,
       fixedStats: {
-        completed: floor.taskCounts.completed,
-        inProgress: floor.taskCounts.inProgress,
-        notStarted: floor.taskCounts.notStarted,
+        completed: floor.taskCounts?.completed || 0,
+        inProgress: floor.taskCounts?.inProgress || 0,
+        pending: (floor.taskCounts as any)?.pending || floor.taskCounts?.notStarted || 0,
       },
     }));
 
@@ -141,7 +160,6 @@ export default function FloorPlanRoute() {
     updateRoomMutation.mutate({ roomId: editingRoom.id, payload });
     setEditingRoom(null);
   };
-
 
   const handleAddRoomRange = (fromCode: string, toCode: string) => {
     const targetFloorId = activeFloorId;
@@ -201,9 +219,9 @@ export default function FloorPlanRoute() {
       previous.map((floor) =>
         floor.id === floorId
           ? {
-            ...floor,
-            rooms: floor.rooms.filter((room) => room.id !== roomId),
-          }
+              ...floor,
+              rooms: floor.rooms.filter((room) => room.id !== roomId),
+            }
           : floor,
       ),
     );
@@ -275,14 +293,14 @@ export default function FloorPlanRoute() {
                   status={floor.status}
                   completed={stats.completed}
                   inProgress={stats.inProgress}
-                  notStarted={stats.notStarted}
+                  pending={stats.pending}
                   rooms={floor.allowRoomManagement ? floor.rooms : undefined}
                   onPressAddRoom={
                     floor.allowRoomManagement
                       ? () => {
-                        setActiveFloorId(floor.id);
-                        setShowAddRoomModal(true);
-                      }
+                          setActiveFloorId(floor.id);
+                          setShowAddRoomModal(true);
+                        }
                       : undefined
                   }
                   onDeleteFloor={() => handleDeleteFloor(floor.id)}
@@ -300,7 +318,8 @@ export default function FloorPlanRoute() {
                   }
                 />
               );
-            }))}
+            })
+          )}
         </View>
       </ScrollView>
 
