@@ -20,7 +20,10 @@ export default function TeamWorkerCard({
       <View className="flex-row items-center justify-between">
         <View className="flex-1 flex-row items-center">
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} className="h-10 w-10 rounded-full" />
+            <Image
+              source={{ uri: avatarUrl }}
+              className="h-10 w-10 rounded-full"
+            />
           ) : (
             <View className="h-10 w-10 rounded-full bg-[#E9EDF1] items-center justify-center">
               <Ionicons name="person" size={18} color="#9CA3AF" />
@@ -37,9 +40,9 @@ export default function TeamWorkerCard({
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onDelete}
-          className="h-6 w-6 items-center justify-center"
+          className="h-7 w-7 mr-3 items-center justify-center"
         >
-          <Ionicons name="trash-outline" size={14} color="#FF4B4B" />
+          <Ionicons name="trash-outline" size={20} color="#FF4B4B" />
         </TouchableOpacity>
       </View>
     </View>

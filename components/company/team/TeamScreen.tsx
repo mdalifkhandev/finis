@@ -23,6 +23,7 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [activeManagerId, setActiveManagerId] = useState<string | null>(null);
   const [deletingManagerId, setDeletingManagerId] = useState<string | null>(null);
+  const [deletingWorkerId, setDeletingWorkerId] = useState<string | null>(null);
 
   const { data: managersData, isLoading: isLoadingTeam } =
     useProjectManagersQuery(projectId);
@@ -137,7 +138,13 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
   };
 
   const handleDeleteWorker = (workerId: string) => {
-    removeWorkerMutation.mutate(workerId);
+    setDeletingWorkerId(workerId);
+  };
+
+  const confirmDeleteWorker = () => {
+    if (!deletingWorkerId) return;
+    removeWorkerMutation.mutate(deletingWorkerId);
+    setDeletingWorkerId(null);
   };
 
   const handleOpenAddSheet = () => setShowAddSheet(true);
@@ -245,6 +252,14 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
         description="Are you sure you want to remove this manager from the project? This action cannot be undone."
         onClose={() => setDeletingManagerId(null)}
         onConfirm={confirmDeleteManager}
+      />
+
+      <DeleteConfirmationModal
+        visible={!!deletingWorkerId}
+        title="Remove Worker"
+        description="Are you sure you want to remove this worker from the project? This action cannot be undone."
+        onClose={() => setDeletingWorkerId(null)}
+        onConfirm={confirmDeleteWorker}
       />
     </>
   );
