@@ -1,61 +1,37 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useState, useEffect } from "react";
+import { Alert, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import AssignWorkerCard, { WorkerItem } from "./AssignWorkerCard";
 import { addTask, clearTaskDraft, getTaskDraft } from "./taskStore";
-
-const workers: WorkerItem[] = [
-  {
-    id: "mike",
-    name: "Mike Johnson",
-    role: "Electrician",
-    initial: "M",
-    available: true,
-  },
-  {
-    id: "sarah",
-    name: "Sarah Davis",
-    role: "Plumber",
-    initial: "S",
-    available: true,
-  },
-  {
-    id: "tom",
-    name: "Tom Wilson",
-    role: "Carpenter",
-    initial: "T",
-    available: false,
-  },
-  {
-    id: "john",
-    name: "John Smith",
-    role: "Painter",
-    initial: "J",
-    available: true,
-  },
-  {
-    id: "robert",
-    name: "Robert Brown",
-    role: "HVAC Technician",
-    initial: "R",
-    available: true,
-  },
-];
+import { useTaskAvailableWorkersQuery, useAssignTaskWorkerMutation } from "@/hooks/company/company";
+import { toast } from "sonner-native";
 
 export default function AssignTaskScreen({ projectId, taskId }: { projectId?: string; taskId?: string }) {
   const [searchText, setSearchText] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [assignedIds, setAssignedIds] = useState<string[]>([]);
 
-  const filteredWorkers = useMemo(() => {
-    const query = searchText.trim().toLowerCase();
-    if (!query) return workers;
-    return workers.filter(
-      (worker) =>
-        worker.name.toLowerCase().includes(query) ||
-        worker.role.toLowerCase().includes(query),
-    );
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchText);
+    }, 500);
+    return () => clearTimeout(handler);
   }, [searchText]);
+
+  const { data: workersData, isLoading } = useTaskAvailableWorkersQuery(taskId, debouncedSearch);
+
+  const filteredWorkers: WorkerItem[] = useMemo(() => {
+    if (!workersData?.data) return [];
+    return workersData.data.map((w: any) => ({
+      id: w.id,
+      name: w.fullName,
+      role: w.role || "Worker",
+      initial: w.fullName ? w.fullName.charAt(0).toUpperCase() : "W",
+      available: w.isAvailable,
+      avatarUrl: w.avatarUrl,
+    }));
+  }, [workersData]);
 
   const handleToggleAssign = (workerId: string) => {
     setAssignedIds((previous) =>
@@ -65,7 +41,27 @@ export default function AssignTaskScreen({ projectId, taskId }: { projectId?: st
     );
   };
 
-  const handleConfirmAssignment = () => {
+  const assignMutation = useAssignTaskWorkerMutation(taskId);
+
+  const handleConfirmAssignment = async () => {
+    if (assignedIds.length === 0) {
+      Alert.alert("Assign worker", "Please assign at least one worker.");
+      return;
+    }
+
+    if (taskId) {
+      try {
+        await Promise.all(assignedIds.map(id => assignMutation.mutateAsync(id)));
+        setAssignedIds([]); // clear selection
+        // Automatically refetched by query invalidation, so UI will update
+        toast.success("Workers assigned successfully");
+        router.back();
+      } catch (error) {
+        // error already handled in hook
+      }
+      return;
+    }
+
     const draft = getTaskDraft();
     if (!draft) {
       router.replace({
@@ -80,7 +76,7 @@ export default function AssignTaskScreen({ projectId, taskId }: { projectId?: st
       return;
     }
 
-    const assignedWorkers = workers.filter((worker) =>
+    const assignedWorkers = filteredWorkers.filter((worker) =>
       assignedIds.includes(worker.id),
     );
 
@@ -124,24 +120,39 @@ export default function AssignTaskScreen({ projectId, taskId }: { projectId?: st
       </Text>
 
       <View className="mt-1">
-        {filteredWorkers.map((worker) => (
-          <AssignWorkerCard
-            key={worker.id}
-            worker={worker}
-            assigned={assignedIds.includes(worker.id)}
-            onAssign={() => handleToggleAssign(worker.id)}
-          />
-        ))}
+        {isLoading ? (
+          <View className="mt-10 items-center justify-center">
+            <ActivityIndicator size="large" color="#1F2937" />
+          </View>
+        ) : filteredWorkers.length > 0 ? (
+          filteredWorkers.map((worker) => (
+            <AssignWorkerCard
+              key={worker.id}
+              worker={worker}
+              assigned={assignedIds.includes(worker.id)}
+              onAssign={() => handleToggleAssign(worker.id)}
+            />
+          ))
+        ) : (
+          <Text className="mt-4 text-center text-[15px] text-[#6B7280]">
+            No workers found.
+          </Text>
+        )}
       </View>
 
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={handleConfirmAssignment}
+        disabled={assignMutation.isPending}
         className="mt-6 h-[52px] items-center justify-center rounded-[10px] bg-[#1E5371]"
       >
-        <Text className="text-[16px] font-medium text-[#F4F8FA]">
-          Confirm Assignment
-        </Text>
+        {assignMutation.isPending ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text className="text-[16px] font-medium text-[#F4F8FA]">
+            Confirm Assignment
+          </Text>
+        )}
       </TouchableOpacity>
     </View>
   );

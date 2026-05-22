@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View, Image } from "react-native";
 
 export type WorkerItem = {
   id: string;
@@ -7,6 +7,7 @@ export type WorkerItem = {
   role: string;
   initial: string;
   available: boolean;
+  avatarUrl?: string | null;
 };
 
 type AssignWorkerCardProps = {
@@ -23,11 +24,18 @@ export default function AssignWorkerCard({
   return (
     <View className="mt-2.5 rounded-xl border border-[#D6DBE2] bg-[#F7F9FB] px-3 py-3">
       <View className="flex-row items-center">
-        <View className="h-11 w-11 items-center justify-center rounded-full bg-[#24577A]">
-          <Text className="text-[22px] font-medium text-white">
-            {worker.initial}
-          </Text>
-        </View>
+        {worker.avatarUrl ? (
+          <Image
+            source={{ uri: worker.avatarUrl }}
+            className="h-11 w-11 rounded-full"
+          />
+        ) : (
+          <View className="h-11 w-11 items-center justify-center rounded-full bg-[#24577A]">
+            <Text className="text-[22px] font-medium text-white">
+              {worker.initial}
+            </Text>
+          </View>
+        )}
 
         <View className="ml-3 flex-1">
           <Text className="text-[19px] font-medium text-[#1F2937]">

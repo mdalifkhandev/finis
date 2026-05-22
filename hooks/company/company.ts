@@ -30,6 +30,8 @@ import {
   addProjectWorker,
   getAssignedWorkers,
   removeProjectWorker,
+  getTaskAvailableWorkers,
+  assignTaskWorker,
 } from "@/api/company/company.api";
 import type { CreateTaskPayload } from "@/types/company.types";
 import { useAuthStore } from "@/store/auth.store";
@@ -795,6 +797,43 @@ export function useRemoveProjectWorkerMutation(projectId?: string) {
     onError: (error: any) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to remove worker",
+      );
+    },
+  });
+}
+
+export function useTaskAvailableWorkersQuery(taskId?: string, search?: string) {
+  return useQuery({
+    queryKey: ["task", "available-workers", taskId, search],
+    queryFn: () => {
+      if (!taskId) throw new Error("Task ID is required");
+      return getTaskAvailableWorkers(taskId, search);
+    },
+    enabled: !!taskId,
+  });
+}
+
+export function useAssignTaskWorkerMutation(taskId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) => {
+      if (!taskId) throw new Error("Task ID is required");
+      return assignTaskWorker(taskId, userId);
+    },
+    onSuccess: () => {
+      if (taskId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["task", "available-workers", taskId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "tasks"],
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to assign worker",
       );
     },
   });

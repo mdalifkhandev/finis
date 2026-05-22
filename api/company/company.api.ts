@@ -715,3 +715,40 @@ export async function removeProjectWorker(projectId: string, userId: string) {
 
   return data.data;
 }
+
+export async function getTaskAvailableWorkers(taskId: string, search?: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: any[];
+    meta: any;
+  }>(`/admin/tasks/${taskId}/available-workers`, {
+    params: search ? { search } : undefined,
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load available workers");
+  }
+
+  return {
+    data: data.data.map((worker: any) => ({
+      ...worker,
+      avatarUrl: resolveMediaUrl(worker.avatarUrl),
+    })),
+    meta: data.meta,
+  };
+}
+
+export async function assignTaskWorker(taskId: string, userId: string) {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/tasks/${taskId}/assign`, { userId });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to assign worker");
+  }
+
+  return data.data;
+}
