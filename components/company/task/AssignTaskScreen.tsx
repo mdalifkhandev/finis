@@ -51,7 +51,7 @@ export default function AssignTaskScreen({ projectId, taskId }: { projectId?: st
 
     if (taskId) {
       try {
-        await Promise.all(assignedIds.map(id => assignMutation.mutateAsync(id)));
+        await assignMutation.mutateAsync(assignedIds);
         setAssignedIds([]); // clear selection
         // Automatically refetched by query invalidation, so UI will update
         toast.success("Workers assigned successfully");

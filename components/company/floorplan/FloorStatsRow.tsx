@@ -4,13 +4,13 @@ import { Text, View } from "react-native";
 type FloorStatsRowProps = {
   completed: number;
   inProgress: number;
-  notStarted: number;
+  pending: number;
 };
 
 export default function FloorStatsRow({
   completed,
   inProgress,
-  notStarted,
+  pending,
 }: FloorStatsRowProps) {
   return (
     <View className="mt-5 flex-row items-start justify-between">
@@ -30,9 +30,9 @@ export default function FloorStatsRow({
 
       <View className="flex-1 items-center">
         <Text className="text-[16px] font-medium text-[#5C6675]">
-          {notStarted}
+          {pending}
         </Text>
-        <Text className="mt-0.5 text-[14px] text-[#4C596C]">Not Started</Text>
+        <Text className="mt-0.5 text-[14px] text-[#4C596C]">Pending</Text>
       </View>
     </View>
   );

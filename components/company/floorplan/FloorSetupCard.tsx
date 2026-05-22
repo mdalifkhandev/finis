@@ -23,7 +23,7 @@ type FloorSetupCardProps = {
   status: FloorStatus;
   completed: number;
   inProgress: number;
-  notStarted: number;
+  pending: number;
   rooms?: RoomInfo[];
   onPressAddRoom?: () => void;
   onEditFloor?: () => void;
@@ -40,7 +40,7 @@ export default function FloorSetupCard({
   status,
   completed,
   inProgress,
-  notStarted,
+  pending,
   rooms,
   onPressAddRoom,
   onEditFloor,
@@ -88,7 +88,7 @@ export default function FloorSetupCard({
       <FloorStatsRow
         completed={completed}
         inProgress={inProgress}
-        notStarted={notStarted}
+        pending={pending}
       />
 
       <TouchableOpacity

@@ -8,8 +8,8 @@ import ProjectBudgetCard from "@/components/company/projectinfo/ProjectBudgetCar
 import ProjectDetailsInfoCard from "@/components/company/projectinfo/ProjectDetailsInfoCard";
 import { useProjectProfileQuery } from "@/hooks/admin/admin";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import { ActivityIndicator, ScrollView, View, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const formatCurrency = (value: number) =>
@@ -17,8 +17,15 @@ const formatCurrency = (value: number) =>
 
 export default function ProjectInfoRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: apiProject, isLoading } = useProjectProfileQuery(id as string);
+  const { data: apiProject, isLoading, refetch } = useProjectProfileQuery(id as string);
   const project = useProjectData();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   // When API responds, push data into the store
   useEffect(() => {
@@ -48,6 +55,13 @@ export default function ProjectInfoRoute() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#1F506D"]}
+          />
+        }
       >
         <BackTitleHeader title="Project Details" onBack={() => router.back()} />
 

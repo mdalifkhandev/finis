@@ -817,9 +817,9 @@ export function useAssignTaskWorkerMutation(taskId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (userId: string) => {
+    mutationFn: (userIds: string[]) => {
       if (!taskId) throw new Error("Task ID is required");
-      return assignTaskWorker(taskId, userId);
+      return assignTaskWorker(taskId, userIds);
     },
     onSuccess: () => {
       if (taskId) {
