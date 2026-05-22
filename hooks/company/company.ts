@@ -745,6 +745,9 @@ export function useAddProjectWorkerMutation(projectId?: string) {
         void queryClient.invalidateQueries({
           queryKey: ["team", "available-workers"],
         });
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "assigned-workers", projectId],
+        });
       }
       toast.success("Worker added successfully");
     },
