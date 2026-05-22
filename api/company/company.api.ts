@@ -646,3 +646,72 @@ export async function getProjectManagers(projectId: string) {
     avatarUrl: resolveMediaUrl(manager.avatarUrl),
   }));
 }
+
+export async function getAvailableWorkers() {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: any[];
+  }>("/admin/team/available-workers");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load available workers");
+  }
+
+  return data.data.map((worker: any) => ({
+    ...worker,
+    avatarUrl: resolveMediaUrl(worker.avatarUrl),
+  }));
+}
+
+export async function addProjectWorker(projectId: string, payload: { userId: string; managerId: string }) {
+  try {
+    const { data } = await api.post<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(`/admin/projects/${projectId}/team/workers`, payload);
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to add worker");
+    }
+
+    return data.data;
+  } catch (error: any) {
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw error;
+  }
+}
+
+export async function getAssignedWorkers(projectId: string, managerId: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: any[];
+  }>(`/admin/projects/${projectId}/team/managers/${managerId}/workers`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load assigned workers");
+  }
+
+  return data.data.map((worker: any) => ({
+    ...worker,
+    avatarUrl: resolveMediaUrl(worker.avatarUrl),
+  }));
+}
+
+export async function removeProjectWorker(projectId: string, userId: string) {
+  const { data } = await api.delete<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/team/${userId}`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to remove worker");
+  }
+
+  return data.data;
+}
