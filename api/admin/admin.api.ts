@@ -97,3 +97,35 @@ export async function getProjectProfile(id: string) {
 
   return data.data;
 }
+
+export type AdminProfileResponse = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  avatarUrl: string | null;
+  role: string;
+  status: string;
+  dateOfBirth: string | null;
+  address: string | null;
+  bio: string | null;
+  department: string | null;
+  employeeId: string | null;
+  joinDate: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+};
+
+export async function getAdminProfile() {
+  const { data } = await api.get<{ success: boolean; message: string; data: AdminProfileResponse; statusCode: number }>("/admin/profile");
+  
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load admin profile");
+  }
+  
+  return {
+    ...data.data,
+    avatarUrl: resolveMediaUrl(data.data.avatarUrl)
+  };
+}
+

@@ -1,10 +1,9 @@
 import { Alert } from "react-native";
 import { useSyncExternalStore } from "react";
 
-const defaultAvatarUri =
-  "https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?q=80&w=200&auto=format&fit=crop";
+const defaultAvatarUri = "";
 
-let profileAvatarUri = defaultAvatarUri;
+let profileAvatarUri: string = defaultAvatarUri;
 const listeners = new Set<() => void>();
 
 const notify = () => {
@@ -30,28 +29,29 @@ export async function pickProfileAvatar() {
     if (!permission.granted) {
       Alert.alert(
         "Permission Required",
-        "Allow photo access to change the profile image.",
+        "Allow photo access to change the profile image."
       );
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 1,
+      quality: 0.8,
     });
 
-    if (result.canceled || !result.assets.length) {
-      return;
+    if (!result.canceled && result.assets[0]?.uri) {
+      profileAvatarUri = result.assets[0].uri;
+      notify();
     }
-
-    profileAvatarUri = result.assets[0].uri;
-    notify();
-  } catch {
-    Alert.alert(
-      "Unavailable",
-      "Image picker is unavailable in this runtime.",
-    );
+  } catch (error) {
+    Alert.alert("Error", "Failed to pick an image.");
   }
 }
+
+export function updateProfileAvatar(uri: string) {
+  profileAvatarUri = uri;
+  notify();
+}
+
