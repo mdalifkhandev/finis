@@ -3,7 +3,9 @@ export type DocumentItem = {
   fileName: string;
   fileType: string;
   fileSize: string;
-  uploadedBy: string;
+  uploadedBy: string | { id: string; fullName: string; email: string; avatarUrl: string | null };
   uploadedDate: string;
   fileUrl?: string;
+  fileSizeMb?: number;
+  uploadedAt?: string;
 };

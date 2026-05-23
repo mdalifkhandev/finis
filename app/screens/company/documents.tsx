@@ -3,6 +3,7 @@ import DocumentsList from "@/components/company/documents/DocumentsList";
 import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { getCompanyDocuments } from "@/api/company/company.api";
+import { API_BASE_URL } from "@/lib/config";
 import { DocumentItem } from "@/components/company/documents/types";
 import * as FileSystem from "expo-file-system/legacy";
 import RNBlobUtil from "react-native-blob-util";
@@ -59,6 +60,10 @@ export default function DocumentsRoute() {
       return;
     }
 
+    const fullUrl = document.fileUrl.startsWith("http")
+      ? document.fileUrl
+      : `${API_BASE_URL}${document.fileUrl}`;
+
     try {
       if (Platform.OS === "android") {
         const { fs, config } = RNBlobUtil;
@@ -75,11 +80,11 @@ export default function DocumentsRoute() {
             mime: document.fileType,
             description: "Downloading company document",
           },
-        }).fetch("GET", document.fileUrl);
+        }).fetch("GET", fullUrl);
       } else {
         const destination = `${FileSystem.documentDirectory}${document.fileName}`;
         const result = await FileSystem.downloadAsync(
-          document.fileUrl,
+          fullUrl,
           destination,
         );
         const sharingAvailable = await Sharing.isAvailableAsync();
@@ -109,10 +114,14 @@ export default function DocumentsRoute() {
       return;
     }
 
+    const fullUrl = document.fileUrl.startsWith("http")
+      ? document.fileUrl
+      : `${API_BASE_URL}${document.fileUrl}`;
+
     setCurrentPreviewDocument({
       id: document.id,
       name: document.fileName,
-      uri: document.fileUrl,
+      uri: fullUrl,
       mimeType: document.fileType,
       size: null,
     });
