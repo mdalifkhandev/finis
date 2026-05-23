@@ -8,14 +8,18 @@ import InventoryStatCard from "./InventoryStatCard";
 import LowStockAlertsCard from "./LowStockAlertsCard";
 import UpdateInventoryModal from "./UpdateInventoryModal";
 import {
-  updateInventoryItem,
-} from "./inventoryStore";
-import { useAllInventoryItemsQuery, useInventorySummaryQuery, useLowStockAlertsQuery } from "@/hooks/inventory/inventory";
+  useInventorySummaryQuery,
+  useAllInventoryItemsQuery,
+  useLowStockAlertsQuery,
+  useUpdateInventoryMutation,
+} from "@/hooks/inventory/inventory";
 
 export default function InventoryScreen() {
   const { data: summary } = useInventorySummaryQuery();
   const { data: alerts = [], isLoading: isLoadingAlerts } = useLowStockAlertsQuery();
   const { data: items = [], isLoading } = useAllInventoryItemsQuery();
+  const { mutate: updateItem, isPending: isUpdating } = useUpdateInventoryMutation();
+
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [editedQuantity, setEditedQuantity] = useState("");
   const [editedUnit, setEditedUnit] = useState("");
@@ -49,13 +53,21 @@ export default function InventoryScreen() {
       return;
     }
 
-    updateInventoryItem({
-      id: selectedItem.id,
-      quantity,
-      unit: editedUnit,
-    });
+    if (!selectedItem.projectId) {
+      Alert.alert("Error", "Project ID is missing for this item.");
+      return;
+    }
 
-    handleCloseUpdate();
+    updateItem({
+      projectId: selectedItem.projectId,
+      itemId: selectedItem.id,
+      currentQty: quantity,
+      unit: editedUnit,
+    }, {
+      onSuccess: () => {
+        handleCloseUpdate();
+      }
+    });
   };
 
   return (
@@ -130,6 +142,7 @@ export default function InventoryScreen() {
         onChangeUnit={setEditedUnit}
         onClose={handleCloseUpdate}
         onSave={handleSaveUpdate}
+        isSaving={isUpdating}
       />
     </SafeAreaView>
   );

@@ -20,6 +20,7 @@ type UpdateInventoryModalProps = {
   onChangeUnit: (value: string) => void;
   onClose: () => void;
   onSave: () => void;
+  isSaving?: boolean;
 };
 
 export default function UpdateInventoryModal({
@@ -31,6 +32,7 @@ export default function UpdateInventoryModal({
   onChangeUnit,
   onClose,
   onSave,
+  isSaving,
 }: UpdateInventoryModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -69,6 +71,7 @@ export default function UpdateInventoryModal({
                   <TouchableOpacity
                     activeOpacity={0.85}
                     onPress={onClose}
+                    disabled={isSaving}
                     className="h-[54px] flex-1 items-center justify-center rounded-[14px] border border-[#D3D9E2] bg-[#F7F9FB]"
                   >
                     <Text className="text-[16px] font-medium text-[#1F2937]">
@@ -79,10 +82,11 @@ export default function UpdateInventoryModal({
                   <TouchableOpacity
                     activeOpacity={0.85}
                     onPress={onSave}
+                    disabled={isSaving}
                     className="h-[54px] flex-1 items-center justify-center rounded-[14px] bg-[#1D5478]"
                   >
                     <Text className="text-[16px] font-medium text-white">
-                      Save
+                      {isSaving ? "Saving..." : "Save"}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -94,3 +98,4 @@ export default function UpdateInventoryModal({
     </Modal>
   );
 }
+
