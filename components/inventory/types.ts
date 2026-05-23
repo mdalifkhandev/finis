@@ -9,6 +9,7 @@ export type InventoryItem = {
   unit: string;
   location: string;
   updatedAt: string;
+  projectId?: string;
 };
 
 export type LowStockAlert = {

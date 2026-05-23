@@ -126,3 +126,22 @@ export async function getLowStockAlerts() {
   return data.data;
 }
 
+
+export type UpdateInventoryPayload = {
+  projectId: string;
+  itemId: string;
+  name?: string;
+  category?: string;
+  unit?: string;
+  currentQty?: number;
+  location?: string;
+};
+
+export async function updateInventoryItemData({ projectId, itemId, ...data }: UpdateInventoryPayload) {
+  const response = await api.patch<ApiResponse<any>>(`/inventory/${projectId}/item/${itemId}`, data);
+  if (!response.data.success) {
+    throw new Error(response.data.message || "Failed to update item");
+  }
+  return response.data.data;
+}
+
