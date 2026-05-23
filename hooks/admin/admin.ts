@@ -104,3 +104,11 @@ export function useProjectProfileQuery(id: string) {
 
   return query;
 }
+
+export function useAdminProfileQuery() {
+  return useQuery({
+    queryKey: ["admin", "profile"],
+    queryFn: () => import("@/api/admin/admin.api").then(m => m.getAdminProfile()),
+  });
+}
+
