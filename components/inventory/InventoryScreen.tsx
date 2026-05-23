@@ -9,13 +9,12 @@ import LowStockAlertsCard from "./LowStockAlertsCard";
 import UpdateInventoryModal from "./UpdateInventoryModal";
 import {
   updateInventoryItem,
-  useLowStockAlerts,
 } from "./inventoryStore";
-import { useAllInventoryItemsQuery, useInventorySummaryQuery } from "@/hooks/inventory/inventory";
+import { useAllInventoryItemsQuery, useInventorySummaryQuery, useLowStockAlertsQuery } from "@/hooks/inventory/inventory";
 
 export default function InventoryScreen() {
   const { data: summary } = useInventorySummaryQuery();
-  const alerts = useLowStockAlerts();
+  const { data: alerts = [], isLoading: isLoadingAlerts } = useLowStockAlertsQuery();
   const { data: items = [], isLoading } = useAllInventoryItemsQuery();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [editedQuantity, setEditedQuantity] = useState("");
@@ -87,7 +86,13 @@ export default function InventoryScreen() {
           <Text className="text-[18px] font-medium text-[#111827]">
             Low Stock Alerts
           </Text>
-          <LowStockAlertsCard alerts={alerts} />
+          {isLoadingAlerts ? (
+            <View className="mt-4 items-center justify-center">
+              <Text className="text-[#697487]">Loading alerts...</Text>
+            </View>
+          ) : (
+            <LowStockAlertsCard alerts={alerts} />
+          )}
 
           <TouchableOpacity
             activeOpacity={0.85}
