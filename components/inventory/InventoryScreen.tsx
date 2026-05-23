@@ -9,15 +9,14 @@ import LowStockAlertsCard from "./LowStockAlertsCard";
 import UpdateInventoryModal from "./UpdateInventoryModal";
 import {
   updateInventoryItem,
-  useInventoryItems,
-  useInventorySummary,
   useLowStockAlerts,
 } from "./inventoryStore";
+import { useAllInventoryItemsQuery, useInventorySummaryQuery } from "@/hooks/inventory/inventory";
 
 export default function InventoryScreen() {
-  const summary = useInventorySummary();
+  const { data: summary } = useInventorySummaryQuery();
   const alerts = useLowStockAlerts();
-  const items = useInventoryItems();
+  const { data: items = [], isLoading } = useAllInventoryItemsQuery();
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [editedQuantity, setEditedQuantity] = useState("");
   const [editedUnit, setEditedUnit] = useState("");
@@ -75,11 +74,11 @@ export default function InventoryScreen() {
 
         <View className="mt-5 flex-row justify-between px-5">
           <InventoryStatCard
-            value={String(summary.totalItems)}
+            value={String(summary?.totalProducts || 0)}
             label="Total Items"
           />
           <InventoryStatCard
-            value={String(summary.lowStock)}
+            value={String(summary?.lowStockAlerts || 0)}
             label="Low Stock"
           />
         </View>
@@ -99,15 +98,21 @@ export default function InventoryScreen() {
             </Text>
           </TouchableOpacity>
 
-          <View className="mt-2">
-            {items.map((item) => (
-              <InventoryItemCard
-                key={item.id}
-                item={item}
-                onPressUpdate={() => handleOpenUpdate(item.id)}
-              />
-            ))}
-          </View>
+          {isLoading ? (
+            <View className="mt-8 items-center justify-center">
+              <Text className="text-[#697487]">Loading items...</Text>
+            </View>
+          ) : (
+            <View className="mt-2">
+              {items.map((item) => (
+                <InventoryItemCard
+                  key={item.id}
+                  item={item}
+                  onPressUpdate={() => handleOpenUpdate(item.id)}
+                />
+              ))}
+            </View>
+          )}
         </View>
       </ScrollView>
 
