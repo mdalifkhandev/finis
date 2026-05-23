@@ -1,7 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { TaskItem, TaskStatus } from "../task/types";
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useReviewTaskReportMutation } from "@/hooks/company/company";
+import { toast } from "sonner-native";
+import type { TaskDetailsData } from "@/types/company.types";
+import { TaskStatus } from "../task/types";
 import TaskDetailMetaItem from "./TaskDetailMetaItem";
 import TaskExpensesCard, { TaskExpenseDocument } from "./TaskExpensesCard";
 import TaskInventoryRow from "./TaskInventoryRow";
@@ -9,11 +12,8 @@ import TaskPhotoCard from "./TaskPhotoCard";
 import { getTaskDetailsPreset } from "./taskDetailsPreset";
 
 type TaskDetailsScreenProps = {
-  task?: TaskItem;
+  task?: TaskDetailsData;
 };
-
-const PHOTO_URL =
-  "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1400&auto=format&fit=crop";
 
 function toStatusBadge(status: TaskStatus | undefined) {
   if (!status) return "PENDING";
@@ -22,10 +22,35 @@ function toStatusBadge(status: TaskStatus | undefined) {
 }
 
 export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
-  const preset = getTaskDetailsPreset(task?.status);
+  const preset = getTaskDetailsPreset(task?.status as TaskStatus);
   const description = task?.description?.trim() || preset.description;
   const [reviewDescription, setReviewDescription] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<TaskExpenseDocument[]>([]);
+
+  const reportId = task?.reports?.[0]?.id;
+  const taskId = task?.id;
+  const reviewMutation = useReviewTaskReportMutation(taskId || "", reportId || "");
+
+  const handleReview = async (decision: "approved" | "rejected") => {
+    if (!taskId || !reportId) {
+      toast.error("No report available to review");
+      return;
+    }
+    
+    try {
+      await reviewMutation.mutateAsync(decision);
+      toast.success(decision === "approved" ? "Task approved successfully" : "Task rejected successfully");
+    } catch {
+      // Error handled by hook
+    }
+  };
+
+  const beforePhoto = task?.reports?.[0]?.beforePhotoUrl;
+  const afterPhoto = task?.reports?.[0]?.afterPhotoUrl;
+  const reportNotes = task?.reports?.[0]?.notes || preset.reportSummary;
+  const inventories = task?.taskInventories?.length
+    ? task.taskInventories.map(inv => ({ label: inv.inventory?.name || "Unknown", quantity: `${inv.qtyUsed} ${inv.inventory?.unit || ''}` }))
+    : preset.inventory;
 
   const handleUploadFile = async () => {
     try {
@@ -75,18 +100,18 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
         <TaskDetailMetaItem
           icon="location-outline"
           label="Project"
-          value={task?.location || preset.project}
-          statusBadgeText={toStatusBadge(task?.status)}
+          value={task ? (task.project?.name + ' • ' + task.floor?.name + ' • ' + task.room?.name) : preset.project}
+          statusBadgeText={toStatusBadge(task?.status as TaskStatus)}
         />
         <TaskDetailMetaItem
           icon="person-outline"
           label="Assigned To"
-          value={task?.assignee || preset.assignedTo}
+          value={task?.assignee?.fullName || task?.taskAssignees?.[0]?.user?.fullName || preset.assignedTo}
         />
         <TaskDetailMetaItem
           icon="calendar-outline"
           label="Due Date"
-          value={task?.dueDate || preset.dueDate}
+          value={task?.dueDate ? new Date(task.dueDate).toLocaleDateString() : preset.dueDate}
         />
         <TaskDetailMetaItem
           icon="time-outline"
@@ -95,15 +120,15 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
         />
       </View>
 
-      <TaskPhotoCard title="Before Photo" imageUrl={PHOTO_URL} />
-      <TaskPhotoCard title="After Photo" imageUrl={PHOTO_URL} />
+      <TaskPhotoCard title="Before Photo" imageUrl={beforePhoto} />
+      <TaskPhotoCard title="After Photo" imageUrl={afterPhoto} />
 
       <View className="mt-5 rounded-[16px] border border-[#DADFE5] bg-white p-4">
         <Text className="text-[15px] font-semibold text-[#1F2937]">
           Task Report Summary
         </Text>
         <Text className="mt-5 text-[13px] leading-[24px] text-[#737B88]">
-          &quot;{preset.reportSummary}&quot;
+          &quot;{reportNotes}&quot;
         </Text>
       </View>
 
@@ -113,9 +138,9 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
         </Text>
 
         <View className="mt-3 gap-3">
-          {preset.inventory.map((item) => (
+          {inventories.map((item, i) => (
             <TaskInventoryRow
-              key={item.label}
+              key={item.label + i}
               label={item.label}
               quantity={item.quantity}
             />
@@ -173,20 +198,28 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
       <View className="mt-6 flex-row items-center justify-between">
         <TouchableOpacity
           activeOpacity={0.9}
-          className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] border border-[#D6DDE5] bg-white"
+          onPress={() => handleReview("rejected")}
+          disabled={reviewMutation.isPending}
+          className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] border border-[#D6DDE5] bg-white opacity-90 disabled:opacity-50"
         >
-          <Text className="text-[16px] font-medium text-[#1E1E1E]">
-            Reject Task
-          </Text>
+          {reviewMutation.isPending && reviewMutation.variables === "rejected" ? (
+            <ActivityIndicator color="#1E1E1E" />
+          ) : (
+            <Text className="text-[16px] font-medium text-[#1E1E1E]">Reject Task</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity
           activeOpacity={0.9}
-          className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] bg-[#1E5371]"
+          onPress={() => handleReview("approved")}
+          disabled={reviewMutation.isPending}
+          className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] bg-[#1E5371] opacity-90 disabled:opacity-50"
         >
-          <Text className="text-[16px] font-medium text-[#F3F7FA]">
-            Approve Work
-          </Text>
+          {reviewMutation.isPending && reviewMutation.variables === "approved" ? (
+            <ActivityIndicator color="#F3F7FA" />
+          ) : (
+            <Text className="text-[16px] font-medium text-[#F3F7FA]">Approve Work</Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>

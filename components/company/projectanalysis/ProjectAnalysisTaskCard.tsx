@@ -8,7 +8,7 @@ type ProjectAnalysisTaskCardProps = {
   units: string;
   date: string;
   status: "Completed" | "Pending" | "Not Started" | "In Progress";
-  onPressCheck?: () => void;
+  onPressCard?: () => void;
 };
 
 export default function ProjectAnalysisTaskCard({
@@ -17,7 +17,7 @@ export default function ProjectAnalysisTaskCard({
   units,
   date,
   status,
-  onPressCheck,
+  onPressCard,
 }: ProjectAnalysisTaskCardProps) {
   const isCompleted = status === "Completed";
   const accentColor =
@@ -28,10 +28,12 @@ export default function ProjectAnalysisTaskCard({
         : "#BFC1C5";
 
   return (
-    <View className="mt-2.5 flex-row items-center">
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={onPressCheck}
+    <TouchableOpacity
+      activeOpacity={0.85}
+      onPress={onPressCard}
+      className="mt-2.5 flex-row items-center"
+    >
+      <View
         className={`h-6 w-6 items-center justify-center rounded-full ${
           isCompleted
             ? "bg-[#5C61F0]"
@@ -41,7 +43,7 @@ export default function ProjectAnalysisTaskCard({
         {isCompleted ? (
           <Ionicons name="checkmark" size={14} color="#FFFFFF" />
         ) : null}
-      </TouchableOpacity>
+      </View>
 
       <View
         className={`ml-2.5 flex-1 overflow-hidden rounded-xl border px-4 py-3 ${
@@ -67,6 +69,6 @@ export default function ProjectAnalysisTaskCard({
           <Text className="ml-1 text-[12px] text-[#131820]">{date}</Text>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }

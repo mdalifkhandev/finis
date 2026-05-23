@@ -323,3 +323,55 @@ export type CreateTaskPayload = {
 };
 
 export type CreateTaskResponse = ApiResponse<{ id: string }>;
+
+export type TaskDetailsReport = {
+  id: string;
+  notes: string;
+  beforePhotoUrl: string | null;
+  afterPhotoUrl: string | null;
+  receiptUrl: string | null;
+  reviewDecision: string;
+  worker: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+  }
+};
+
+export type TaskDetailsInventory = {
+  id: string;
+  qtyUsed: number;
+  inventory: {
+    id: string;
+    name: string;
+    unit: string;
+  }
+};
+
+export type TaskDetailsExpense = {
+  id: string;
+  description: string;
+  category: string;
+  amount: number;
+  status: string;
+  date: string;
+};
+
+export type TaskDetailsData = {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  dueDate: string;
+  project: { name: string };
+  floor: { name: string };
+  room: { name: string };
+  assignee: { fullName: string } | null;
+  taskAssignees: any[];
+  reports: TaskDetailsReport[];
+  taskInventories: TaskDetailsInventory[];
+  expenses: TaskDetailsExpense[];
+};
+
+export type TaskDetailsApiResponse = ApiResponse<TaskDetailsData>;
+
