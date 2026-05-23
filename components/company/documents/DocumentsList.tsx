@@ -28,23 +28,45 @@ export default function DocumentsList({
 
   return (
     <View className="mt-7 px-5">
-      {documents.map((document, index) => (
-        <View key={document.id} className={index > 0 ? "mt-3.5" : ""}>
-          <DocumentCard
-            fileName={document.fileName}
-            fileType={document.fileType}
-            fileSize={document.fileSize}
-            uploadedBy={document.uploadedBy}
-            uploadedDate={document.uploadedDate}
-            onPreviewPress={
-              onPreviewPress ? () => onPreviewPress(document) : undefined
+      {documents.map((document, index) => {
+        const uploaderName =
+          typeof document.uploadedBy === "object" && document.uploadedBy !== null
+            ? (document.uploadedBy as any).fullName
+            : document.uploadedBy || "Unknown";
+
+        const sizeString = document.fileSizeMb !== undefined
+          ? `${document.fileSizeMb} MB`
+          : document.fileSize || "Unknown size";
+
+        let dateString = (document as any).uploadedAt || document.uploadedDate || "";
+        if (dateString) {
+          try {
+            const d = new Date(dateString);
+            if (!isNaN(d.getTime())) {
+              dateString = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
             }
-            onDownloadPress={
-              onDownloadPress ? () => onDownloadPress(document) : undefined
-            }
-          />
-        </View>
-      ))}
+          } catch {}
+        }
+
+        return (
+          <View key={document.id} className={index > 0 ? "mt-3.5" : ""}>
+            <DocumentCard
+              fileName={document.fileName}
+              fileType={document.fileType}
+              fileSize={sizeString}
+              uploadedBy={uploaderName}
+              uploadedDate={dateString}
+              onPreviewPress={
+                onPreviewPress ? () => onPreviewPress(document) : undefined
+              }
+              onDownloadPress={
+                onDownloadPress ? () => onDownloadPress(document) : undefined
+              }
+            />
+          </View>
+        );
+      })}
     </View>
   );
 }
+

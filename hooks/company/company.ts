@@ -870,3 +870,27 @@ export function useReviewTaskReportMutation(taskId: string, reportId: string) {
   });
 }
 
+
+import { getProjectDocuments } from "../../api/company/company.api";
+
+export function useProjectDocumentsQuery(projectId?: string) {
+  const query = useQuery({
+    queryKey: ["project", "documents", projectId],
+    queryFn: () => getProjectDocuments(projectId!),
+    enabled: !!projectId,
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load project documents",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+

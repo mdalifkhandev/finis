@@ -4,6 +4,7 @@ import { api } from "@/lib/api/client";
 import { API_BASE_URL } from "@/lib/config";
 import type { AdminCompaniesResponse } from "@/types/admin.types";
 import type { AdminCompanyDetailResponse } from "@/types/admin.types";
+import type { ApiResponse } from "@/types/auth.types";
 import type {
   CreateCompanyPayload,
   CreateProjectPayload,
@@ -356,7 +357,15 @@ export async function getCompanyDocuments(id: string): Promise<DocumentItem[]> {
 export async function getProjectDocuments(
   projectId: string,
 ): Promise<DocumentItem[]> {
-  return simulateNetwork(projectDocuments[projectId] ?? []);
+  const { data } = await api.get<ApiResponse<DocumentItem[]>>(
+    `/admin/projects/${projectId}/documents`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load project documents");
+  }
+
+  return data.data;
 }
 
 export async function getProjectAnalysis(id: string) {
