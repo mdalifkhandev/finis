@@ -10,7 +10,7 @@ function resolveAvatarUrl(uri: string) {
     return null;
   }
 
-  if (uri.startsWith("http://") || uri.startsWith("https://")) {
+  if (uri.startsWith("http://") || uri.startsWith("https://") || uri.startsWith("file://")) {
     return uri;
   }
 
