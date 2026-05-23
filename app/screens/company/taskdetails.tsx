@@ -1,18 +1,25 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
-import { useTaskItems } from "@/components/company/task/taskStore";
+import { useTaskDetailsQuery } from "@/hooks/company/company";
 import { getTaskDetailsPreset } from "@/components/company/taskdetails/taskDetailsPreset";
 import TaskDetailsScreen from "@/components/company/taskdetails/TaskDetailsScreen";
+import { TaskStatus } from "@/components/company/task/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TaskDetailsRoute() {
   const { taskId } = useLocalSearchParams<{ taskId?: string }>();
-  const tasks = useTaskItems();
+  const { data: task, isLoading } = useTaskDetailsQuery(taskId);
 
-  const task = tasks.find((item) => item.id === taskId) ?? tasks[0];
-  const preset = getTaskDetailsPreset(task?.status);
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#E9EDF1] items-center justify-center">
+        <ActivityIndicator size="large" color="#1F506D" />
+      </SafeAreaView>
+    );
+  }
+  const preset = getTaskDetailsPreset(task?.status as TaskStatus);
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">

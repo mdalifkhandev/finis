@@ -752,3 +752,31 @@ export async function assignTaskWorker(taskId: string, userIds: string[]) {
 
   return data.data;
 }
+
+import type { TaskDetailsData, TaskDetailsApiResponse } from "../../types/company.types";
+
+export async function getTaskDetails(taskId: string): Promise<TaskDetailsData> {
+  const { data } = await api.get<TaskDetailsApiResponse>(`/admin/tasks/${taskId}`);
+  
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load task details");
+  }
+
+  return data.data;
+}
+
+
+export async function reviewTaskReport(taskId: string, reportId: string, reviewDecision: string) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/tasks/${taskId}/reports/${reportId}/review`, { reviewDecision });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to submit review");
+  }
+
+  return data.data;
+}
+

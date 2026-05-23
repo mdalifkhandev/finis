@@ -838,3 +838,35 @@ export function useAssignTaskWorkerMutation(taskId?: string) {
     },
   });
 }
+
+import { getTaskDetails } from "../../api/company/company.api";
+
+export function useTaskDetailsQuery(taskId?: string) {
+  return useQuery({
+    queryKey: ["task", "details", taskId],
+    queryFn: () => {
+      if (!taskId) throw new Error("Task ID is required");
+      return getTaskDetails(taskId);
+    },
+    enabled: !!taskId,
+  });
+}
+
+
+import { reviewTaskReport } from "../../api/company/company.api";
+
+export function useReviewTaskReportMutation(taskId: string, reportId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reviewDecision: string) => reviewTaskReport(taskId, reportId, reviewDecision),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["project-analysis"] });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to submit review");
+    },
+  });
+}
+

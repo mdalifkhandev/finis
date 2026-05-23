@@ -1,4 +1,4 @@
-import { create, type InternalAxiosRequestConfig } from "axios";
+import { create, type InternalAxiosRequestConfig, AxiosError } from "axios";
 import { API_BASE_URL } from "@/lib/config";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -20,3 +20,15 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<{ message?: string }>) => {
+    if (!error.response || error.response.status === 502 || error.response.status === 503) {
+      error.message = "Server is not available";
+    } else if (error.response?.data?.message) {
+      error.message = error.response.data.message;
+    }
+    return Promise.reject(error);
+  }
+);

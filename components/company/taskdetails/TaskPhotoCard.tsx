@@ -1,13 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { Image, Text, View } from "react-native";
 
 type TaskPhotoCardProps = {
   title: string;
-  imageUrl: string;
+  imageUrl?: string | null;
 };
 
 export default function TaskPhotoCard({ title, imageUrl }: TaskPhotoCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const placeholder = require("@/assets/images/placeholder-image.png");
+  const source = imageUrl && !imageError ? { uri: imageUrl } : placeholder;
+
   return (
     <View className="mt-4 rounded-[16px] border border-[#DADFE5] bg-white p-3">
       <View className="flex-row items-center">
@@ -18,9 +22,10 @@ export default function TaskPhotoCard({ title, imageUrl }: TaskPhotoCardProps) {
       </View>
 
       <Image
-        source={{ uri: imageUrl }}
+        source={source}
         resizeMode="cover"
         className="mt-3 h-[185px] w-full rounded-[14px]"
+        onError={() => setImageError(true)}
       />
     </View>
   );
