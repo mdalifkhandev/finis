@@ -120,3 +120,17 @@ export const useResetPassword = () => {
     error: mutation.error,
   };
 };
+
+import { changePasswordRequest, ChangePasswordPayload } from "@/api/auth/auth.api";
+
+export const useChangePassword = () => {
+  const mutation = useMutation({
+    mutationFn: (payload: ChangePasswordPayload) => changePasswordRequest(payload),
+  });
+
+  return {
+    changePassword: mutation.mutateAsync,
+    isPending: mutation.isPending,
+  };
+};
+
