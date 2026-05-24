@@ -1,6 +1,6 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     KeyboardAvoidingView,
     Modal,
@@ -12,8 +12,11 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useWorkerProfileQuery, useUpdateWorkerProfileMutation } from "@/hooks/profile/profile";
 
 const THEME = {
   colors: {
@@ -24,7 +27,7 @@ const THEME = {
     textPlaceholder: "#94A3B8",
     inputBg: "#F8FAFC",
     inputBorder: "#F1F5F9",
-    bluePrimary: "#1D4F6D", // Dark blue for the save button
+    bluePrimary: "#1D4F6D",
   },
 };
 
@@ -97,15 +100,43 @@ const CustomInput = ({
 );
 
 const EditProfileScreen = () => {
-  const [name, setName] = useState("Rokey Mahmud");
-  const [phone, setPhone] = useState("+1 (555) 123-4567");
-  const [dob, setDob] = useState("01/15/1995");
+  const { data: profile } = useWorkerProfileQuery();
+  const { mutateAsync: updateProfile, isPending } = useUpdateWorkerProfileMutation();
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dob, setDob] = useState<Date | null>(null);
   const [gender, setGender] = useState("Male");
 
+  useEffect(() => {
+    if (profile) {
+      setName(profile.fullName || "");
+      setPhone(profile.phone || "");
+      if (profile.dateOfBirth) {
+        setDob(new Date(profile.dateOfBirth));
+      }
+    }
+  }, [profile]);
+
   const [isGenderModalVisible, setIsGenderModalVisible] = useState(false);
-  const [isDateModalVisible, setIsDateModalVisible] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const genderOptions = ["Male", "Female", "Other"];
+
+  const handleSave = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("fullName", name);
+      if (phone) formData.append("phone", phone);
+      if (dob) formData.append("dateOfBirth", dob.toISOString());
+      formData.append("gender", gender);
+
+      await updateProfile(formData as any);
+      router.back();
+    } catch (error) {
+      // Error handled in mutation
+    }
+  };
 
   return (
     <SafeAreaView
@@ -146,63 +177,92 @@ const EditProfileScreen = () => {
         </Text>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: 32,
-          paddingBottom: 40,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
-        <CustomInput
-          placeholder="Full name"
-          value={name}
-          onChangeText={setName}
-        />
-
-        <CustomInput
-          value="alice@example.com"
-          readOnly={true}
-          icon="lock-outline"
-        />
-
-        <CustomInput
-          placeholder="Phone number"
-          value={phone}
-          onChangeText={setPhone}
-        />
-
-        <CustomInput
-          placeholder="mm/dd/yyyy"
-          value={dob}
-          onPress={() => setIsDateModalVisible(true)}
-          icon="calendar-month-outline"
-        />
-
-        <CustomInput
-          placeholder="Gender"
-          value={gender}
-          isDropdown={true}
-          onPress={() => setIsGenderModalVisible(true)}
-        />
-
-        <TouchableOpacity
-          style={{
-            height: 56,
-            backgroundColor: THEME.colors.bluePrimary,
-            borderRadius: 12,
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: 16,
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingTop: 32,
+            paddingBottom: 40,
           }}
-          onPress={() => router.back()}
         >
-          <Text style={{ color: "white", fontSize: 18, fontWeight: "700" }}>
-            Save
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <CustomInput
+            placeholder="Full name"
+            value={name}
+            onChangeText={setName}
+          />
+
+          <CustomInput
+            value={profile?.email || ""}
+            readOnly={true}
+            icon="lock-outline"
+          />
+
+          <CustomInput
+            placeholder="Phone number"
+            value={phone}
+            onChangeText={setPhone}
+          />
+
+          <CustomInput
+            placeholder="mm/dd/yyyy"
+            value={
+              dob
+                ? dob.toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "numeric",
+                  })
+                : ""
+            }
+            onPress={() => setShowDatePicker(true)}
+            icon="calendar-month-outline"
+          />
+          {showDatePicker && (
+            <DateTimePicker
+              value={dob || new Date()}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "default"}
+              onChange={(event, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) {
+                  setDob(selectedDate);
+                }
+              }}
+            />
+          )}
+
+          <CustomInput
+            placeholder="Gender"
+            value={gender}
+            isDropdown={true}
+            onPress={() => setIsGenderModalVisible(true)}
+          />
+
+          <TouchableOpacity
+            disabled={isPending}
+            style={{
+              height: 56,
+              backgroundColor: THEME.colors.bluePrimary,
+              borderRadius: 12,
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "row",
+              marginTop: 16,
+            }}
+            onPress={handleSave}
+          >
+            {isPending && <ActivityIndicator color="#FFF" style={{ marginRight: 8 }} />}
+            <Text style={{ color: "white", fontSize: 18, fontWeight: "700" }}>
+              Save
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Gender Picker Modal */}
       <Modal
@@ -281,105 +341,9 @@ const EditProfileScreen = () => {
           </View>
         </Pressable>
       </Modal>
-
-      {/* Date Pick Modal */}
-      <Modal
-        visible={isDateModalVisible}
-        transparent
-        animationType="fade"
-        statusBarTranslucent
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <Pressable
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(0,0,0,0.4)",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            onPress={() => setIsDateModalVisible(false)}
-          >
-            <View
-              style={{
-                backgroundColor: "white",
-                width: "85%",
-                borderRadius: 24,
-                padding: 28,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.1,
-                shadowRadius: 20,
-                elevation: 5,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "700",
-                  color: THEME.colors.textMain,
-                  marginBottom: 12,
-                }}
-              >
-                Enter Date of Birth
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: THEME.colors.textSecondary,
-                  marginBottom: 24,
-                }}
-              >
-                Please use mm/dd/yyyy format
-              </Text>
-
-              <View
-                style={{
-                  height: 56,
-                  backgroundColor: "#F8FAFC",
-                  borderRadius: 14,
-                  paddingHorizontal: 16,
-                  borderWidth: 1,
-                  borderColor: "#F1F5F9",
-                  marginBottom: 28,
-                  justifyContent: "center",
-                }}
-              >
-                <TextInput
-                  autoFocus
-                  placeholder="01/15/1995"
-                  placeholderTextColor="#CBD5E1"
-                  value={dob}
-                  onChangeText={setDob}
-                  keyboardType="numbers-and-punctuation"
-                  style={{ fontSize: 18, fontWeight: "600", color: "#1A1C1E" }}
-                />
-              </View>
-
-              <TouchableOpacity
-                style={{
-                  height: 52,
-                  backgroundColor: THEME.colors.bluePrimary,
-                  borderRadius: 12,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-                onPress={() => setIsDateModalVisible(false)}
-              >
-                <Text
-                  style={{ color: "white", fontSize: 16, fontWeight: "700" }}
-                >
-                  Confirm
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 };
 
 export default EditProfileScreen;
+

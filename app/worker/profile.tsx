@@ -12,6 +12,19 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useWorkerProfileQuery } from "@/hooks/profile/profile";
+import { API_BASE_URL } from "@/lib/config";
+import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
+
+function resolveAvatarUrl(avatarUrl?: string | null) {
+  if (!avatarUrl) {
+    return DEFAULT_AVATAR_URL;
+  }
+  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") || avatarUrl.startsWith("file://")) {
+    return avatarUrl;
+  }
+  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
 
 const THEME = {
   colors: {
@@ -27,13 +40,19 @@ const THEME = {
   },
 };
 
+const placeholderAvatar = require("../../assets/images/placeholder-person.png");
+
 export default function WorkerProfile() {
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const { data: profile } = useWorkerProfileQuery();
 
   const handleLogout = () => {
     setIsLogoutModalVisible(false);
     router.replace("/(auth)/login");
   };
+
+  const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
 
   return (
     <SafeAreaView
@@ -73,9 +92,8 @@ export default function WorkerProfile() {
             }}
           >
             <Image
-              source={{
-                uri: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=2662&auto=format&fit=crop",
-              }}
+              source={avatarUrl && !imageFailed ? { uri: avatarUrl } : placeholderAvatar}
+              onError={() => setImageFailed(true)}
               style={{ width: "100%", height: "100%" }}
             />
           </View>
@@ -87,10 +105,10 @@ export default function WorkerProfile() {
               marginBottom: 4,
             }}
           >
-            Abcd.LTD
+            {profile?.fullName || "Worker"}
           </Text>
           <Text style={{ fontSize: 14, color: THEME.colors.textSecondary }}>
-            ID: #225432
+            ID: {profile?.employeeId || "N/A"}
           </Text>
 
           <View style={{ width: "100%", marginTop: 24 }}>

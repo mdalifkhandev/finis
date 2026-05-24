@@ -12,6 +12,10 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useChangePassword } from "@/hooks/auth/auth";
+import { toast } from "sonner-native";
+import { isAxiosError } from "axios";
+import { ActivityIndicator } from "react-native";
 
 const THEME = {
   colors: {
@@ -79,6 +83,40 @@ const ChangePasswordScreen = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const { changePassword, isPending } = useChangePassword();
+
+  const handleUpdate = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("Please fill all fields.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirm password do not match.");
+      return;
+    }
+
+    try {
+      await changePassword({
+        oldPassword: currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      toast.success("Password updated successfully.");
+      router.back();
+    } catch (error) {
+      const message = isAxiosError(error)
+        ? (error.response?.data?.message as string | undefined)
+        : undefined;
+
+      toast.error(
+        message ||
+          (error instanceof Error ? error.message : "Failed to change password"),
+      );
+    }
+  };
 
   return (
     <SafeAreaView
@@ -156,15 +194,18 @@ const ChangePasswordScreen = () => {
         {/* Fixed bottom button container */}
         <View style={{ paddingHorizontal: 20, paddingBottom: 24 }}>
           <TouchableOpacity
+            disabled={isPending}
             style={{
               height: 56,
               backgroundColor: THEME.colors.bluePrimary,
               borderRadius: 14,
               alignItems: "center",
               justifyContent: "center",
+              flexDirection: "row"
             }}
-            onPress={() => router.back()}
+            onPress={handleUpdate}
           >
+            {isPending && <ActivityIndicator color="#FFF" style={{ marginRight: 8 }} />}
             <Text style={{ color: "white", fontSize: 18, fontWeight: "700" }}>
               Update password
             </Text>

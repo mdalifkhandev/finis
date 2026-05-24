@@ -3,8 +3,18 @@ import React from "react";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
-import { useAuthMeQuery } from "@/hooks/auth/auth";
-import { useAuthStore } from "@/store/auth.store";
+import { API_BASE_URL } from "@/lib/config";
+import { useWorkerProfileQuery } from "@/hooks/profile/profile";
+
+function resolveAvatarUrl(avatarUrl?: string | null) {
+  if (!avatarUrl) {
+    return DEFAULT_AVATAR_URL;
+  }
+  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") || avatarUrl.startsWith("file://")) {
+    return avatarUrl;
+  }
+  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
 import HomeHeader from "../../components/home/HomeHeader";
 import SectionHeader from "../../components/home/SectionHeader";
 import StatCard from "../../components/home/StatCard";
@@ -54,11 +64,11 @@ const WEEKLY_ACTIVITY = [
 ];
 
 export default function WorkerHome() {
-  useAuthMeQuery();
-  const user = useAuthStore((state) => state.user);
-  const avatarUrl = user?.avatarUrl ?? DEFAULT_AVATAR_URL;
-  const displayName = user?.fullName?.trim() || "Welcome Back";
-  const subtitle = user?.role ? `${user.role}!` : "Electrician!";
+  const { data: profile } = useWorkerProfileQuery();
+  
+  const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
+  const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
+  const subtitle = profile?.role ? `${profile.role}!` : "Worker!";
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
@@ -67,7 +77,7 @@ export default function WorkerHome() {
           name={displayName}
           subtitle={subtitle}
           avatarUrl={avatarUrl}
-          onPressAvatar={() => router.push("/screens/profile")}
+          onPressAvatar={() => router.push("/worker/profile")}
         />
 
         <View className="flex-row justify-between px-5 mt-6">

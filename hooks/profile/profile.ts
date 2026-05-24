@@ -28,3 +28,28 @@ export function useUpdateAdminProfileMutation() {
   });
 }
 
+
+import { getWorkerProfile, updateWorkerProfile } from "@/api/profile/profile.api";
+
+export function useWorkerProfileQuery() {
+  return useQuery({
+    queryKey: ["worker", "profile"],
+    queryFn: () => getWorkerProfile(),
+  });
+}
+
+export function useUpdateWorkerProfileMutation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (formData: FormData) => updateWorkerProfile(formData),
+    onSuccess: () => {
+      toast.success("Profile updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["worker", "profile"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update profile");
+    },
+  });
+}
+
