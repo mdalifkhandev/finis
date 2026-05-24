@@ -1,10 +1,12 @@
 import { router } from "expo-router";
 import React from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, ActivityIndicator, RefreshControl, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import { API_BASE_URL } from "@/lib/config";
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
+import { useWorkerDashboardQuery } from "@/hooks/worker/dashboard";
+import { WorkerDashboardTask } from "@/api/worker/dashboard.api";
 
 function resolveAvatarUrl(avatarUrl?: string | null) {
   if (!avatarUrl) {
@@ -22,37 +24,6 @@ import WeeklyActivityItem from "../../components/home/WeeklyActivityItem";
 import WorkerStatusCard from "../../components/home/WorkerStatusCard";
 import WorkerTaskCard from "../../components/home/WorkerTaskCard";
 
-const MOCK_TASKS = [
-  {
-    id: "1",
-    title: "Electrical rough-in",
-    location: "Riverside Tower",
-    priority: "MEDIUM" as const,
-    assignedAvatars: [
-      "https://i.pravatar.cc/150?u=1",
-      "https://i.pravatar.cc/150?u=2",
-      "https://i.pravatar.cc/150?u=3",
-      "https://i.pravatar.cc/150?u=4",
-      "https://i.pravatar.cc/150?u=5",
-    ],
-    commentsCount: 2,
-  },
-  {
-    id: "2",
-    title: "Electrical rough-in",
-    location: "Riverside Tower",
-    priority: "HIGH" as const,
-    assignedAvatars: [
-      "https://i.pravatar.cc/150?u=6",
-      "https://i.pravatar.cc/150?u=7",
-      "https://i.pravatar.cc/150?u=8",
-      "https://i.pravatar.cc/150?u=9",
-      "https://i.pravatar.cc/150?u=10",
-    ],
-    commentsCount: 2,
-  },
-];
-
 const WEEKLY_ACTIVITY = [
   { day: "Monday", status: "8 hours", type: "completed" as const },
   {
@@ -65,14 +36,30 @@ const WEEKLY_ACTIVITY = [
 
 export default function WorkerHome() {
   const { data: profile } = useWorkerProfileQuery();
+  const { data: dashboard, isLoading, refetch, isRefetching } = useWorkerDashboardQuery();
   
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
   const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
   const subtitle = profile?.role ? `${profile.role}!` : "Worker!";
 
+  const todayTasksCount = dashboard?.stats?.todayTasksCount ?? 0;
+  const completedToday = dashboard?.stats?.completedToday ?? 0;
+  const isClockedIn = dashboard?.stats?.clockStatus === "clocked_in";
+
+  const getClockInTime = () => {
+    if (!isClockedIn || !dashboard?.stats?.clockInTime) return undefined;
+    return new Date(dashboard.stats.clockInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
-      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        className="flex-1"
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#1f3d5c" colors={["#1f3d5c"]} />
+        }
+      >
         <HomeHeader
           name={displayName}
           subtitle={subtitle}
@@ -80,36 +67,50 @@ export default function WorkerHome() {
           onPressAvatar={() => router.push("/worker/profile")}
         />
 
-        <View className="flex-row justify-between px-5 mt-6">
-          <StatCard icon="trending-up" value="3" label="Today's Tasks" />
-          <StatCard icon="people" value="3" label="Completed" />
-        </View>
-
-        <View className="mt-4">
-          <WorkerStatusCard isClockedIn={false} />
-          <WorkerStatusCard isClockedIn={true} time="05 : 12" />
-        </View>
-
-        <View className="mt-6">
-          <SectionHeader
-            title="Today's Tasks"
-            actionLabel="View All"
-            onPressAction={() => {}}
-          />
-          <View className="mt-2">
-            {MOCK_TASKS.map((task) => (
-              <WorkerTaskCard
-                key={task.id}
-                priority={task.priority}
-                title={task.title}
-                location={task.location}
-                assignedAvatars={task.assignedAvatars}
-                commentsCount={task.commentsCount}
-                onPress={() => router.push("/screens/worker/viewtask")}
-              />
-            ))}
+        {isLoading ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="small" color="#1f3d5c" />
+            <Text className="mt-2 text-xs text-slate-500">Loading dashboard...</Text>
           </View>
-        </View>
+        ) : (
+          <>
+            <View className="flex-row justify-between px-5 mt-6">
+              <StatCard icon="trending-up" value={String(todayTasksCount)} label="Today`s Tasks" />
+              <StatCard icon="people" value={String(completedToday)} label="Completed" />
+            </View>
+
+            <View className="mt-4">
+              <WorkerStatusCard isClockedIn={isClockedIn} time={getClockInTime()} />
+            </View>
+
+            <View className="mt-6">
+              <SectionHeader
+                title="Today`s Tasks"
+                actionLabel="View All"
+                onPressAction={() => {}}
+              />
+              <View className="mt-2">
+                {dashboard?.todayTasks?.length ? (
+                  dashboard.todayTasks.map((task: WorkerDashboardTask) => (
+                    <WorkerTaskCard
+                      key={task.id}
+                      priority={task.priority?.toUpperCase() as any}
+                      title={task.title}
+                      location={`${task.project?.name || "Project"}${task.floor?.name ? " - " + task.floor.name : ""}`}
+                      assignedAvatars={[]}
+                      commentsCount={task._count?.reports || 0}
+                      onPress={() => router.push("/screens/worker/viewtask")}
+                    />
+                  ))
+                ) : (
+                  <View className="items-center py-4">
+                    <Text className="text-slate-500 text-sm">No tasks for today.</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </>
+        )}
 
         <View className="mt-4 pb-10">
           <SectionHeader
@@ -132,3 +133,4 @@ export default function WorkerHome() {
     </SafeAreaView>
   );
 }
+
