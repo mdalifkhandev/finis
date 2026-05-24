@@ -26,7 +26,7 @@ export default function HomeHeader({
       <View className="flex-row items-center">
         <TouchableOpacity activeOpacity={0.85} onPress={onPressAvatar}>
           <Image
-            source={avatarUrl ? { uri: avatarUrl } : placeholderAvatar}
+            source={avatarUrl && !imageFailed ? { uri: avatarUrl } : placeholderAvatar}
             onError={() => setImageFailed(true)}
             resizeMode="cover"
             className="h-12 w-12 rounded-full"

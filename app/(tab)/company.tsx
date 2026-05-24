@@ -1,5 +1,6 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import CompanyCard from "@/components/company/CompanyCard";
+import { useCompaniesQuery } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -15,7 +16,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useCompaniesQuery } from "@/hooks/company/company";
 
 export default function Company() {
   const router = useRouter();
@@ -91,11 +91,11 @@ export default function Company() {
               </View>
             ) : filteredCompanies.length ? (
               filteredCompanies.map((company) => (
-              <CompanyCard
+                <CompanyCard
                   key={company.id}
                   name={company.name}
                   type={company.industry}
-                  revenue={company.revenue.toLocaleString()}
+                  revenue={company.revenue?.toLocaleString()}
                   projectLevel={String(company._count.projects)}
                   address={company.address}
                   website={company.website}
@@ -110,7 +110,9 @@ export default function Company() {
               ))
             ) : (
               <View className="mt-10 items-center">
-                <Text className="text-sm text-slate-500">No companies found.</Text>
+                <Text className="text-sm text-slate-500">
+                  No companies found.
+                </Text>
               </View>
             )}
           </View>
@@ -141,13 +143,17 @@ export default function Company() {
               disabled={meta ? page >= meta.totalPages : false}
               onPress={() => setPage((current) => current + 1)}
               className={`rounded-full px-4 py-2 ${
-                meta && page >= meta.totalPages ? "bg-slate-200" : "bg-slate-900"
+                meta && page >= meta.totalPages
+                  ? "bg-slate-200"
+                  : "bg-slate-900"
               }`}
               activeOpacity={0.85}
             >
               <Text
                 className={`text-xs font-semibold ${
-                  meta && page >= meta.totalPages ? "text-slate-400" : "text-white"
+                  meta && page >= meta.totalPages
+                    ? "text-slate-400"
+                    : "text-white"
                 }`}
               >
                 Next

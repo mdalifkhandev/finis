@@ -2,9 +2,8 @@ import BackTitleHeader from "@/components/common/BackTitleHeader";
 import ProfileMenuItem from "@/components/company/ProfileMenuItem";
 import ProfileSummaryCard from "@/components/company/ProfileSummaryCard";
 import { useCompanyQuery } from "@/hooks/company/company";
-import { useLocalSearchParams } from "expo-router";
-import { router } from "expo-router";
-import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const menuItems = [
@@ -44,7 +43,7 @@ export default function CompanyProfileRoute() {
               data.logoUrl ? { uri: data.logoUrl } : placeholderAvatar
             }
             completedProjects={String(data._count.projects)}
-            annualRevenue={data.revenue.toLocaleString()}
+            annualRevenue={data.revenue?.toLocaleString()}
             totalEmployees={String(data._count.members)}
             onEdit={
               companyId
@@ -83,15 +82,15 @@ export default function CompanyProfileRoute() {
                         params: { id: companyId },
                       })
                   : item.route
-                  ? () =>
-                      router.push(
-                        item.route as
-                          | "/screens/company/assignedprojects"
-                          | "/screens/company/contacts"
-                          | "/screens/company/documents"
-                          | "/screens/company/geofencing",
-                      )
-                  : undefined
+                    ? () =>
+                        router.push(
+                          item.route as
+                            | "/screens/company/assignedprojects"
+                            | "/screens/company/contacts"
+                            | "/screens/company/documents"
+                            | "/screens/company/geofencing",
+                        )
+                    : undefined
               }
             />
           ))}
