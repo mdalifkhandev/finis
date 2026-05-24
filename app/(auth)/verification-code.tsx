@@ -5,20 +5,46 @@ import React, { useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
-import { useVerifyOtp } from "@/hooks/auth/auth";
+import { useVerifyOtp, useForgotPassword } from "@/hooks/auth/auth";
 
 export default function VerificationCodeRoute() {
   const router = useRouter();
-  const { email, forgotToken } = useLocalSearchParams<{
+  const { email, forgotToken: initialForgotToken } = useLocalSearchParams<{
     email?: string;
     forgotToken?: string;
   }>();
+  const [forgotToken, setForgotToken] = useState<string | undefined>(initialForgotToken);
   const { verifyOtp, isPending } = useVerifyOtp();
+  const { sendCode, isPending: isResending } = useForgotPassword();
   const [otp, setOtp] = useState("");
   const maskedEmail =
     typeof email === "string" && email.includes("@")
       ? `${email.slice(0, 1)}***@${email.split("@")[1]}`
       : "your email";
+
+  const handleResend = async () => {
+    if (!email || typeof email !== "string") {
+      toast.error("Email is missing.");
+      return;
+    }
+
+    try {
+      const response = await sendCode({ email });
+      if (response && response.forgotToken) {
+        setForgotToken(response.forgotToken);
+      }
+      toast.success("Verification code resent successfully.");
+    } catch (error) {
+      const message = isAxiosError(error)
+        ? (error.response?.data?.message as string | undefined)
+        : undefined;
+
+      toast.error(
+        message ||
+          (error instanceof Error ? error.message : "Failed to resend code"),
+      );
+    }
+  };
 
   const handleVerify = async () => {
     if (!forgotToken || typeof forgotToken !== "string") {
@@ -116,10 +142,16 @@ export default function VerificationCodeRoute() {
           </Text>
         </TouchableOpacity>
 
-        <Text className="mt-8 text-center text-[16px] text-[#8A9097]">
-          Didn&apos;t receive the code?{" "}
-          <Text className="font-medium text-[#3B4046]">Resend</Text>
-        </Text>
+        <View className="mt-8 flex-row items-center justify-center">
+          <Text className="text-[16px] text-[#8A9097]">
+            Didn&apos;t receive the code?{" "}
+          </Text>
+          <TouchableOpacity onPress={handleResend} disabled={isResending}>
+            <Text className={`text-[16px] font-medium ${isResending ? "text-[#8A9097]" : "text-[#3B4046]"}`}>
+              {isResending ? "Resending..." : "Resend"}
+            </Text>
+          </TouchableOpacity>
+        </View>
         <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
           <Text className="mt-3 text-center text-[17px] font-semibold text-[#3B4046]">
             Back to Login
