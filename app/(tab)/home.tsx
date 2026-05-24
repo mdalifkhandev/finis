@@ -1,13 +1,12 @@
+import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import InviteButton from "@/components/home/InviteButton";
 import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
 import { useAdminDashboardQuery } from "@/hooks/admin/admin";
-import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
-import { useAuthMeQuery } from "@/hooks/auth/auth";
+import { useAdminProfileQuery } from "@/hooks/profile/profile";
 import { API_BASE_URL } from "@/lib/config";
-import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -33,17 +32,22 @@ function resolveAvatarUrl(avatarUrl?: string | null) {
 }
 
 export default function Home() {
-  const authMeQuery = useAuthMeQuery();
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    refetch: refetchProfile,
+  } = useAdminProfileQuery();
   const dashboardQuery = useAdminDashboardQuery();
   const dashboard = dashboardQuery.data;
-  const user = useAuthStore((state) => state.user);
-  const avatarUrl = resolveAvatarUrl(user?.avatarUrl);
-  const displayName = user?.fullName?.trim() || "Welcome Back";
-  const subtitle = user?.role ? `${user.role}!` : "Admin!!";
+
+  const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
+  const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
+  const subtitle = profile?.role ? `${profile.role}!` : "Admin!!";
+
   const handleRefresh = async () => {
-    await Promise.all([authMeQuery.refetch(), dashboardQuery.refetch()]);
+    await Promise.all([refetchProfile(), dashboardQuery.refetch()]);
   };
-  const refreshing = authMeQuery.isRefetching || dashboardQuery.isRefetching;
+  const refreshing = isProfileLoading || dashboardQuery.isRefetching;
   const stats = [
     {
       icon: "trending-up-outline" as const,
@@ -70,9 +74,7 @@ export default function Home() {
     title: project.name || "Project",
     status: (project.status?.toLowerCase() === "delayed"
       ? "Delayed"
-      : "On Track") as
-      | "On Track"
-      | "Delayed",
+      : "On Track") as "On Track" | "Delayed",
     workers: `${project.teamCount ?? 0} workers`,
     progress: Number(project.progress ?? 0),
   }));
@@ -105,7 +107,7 @@ export default function Home() {
           onPressAvatar={() => router.push("/screens/profile")}
         />
 
-        {(dashboardQuery.isLoading || authMeQuery.isLoading) && !dashboard ? (
+        {(dashboardQuery.isLoading || isProfileLoading) && !dashboard ? (
           <View className="mt-10 items-center">
             <ActivityIndicator size="small" color="#1f3d5c" />
             <Text className="mt-2 text-xs text-slate-500">

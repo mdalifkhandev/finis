@@ -8,16 +8,25 @@ import ProjectBudgetCard from "@/components/company/projectinfo/ProjectBudgetCar
 import ProjectDetailsInfoCard from "@/components/company/projectinfo/ProjectDetailsInfoCard";
 import { useProjectProfileQuery } from "@/hooks/admin/admin";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState, useCallback } from "react";
-import { ActivityIndicator, ScrollView, View, RefreshControl } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const formatCurrency = (value: number) =>
-  `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  `$${value?.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
 export default function ProjectInfoRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: apiProject, isLoading, refetch } = useProjectProfileQuery(id as string);
+  const {
+    data: apiProject,
+    isLoading,
+    refetch,
+  } = useProjectProfileQuery(id as string);
   const project = useProjectData();
   const [refreshing, setRefreshing] = useState(false);
 
