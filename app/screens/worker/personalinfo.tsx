@@ -10,6 +10,19 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useWorkerProfileQuery } from "@/hooks/profile/profile";
+import { API_BASE_URL } from "@/lib/config";
+import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
+
+function resolveAvatarUrl(avatarUrl?: string | null) {
+  if (!avatarUrl) {
+    return DEFAULT_AVATAR_URL;
+  }
+  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") || avatarUrl.startsWith("file://")) {
+    return avatarUrl;
+  }
+  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
 
 const THEME = {
   colors: {
@@ -19,9 +32,11 @@ const THEME = {
     textSecondary: "#64748B",
     textLabel: "#94A3B8",
     border: "#F1F5F9",
-    darkCircle: "#1D4F6D", // Dark blue for the edit icon background
+    darkCircle: "#1D4F6D",
   },
 };
+
+const placeholderAvatar = require("../../../assets/images/placeholder-person.png");
 
 const InfoRow = ({
   icon,
@@ -71,7 +86,9 @@ const InfoRow = ({
 );
 
 const PersonalInfoScreen = () => {
+  const { data: profile } = useWorkerProfileQuery();
   const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
 
   const pickProfileImage = async () => {
     try {
@@ -159,11 +176,14 @@ const PersonalInfoScreen = () => {
         <View style={{ alignItems: "center", marginBottom: 32 }}>
           <View style={{ width: 120, height: 120, position: "relative" }}>
             <Image
-              source={{
-                uri:
-                  profileImage ||
-                  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=2574&auto=format&fit=crop",
-              }}
+              source={
+                profileImage && !imageFailed 
+                  ? { uri: profileImage } 
+                  : (resolveAvatarUrl(profile?.avatarUrl) && !imageFailed) 
+                      ? { uri: resolveAvatarUrl(profile?.avatarUrl) } 
+                      : placeholderAvatar
+              }
+              onError={() => setImageFailed(true)}
               style={{ width: "100%", height: "100%", borderRadius: 60 }}
             />
             <TouchableOpacity
@@ -193,7 +213,7 @@ const PersonalInfoScreen = () => {
               marginTop: 16,
             }}
           >
-            Rokey
+            {profile?.fullName?.split(" ")[0] || "Worker"}
           </Text>
         </View>
 
@@ -227,7 +247,7 @@ const PersonalInfoScreen = () => {
           <InfoRow
             icon="account-outline"
             label="Full Name"
-            value="Rokey Mahmud"
+            value={profile?.fullName || "N/A"}
           />
 
           <Text
@@ -245,12 +265,12 @@ const PersonalInfoScreen = () => {
           <InfoRow
             icon="email-outline"
             label="Email"
-            value="alice@example.com"
+            value={profile?.email || "N/A"}
           />
           <InfoRow
             icon="phone-outline"
             label="Phone"
-            value="+1 (555) 123-4567"
+            value={profile?.phone || "N/A"}
             isLast={true}
           />
         </View>
@@ -285,3 +305,4 @@ const PersonalInfoScreen = () => {
 };
 
 export default PersonalInfoScreen;
+
