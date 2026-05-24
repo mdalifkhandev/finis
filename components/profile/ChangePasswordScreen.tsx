@@ -6,15 +6,53 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
+import { isAxiosError } from "axios";
 import ProfileField from "./ProfileField";
 import ProfileHeaderBar from "./ProfileHeaderBar";
+import { useChangePassword } from "@/hooks/auth/auth";
 
 export default function ChangePasswordScreen() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  const { changePassword, isPending } = useChangePassword();
+
+  const handleUpdate = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("Please fill all fields.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirm password do not match.");
+      return;
+    }
+
+    try {
+      await changePassword({
+        oldPassword: currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+
+      toast.success("Password updated successfully.");
+      router.back();
+    } catch (error) {
+      const message = isAxiosError(error)
+        ? (error.response?.data?.message as string | undefined)
+        : undefined;
+
+      toast.error(
+        message ||
+          (error instanceof Error ? error.message : "Failed to change password"),
+      );
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -56,8 +94,11 @@ export default function ChangePasswordScreen() {
 
           <TouchableOpacity
             activeOpacity={0.88}
-            className="mb-4 h-[42px] items-center justify-center rounded-[10px] bg-[#1F5577]"
+            onPress={handleUpdate}
+            disabled={isPending}
+            className="mb-4 h-[42px] flex-row items-center justify-center rounded-[10px] bg-[#1F5577]"
           >
+            {isPending && <ActivityIndicator color="#FFFFFF" style={{ marginRight: 8 }} />}
             <Text className="text-[14px] font-semibold text-white">
               Update password
             </Text>
@@ -67,3 +108,4 @@ export default function ChangePasswordScreen() {
     </SafeAreaView>
   );
 }
+

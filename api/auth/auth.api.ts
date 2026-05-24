@@ -136,3 +136,20 @@ export const resetPasswordRequest = async (payload: ResetPasswordData) => {
 
   return data.message || "Password updated";
 };
+
+export type ChangePasswordPayload = {
+  oldPassword?: string;
+  newPassword?: string;
+  confirmPassword?: string;
+};
+
+export const changePasswordRequest = async (payload: ChangePasswordPayload) => {
+  const { data } = await api.post<ApiResponse<any>>("/auth/change-password", payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to change password");
+  }
+
+  return data.data;
+};
+
