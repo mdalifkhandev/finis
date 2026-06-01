@@ -99,7 +99,7 @@ export default function WorkerHome() {
                       location={`${task.project?.name || "Project"}${task.floor?.name ? " - " + task.floor.name : ""}`}
                       assignedAvatars={[]}
                       commentsCount={task._count?.reports || 0}
-                      onPress={() => router.push("/screens/worker/viewtask")}
+                      onPress={() => router.push({ pathname: "/screens/worker/viewtask", params: { id: task.id } })}
                     />
                   ))
                 ) : (
