@@ -1,14 +1,21 @@
-import { Feather, Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useState } from "react";
+import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import {
-    Image,
-    ScrollView,
-    StatusBar,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  useWorkerTaskInventoryQuery,
+  useWorkerTaskQuery,
+} from "@/hooks/worker/tasks";
+import { API_BASE_URL } from "@/lib/config";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import car from "../../../assets/images/car.jpg";
@@ -29,18 +36,32 @@ const THEME = {
 };
 
 const TaskDetailsScreen = () => {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { data: task, isLoading } = useWorkerTaskQuery(id as string);
+  const { data: profile } = useWorkerProfileQuery();
+  const { data: inventoryData, isLoading: inventoryLoading } =
+    useWorkerTaskInventoryQuery(id as string);
+
   const [inventoryExpanded, setInventoryExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [notes, setNotes] = useState("");
   const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
 
-  const [inventoryItems, setInventoryItems] = useState([
-    { id: "1", name: "Cement", quantity: 1, checked: false },
-    { id: "2", name: "Steel Rods", quantity: 1, checked: true },
-    { id: "3", name: "Steel Rods", quantity: 1, checked: true },
-    { id: "4", name: "Steel Rods", quantity: 1, checked: true },
-    { id: "5", name: "Safety Helmets", quantity: 1, checked: false },
-  ]);
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (inventoryData && inventoryData.length > 0) {
+      setInventoryItems(
+        inventoryData.map((inv: any) => ({
+          id: inv.id,
+          name: inv.name,
+          maxQty: inv.currentQty || 1,
+          quantity: 1, // Start with 1 when checked
+          checked: false,
+        })),
+      );
+    }
+  }, [inventoryData]);
 
   const toggleInventoryItem = (id: string) => {
     setInventoryItems((prev) =>
@@ -54,7 +75,13 @@ const TaskDetailsScreen = () => {
     setInventoryItems((prev) =>
       prev.map((item) =>
         item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+          ? {
+              ...item,
+              quantity: Math.max(
+                1,
+                Math.min(item.quantity + delta, item.maxQty),
+              ),
+            }
           : item,
       ),
     );
@@ -148,582 +175,658 @@ const TaskDetailsScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
       >
-        {/* Task Summary Card */}
-        <View
-          style={{
-            backgroundColor: THEME.colors.white,
-            borderRadius: 24,
-            padding: 24,
-            borderWidth: 1,
-            borderColor: THEME.colors.border,
-            marginBottom: 16,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: THEME.colors.textMain,
-              marginBottom: 8,
-            }}
-          >
-            Task Details
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: THEME.colors.textSecondary,
-              lineHeight: 20,
-              marginBottom: 24,
-            }}
-          >
-            Install electrical wiring and outlets for Room 302. Ensure all
-            connections meet code requirements.
-          </Text>
-
-          {/* Metadata Rows */}
-          <View style={{ gap: 16, marginBottom: 24 }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View style={{ width: 32, alignItems: "center" }}>
-                <Ionicons
-                  name="location-outline"
-                  size={20}
-                  color={THEME.colors.textSecondary}
-                />
-              </View>
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text
-                  style={{ fontSize: 13, color: THEME.colors.textSecondary }}
-                >
-                  Project
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: "600",
-                    color: THEME.colors.textMain,
-                  }}
-                >
-                  Downtown Plaza
-                </Text>
-              </View>
-              <View
-                style={{
-                  backgroundColor: "#FFF7ED",
-                  paddingHorizontal: 10,
-                  paddingVertical: 6,
-                  borderRadius: 100,
-                }}
-              >
-                <Text
-                  style={{ color: "#F97316", fontSize: 12, fontWeight: "700" }}
-                >
-                  In Progress
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View style={{ width: 32, alignItems: "center" }}>
-                <Ionicons
-                  name="person-outline"
-                  size={20}
-                  color={THEME.colors.textSecondary}
-                />
-              </View>
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text
-                  style={{ fontSize: 13, color: THEME.colors.textSecondary }}
-                >
-                  Assigned To
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: "600",
-                    color: THEME.colors.textMain,
-                  }}
-                >
-                  Michael Torres
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View style={{ width: 32, alignItems: "center" }}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color={THEME.colors.textSecondary}
-                />
-              </View>
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text
-                  style={{ fontSize: 13, color: THEME.colors.textSecondary }}
-                >
-                  Due Date
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: "600",
-                    color: THEME.colors.textMain,
-                  }}
-                >
-                  Jan 15, 2026
-                </Text>
-              </View>
-            </View>
-
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View style={{ width: 32, alignItems: "center" }}>
-                <Ionicons
-                  name="time-outline"
-                  size={20}
-                  color={THEME.colors.textSecondary}
-                />
-              </View>
-              <View style={{ flex: 1, marginLeft: 8 }}>
-                <Text
-                  style={{ fontSize: 13, color: THEME.colors.textSecondary }}
-                >
-                  Estimated Time
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: "600",
-                    color: THEME.colors.textMain,
-                  }}
-                >
-                  4 hours
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Priority Banner */}
+        {isLoading || !task ? (
           <View
             style={{
-              backgroundColor: "#FEF2F2",
-              padding: 16,
-              borderRadius: 16,
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 100,
             }}
           >
+            <ActivityIndicator size="large" color={THEME.colors.bluePrimary} />
+          </View>
+        ) : (
+          <>
+            {/* Task Summary Card */}
             <View
               style={{
-                backgroundColor: "#EF4444",
-                alignSelf: "flex-start",
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                borderRadius: 8,
-                marginBottom: 8,
+                backgroundColor: THEME.colors.white,
+                borderRadius: 24,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: THEME.colors.border,
+                marginBottom: 16,
               }}
             >
-              <Text style={{ color: "white", fontSize: 13, fontWeight: "700" }}>
-                High Priority
-              </Text>
-            </View>
-            <Text style={{ color: "#EF4444", fontSize: 13, fontWeight: "500" }}>
-              This task requires immediate attention
-            </Text>
-          </View>
-        </View>
-
-        {/* Before Photo Section */}
-        <View
-          style={{
-            backgroundColor: THEME.colors.white,
-            borderRadius: 24,
-            padding: 24,
-            borderWidth: 1,
-            borderColor: THEME.colors.border,
-            marginBottom: 16,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <Ionicons
-              name="camera-outline"
-              size={20}
-              color={THEME.colors.textMain}
-            />
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: THEME.colors.textMain,
-                marginLeft: 8,
-              }}
-            >
-              Before Photo
-            </Text>
-          </View>
-          <View style={{ borderRadius: 16, overflow: "hidden" }}>
-            <Image
-              source={car}
-              style={{ width: "100%", height: 200 }}
-              resizeMode="cover"
-            />
-          </View>
-        </View>
-
-        {/* Use Inventory Section */}
-        <View
-          style={{
-            backgroundColor: THEME.colors.white,
-            borderRadius: 24,
-            padding: 24,
-            borderWidth: 1,
-            borderColor: THEME.colors.border,
-            marginBottom: 16,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => setInventoryExpanded(!inventoryExpanded)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: inventoryExpanded ? 16 : 0,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: THEME.colors.textMain,
-              }}
-            >
-              Use Inventory
-            </Text>
-            <Ionicons
-              name={inventoryExpanded ? "chevron-up" : "chevron-down"}
-              size={20}
-              color={THEME.colors.textMain}
-            />
-          </TouchableOpacity>
-
-          {inventoryExpanded && (
-            <View>
-              <View
+              <Text
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: "#F1F5F9",
-                  paddingHorizontal: 12,
-                  height: 48,
-                  marginBottom: 16,
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: THEME.colors.textMain,
+                  marginBottom: 8,
                 }}
               >
-                <Ionicons
-                  name="search"
-                  size={24}
-                  color={THEME.colors.textSecondary}
-                />
-                <TextInput
-                  placeholder="Search Item"
-                  style={{
-                    flex: 1,
-                    marginLeft: 12,
-                    fontSize: 16,
-                    color: "#64748B",
-                  }}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-              </View>
+                {task.title || "Task Details"}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: THEME.colors.textSecondary,
+                  lineHeight: 20,
+                  marginBottom: 24,
+                }}
+              >
+                {task.description || "No description provided."}
+              </Text>
 
-              <View style={{ gap: 16 }}>
-                {filteredInventoryItems.map((item) => (
+              {/* Metadata Rows */}
+              <View style={{ gap: 16, marginBottom: 24 }}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View style={{ width: 32, alignItems: "center" }}>
+                    <Ionicons
+                      name="location-outline"
+                      size={20}
+                      color={THEME.colors.textSecondary}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: THEME.colors.textSecondary,
+                      }}
+                    >
+                      Project
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: THEME.colors.textMain,
+                      }}
+                    >
+                      {task.project?.name || "N/A"}
+                    </Text>
+                  </View>
                   <View
-                    key={item.id}
                     style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
+                      backgroundColor: "#FFF7ED",
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: 100,
                     }}
                   >
-                    <View
+                    <Text
                       style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        flex: 1,
+                        color: "#F97316",
+                        fontSize: 12,
+                        fontWeight: "700",
+                        textTransform: "capitalize",
                       }}
                     >
-                      <TouchableOpacity
-                        onPress={() => toggleInventoryItem(item.id)}
-                        style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: 6,
-                          borderWidth: item.checked ? 0 : 2,
-                          borderColor: "#CBD5E1",
-                          backgroundColor: item.checked
-                            ? "#1D4F6D"
-                            : "transparent",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {item.checked && (
-                          <Ionicons name="checkmark" size={18} color="white" />
-                        )}
-                      </TouchableOpacity>
-                      <Text
-                        style={{
-                          marginLeft: 16,
-                          fontSize: 18,
-                          fontWeight: "500",
-                          color: "#475569",
-                        }}
-                      >
-                        {item.name}
-                      </Text>
-                    </View>
-
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        backgroundColor: "#EBF4F6",
-                        padding: 4,
-                        borderRadius: 12,
-                        height: 54,
-                        width: 130,
-                        justifyContent: "space-between",
-                        paddingHorizontal: 6,
-                      }}
-                    >
-                      <TouchableOpacity
-                        onPress={() => updateInventoryQuantity(item.id, -1)}
-                        style={{
-                          width: 36,
-                          height: 36,
-                          backgroundColor: "white",
-                          borderRadius: 8,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Ionicons
-                          name="remove-outline"
-                          size={20}
-                          color="#0088CC"
-                        />
-                      </TouchableOpacity>
-
-                      <Text
-                        style={{
-                          fontSize: 18,
-                          fontWeight: "600",
-                          color: "#1D4F6D",
-                          marginHorizontal: 12,
-                        }}
-                      >
-                        {item.quantity}
-                      </Text>
-
-                      <TouchableOpacity
-                        onPress={() => updateInventoryQuantity(item.id, 1)}
-                        style={{
-                          width: 36,
-                          height: 36,
-                          backgroundColor: "white",
-                          borderRadius: 8,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Ionicons
-                          name="add-outline"
-                          size={20}
-                          color="#0088CC"
-                        />
-                      </TouchableOpacity>
-                    </View>
+                      {task.status
+                        ? task.status.replace("_", " ")
+                        : "In Progress"}
+                    </Text>
                   </View>
-                ))}
+                </View>
+
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View style={{ width: 32, alignItems: "center" }}>
+                    <Ionicons
+                      name="person-outline"
+                      size={20}
+                      color={THEME.colors.textSecondary}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: THEME.colors.textSecondary,
+                      }}
+                    >
+                      Assigned To
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: THEME.colors.textMain,
+                      }}
+                    >
+                      {profile?.fullName || "You"}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View style={{ width: 32, alignItems: "center" }}>
+                    <Ionicons
+                      name="calendar-outline"
+                      size={20}
+                      color={THEME.colors.textSecondary}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: THEME.colors.textSecondary,
+                      }}
+                    >
+                      Due Date
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: THEME.colors.textMain,
+                      }}
+                    >
+                      {task.dueDate
+                        ? new Date(task.dueDate).toLocaleDateString()
+                        : "N/A"}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <View style={{ width: 32, alignItems: "center" }}>
+                    <Ionicons
+                      name="time-outline"
+                      size={20}
+                      color={THEME.colors.textSecondary}
+                    />
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 8 }}>
+                    <Text
+                      style={{
+                        fontSize: 13,
+                        color: THEME.colors.textSecondary,
+                      }}
+                    >
+                      Estimated Time
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 15,
+                        fontWeight: "600",
+                        color: THEME.colors.textMain,
+                      }}
+                    >
+                      {task.estimatedHours
+                        ? `${task.estimatedHours} hours`
+                        : "N/A"}
+                    </Text>
+                  </View>
+                </View>
               </View>
+
+              {/* Priority Banner */}
+              {task.priority === "high" && (
+                <View
+                  style={{
+                    backgroundColor: "#FEF2F2",
+                    padding: 16,
+                    borderRadius: 16,
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "#EF4444",
+                      alignSelf: "flex-start",
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 8,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 13,
+                        fontWeight: "700",
+                      }}
+                    >
+                      High Priority
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      color: "#EF4444",
+                      fontSize: 13,
+                      fontWeight: "500",
+                    }}
+                  >
+                    This task requires immediate attention
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        {/* After Photo Section */}
-        <View
-          style={{
-            backgroundColor: THEME.colors.white,
-            borderRadius: 24,
-            padding: 24,
-            borderWidth: 1,
-            borderColor: THEME.colors.border,
-            marginBottom: 16,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <Ionicons
-              name="camera-outline"
-              size={20}
-              color={THEME.colors.textMain}
-            />
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "700",
-                color: THEME.colors.textMain,
-                marginLeft: 8,
-              }}
-            >
-              After Photo
-            </Text>
-          </View>
-
-          {afterPhoto ? (
+            {/* Before Photo Section */}
             <View
-              style={{ borderRadius: 16, overflow: "hidden", marginBottom: 16 }}
-            >
-              <Image
-                source={{ uri: afterPhoto }}
-                style={{ width: "100%", height: 200 }}
-                resizeMode="cover"
-              />
-              <TouchableOpacity
-                onPress={() => setAfterPhoto(null)}
-                style={{
-                  position: "absolute",
-                  top: 10,
-                  right: 10,
-                  backgroundColor: "rgba(0,0,0,0.5)",
-                  borderRadius: 15,
-                  padding: 5,
-                }}
-              >
-                <Ionicons name="close" size={20} color="white" />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              onPress={pickImage}
               style={{
-                width: "100%",
-                height: 160,
+                backgroundColor: THEME.colors.white,
+                borderRadius: 24,
+                padding: 24,
                 borderWidth: 1,
-                borderColor: "#E2E8F0",
-                borderRadius: 20,
-                borderStyle: "dashed",
-                alignItems: "center",
-                justifyContent: "center",
+                borderColor: THEME.colors.border,
                 marginBottom: 16,
               }}
             >
               <View
                 style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 28,
-                  backgroundColor: "#F0F9FF",
+                  flexDirection: "row",
                   alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: 12,
+                  marginBottom: 16,
                 }}
               >
-                <Ionicons name="camera" size={24} color="#0088CC" />
+                <Ionicons
+                  name="camera-outline"
+                  size={20}
+                  color={THEME.colors.textMain}
+                />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: THEME.colors.textMain,
+                    marginLeft: 8,
+                  }}
+                >
+                  Before Photo
+                </Text>
               </View>
-              <Text
-                style={{ fontSize: 15, fontWeight: "700", color: "#334155" }}
+              <View style={{ borderRadius: 16, overflow: "hidden" }}>
+                <Image
+                  source={
+                    task.reports?.[0]?.beforePhotoUrl
+                      ? {
+                          uri:
+                            (task.reports[0].beforePhotoUrl.startsWith("http")
+                              ? ""
+                              : API_BASE_URL) + task.reports[0].beforePhotoUrl,
+                        }
+                      : car
+                  }
+                  style={{ width: "100%", height: 200 }}
+                  resizeMode="cover"
+                />
+              </View>
+            </View>
+
+            {/* Use Inventory Section */}
+            <View
+              style={{
+                backgroundColor: THEME.colors.white,
+                borderRadius: 24,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: THEME.colors.border,
+                marginBottom: 16,
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => setInventoryExpanded(!inventoryExpanded)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: inventoryExpanded ? 16 : 0,
+                }}
               >
-                Take or Upload Photo
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: THEME.colors.textMain,
+                  }}
+                >
+                  Use Inventory
+                </Text>
+                <Ionicons
+                  name={inventoryExpanded ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={THEME.colors.textMain}
+                />
+              </TouchableOpacity>
+
+              {inventoryExpanded && (
+                <View>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: "#FFFFFF",
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: "#F1F5F9",
+                      paddingHorizontal: 12,
+                      height: 48,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <Ionicons
+                      name="search"
+                      size={20}
+                      color={THEME.colors.textSecondary}
+                    />
+                    <TextInput
+                      placeholder="Search Item"
+                      style={{
+                        flex: 1,
+                        marginLeft: 12,
+                        fontSize: 16,
+                        color: "#64748B",
+                      }}
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                    />
+                  </View>
+
+                  <View style={{ gap: 16 }}>
+                    {filteredInventoryItems.map((item) => (
+                      <View
+                        key={item.id}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            flex: 1,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => toggleInventoryItem(item.id)}
+                            style={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: 6,
+                              borderWidth: item.checked ? 0 : 2,
+                              borderColor: "#CBD5E1",
+                              backgroundColor: item.checked
+                                ? "#1D4F6D"
+                                : "transparent",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {item.checked && (
+                              <Ionicons
+                                name="checkmark"
+                                size={18}
+                                color="white"
+                              />
+                            )}
+                          </TouchableOpacity>
+                          <Text
+                            style={{
+                              marginLeft: 16,
+                              fontSize: 16,
+                              fontWeight: "500",
+                              color: "#475569",
+                            }}
+                          >
+                            {item.name}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: "#EBF4F6",
+                            padding: 4,
+                            borderRadius: 12,
+                            height: 40,
+                            width: 110,
+                            justifyContent: "space-between",
+                            paddingHorizontal: 6,
+                          }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => updateInventoryQuantity(item.id, -1)}
+                            style={{
+                              width: 30,
+                              height: 30,
+                              backgroundColor: "white",
+                              borderRadius: 8,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Ionicons
+                              name="remove-outline"
+                              size={22}
+                              color="#0088CC"
+                            />
+                          </TouchableOpacity>
+
+                          <Text
+                            style={{
+                              fontSize: 18,
+                              fontWeight: "600",
+                              color: "#1D4F6D",
+                              marginHorizontal: 12,
+                            }}
+                          >
+                            {item.quantity}
+                          </Text>
+
+                          <TouchableOpacity
+                            onPress={() => updateInventoryQuantity(item.id, 1)}
+                            style={{
+                              width: 30,
+                              height: 30,
+                              backgroundColor: "white",
+                              borderRadius: 8,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <Ionicons
+                              name="add-outline"
+                              size={22}
+                              color="#0088CC"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* After Photo Section */}
+            <View
+              style={{
+                backgroundColor: THEME.colors.white,
+                borderRadius: 24,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: THEME.colors.border,
+                marginBottom: 16,
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 16,
+                }}
+              >
+                <Ionicons
+                  name="camera-outline"
+                  size={20}
+                  color={THEME.colors.textMain}
+                />
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: THEME.colors.textMain,
+                    marginLeft: 8,
+                  }}
+                >
+                  After Photo
+                </Text>
+              </View>
+
+              {afterPhoto ? (
+                <View
+                  style={{
+                    borderRadius: 16,
+                    overflow: "hidden",
+                    marginBottom: 16,
+                  }}
+                >
+                  <Image
+                    source={{ uri: afterPhoto }}
+                    style={{ width: "100%", height: 200 }}
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setAfterPhoto(null)}
+                    style={{
+                      position: "absolute",
+                      top: 10,
+                      right: 10,
+                      backgroundColor: "rgba(0,0,0,0.5)",
+                      borderRadius: 15,
+                      padding: 5,
+                    }}
+                  >
+                    <Ionicons name="close" size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={pickImage}
+                  style={{
+                    width: "100%",
+                    height: 160,
+                    borderWidth: 1,
+                    borderColor: "#E2E8F0",
+                    borderRadius: 20,
+                    borderStyle: "dashed",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 28,
+                      backgroundColor: "#F0F9FF",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Ionicons name="camera" size={24} color="#0088CC" />
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 15,
+                      fontWeight: "700",
+                      color: "#334155",
+                    }}
+                  >
+                    Take or Upload Photo
+                  </Text>
+                  <Text
+                    style={{ fontSize: 13, color: "#94A3B8", marginTop: 4 }}
+                  >
+                    Photo of completed work
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                onPress={pickImage}
+                style={{
+                  height: 48,
+                  backgroundColor: "#D1F0FF",
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{ color: "#0F172A", fontSize: 15, fontWeight: "700" }}
+                >
+                  {afterPhoto ? "Change photo" : "Take photo"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Notes Section */}
+            <View
+              style={{
+                backgroundColor: THEME.colors.white,
+                borderRadius: 24,
+                padding: 24,
+                borderWidth: 1,
+                borderColor: THEME.colors.border,
+                marginBottom: 24,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "700",
+                  color: THEME.colors.textMain,
+                  marginBottom: 16,
+                }}
+              >
+                Notes (Optional)
               </Text>
-              <Text style={{ fontSize: 13, color: "#94A3B8", marginTop: 4 }}>
-                Photo of completed work
+              <TextInput
+                placeholder="Add any additional notes about this task..."
+                multiline
+                textAlignVertical="top"
+                style={{
+                  height: 100,
+                  borderWidth: 1,
+                  borderColor: "#E2E8F0",
+                  borderRadius: 16,
+                  padding: 16,
+                  fontSize: 14,
+                  color: THEME.colors.textMain,
+                }}
+                value={notes}
+                onChangeText={setNotes}
+              />
+            </View>
+
+            {/* Action Button */}
+            <TouchableOpacity
+              onPress={handleComplete}
+              style={{
+                height: 56,
+                backgroundColor: "#1D4F6D",
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                Mark as Completed
               </Text>
             </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            onPress={pickImage}
-            style={{
-              height: 48,
-              backgroundColor: "#D1F0FF",
-              borderRadius: 12,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={{ color: "#0F172A", fontSize: 15, fontWeight: "700" }}>
-              {afterPhoto ? "Change photo" : "Take photo"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Notes Section */}
-        <View
-          style={{
-            backgroundColor: THEME.colors.white,
-            borderRadius: 24,
-            padding: 24,
-            borderWidth: 1,
-            borderColor: THEME.colors.border,
-            marginBottom: 24,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "700",
-              color: THEME.colors.textMain,
-              marginBottom: 16,
-            }}
-          >
-            Notes (Optional)
-          </Text>
-          <TextInput
-            placeholder="Add any additional notes about this task..."
-            multiline
-            textAlignVertical="top"
-            style={{
-              height: 100,
-              borderWidth: 1,
-              borderColor: "#E2E8F0",
-              borderRadius: 16,
-              padding: 16,
-              fontSize: 14,
-              color: THEME.colors.textMain,
-            }}
-            value={notes}
-            onChangeText={setNotes}
-          />
-        </View>
-
-        {/* Action Button */}
-        <TouchableOpacity
-          onPress={handleComplete}
-          style={{
-            height: 56,
-            backgroundColor: "#1D4F6D",
-            borderRadius: 12,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
-            Mark as Completed
-          </Text>
-        </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
