@@ -1,28 +1,38 @@
-import { router } from "expo-router";
-import React from "react";
-import { ScrollView, View, ActivityIndicator, RefreshControl, Text } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
-import { API_BASE_URL } from "@/lib/config";
+import { WorkerDashboardTask } from "@/api/worker/dashboard.api";
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import { useWorkerDashboardQuery } from "@/hooks/worker/dashboard";
-import { WorkerDashboardTask } from "@/api/worker/dashboard.api";
-
-function resolveAvatarUrl(avatarUrl?: string | null) {
-  if (!avatarUrl) {
-    return DEFAULT_AVATAR_URL;
-  }
-  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://") || avatarUrl.startsWith("file://")) {
-    return avatarUrl;
-  }
-  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
-}
+import { API_BASE_URL } from "@/lib/config";
+import { router } from "expo-router";
+import React from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import HomeHeader from "../../components/home/HomeHeader";
 import SectionHeader from "../../components/home/SectionHeader";
 import StatCard from "../../components/home/StatCard";
 import WeeklyActivityItem from "../../components/home/WeeklyActivityItem";
 import WorkerStatusCard from "../../components/home/WorkerStatusCard";
 import WorkerTaskCard from "../../components/home/WorkerTaskCard";
+
+function resolveAvatarUrl(avatarUrl?: string | null) {
+  if (!avatarUrl) {
+    return DEFAULT_AVATAR_URL;
+  }
+  if (
+    avatarUrl.startsWith("http://") ||
+    avatarUrl.startsWith("https://") ||
+    avatarUrl.startsWith("file://")
+  ) {
+    return avatarUrl;
+  }
+  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
 
 const WEEKLY_ACTIVITY = [
   { day: "Monday", status: "8 hours", type: "completed" as const },
@@ -36,8 +46,13 @@ const WEEKLY_ACTIVITY = [
 
 export default function WorkerHome() {
   const { data: profile } = useWorkerProfileQuery();
-  const { data: dashboard, isLoading, refetch, isRefetching } = useWorkerDashboardQuery();
-  
+  const {
+    data: dashboard,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useWorkerDashboardQuery();
+
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
   const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
   const subtitle = profile?.role ? `${profile.role}!` : "Worker!";
@@ -48,16 +63,24 @@ export default function WorkerHome() {
 
   const getClockInTime = () => {
     if (!isClockedIn || !dashboard?.stats?.clockInTime) return undefined;
-    return new Date(dashboard.stats.clockInTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return new Date(dashboard.stats.clockInTime).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         className="flex-1"
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#1f3d5c" colors={["#1f3d5c"]} />
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
         }
       >
         <HomeHeader
@@ -70,17 +93,30 @@ export default function WorkerHome() {
         {isLoading ? (
           <View className="mt-10 items-center">
             <ActivityIndicator size="small" color="#1f3d5c" />
-            <Text className="mt-2 text-xs text-slate-500">Loading dashboard...</Text>
+            <Text className="mt-2 text-xs text-slate-500">
+              Loading dashboard...
+            </Text>
           </View>
         ) : (
           <>
             <View className="flex-row justify-between px-5 mt-6">
-              <StatCard icon="trending-up" value={String(todayTasksCount)} label="Today`s Tasks" />
-              <StatCard icon="people" value={String(completedToday)} label="Completed" />
+              <StatCard
+                icon="trending-up"
+                value={String(todayTasksCount)}
+                label="Today`s Tasks"
+              />
+              <StatCard
+                icon="people"
+                value={String(completedToday)}
+                label="Completed"
+              />
             </View>
 
             <View className="mt-4">
-              <WorkerStatusCard isClockedIn={isClockedIn} time={getClockInTime()} />
+              <WorkerStatusCard
+                isClockedIn={isClockedIn}
+                time={getClockInTime()}
+              />
             </View>
 
             <View className="mt-6">
@@ -99,12 +135,19 @@ export default function WorkerHome() {
                       location={`${task.project?.name || "Project"}${task.floor?.name ? " - " + task.floor.name : ""}`}
                       assignedAvatars={[]}
                       commentsCount={task._count?.reports || 0}
-                      onPress={() => router.push({ pathname: "/screens/worker/viewtask", params: { id: task.id } })}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/screens/worker/viewtask",
+                          params: { id: task.id },
+                        })
+                      }
                     />
                   ))
                 ) : (
                   <View className="items-center py-4">
-                    <Text className="text-slate-500 text-sm">No tasks for today.</Text>
+                    <Text className="text-slate-500 text-sm">
+                      No tasks for today.
+                    </Text>
                   </View>
                 )}
               </View>
@@ -133,4 +176,3 @@ export default function WorkerHome() {
     </SafeAreaView>
   );
 }
-
