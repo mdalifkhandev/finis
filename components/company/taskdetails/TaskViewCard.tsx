@@ -22,7 +22,7 @@ type TaskViewCardProps = {
   endTime: string;
   date: string;
   description: string;
-  onStartTask?: () => void;
+  onStartTask?: (imageUri: string) => void;
 };
 
 export default function TaskViewCard({
@@ -79,9 +79,13 @@ export default function TaskViewCard({
   };
 
   const handleConfirm = () => {
+    if (!takenPhoto) {
+      Alert.alert("Error", "Please take a photo first");
+      return;
+    }
     setIsModalVisible(false);
+    onStartTask?.(takenPhoto);
     setTakenPhoto(null);
-    onStartTask?.();
   };
 
   return (
