@@ -31,8 +31,6 @@ yarn-error.*
 *.pem
 
 # local env files
-.env
-.env.*
 !.env.example
 .env*.local
 
@@ -45,3 +43,4 @@ app-example
 /ios
 /android
 .agents
+config.bat
