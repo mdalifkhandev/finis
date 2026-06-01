@@ -1,10 +1,26 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import TaskViewCard from "@/components/company/taskdetails/TaskViewCard";
+import { useWorkerTaskQuery } from "@/hooks/worker/tasks";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, View, ActivityIndicator, Text } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useWorkerTaskQuery } from "@/hooks/worker/tasks";
+
+function formatDateRange(start?: string | Date, end?: string | Date) {
+  if (!start || !end) return "";
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const startStr = startDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+  const endStr = endDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${startStr} - ${endStr}`;
+}
 
 export default function WorkerViewTaskRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -29,22 +45,32 @@ export default function WorkerViewTaskRoute() {
           </View>
         ) : (
           <TaskViewCard
-            workerName={task.creator?.fullName || "Company"}
+            workerName={task.title || "Company"}
             role={task.project?.name || "Project"}
-            dateRange={task.dueDate ? new Date(task.dueDate).toLocaleDateString() : ""}
+            dateRange={formatDateRange(task.createdAt, task.dueDate)}
             title={task.title}
             location={task.project?.name || "N/A"}
             city={task.project?.location || ""}
-            roomNo={task.floor?.name ? `${task.floor.name} - ${task.room?.name || ""}` : (task.room?.name || "N/A")}
-            startTime="N/A" 
+            roomNo={
+              task.floor?.name
+                ? `${task.floor.name} - ${task.room?.name || ""}`
+                : task.room?.name || "N/A"
+            }
+            startTime="N/A"
             endTime="N/A"
-            date={task.dueDate ? new Date(task.dueDate).toLocaleDateString() : ""}
+            date={
+              task.dueDate ? new Date(task.dueDate).toLocaleDateString() : ""
+            }
             description={task.description || "No description provided."}
-            onStartTask={() => router.push({ pathname: "/screens/worker/taskdetails", params: { id: task.id } })}
+            onStartTask={() =>
+              router.push({
+                pathname: "/screens/worker/taskdetails",
+                params: { id: task.id },
+              })
+            }
           />
         )}
       </ScrollView>
     </SafeAreaView>
   );
 }
-
