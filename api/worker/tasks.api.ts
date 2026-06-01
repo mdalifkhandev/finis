@@ -50,3 +50,46 @@ export async function getWorkerTaskById(id: string) {
   return data.data;
 }
 
+export async function startWorkerTask(id: string) {
+  const { data } = await api.post<ApiResponse<any>>(`/worker/tasks/${id}/start`);
+  if (!data.success) {
+    throw new Error(data.message || "Failed to start task");
+  }
+  return data.data;
+}
+
+export async function reportWorkerTaskBeforePhoto(id: string, imageUri: string) {
+  const formData = new FormData();
+  formData.append("beforePhoto", {
+    uri: imageUri,
+    name: "before_photo.jpg",
+    type: "image/jpeg",
+  } as any);
+
+  const { data } = await api.post<ApiResponse<any>>(`/worker/tasks/${id}/report`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  if (!data.success) {
+    throw new Error(data.message || "Failed to upload photo");
+  }
+  return data.data;
+}
+
+export type TaskInventoryItem = {
+  id: string;
+  name: string;
+  category: string;
+  currentQty: number;
+  unit: string;
+  location: string | null;
+};
+
+export async function getWorkerTaskInventory(taskId: string) {
+  const { data } = await api.get<ApiResponse<TaskInventoryItem[]>>(`/worker/tasks/${taskId}/inventory`);
+  if (!data.success) {
+    throw new Error(data.message || "Failed to fetch task inventory");
+  }
+  return data.data;
+}
