@@ -9,6 +9,8 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useWorkerTasksQuery } from "@/hooks/worker/tasks";
+import { ActivityIndicator, RefreshControl } from "react-native";
 
 const THEME = {
   colors: {
@@ -29,42 +31,34 @@ const THEME = {
   },
 };
 
-const DATA = [
-  {
-    id: 1,
-    title: "Web Design",
-    desc: "Redesign existing website",
-    status: "3 Days Left",
-    progress: 85,
-    count: "0/3",
-    isCompleted: false,
-  },
-  {
-    id: 2,
-    title: "Web Design",
-    desc: "Redesign existing website",
-    status: "3 Days Left",
-    progress: 85,
-    count: "0/3",
-    isCompleted: false,
-  },
-  {
-    id: 3,
-    title: "Web Design",
-    desc: "Redesign existing website",
-    status: "Completed",
-    progress: 100,
-    count: "3/3",
-    isCompleted: true,
-  },
-];
 
-const TaskCard = ({ item }: { item: (typeof DATA)[0] }) => {
-  const isDone = item.isCompleted;
+
+const TaskCard = ({ item }: { item: any }) => {
+  const isDone = item.status === "completed";
   const statusColor = isDone
     ? THEME.colors.greenSuccess
     : THEME.colors.bluePrimary;
   const statusBg = isDone ? THEME.colors.greenBg : THEME.colors.blueBg;
+
+  // Calculate days left
+  let statusText = item.status ? item.status.replace("_", " ") : "In Progress";
+  if (!isDone && item.dueDate) {
+    const today = new Date();
+    const due = new Date(item.dueDate);
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 0) {
+      statusText = `${diffDays} Days Left`;
+    } else if (diffDays === 0) {
+      statusText = "Due Today";
+    } else {
+      statusText = "Overdue";
+    }
+  }
+
+  const reportsCount = item._count?.reports || 0;
+  const progressValue = isDone ? 100 : (reportsCount > 0 ? 50 : 0);
+  const progressText = `${reportsCount} Reports`;
 
   return (
     <View
@@ -110,7 +104,7 @@ const TaskCard = ({ item }: { item: (typeof DATA)[0] }) => {
             />
           )}
           <Text style={{ color: statusColor, fontSize: 13, fontWeight: "700" }}>
-            {item.status}
+            {statusText}
           </Text>
         </View>
         <TouchableOpacity
@@ -143,7 +137,7 @@ const TaskCard = ({ item }: { item: (typeof DATA)[0] }) => {
             fontWeight: "500",
           }}
         >
-          {item.desc}
+          {item.description || "No description"}
         </Text>
       </View>
 
@@ -170,7 +164,7 @@ const TaskCard = ({ item }: { item: (typeof DATA)[0] }) => {
               fontWeight: "600",
             }}
           >
-            {item.count}
+            {progressText}
           </Text>
         </View>
         <Text
@@ -180,7 +174,7 @@ const TaskCard = ({ item }: { item: (typeof DATA)[0] }) => {
             fontWeight: "600",
           }}
         >
-          {item.progress}%
+          {progressValue}%
         </Text>
       </View>
 
@@ -196,7 +190,7 @@ const TaskCard = ({ item }: { item: (typeof DATA)[0] }) => {
         <View
           style={{
             height: "100%",
-            width: `${item.progress}%`,
+            width: `${progressValue}%`,
             backgroundColor: THEME.colors.greenSuccess,
             borderRadius: 4,
           }}
@@ -207,6 +201,9 @@ const TaskCard = ({ item }: { item: (typeof DATA)[0] }) => {
 };
 
 export default function WorkerTasks() {
+  const { data, isLoading, refetch, isRefetching } = useWorkerTasksQuery();
+  const tasks = data?.data || [];
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: THEME.colors.background }}
@@ -254,16 +251,33 @@ export default function WorkerTasks() {
           paddingTop: 8,
           paddingBottom: 40,
         }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            colors={[THEME.colors.bluePrimary]}
+          />
+        }
       >
-        {DATA.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            activeOpacity={0.8}
-            onPress={() => router.push("/screens/worker/taskdetails")}
-          >
-            <TaskCard item={item} />
-          </TouchableOpacity>
-        ))}
+        {isLoading ? (
+          <View style={{ marginTop: 100, alignItems: "center" }}>
+            <ActivityIndicator size="large" color={THEME.colors.bluePrimary} />
+          </View>
+        ) : tasks.length === 0 ? (
+          <View style={{ marginTop: 100, alignItems: "center" }}>
+            <Text style={{ color: THEME.colors.textSecondary, fontSize: 16 }}>No tasks found.</Text>
+          </View>
+        ) : (
+          tasks.map((item: any) => (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.8}
+              onPress={() => router.push(`/screens/worker/taskdetails?id=${item.id}`)}
+            >
+              <TaskCard item={item} />
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
