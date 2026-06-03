@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getWorkerTaskById, startWorkerTask, reportWorkerTaskBeforePhoto, getWorkerTaskInventory } from "@/api/worker/tasks.api";
+import { getWorkerTaskById, startWorkerTask, reportWorkerTaskBeforePhoto, getWorkerTaskInventory, updateWorkerTaskInventory, completeWorkerTaskReport, getWorkerTasks } from "@/api/worker/tasks.api";
 
 export function useWorkerTaskQuery(id: string) {
   return useQuery({
@@ -37,5 +37,36 @@ export function useReportWorkerTaskBeforePhotoMutation() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["worker", "task", variables.id] });
     },
+  });
+}
+
+export function useUpdateWorkerTaskInventoryMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, inventoryId, data }: { taskId: string; inventoryId: string; data: any }) => updateWorkerTaskInventory(taskId, inventoryId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["worker", "task", variables.taskId, "inventory"] });
+    },
+  });
+}
+
+export function useCompleteWorkerTaskReportMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, afterPhotoUri, inventoryUsed, notes }: { taskId: string; afterPhotoUri: string | null; inventoryUsed: { inventoryId: string; qtyUsed: number }[]; notes: string }) => 
+      completeWorkerTaskReport(taskId, afterPhotoUri, inventoryUsed, notes),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["worker", "task", variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ["worker", "dashboard"] });
+    },
+  });
+}
+
+export function useWorkerTasksQuery(page = 1, limit = 10) {
+  return useQuery({
+    queryKey: ["worker", "tasks", page, limit],
+    queryFn: () => getWorkerTasks(page, limit),
   });
 }

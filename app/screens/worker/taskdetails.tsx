@@ -2,6 +2,8 @@ import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import {
   useWorkerTaskInventoryQuery,
   useWorkerTaskQuery,
+  useUpdateWorkerTaskInventoryMutation,
+  useCompleteWorkerTaskReportMutation,
 } from "@/hooks/worker/tasks";
 import { API_BASE_URL } from "@/lib/config";
 import { Feather, Ionicons } from "@expo/vector-icons";
@@ -10,6 +12,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  RefreshControl,
   ScrollView,
   StatusBar,
   Text,
@@ -37,10 +40,23 @@ const THEME = {
 
 const TaskDetailsScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: task, isLoading } = useWorkerTaskQuery(id as string);
+  const { data: task, isLoading, refetch: refetchTask } = useWorkerTaskQuery(id as string);
   const { data: profile } = useWorkerProfileQuery();
-  const { data: inventoryData, isLoading: inventoryLoading } =
+  const { data: inventoryData, isLoading: inventoryLoading, refetch: refetchInventory } =
     useWorkerTaskInventoryQuery(id as string);
+  const updateInventoryMutation = useUpdateWorkerTaskInventoryMutation();
+  const completeTaskMutation = useCompleteWorkerTaskReportMutation();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchTask(), refetchInventory()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchTask, refetchInventory]);
 
   const [inventoryExpanded, setInventoryExpanded] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,17 +67,38 @@ const TaskDetailsScreen = () => {
 
   useEffect(() => {
     if (inventoryData && inventoryData.length > 0) {
+      // Create a map of used inventory from the task reports (if any)
+      const usedInventoryMap: Record<string, number> = {};
+      
+      if (task?.reports && task.reports.length > 0) {
+        // Assume reports have taskInventories or inventoryUsed array
+        // We'll iterate through the task's taskInventories or report's inventory to find used quantities
+        if (task.taskInventories) {
+          task.taskInventories.forEach((ti: any) => {
+            if (ti.inventoryId) {
+              usedInventoryMap[ti.inventoryId] = ti.quantity || 1;
+            }
+          });
+        }
+      }
+
       setInventoryItems(
-        inventoryData.map((inv: any) => ({
-          id: inv.id,
-          name: inv.name,
-          maxQty: inv.currentQty || 1,
-          quantity: 1, // Start with 1 when checked
-          checked: false,
-        })),
+        inventoryData.map((inv: any) => {
+          const usedQty = usedInventoryMap[inv.id];
+          return {
+            id: inv.id,
+            name: inv.name,
+            category: inv.category,
+            unit: inv.unit,
+            location: inv.location,
+            maxQty: inv.currentQty || 1,
+            quantity: usedQty || 1, // Start with used amount if it exists, else 1
+            checked: !!usedQty, // Mark as checked if it was used
+          };
+        }),
       );
     }
-  }, [inventoryData]);
+  }, [inventoryData, task]);
 
   const toggleInventoryItem = (id: string) => {
     setInventoryItems((prev) =>
@@ -109,28 +146,30 @@ const TaskDetailsScreen = () => {
     }
   };
 
-  const handleComplete = () => {
-    const taskData = {
-      timestamp: new Date().toISOString(),
-      status: "Completed",
-      afterPhoto: afterPhoto,
-      inventoryUsed: inventoryItems
-        .filter((item) => item.checked)
-        .map((item) => ({
-          id: item.id,
-          name: item.name,
-          quantity: item.quantity,
-        })),
-      notes: notes,
-    };
+  const handleComplete = async () => {
+    if (!afterPhoto) {
+      alert("Please take or upload an 'After Photo' to complete the task.");
+      return;
+    }
+    const usedItems = inventoryItems.filter((item) => item.checked);
+    const inventoryUsedPayload = usedItems.map((item) => ({
+      inventoryId: item.id,
+      qtyUsed: item.quantity,
+    }));
 
-    console.log("====================================");
-    console.log("SUBMITTING TASK DATA:");
-    console.log(JSON.stringify(taskData, null, 2));
-    console.log("====================================");
+    try {
+      await completeTaskMutation.mutateAsync({
+        taskId: id as string,
+        afterPhotoUri: afterPhoto,
+        inventoryUsed: inventoryUsedPayload,
+        notes: notes,
+      });
 
-    // You could also add a success toast or navigation here
-    alert("Task marked as completed successfully!");
+      alert("Task marked as completed successfully!");
+      router.back();
+    } catch (error: any) {
+      alert(error.message || "Failed to complete task.");
+    }
   };
 
   return (
@@ -174,6 +213,13 @@ const TaskDetailsScreen = () => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[THEME.colors.bluePrimary]}
+          />
+        }
       >
         {isLoading || !task ? (
           <View
@@ -681,7 +727,7 @@ const TaskDetailsScreen = () => {
                 </Text>
               </View>
 
-              {afterPhoto ? (
+              {(afterPhoto || task?.reports?.[0]?.afterPhotoUrl) ? (
                 <View
                   style={{
                     borderRadius: 16,
@@ -690,23 +736,25 @@ const TaskDetailsScreen = () => {
                   }}
                 >
                   <Image
-                    source={{ uri: afterPhoto }}
+                    source={{ uri: afterPhoto || ((task?.reports[0].afterPhotoUrl.startsWith("http") ? "" : API_BASE_URL) + task?.reports[0].afterPhotoUrl) }}
                     style={{ width: "100%", height: 200 }}
                     resizeMode="cover"
                   />
-                  <TouchableOpacity
-                    onPress={() => setAfterPhoto(null)}
-                    style={{
-                      position: "absolute",
-                      top: 10,
-                      right: 10,
-                      backgroundColor: "rgba(0,0,0,0.5)",
-                      borderRadius: 15,
-                      padding: 5,
-                    }}
-                  >
-                    <Ionicons name="close" size={20} color="white" />
-                  </TouchableOpacity>
+                  {!task?.reports?.[0]?.afterPhotoUrl && (
+                    <TouchableOpacity
+                      onPress={() => setAfterPhoto(null)}
+                      style={{
+                        position: "absolute",
+                        top: 10,
+                        right: 10,
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        borderRadius: 15,
+                        padding: 5,
+                      }}
+                    >
+                      <Ionicons name="close" size={20} color="white" />
+                    </TouchableOpacity>
+                  )}
                 </View>
               ) : (
                 <TouchableOpacity
@@ -753,22 +801,24 @@ const TaskDetailsScreen = () => {
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity
-                onPress={pickImage}
-                style={{
-                  height: 48,
-                  backgroundColor: "#D1F0FF",
-                  borderRadius: 12,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{ color: "#0F172A", fontSize: 15, fontWeight: "700" }}
+              {task?.status !== "completed" && (
+                <TouchableOpacity
+                  onPress={pickImage}
+                  style={{
+                    height: 48,
+                    backgroundColor: "#D1F0FF",
+                    borderRadius: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  {afterPhoto ? "Change photo" : "Take photo"}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={{ color: "#0F172A", fontSize: 15, fontWeight: "700" }}
+                  >
+                    {afterPhoto ? "Change photo" : "Take photo"}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Notes Section */}
@@ -811,20 +861,22 @@ const TaskDetailsScreen = () => {
             </View>
 
             {/* Action Button */}
-            <TouchableOpacity
-              onPress={handleComplete}
-              style={{
-                height: 56,
-                backgroundColor: "#1D4F6D",
-                borderRadius: 12,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
-                Mark as Completed
-              </Text>
-            </TouchableOpacity>
+            {task?.status !== "completed" && (
+              <TouchableOpacity
+                onPress={handleComplete}
+                style={{
+                  height: 56,
+                  backgroundColor: "#1D4F6D",
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                  Mark as Completed
+                </Text>
+              </TouchableOpacity>
+            )}
           </>
         )}
       </ScrollView>

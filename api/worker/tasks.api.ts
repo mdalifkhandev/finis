@@ -93,3 +93,53 @@ export async function getWorkerTaskInventory(taskId: string) {
   }
   return data.data;
 }
+
+export async function updateWorkerTaskInventory(taskId: string, inventoryId: string, data: { name: string; category: string; unit: string; currentQty: number; location: string | null }) {
+  const response = await api.patch<ApiResponse<any>>(`/worker/tasks/${taskId}/inventory/${inventoryId}`, data);
+  if (!response.data.success) {
+    throw new Error(response.data.message || "Failed to update inventory");
+  }
+  return response.data.data;
+}
+
+export async function completeWorkerTaskReport(
+  taskId: string,
+  afterPhotoUri: string | null,
+  inventoryUsed: { inventoryId: string; qtyUsed: number }[],
+  notes: string
+) {
+  const formData = new FormData();
+
+  if (afterPhotoUri && !afterPhotoUri.startsWith('http')) {
+    formData.append("afterPhoto", {
+      uri: afterPhotoUri,
+      name: "after_photo.jpg",
+      type: "image/jpeg",
+    } as any);
+  }
+
+  formData.append("inventoryUsed", JSON.stringify(inventoryUsed));
+  
+  if (notes) {
+    formData.append("notes", notes);
+  }
+
+  const { data } = await api.put<ApiResponse<any>>(`/worker/tasks/${taskId}/report`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to submit task report");
+  }
+  return data.data;
+}
+
+export async function getWorkerTasks(page = 1, limit = 10) {
+  const { data } = await api.get<ApiResponse<WorkerTaskDetail[]>>(`/worker/tasks?page=${page}&limit=${limit}`);
+  if (!data.success) {
+    throw new Error(data.message || "Failed to fetch tasks");
+  }
+  return data;
+}
