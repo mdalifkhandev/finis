@@ -2,6 +2,7 @@ export type ChatFilter = "chat" | "support";
 
 export type ChatListItemModel = {
   id: string;
+  threadId?: string;
   name: string;
   preview: string;
   time: string;
@@ -17,6 +18,11 @@ export type MessageModel = {
   sender: "me" | "other";
   kind?: "text" | "image" | "location";
   imageUri?: string;
+  mediaUrl?: string;
+  mediaType?: "image" | "video" | "document" | "audio";
+  senderId?: string;
+  senderName?: string;
+  senderAvatarUrl?: string;
 };
 
 export const chatListMock: ChatListItemModel[] = [

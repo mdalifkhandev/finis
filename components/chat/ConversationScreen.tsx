@@ -1,37 +1,46 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
-import { Alert, Keyboard, Platform, ScrollView, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, ActivityIndicator, Keyboard, Platform, ScrollView, View } from "react-native";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import ChatAttachmentTray from "./ChatAttachmentTray";
 import ChatComposer from "./ChatComposer";
-import { MessageModel, conversationInitialMessages } from "./chatData";
+import { MessageModel } from "./chatData";
 import ChatMessageBubble from "./ChatMessageBubble";
 import ConversationHeader from "./ConversationHeader";
+import {
+  useChatMessagesQuery,
+  useChatSocketConnection,
+  useSendChatMessageMutation,
+} from "@/hooks/chat/chat";
 
-function getCurrentTimeLabel() {
-  const now = new Date();
-  return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
+const DEFAULT_CHAT_AVATAR =
+  "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?q=80&w=120&auto=format&fit=crop";
 
 export default function ConversationScreen() {
-  const { name, avatarUrl } = useLocalSearchParams<{
+  const { name, avatarUrl, threadId: searchThreadId, id } = useLocalSearchParams<{
     name?: string;
     avatarUrl?: string;
+    threadId?: string;
+    id?: string;
   }>();
 
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
   const [messageText, setMessageText] = useState("");
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
-  const [messages, setMessages] = useState(conversationInitialMessages);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const threadId = (searchThreadId || id || "").toString();
+
+  useChatSocketConnection(threadId || undefined);
+  const messagesQuery = useChatMessagesQuery(threadId || undefined);
+  const sendMessageMutation = useSendChatMessageMutation(threadId || undefined);
 
   const resolvedName = name || "Wade Warren";
   const resolvedAvatar =
-    avatarUrl ||
-    "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?q=80&w=120&auto=format&fit=crop";
+    avatarUrl || DEFAULT_CHAT_AVATAR;
 
   useEffect(() => {
     const showEvent =
@@ -53,6 +62,10 @@ export default function ConversationScreen() {
     };
   }, []);
 
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({ animated: true });
+  }, [messagesQuery.data?.length]);
+
   const contentBottomPadding = useMemo(
     () => (attachmentsOpen ? 16 : 26),
     [attachmentsOpen],
@@ -60,28 +73,37 @@ export default function ConversationScreen() {
 
   const bottomOffset = Math.max(0, keyboardHeight - insets.bottom);
 
-  const appendMessage = (message: Omit<MessageModel, "id" | "time">) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        ...message,
-        id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        time: getCurrentTimeLabel(),
-      },
-    ]);
+  const appendMessage = async (message: Omit<MessageModel, "id" | "time">) => {
+    if (!threadId) {
+      Alert.alert("Chat unavailable", "Thread information is missing.");
+      return false;
+    }
+
+    try {
+      await sendMessageMutation.mutateAsync({
+        content: message.text || undefined,
+        mediaUrl: message.mediaUrl || message.imageUri,
+        mediaType: message.mediaType,
+      });
+      return true;
+    } catch {
+      return false;
+    }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = messageText.trim();
     if (!text) return;
 
-    appendMessage({
+    const sent = await appendMessage({
       sender: "me",
       text,
       kind: "text",
     });
 
-    setMessageText("");
+    if (sent) {
+      setMessageText("");
+    }
   };
 
   const handlePickFromGallery = async () => {
@@ -107,11 +129,13 @@ export default function ConversationScreen() {
 
       if (result.canceled || !result.assets?.length) return;
 
-      appendMessage({
+      await appendMessage({
         sender: "me",
         text: "",
         kind: "image",
         imageUri: result.assets[0].uri,
+        mediaUrl: result.assets[0].uri,
+        mediaType: "image",
       });
     } catch {
       Alert.alert("Gallery error", "Could not open gallery. Please try again.");
@@ -139,11 +163,13 @@ export default function ConversationScreen() {
 
       if (result.canceled || !result.assets?.length) return;
 
-      appendMessage({
+      await appendMessage({
         sender: "me",
         text: "",
         kind: "image",
         imageUri: result.assets[0].uri,
+        mediaUrl: result.assets[0].uri,
+        mediaType: "image",
       });
     } catch {
       Alert.alert("Camera error", "Could not open camera. Please try again.");
@@ -171,7 +197,7 @@ export default function ConversationScreen() {
       const lat = position.coords.latitude.toFixed(5);
       const lon = position.coords.longitude.toFixed(5);
 
-      appendMessage({
+      await appendMessage({
         sender: "me",
         kind: "location",
         text: `My location: ${lat}, ${lon}`,
@@ -186,28 +212,35 @@ export default function ConversationScreen() {
       <ConversationHeader
         name={resolvedName}
         avatarUrl={resolvedAvatar}
-        idText="ID: #225432"
+        idText={threadId ? `ID: #${threadId.slice(0, 8).toUpperCase()}` : undefined}
         onBack={() => router.back()}
       />
 
       <View className="flex-1">
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          contentContainerStyle={{
-            paddingTop: 12,
-            paddingBottom: contentBottomPadding,
-          }}
-        >
-          {messages.map((message) => (
-            <ChatMessageBubble
-              key={message.id}
-              message={message}
-              avatarUrl={resolvedAvatar}
-            />
-          ))}
-        </ScrollView>
+        {messagesQuery.isLoading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator size="small" color="#1D5478" />
+          </View>
+        ) : (
+          <ScrollView
+            ref={scrollRef}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            contentContainerStyle={{
+              paddingTop: 12,
+              paddingBottom: contentBottomPadding,
+            }}
+          >
+            {(messagesQuery.data ?? []).map((message) => (
+              <ChatMessageBubble
+                key={message.id}
+                message={message}
+                avatarUrl={resolvedAvatar}
+              />
+            ))}
+          </ScrollView>
+        )}
 
         <View style={{ paddingBottom: bottomOffset }}>
           <ChatComposer
@@ -219,6 +252,7 @@ export default function ConversationScreen() {
               Keyboard.dismiss();
               setAttachmentsOpen((prev) => !prev);
             }}
+            disabled={sendMessageMutation.isPending}
           />
 
           {attachmentsOpen ? (
