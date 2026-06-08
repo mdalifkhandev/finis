@@ -2,12 +2,19 @@ import React from "react";
 import { Image, Text, TouchableOpacity, View } from "react-native";
 import { ChatListItemModel } from "./chatData";
 
+const placeholderAvatar = require("../../assets/images/placeholder-person.png");
+
 type ChatListItemProps = {
   item: ChatListItemModel;
   onPress: () => void;
 };
 
 export default function ChatListItem({ item, onPress }: ChatListItemProps) {
+  const avatarSource =
+    item.avatarUrl && item.avatarUrl.trim()
+      ? { uri: item.avatarUrl }
+      : placeholderAvatar;
+
   return (
     <TouchableOpacity
       activeOpacity={0.88}
@@ -16,7 +23,7 @@ export default function ChatListItem({ item, onPress }: ChatListItemProps) {
     >
       <View className="flex-row items-center">
         <Image
-          source={{ uri: item.avatarUrl }}
+          source={avatarSource}
           className="h-[56px] w-[56px] rounded-full"
         />
 
