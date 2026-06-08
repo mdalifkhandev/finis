@@ -3,6 +3,7 @@ import ProjectDetailsMenu from "@/components/company/projectdetails/ProjectDetai
 import ProjectOverviewCard from "@/components/company/projectdetails/ProjectOverviewCard";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useProjectProfileQuery } from "@/hooks/company/company";
+import { queryClient } from "@/lib/query-client";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
@@ -27,7 +28,10 @@ export default function ProjectDetailsRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const projectId = typeof id === "string" ? id : undefined;
   const { data, isLoading } = useProjectProfileQuery(projectId);
-  const { refreshing, onRefresh } = usePullToRefresh();
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    if (!projectId) return;
+    await queryClient.invalidateQueries({ queryKey: ["project", "profile", projectId] });
+  });
 
   const formattedDateRange = data
     ? `${new Date(data.startDate).toLocaleDateString("en-US", {

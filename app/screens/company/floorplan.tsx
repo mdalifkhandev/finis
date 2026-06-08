@@ -22,6 +22,7 @@ import {
   useUpdateFloorMutation,
   useUpdateRoomMutation,
 } from "@/hooks/company/company";
+import { queryClient } from "@/lib/query-client";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -105,7 +106,12 @@ export default function FloorPlanRoute() {
   const updateRoomMutation = useUpdateRoomMutation(projectId);
   const deleteFloorMutation = useDeleteFloorMutation(projectId);
   const deleteRoomMutation = useDeleteRoomMutation(projectId);
-  const { refreshing, onRefresh } = usePullToRefresh();
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    if (!projectId) return;
+    await queryClient.invalidateQueries({
+      queryKey: ["project", "floor-plan", projectId],
+    });
+  });
   const [floors, setFloors] = useState<FloorInfo[]>([]);
   const [activeFloorId, setActiveFloorId] = useState<string | null>(null);
   const [roomDetailsVisibleByFloorId, setRoomDetailsVisibleByFloorId] =
