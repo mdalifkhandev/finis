@@ -86,6 +86,74 @@ export async function getActiveProjects(params: ActiveProjectsParams = {}) {
   return data.data;
 }
 
+export async function getAdminProjects() {
+  const { data } = await api.get<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: Array<{
+      id: string;
+      name: string;
+      type: string;
+      status: string;
+      priority: string | null;
+      isWholeHouse: boolean;
+      houseSections: any[];
+      progress: number;
+      startDate: string;
+      endDate: string;
+      budget: number;
+      spent: number | null;
+      remaining: number | null;
+      location: string;
+      numFloors: number;
+      roomsPerFloor: number;
+      company: {
+        id: string;
+        name: string;
+        logoUrl: string | null;
+      };
+      _count: {
+        floors: number;
+        tasks: number;
+        teamMembers: number;
+      };
+      teamMembers: Array<{
+        id: string;
+        projectId: string;
+        userId: string;
+        role: string;
+        managerId: string | null;
+        createdAt: string;
+        user: {
+          id: string;
+          fullName: string;
+          avatarUrl: string | null;
+        };
+      }>;
+    }>;
+  }>("/admin/projects");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load projects");
+  }
+
+  return data.data.map((project) => ({
+    ...project,
+    company: {
+      ...project.company,
+      logoUrl: resolveMediaUrl(project.company.logoUrl),
+    },
+    teamMembers: project.teamMembers.map((member) => ({
+      ...member,
+      user: {
+        ...member.user,
+        avatarUrl: resolveMediaUrl(member.user.avatarUrl),
+      },
+    })),
+  }));
+}
+
 export async function getProjectProfile(id: string) {
   const { data } = await api.get<AdminProjectProfileResponse>(
     `/admin/projects/${id}/profile`,

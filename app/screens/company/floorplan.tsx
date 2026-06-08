@@ -36,7 +36,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const roomRangePattern = /^([A-Za-z]+)(\d+)$/;
 
 type FloorStats = {
   completed: number;
