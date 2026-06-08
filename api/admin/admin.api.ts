@@ -154,6 +154,24 @@ export async function getAdminProjects() {
   }));
 }
 
+export async function getAdminProjectNames() {
+  const { data } = await api.get<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: Array<{
+      id: string;
+      name: string;
+    }>;
+  }>("/admin/projects/names");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load project names");
+  }
+
+  return data.data;
+}
+
 export async function getProjectProfile(id: string) {
   const { data } = await api.get<AdminProjectProfileResponse>(
     `/admin/projects/${id}/profile`,

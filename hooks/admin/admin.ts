@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import {
+  getAdminProjectNames,
   getActiveProjects,
   getActiveWorkers,
   getAdminDashboard,
@@ -97,6 +98,31 @@ export function useAdminProjectsQuery() {
   useEffect(() => {
     if (query.isError) {
       
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load projects",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useAdminProjectNamesQuery() {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+  const canAccessProjects = role === "admin" || role === "manager";
+
+  const query = useQuery({
+    queryKey: ["admin", "project-names", token],
+    queryFn: getAdminProjectNames,
+    enabled: !!token && canAccessProjects,
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
       toast.error(
         query.error instanceof Error
           ? query.error.message

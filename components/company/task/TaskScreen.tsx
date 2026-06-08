@@ -30,7 +30,12 @@ function mapStatusToApi(status: TaskStatus): string {
 }
 
 
-export default function TaskScreen({ projectId }: { projectId?: string }) {
+type TaskScreenProps = {
+  projectId?: string;
+  onCreateTaskPress?: () => void;
+};
+
+export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenProps) {
   const [filter, setFilter] = useState<TaskFilter>("All");
   const [searchText, setSearchText] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -101,10 +106,7 @@ export default function TaskScreen({ projectId }: { projectId?: string }) {
     <View className="mt-6 px-5">
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => router.push({
-          pathname: "/screens/company/createtask",
-          params: { projectId }
-        })}
+        onPress={onCreateTaskPress}
         className="h-[52px] flex-row items-center justify-center rounded-[10px] bg-[#1E5371]"
       >
         <Ionicons name="add" size={22} color="#F4F8FA" />
