@@ -1,9 +1,13 @@
 import AssignedProjectCard from "@/components/company/assignedprojects/AssignedProjectCard";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useAdminProjectsQuery } from "@/hooks/admin/admin";
+import { queryClient } from "@/lib/query-client";
+import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,7 +17,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ManagerProjectsScreen() {
+  const currentRole = useAuthStore((state) => state.user?.role?.toLowerCase());
   const { data: projects, isLoading } = useAdminProjectsQuery();
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    await queryClient.invalidateQueries({ queryKey: ["admin", "projects"] });
+  });
+  const canCreateProject = currentRole === "admin";
 
 
   const visibleProjects = (projects ?? []).map((project) => ({
@@ -39,6 +48,14 @@ export default function ManagerProjectsScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
       >
         <View className="px-5 pt-8">
           <Text className="text-[28px] font-semibold text-[#1F2328]">
@@ -77,18 +94,20 @@ export default function ManagerProjectsScreen() {
           )}
         </View>
 
-        <View className="mt-7 px-5">
-          <TouchableOpacity
-            activeOpacity={0.86}
-            onPress={() => router.push("/screens/company/createproject")}
-            className="h-[52px] w-full flex-row items-center justify-center gap-2 rounded-[12px] bg-[#1D4F6D] px-8 py-3"
-            style={styles.buttonChrome}
-          >
-            <Text className="text-center text-[16px] font-medium leading-6 text-[#EAEFE9]">
-              Create Project & Setup Floors
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {canCreateProject ? (
+          <View className="mt-7 px-5">
+            <TouchableOpacity
+              activeOpacity={0.86}
+              onPress={() => router.push("/screens/company/createproject")}
+              className="h-[52px] w-full flex-row items-center justify-center gap-2 rounded-[12px] bg-[#1D4F6D] px-8 py-3"
+              style={styles.buttonChrome}
+            >
+              <Text className="text-center text-[16px] font-medium leading-6 text-[#EAEFE9]">
+                Create Project & Setup Floors
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
