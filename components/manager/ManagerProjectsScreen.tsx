@@ -1,7 +1,9 @@
 import AssignedProjectCard from "@/components/company/assignedprojects/AssignedProjectCard";
+import { useAdminProjectsQuery } from "@/hooks/admin/admin";
 import { router } from "expo-router";
 import React from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,34 +12,28 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const avatars = [
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=256&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=256&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1546961329-78bef0414d7c?q=80&w=256&auto=format&fit=crop",
-];
-
-const assignedProjects = [
-  {
-    priority: "MEDIUM" as const,
-    title: "Electrical rough-in",
-    site: "Riverside Tower",
-    date: "Sept 18,  2024",
-    checklist: "0/3",
-    links: "2",
-    extraMembers: "3+",
-  },
-  {
-    priority: "HIGH" as const,
-    title: "Facade alignment",
-    site: "Lakeside Plaza",
-    date: "Oct 04,  2024",
-    checklist: "1/4",
-    links: "5",
-    extraMembers: "6+",
-  },
-];
-
 export default function ManagerProjectsScreen() {
+  const { data: projects, isLoading } = useAdminProjectsQuery();
+
+
+  const visibleProjects = (projects ?? []).map((project) => ({
+    priority:
+      (project.priority?.toUpperCase() as "LOW" | "MEDIUM" | "HIGH") || "MEDIUM",
+    title: project.name,
+    site: project.location || project.company.name,
+    date: new Date(project.startDate).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }),
+    checklist: `${project._count.tasks}/${project._count.floors}`,
+    links: String(project._count.teamMembers),
+    extraMembers:
+      project.teamMembers.length > 0 ? `${project.teamMembers.length}+` : "0+",
+    teamMembers: project.teamMembers,
+    id: project.id,
+  }));
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
@@ -54,20 +50,31 @@ export default function ManagerProjectsScreen() {
         </View>
 
         <View className="mt-5 px-5">
-          {assignedProjects.map((project, index) => (
-            <AssignedProjectCard
-              key={`${project.priority}-${index}`}
-              priority={project.priority}
-              title={project.title}
-              site={project.site}
-              date={project.date}
-              checklist={project.checklist}
-              links={project.links}
-              extraMembers={project.extraMembers}
-              avatars={avatars}
-              onPress={() => router.push("/screens/company/projectdetails")}
-            />
-          ))}
+          {isLoading ? (
+            <View className="mt-10 items-center">
+              <ActivityIndicator size="small" color="#1D4F6D" />
+            </View>
+          ) : (
+            visibleProjects.map((project) => (
+              <AssignedProjectCard
+                key={project.id}
+                priority={project.priority}
+                title={project.title}
+                site={project.site}
+                date={project.date}
+                checklist={project.checklist}
+                links={project.links}
+                extraMembers={project.extraMembers}
+                avatars={project.teamMembers.map((member) => member.user.avatarUrl)}
+                onPress={() =>
+                  router.push({
+                    pathname: "/screens/company/projectdetails",
+                    params: { id: project.id },
+                  })
+                }
+              />
+            ))
+          )}
         </View>
 
         <View className="mt-7 px-5">

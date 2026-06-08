@@ -5,6 +5,7 @@ import {
   getActiveProjects,
   getActiveWorkers,
   getAdminDashboard,
+  getAdminProjects,
   getProjectProfile,
 } from "@/api/admin/admin.api";
 import { useAuthStore } from "@/store/auth.store";
@@ -16,7 +17,7 @@ export function useAdminDashboardQuery() {
   const query = useQuery({
     queryKey: ["admin", "dashboard", token],
     queryFn: getAdminDashboard,
-    enabled: !!token && role === "admin",
+    enabled: !!token,
     staleTime: 60 * 1000,
   });
 
@@ -40,7 +41,7 @@ export function useActiveWorkersQuery(page: number, limit: number) {
   const query = useQuery({
     queryKey: ["admin", "active-workers", page, limit, token],
     queryFn: () => getActiveWorkers({ page, limit }),
-    enabled: !!token && role === "admin",
+    enabled: !!token , 
     staleTime: 60 * 1000,
   });
 
@@ -64,12 +65,38 @@ export function useActiveProjectsQuery(page: number, limit: number) {
   const query = useQuery({
     queryKey: ["admin", "active-projects", page, limit, token],
     queryFn: () => getActiveProjects({ page, limit }),
-    enabled: !!token && role === "admin",
+    enabled: !!token ,
     staleTime: 60 * 1000,
   });
 
   useEffect(() => {
     if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load projects",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useAdminProjectsQuery() {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+
+
+  const query = useQuery({
+    queryKey: ["admin", "projects", token],
+    queryFn: getAdminProjects,
+    enabled: !!token,
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      
       toast.error(
         query.error instanceof Error
           ? query.error.message
@@ -88,7 +115,7 @@ export function useProjectProfileQuery(id: string) {
   const query = useQuery({
     queryKey: ["admin", "project-profile", id, token],
     queryFn: () => getProjectProfile(id),
-    enabled: !!token && !!id && role === "admin",
+    enabled: !!token && !!id,
     staleTime: 60 * 1000,
   });
 

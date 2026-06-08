@@ -57,7 +57,7 @@ export function useCompaniesQuery(page: number, limit: number) {
   const query = useQuery({
     queryKey: ["company", "companies", page, limit, token],
     queryFn: () => getCompanies({ page, limit }),
-    enabled: !!token && role === "admin",
+    enabled: !!token ,
     staleTime: 60 * 1000,
   });
 
@@ -152,7 +152,7 @@ export function useCompanyQuery(id?: string) {
   const query = useQuery({
     queryKey: ["company", "detail", id, token],
     queryFn: () => getCompany(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -211,7 +211,7 @@ export function useCompanyProjectsQuery(id?: string) {
   const query = useQuery<CompanyProject[]>({
     queryKey: ["company", "projects", id, token],
     queryFn: () => getCompanyProjects(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -235,7 +235,7 @@ export function useCompanyContactsQuery(id?: string) {
   const query = useQuery<CompanyContact[]>({
     queryKey: ["company", "contacts", id, token],
     queryFn: () => getCompanyContacts(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -259,7 +259,7 @@ export function useProjectProfileQuery(id?: string) {
   const query = useQuery<ProjectProfile>({
     queryKey: ["project", "profile", id, token],
     queryFn: () => getProjectProfile(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -283,7 +283,7 @@ export function useProjectFloorPlanQuery(id?: string) {
   const query = useQuery<ProjectFloorPlanFloor[]>({
     queryKey: ["project", "floor-plan", id, token],
     queryFn: () => getProjectFloorPlan(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token ,
     staleTime: 60 * 1000,
   });
 
@@ -356,7 +356,7 @@ export function useProjectAnalysisQuery(id?: string) {
   const query = useQuery<ProjectAnalysisData>({
     queryKey: ["project", "analysis", id, token],
     queryFn: () => getProjectAnalysis(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -386,7 +386,7 @@ export function useTasksQuery(params: {
   const query = useQuery({
     queryKey: ["project", "tasks", params, token],
     queryFn: () => getTasks(params),
-    enabled: !!token && role === "admin",
+    enabled: !!token  ,
     staleTime: 10 * 1000,
   });
 
@@ -423,10 +423,13 @@ export function useUpdateTaskStatusMutation() {
 
 export function useCreateFloorMutation(projectId?: string) {
   const queryClient = useQueryClient();
+  const role = useAuthStore((state) => state.user?.role);
+
 
   return useMutation({
     mutationFn: ({ name }: { name: string }) => {
       if (!projectId) throw new Error("Project ID is required");
+  
       return createProjectFloor(projectId, name);
     },
     onSuccess: () => {
@@ -447,6 +450,8 @@ export function useCreateFloorMutation(projectId?: string) {
 
 export function useCreateFloorRoomsMutation(projectId?: string) {
   const queryClient = useQueryClient();
+  const role = useAuthStore((state) => state.user?.role);
+ 
 
   return useMutation({
     mutationFn: ({
@@ -459,6 +464,7 @@ export function useCreateFloorRoomsMutation(projectId?: string) {
       endRoomNumber: string;
     }) => {
       if (!projectId) throw new Error("Project ID is required");
+     
       return createProjectFloorRooms(projectId, floorId, startRoomNumber, endRoomNumber);
     },
     onSuccess: () => {
@@ -479,6 +485,8 @@ export function useCreateFloorRoomsMutation(projectId?: string) {
 
 export function useUpdateFloorMutation(projectId?: string) {
   const queryClient = useQueryClient();
+  const role = useAuthStore((state) => state.user?.role);
+
 
   return useMutation({
     mutationFn: ({
@@ -489,6 +497,7 @@ export function useUpdateFloorMutation(projectId?: string) {
       payload: { name: string; status: string; progress: number };
     }) => {
       if (!projectId) throw new Error("Project ID is required");
+      
       return updateProjectFloor(projectId, floorId, payload);
     },
     onSuccess: () => {
@@ -509,6 +518,8 @@ export function useUpdateFloorMutation(projectId?: string) {
 
 export function useUpdateRoomMutation(projectId?: string) {
   const queryClient = useQueryClient();
+  const role = useAuthStore((state) => state.user?.role);
+ 
 
   return useMutation({
     mutationFn: ({
@@ -525,6 +536,7 @@ export function useUpdateRoomMutation(projectId?: string) {
       };
     }) => {
       if (!projectId) throw new Error("Project ID is required");
+     
       return updateProjectRoom(projectId, roomId, payload);
     },
     onSuccess: () => {
@@ -545,10 +557,13 @@ export function useUpdateRoomMutation(projectId?: string) {
 
 export function useDeleteFloorMutation(projectId?: string) {
   const queryClient = useQueryClient();
+  const role = useAuthStore((state) => state.user?.role);
+
 
   return useMutation({
     mutationFn: (floorId: string) => {
       if (!projectId) throw new Error("Project ID is required");
+  
       return deleteProjectFloor(projectId, floorId);
     },
     onSuccess: () => {
@@ -570,9 +585,11 @@ export function useDeleteFloorMutation(projectId?: string) {
 export function useDeleteRoomMutation(projectId?: string) {
   const queryClient = useQueryClient();
 
+
   return useMutation({
     mutationFn: (roomId: string) => {
       if (!projectId) throw new Error("Project ID is required");
+    
       return deleteProjectRoom(projectId, roomId);
     },
     onSuccess: () => {
