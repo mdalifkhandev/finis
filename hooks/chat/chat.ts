@@ -4,10 +4,12 @@ import { toast } from "sonner-native";
 import {
   formatChatPreview,
   formatChatTime,
+  getChatContacts,
   getChatMessages,
   getChatThreads,
   resolveChatAvatar,
   sendChatMessage,
+  type ChatContact,
   type ChatMessage,
   type ChatThread,
   type SendChatMessagePayload,
@@ -106,6 +108,37 @@ export function useChatThreadsQuery(filter: "chat" | "support", search: string) 
     if (query.isError) {
       toast.error(
         query.error instanceof Error ? query.error.message : "Failed to load chats",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useChatContactsQuery(search: string) {
+  const token = useAuthStore((state) => state.token);
+  const currentUserId = useAuthStore((state) => state.user?.id);
+
+  const query = useQuery({
+    queryKey: ["chat", "contacts", token, currentUserId, search],
+    queryFn: async () => {
+      const response = await getChatContacts(search.trim() || undefined);
+      return response.map((contact: ChatContact) => ({
+        id: contact.id,
+        name: contact.fullName,
+        role: contact.role,
+        status: contact.status,
+        avatarUrl: toAbsoluteAvatar(contact.avatarUrl),
+      }));
+    },
+    enabled: !!token && !!currentUserId,
+    staleTime: 15 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error ? query.error.message : "Failed to load contacts",
       );
     }
   }, [query.error, query.isError]);
