@@ -42,6 +42,14 @@ export type ChatThreadListResponse = {
   };
 };
 
+export type ChatContact = {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  role: string;
+  status: string;
+};
+
 export type ChatMessageSender = {
   user: {
     id: string;
@@ -154,6 +162,23 @@ export async function getChatThreads(params: ThreadQueryParams = {}) {
   }
 
   return data;
+}
+
+export async function getChatContacts(search?: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: ChatContact[];
+  }>("/messages/contacts", {
+    params: search ? { search } : undefined,
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load contacts");
+  }
+
+  return data.data;
 }
 
 export async function getChatMessages(

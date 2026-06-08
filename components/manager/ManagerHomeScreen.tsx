@@ -34,7 +34,7 @@ type SiteWorker = {
 
 const stats: ManagerStat[] = [
   { icon: "trending-up", value: "56", label: "Active Projects" },
-  { icon: "people", value: "85", label: "Active Orders" },
+  { icon: "people", value: "85", label: "Workers On Site" },
   { icon: "cash", value: "$24.5K", label: "Payroll Pending" },
   { icon: "warning-outline", value: "85", label: "Inventory Alerts" },
 ];
