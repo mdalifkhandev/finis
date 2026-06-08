@@ -33,6 +33,11 @@ export default function ConversationScreen() {
     avatarUrl ||
     "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?q=80&w=120&auto=format&fit=crop";
 
+  const contentBottomPadding = useMemo(
+    () => (attachmentsOpen ? 16 : 26),
+    [attachmentsOpen],
+  );
+
   useEffect(() => {
     const showEvent =
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -52,11 +57,6 @@ export default function ConversationScreen() {
       hideSub.remove();
     };
   }, []);
-
-  const contentBottomPadding = useMemo(
-    () => (attachmentsOpen ? 16 : 26),
-    [attachmentsOpen],
-  );
 
   const bottomOffset = Math.max(0, keyboardHeight - insets.bottom);
 

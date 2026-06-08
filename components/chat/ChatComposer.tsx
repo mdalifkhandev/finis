@@ -18,7 +18,7 @@ export default function ChatComposer({
   onToggleAttachments,
 }: ChatComposerProps) {
   return (
-    <View className="border-t border-[#E1E5EA] bg-[#E9EDF1] px-3 py-3">
+    <View className="border-t border-[#E1E5EA] bg-[#E9EDF1] px-3 py-3 mb-6">
       <View className="flex-row items-center">
         <TouchableOpacity
           activeOpacity={0.85}

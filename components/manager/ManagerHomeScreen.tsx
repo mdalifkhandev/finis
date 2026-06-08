@@ -1,98 +1,109 @@
+import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
+import { useAdminDashboardQuery } from "@/hooks/admin/admin";
+import { useAuthMeQuery } from "@/hooks/auth/auth";
+import { API_BASE_URL } from "@/lib/config";
+import { router } from "expo-router";
+import React from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import HomeHeader from "@/components/home/HomeHeader";
+import InviteButton from "@/components/home/InviteButton";
 import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
-import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
-import { useAuthMeQuery } from "@/hooks/auth/auth";
-import { useAuthStore } from "@/store/auth.store";
-import { router } from "expo-router";
-import React from "react";
-import { ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
-type ManagerStat = {
-  icon: React.ComponentProps<typeof StatCard>["icon"];
-  value: string;
-  label: string;
-};
+function resolveAvatarUrl(avatarUrl?: string | null) {
+  if (!avatarUrl) {
+    return DEFAULT_AVATAR_URL;
+  }
 
-type ManagerProject = {
-  title: string;
-  status: "On Track" | "Delayed";
-  workers: string;
-  progress: number;
-};
+  if (
+    avatarUrl.startsWith("http://") ||
+    avatarUrl.startsWith("https://") ||
+    avatarUrl.startsWith("file://")
+  ) {
+    return avatarUrl;
+  }
 
-type SiteWorker = {
-  name: string;
-  role: string;
-  location: string;
-  status: "Active" | "Inactive";
-  avatarUrl: string;
-};
-
-const stats: ManagerStat[] = [
-  { icon: "trending-up", value: "56", label: "Active Projects" },
-  { icon: "people", value: "85", label: "Active Orders" },
-  { icon: "cash", value: "$24.5K", label: "Payroll Pending" },
-  { icon: "warning-outline", value: "85", label: "Inventory Alerts" },
-];
-
-const projects: ManagerProject[] = [
-  {
-    title: "Riverside Tower",
-    status: "On Track",
-    workers: "15 workers",
-    progress: 75,
-  },
-  {
-    title: "Riverside Tower",
-    status: "Delayed",
-    workers: "15 workers",
-    progress: 75,
-  },
-];
-
-const workersOnSite: SiteWorker[] = [
-  {
-    name: "John Smith",
-    role: "Electrician",
-    location: "Riverside Tower",
-    status: "Active",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    name: "John Smith",
-    role: "Electrician",
-    location: "Riverside Tower",
-    status: "Active",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop",
-  },
-  {
-    name: "John Smith",
-    role: "Electrician",
-    location: "Riverside Tower",
-    status: "Active",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=256&auto=format&fit=crop",
-  },
-];
+  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
 
 export default function ManagerHomeScreen() {
-  useAuthMeQuery();
-  const user = useAuthStore((state) => state.user);
-  const avatarUrl = user?.avatarUrl ?? DEFAULT_AVATAR_URL;
-  const displayName = user?.fullName?.trim() || "Welcome Back";
-  const subtitle = user?.role ? `${user.role}!` : "Manager!!";
+  const { data: profile, isLoading: isProfileLoading, refetch: refetchProfile } =
+    useAuthMeQuery();
+  const dashboardQuery = useAdminDashboardQuery();
+  const dashboard = dashboardQuery.data;
+
+  const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
+  const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
+  const subtitle = profile?.role ? `${profile.role}!` : "Manager!!";
+
+  const handleRefresh = async () => {
+    await Promise.all([refetchProfile(), dashboardQuery.refetch()]);
+  };
+
+  const refreshing = isProfileLoading || dashboardQuery.isRefetching;
+
+  const stats = [
+    {
+      icon: "trending-up-outline" as const,
+      value: String(dashboard?.stats.activeProjects ?? 0),
+      label: "Active Projects",
+    },
+    {
+      icon: "people-outline" as const,
+      value: String(dashboard?.stats.workersOnSite ?? 0),
+      label: "Active Worker",
+    },
+    {
+      icon: "cash-outline" as const,
+      value: String(dashboard?.stats.payrollPending ?? 0),
+      label: "Payroll Pending",
+    },
+    {
+      icon: "alert-circle-outline" as const,
+      value: String(dashboard?.stats.inventoryAlerts ?? 0),
+      label: "Inventory Alerts",
+    },
+  ];
+
+  const projects = (dashboard?.activeProjects.data ?? []).map((project) => ({
+    title: project.name || "Project",
+    status: (project.status?.toLowerCase() === "delayed"
+      ? "Delayed"
+      : "On Track") as "On Track" | "Delayed",
+    workers: `${project.teamCount ?? 0} workers`,
+    progress: Number(project.progress ?? 0),
+  }));
+
+  const workers = (dashboard?.workersOnSite.data ?? []).map((worker) => ({
+    name: worker.fullName || "Worker",
+    role: worker.role || "Worker",
+    location: "On Site",
+    status: "Active" as const,
+    avatarUrl: worker.avatarUrl || DEFAULT_AVATAR_URL,
+  }));
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
       >
         <HomeHeader
           name={displayName}
@@ -100,6 +111,15 @@ export default function ManagerHomeScreen() {
           avatarUrl={avatarUrl}
           onPressAvatar={() => router.push("/screens/profile")}
         />
+
+        {(dashboardQuery.isLoading || isProfileLoading) && !dashboard ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="small" color="#1f3d5c" />
+            <Text className="mt-2 text-xs text-slate-500">
+              Loading dashboard...
+            </Text>
+          </View>
+        ) : null}
 
         <View className="mt-6 flex-row flex-wrap justify-between gap-y-4 px-5">
           {stats.map((item) => (
@@ -112,11 +132,17 @@ export default function ManagerHomeScreen() {
           ))}
         </View>
 
+        <InviteButton />
+
         <View className="mt-6">
-          <SectionHeader title="Active Projects" actionLabel="View All" />
+          <SectionHeader
+            title="Active Projects"
+            actionLabel="View All"
+            onPressAction={() => router.push("/screens/home/projects")}
+          />
           {projects.map((project, index) => (
             <ProjectCard
-              key={`${project.title}-${project.status}-${index}`}
+              key={`${project.title}-${index}`}
               title={project.title}
               status={project.status}
               workers={project.workers}
@@ -125,9 +151,13 @@ export default function ManagerHomeScreen() {
           ))}
         </View>
 
-        <View className="mt-6 pb-2">
-          <SectionHeader title="Workers On Site" actionLabel="View All" />
-          {workersOnSite.map((worker, index) => (
+        <View className="mt-6">
+          <SectionHeader
+            title="Workers On Site"
+            actionLabel="View All"
+            onPressAction={() => router.push("/screens/home/workers")}
+          />
+          {workers.map((worker, index) => (
             <WorkerCard
               key={`${worker.name}-${index}`}
               name={worker.name}

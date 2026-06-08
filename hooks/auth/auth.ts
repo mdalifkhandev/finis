@@ -62,6 +62,12 @@ export function useAuthMeQuery() {
   });
 
   useEffect(() => {
+    if (token) {
+      setUser(null);
+    }
+  }, [token, setUser]);
+
+  useEffect(() => {
     if (query.data) {
       setUser(query.data);
     }
