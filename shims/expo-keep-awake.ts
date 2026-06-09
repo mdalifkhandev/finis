@@ -13,3 +13,17 @@ export async function activateKeepAwakeAsync(): Promise<void> {}
 export async function deactivateKeepAwake(): Promise<void> {}
 
 export async function activateKeepAwake(): Promise<void> {}
+
+export async function deactivateKeepAwakeAsync(): Promise<void> {}
+
+const KeepAwakeShim = {
+  ExpoKeepAwakeTag,
+  useKeepAwake,
+  isAvailableAsync,
+  activateKeepAwakeAsync,
+  deactivateKeepAwakeAsync,
+  activateKeepAwake,
+  deactivateKeepAwake,
+};
+
+export default KeepAwakeShim;
