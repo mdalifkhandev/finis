@@ -12,11 +12,13 @@ import { useAuthStore } from "@/store/auth.store";
 export function useAdminDashboardQuery() {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
 
   const query = useQuery({
     queryKey: ["admin", "dashboard", token],
     queryFn: getAdminDashboard,
-    enabled: !!token && role === "admin",
+    enabled: isHydrated && !!token,
     staleTime: 60 * 1000,
   });
 
@@ -36,11 +38,12 @@ export function useAdminDashboardQuery() {
 export function useActiveWorkersQuery(page: number, limit: number) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
 
   const query = useQuery({
     queryKey: ["admin", "active-workers", page, limit, token],
     queryFn: () => getActiveWorkers({ page, limit }),
-    enabled: !!token && role === "admin",
+    enabled: isHydrated && !!token ,
     staleTime: 60 * 1000,
   });
 
@@ -60,11 +63,13 @@ export function useActiveWorkersQuery(page: number, limit: number) {
 export function useActiveProjectsQuery(page: number, limit: number) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
 
   const query = useQuery({
     queryKey: ["admin", "active-projects", page, limit, token],
     queryFn: () => getActiveProjects({ page, limit }),
-    enabled: !!token && role === "admin",
+    enabled: isHydrated && !!token ,
     staleTime: 60 * 1000,
   });
 
@@ -84,11 +89,12 @@ export function useActiveProjectsQuery(page: number, limit: number) {
 export function useProjectProfileQuery(id: string) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
 
   const query = useQuery({
     queryKey: ["admin", "project-profile", id, token],
     queryFn: () => getProjectProfile(id),
-    enabled: !!token && !!id && role === "admin",
+    enabled: isHydrated && !!token && !!id ,
     staleTime: 60 * 1000,
   });
 

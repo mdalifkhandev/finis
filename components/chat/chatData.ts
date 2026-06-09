@@ -8,6 +8,7 @@ export type ChatListItemModel = {
   unreadCount: number;
   avatarUrl: string;
   type: ChatFilter;
+  threadId?: string;
 };
 
 export type MessageModel = {

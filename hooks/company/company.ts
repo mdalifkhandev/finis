@@ -57,7 +57,7 @@ export function useCompaniesQuery(page: number, limit: number) {
   const query = useQuery({
     queryKey: ["company", "companies", page, limit, token],
     queryFn: () => getCompanies({ page, limit }),
-    enabled: !!token && role === "admin",
+    enabled: !!token ,
     staleTime: 60 * 1000,
   });
 
@@ -152,7 +152,7 @@ export function useCompanyQuery(id?: string) {
   const query = useQuery({
     queryKey: ["company", "detail", id, token],
     queryFn: () => getCompany(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token ,
     staleTime: 60 * 1000,
   });
 
@@ -211,7 +211,7 @@ export function useCompanyProjectsQuery(id?: string) {
   const query = useQuery<CompanyProject[]>({
     queryKey: ["company", "projects", id, token],
     queryFn: () => getCompanyProjects(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -235,7 +235,7 @@ export function useCompanyContactsQuery(id?: string) {
   const query = useQuery<CompanyContact[]>({
     queryKey: ["company", "contacts", id, token],
     queryFn: () => getCompanyContacts(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -259,7 +259,7 @@ export function useProjectProfileQuery(id?: string) {
   const query = useQuery<ProjectProfile>({
     queryKey: ["project", "profile", id, token],
     queryFn: () => getProjectProfile(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -283,7 +283,7 @@ export function useProjectFloorPlanQuery(id?: string) {
   const query = useQuery<ProjectFloorPlanFloor[]>({
     queryKey: ["project", "floor-plan", id, token],
     queryFn: () => getProjectFloorPlan(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token ,
     staleTime: 60 * 1000,
   });
 
@@ -356,7 +356,7 @@ export function useProjectAnalysisQuery(id?: string) {
   const query = useQuery<ProjectAnalysisData>({
     queryKey: ["project", "analysis", id, token],
     queryFn: () => getProjectAnalysis(id as string),
-    enabled: !!id && !!token && role === "admin",
+    enabled: !!id && !!token  ,
     staleTime: 60 * 1000,
   });
 
@@ -386,7 +386,7 @@ export function useTasksQuery(params: {
   const query = useQuery({
     queryKey: ["project", "tasks", params, token],
     queryFn: () => getTasks(params),
-    enabled: !!token && role === "admin",
+    enabled: !!token  ,
     staleTime: 10 * 1000,
   });
 

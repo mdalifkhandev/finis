@@ -18,6 +18,7 @@ import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
+import { useAuthStore } from "@/store/auth.store";
 
 function resolveAvatarUrl(avatarUrl?: string | null) {
   if (!avatarUrl) {
@@ -40,6 +41,7 @@ export default function ManagerHomeScreen() {
     useAuthMeQuery();
   const dashboardQuery = useAdminDashboardQuery();
   const dashboard = dashboardQuery.data;
+  const isHydrated = useAuthStore((state) => state.isHydrated);
 
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
   const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
@@ -112,7 +114,7 @@ export default function ManagerHomeScreen() {
           onPressAvatar={() => router.push("/screens/profile")}
         />
 
-        {(dashboardQuery.isLoading || isProfileLoading) && !dashboard ? (
+        {((dashboardQuery.isLoading || isProfileLoading) && !dashboard) || !isHydrated ? (
           <View className="mt-10 items-center">
             <ActivityIndicator size="small" color="#1f3d5c" />
             <Text className="mt-2 text-xs text-slate-500">
