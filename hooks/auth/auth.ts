@@ -50,6 +50,7 @@ export function useInviteMutation() {
 
 export function useAuthMeQuery() {
   const token = useAuthStore((state) => state.token);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
   const setUser = useAuthStore((state) => state.setUser);
   const clearSession = useAuthStore((state) => state.clearSession);
   const router = useRouter();
@@ -57,7 +58,7 @@ export function useAuthMeQuery() {
   const query = useQuery({
     queryKey: ["auth", "me", token],
     queryFn: meRequest,
-    enabled: !!token,
+    enabled: isHydrated && !!token,
     staleTime: 5 * 60 * 1000,
   });
 
