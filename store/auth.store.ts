@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
+import { queryClient } from "@/lib/query-client";
 import type { AuthSession, User } from "@/types/auth.types";
 
 const TOKEN_KEY = "token";
@@ -25,19 +26,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isHydrated: false,
   setAuth: async (user, token) => {
     await SecureStore.setItemAsync(TOKEN_KEY, token);
+    queryClient.clear();
     set({ user, token, accessToken: token });
   },
   logout: async () => {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
+    queryClient.clear();
     set({ user: null, token: null, accessToken: null });
   },
   setSession: ({ accessToken, user }) => {
     void SecureStore.setItemAsync(TOKEN_KEY, accessToken);
+    queryClient.clear();
     set({ user, token: accessToken, accessToken });
   },
   setUser: (user) => set({ user }),
   clearSession: () => {
     void SecureStore.deleteItemAsync(TOKEN_KEY);
+    queryClient.clear();
     set({ user: null, token: null, accessToken: null });
   },
   setHydrated: (hydrated) => set({ isHydrated: hydrated }),

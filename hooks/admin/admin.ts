@@ -5,15 +5,15 @@ import {
   getActiveProjects,
   getActiveWorkers,
   getAdminDashboard,
+  getAdminProjectNames,
+  getAdminProjects,
   getProjectProfile,
 } from "@/api/admin/admin.api";
 import { useAuthStore } from "@/store/auth.store";
 
 export function useAdminDashboardQuery() {
   const token = useAuthStore((state) => state.token);
-  const role = useAuthStore((state) => state.user?.role);
   const isHydrated = useAuthStore((state) => state.isHydrated);
-
 
   const query = useQuery({
     queryKey: ["admin", "dashboard", token],
@@ -37,13 +37,12 @@ export function useAdminDashboardQuery() {
 
 export function useActiveWorkersQuery(page: number, limit: number) {
   const token = useAuthStore((state) => state.token);
-  const role = useAuthStore((state) => state.user?.role);
   const isHydrated = useAuthStore((state) => state.isHydrated);
 
   const query = useQuery({
     queryKey: ["admin", "active-workers", page, limit, token],
     queryFn: () => getActiveWorkers({ page, limit }),
-    enabled: isHydrated && !!token ,
+    enabled: isHydrated && !!token,
     staleTime: 60 * 1000,
   });
 
@@ -62,14 +61,61 @@ export function useActiveWorkersQuery(page: number, limit: number) {
 
 export function useActiveProjectsQuery(page: number, limit: number) {
   const token = useAuthStore((state) => state.token);
-  const role = useAuthStore((state) => state.user?.role);
   const isHydrated = useAuthStore((state) => state.isHydrated);
-
 
   const query = useQuery({
     queryKey: ["admin", "active-projects", page, limit, token],
     queryFn: () => getActiveProjects({ page, limit }),
-    enabled: isHydrated && !!token ,
+    enabled: isHydrated && !!token,
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load projects",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useAdminProjectsQuery() {
+  const token = useAuthStore((state) => state.token);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  const query = useQuery({
+    queryKey: ["admin", "projects", token],
+    queryFn: getAdminProjects,
+    enabled: isHydrated && !!token,
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load projects",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useAdminProjectNamesQuery() {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+  const canAccessProjects = role === "admin" || role === "manager";
+
+  const query = useQuery({
+    queryKey: ["admin", "project-names", token],
+    queryFn: getAdminProjectNames,
+    enabled: !!token && canAccessProjects,
     staleTime: 60 * 1000,
   });
 
@@ -88,13 +134,12 @@ export function useActiveProjectsQuery(page: number, limit: number) {
 
 export function useProjectProfileQuery(id: string) {
   const token = useAuthStore((state) => state.token);
-  const role = useAuthStore((state) => state.user?.role);
   const isHydrated = useAuthStore((state) => state.isHydrated);
 
   const query = useQuery({
     queryKey: ["admin", "project-profile", id, token],
     queryFn: () => getProjectProfile(id),
-    enabled: isHydrated && !!token && !!id ,
+    enabled: isHydrated && !!token && !!id,
     staleTime: 60 * 1000,
   });
 
@@ -114,7 +159,6 @@ export function useProjectProfileQuery(id: string) {
 export function useAdminProfileQuery() {
   return useQuery({
     queryKey: ["admin", "profile"],
-    queryFn: () => import("@/api/admin/admin.api").then(m => m.getAdminProfile()),
+    queryFn: () => import("@/api/admin/admin.api").then((m) => m.getAdminProfile()),
   });
 }
-

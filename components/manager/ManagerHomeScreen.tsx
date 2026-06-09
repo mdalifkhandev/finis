@@ -2,6 +2,7 @@ import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import { useAdminDashboardQuery } from "@/hooks/admin/admin";
 import { useAuthMeQuery } from "@/hooks/auth/auth";
 import { API_BASE_URL } from "@/lib/config";
+import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
 import React from "react";
 import {
@@ -18,7 +19,6 @@ import ProjectCard from "@/components/home/ProjectCard";
 import SectionHeader from "@/components/home/SectionHeader";
 import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
-import { useAuthStore } from "@/store/auth.store";
 
 function resolveAvatarUrl(avatarUrl?: string | null) {
   if (!avatarUrl) {
