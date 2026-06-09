@@ -12,13 +12,14 @@ export default function ChatMessageBubble({
   avatarUrl,
 }: ChatMessageBubbleProps) {
   const isMe = message.sender === "me";
+  const resolvedAvatar = message.senderAvatarUrl || avatarUrl;
 
   const BubbleBody = () => {
-    if (message.kind === "image" && message.imageUri) {
+    if (message.kind === "image" && (message.imageUri || message.mediaUrl)) {
       return (
         <>
           <Image
-            source={{ uri: message.imageUri }}
+            source={{ uri: message.imageUri || message.mediaUrl || "" }}
             className="h-44 w-full rounded-[10px]"
           />
           <Text
@@ -61,7 +62,7 @@ export default function ChatMessageBubble({
   return (
     <View className="mt-4 flex-row items-end px-4">
       <Image
-        source={{ uri: avatarUrl }}
+        source={{ uri: resolvedAvatar }}
         className="mr-2 h-6 w-6 rounded-full"
       />
       <View className="w-[66%] rounded-[14px] bg-[#F8FAFC] px-4 py-3">

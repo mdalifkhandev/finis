@@ -14,12 +14,15 @@ import AddTeamMemberSheet, { TeamMemberOption } from "./AddTeamMemberSheet";
 import TeamMemberCard from "./TeamMemberCard";
 import TeamWorkerCard from "./TeamWorkerCard";
 import DeleteConfirmationModal from "@/components/common/DeleteConfirmationModal";
+import { useAuthStore } from "@/store/auth.store";
 
 type TeamScreenProps = {
   projectId?: string;
 };
 
 export default function TeamScreen({ projectId }: TeamScreenProps) {
+  const currentUser = useAuthStore((state) => state.user);
+  const currentRole = currentUser?.role?.toLowerCase();
   const [showAddSheet, setShowAddSheet] = useState(false);
   const [activeManagerId, setActiveManagerId] = useState<string | null>(null);
   const [deletingManagerId, setDeletingManagerId] = useState<string | null>(null);
@@ -59,6 +62,16 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
       null,
     [activeManagerId, selectedManagers],
   );
+
+  const currentManager = useMemo(() => {
+    if (currentRole !== "manager") return null;
+    return (
+      selectedManagers.find(
+        (manager: any) =>
+          manager.userId === currentUser?.id || manager.id === currentUser?.id,
+      ) ?? null
+    );
+  }, [currentRole, currentUser?.id, selectedManagers]);
 
   const activeWorkers = useMemo(() => {
     if (!assignedWorkersData) return [];
@@ -113,10 +126,11 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
   };
 
   const handleAddWorker = (member: TeamMemberOption) => {
-    if (!activeManager) return;
+    const targetManager = activeManager ?? currentManager;
+    if (!targetManager) return;
     addWorkerMutation.mutate({
       userId: member.id,
-      managerId: activeManager.id,
+      managerId: targetManager.id,
     }, {
       onSuccess: () => {
         setShowAddSheet(false);
@@ -149,16 +163,20 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
 
   const handleOpenAddSheet = () => setShowAddSheet(true);
 
-  const headerCount = activeManager
+  const isManagerView = currentRole === "manager";
+  const hasWorkerContext = Boolean(activeManager || currentManager);
+  const workerContext = activeManager ?? currentManager;
+
+  const headerCount = workerContext
     ? activeWorkers.length
     : selectedManagers.length;
-  const headerLabel = activeManager ? "Workers" : "Managers";
-  const buttonLabel = activeManager ? "Add Worker" : "Add Managers";
-  const sheetTitle = activeManager ? "Add Team Worker" : "Add Team Managers";
-  const sheetMembers = activeManager ? availableWorkers : availableManagers;
-  const handleSelectMember = activeManager ? handleAddWorker : handleAddManager;
+  const headerLabel = workerContext ? "Workers" : "Managers";
+  const buttonLabel = workerContext ? "Add Worker" : "Add Managers";
+  const sheetTitle = workerContext ? "Add Team Worker" : "Add Team Managers";
+  const sheetMembers = workerContext ? availableWorkers : availableManagers;
+  const handleSelectMember = workerContext ? handleAddWorker : handleAddManager;
 
-  const isLoading = isLoadingTeam || isLoadingAssignedWorkers || (showAddSheet && (activeManager ? isLoadingWorkers : isLoadingManagers));
+  const isLoading = isLoadingTeam || isLoadingAssignedWorkers || (showAddSheet && (workerContext ? isLoadingWorkers : isLoadingManagers));
 
   return (
     <>
@@ -195,14 +213,14 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
               Loading team...
             </Text>
           </View>
-        ) : activeManager ? (
+        ) : workerContext ? (
           <>
             <TeamMemberCard
-              avatarUrl={activeManager.avatarUrl}
-              name={activeManager.name}
-              role={activeManager.role}
-              email={activeManager.email}
-              phone={activeManager.phone}
+              avatarUrl={workerContext.avatarUrl}
+              name={workerContext.name}
+              role={workerContext.role}
+              email={workerContext.email}
+              phone={workerContext.phone}
               onPress={() => setActiveManagerId(null)}
               hideDelete
             />
@@ -243,7 +261,7 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
         members={sheetMembers}
         onClose={() => setShowAddSheet(false)}
         onSelectMember={handleSelectMember}
-        isLoading={activeManager ? isLoadingWorkers : isLoadingManagers}
+        isLoading={workerContext ? isLoadingWorkers : isLoadingManagers}
       />
 
       <DeleteConfirmationModal

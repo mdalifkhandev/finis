@@ -43,26 +43,32 @@ export default function ConversationScreen() {
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
 
   const messagesQuery = useChatMessagesQuery(threadId);
-  const sendMessageMutation = useSendChatMessageMutation();
+  const sendMessageMutation = useSendChatMessageMutation(threadId);
 
   const resolvedName = name || "Chat";
-  const resolvedAvatar = avatarUrl || "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?q=80&w=120&auto=format&fit=crop";
+  const resolvedAvatar =
+    avatarUrl ||
+    "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?q=80&w=120&auto=format&fit=crop";
 
   const messages = useMemo<MessageModel[]>(() => {
     return (messagesQuery.data ?? []).map((message) => ({
       id: message.id,
-      text: message.content,
-      time: formatMessageTime(message.createdAt),
-      sender: message.senderId === userId ? "me" : "other",
-      kind: "text",
+      text: message.text,
+      time: formatMessageTime(message.time),
+      sender: message.sender === "me" ? "me" : "other",
+      kind: message.kind,
+      imageUri: message.imageUri,
+      senderId: message.senderId,
+      senderName: message.senderName,
+      senderAvatarUrl: message.senderAvatarUrl,
     }));
   }, [messagesQuery.data, userId]);
 
   const handleSend = async () => {
     const text = messageText.trim();
-    if (!text || !threadId) return;
+    if (!text) return;
 
-    await sendMessageMutation.mutateAsync({ threadId, content: text });
+    await sendMessageMutation.mutateAsync({ content: text });
     setMessageText("");
     messagesQuery.refetch();
   };

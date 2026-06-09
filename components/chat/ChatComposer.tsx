@@ -8,6 +8,7 @@ type ChatComposerProps = {
   onPressSend: () => void;
   attachmentsOpen: boolean;
   onToggleAttachments: () => void;
+  disabled?: boolean;
 };
 
 export default function ChatComposer({
@@ -16,6 +17,7 @@ export default function ChatComposer({
   onPressSend,
   attachmentsOpen,
   onToggleAttachments,
+  disabled = false,
 }: ChatComposerProps) {
   return (
     <View className="border-t border-[#E1E5EA] bg-[#E9EDF1] px-3 py-3 mb-6">
@@ -45,7 +47,8 @@ export default function ChatComposer({
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={onPressSend}
-          className="h-11 w-11 items-center justify-center rounded-full bg-[#1D5478]"
+          disabled={disabled}
+          className={`h-11 w-11 items-center justify-center rounded-full bg-[#1D5478] ${disabled ? "opacity-60" : ""}`}
         >
           <Ionicons name="send" size={21} color="#FFFFFF" />
         </TouchableOpacity>
