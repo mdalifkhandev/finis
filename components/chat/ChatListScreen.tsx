@@ -15,6 +15,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   TextInput,
@@ -24,6 +25,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ChatFilterTabs from "./ChatFilterTabs";
 import ChatListItem from "./ChatListItem";
 import { ChatFilter } from "./chatData";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 
 type ContactItem = {
   id: string;
@@ -42,6 +44,13 @@ export default function ChatListScreen() {
   const openSupportThreadMutation = useCreateSupportThreadMutation();
   const supportThreadQuery = useSupportThreadQuery();
   useChatSocketConnection();
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    await Promise.all([
+      threadsQuery.refetch(),
+      contactsQuery.refetch(),
+      supportThreadQuery.refetch(),
+    ]);
+  });
 
   const filteredItems = useMemo(() => threadsQuery.data ?? [], [threadsQuery.data]);
   const contacts = useMemo(
@@ -109,6 +118,9 @@ export default function ChatListScreen() {
           keyboardDismissMode="on-drag"
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={{ paddingBottom: 120 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         >
           <BackTitleHeader title="Chat" onBack={() => router.back()} />
 

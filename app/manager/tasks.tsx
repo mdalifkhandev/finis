@@ -1,5 +1,7 @@
 import TaskScreen from "@/components/company/task/TaskScreen";
 import { useAdminProjectNamesQuery } from "@/hooks/admin/admin";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
+import { useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -10,6 +12,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -21,6 +24,13 @@ export default function ManagerTasksRoute() {
     projectIdFromRoute,
   );
   const { data: projectNames, isLoading } = useAdminProjectNamesQuery();
+  const queryClient = useQueryClient();
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["project", "tasks"] }),
+      queryClient.invalidateQueries({ queryKey: ["admin", "project-names"] }),
+    ]);
+  });
 
   const selectedProjectName = useMemo(() => {
     if (!selectedProjectId) return undefined;
@@ -28,7 +38,8 @@ export default function ManagerTasksRoute() {
   }, [projectNames, selectedProjectId]);
 
   const handleOpenProjectSheet = () => {
-    setSelectedProjectId(projectIdFromRoute);
+    const fallbackProjectId = projectIdFromRoute ?? projectNames?.[0]?.id;
+    setSelectedProjectId(fallbackProjectId);
     setIsProjectSheetVisible(true);
   };
 
@@ -50,6 +61,9 @@ export default function ManagerTasksRoute() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <View className="px-5 pt-8">
           <Text className="text-[28px] font-semibold text-[#1F2328]">

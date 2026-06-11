@@ -1,6 +1,13 @@
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InventoryHeader from "./InventoryHeader";
 import InventoryItemCard from "./InventoryItemCard";
@@ -13,12 +20,25 @@ import {
   useLowStockAlertsQuery,
   useUpdateInventoryMutation,
 } from "@/hooks/inventory/inventory";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function InventoryScreen() {
-  const { data: summary } = useInventorySummaryQuery();
-  const { data: alerts = [], isLoading: isLoadingAlerts } = useLowStockAlertsQuery();
-  const { data: items = [], isLoading } = useAllInventoryItemsQuery();
+  const { data: summary, refetch: refetchSummary } = useInventorySummaryQuery();
+  const { data: alerts = [], isLoading: isLoadingAlerts, refetch: refetchAlerts } = useLowStockAlertsQuery();
+  const { data: items = [], isLoading, refetch: refetchItems } = useAllInventoryItemsQuery();
   const { mutate: updateItem, isPending: isUpdating } = useUpdateInventoryMutation();
+  const queryClient = useQueryClient();
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    await Promise.all([
+      refetchSummary(),
+      refetchAlerts(),
+      refetchItems(),
+      queryClient.invalidateQueries({ queryKey: ["inventory", "summary"] }),
+      queryClient.invalidateQueries({ queryKey: ["inventory", "all"] }),
+      queryClient.invalidateQueries({ queryKey: ["inventory", "low-stock"] }),
+    ]);
+  });
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [editedQuantity, setEditedQuantity] = useState("");
@@ -75,6 +95,9 @@ export default function InventoryScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <InventoryHeader
           title="Inventory"

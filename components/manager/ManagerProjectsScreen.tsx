@@ -1,10 +1,12 @@
 import AssignedProjectCard from "@/components/company/assignedprojects/AssignedProjectCard";
-import { useAdminDashboardQuery } from "@/hooks/admin/admin";
+import { useAdminDashboardQuery, useAdminProjectsQuery } from "@/hooks/admin/admin";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -16,16 +18,28 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const avatars = [null, null, null];
 
 export default function ManagerProjectsScreen() {
-  const { data: dashboard, isLoading } = useAdminDashboardQuery();
+  const { data: dashboard, isLoading, refetch } = useAdminDashboardQuery();
+  const { data: adminProjects } = useAdminProjectsQuery();
   const role = useAuthStore((state) => state.user?.role);
   const canCreateProject = role === "admin";
   const assignedProjects = dashboard?.activeProjects.data ?? [];
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    await refetch();
+  });
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
       >
         <View className="px-5 pt-8">
           <Text className="text-[28px] font-semibold text-[#1F2328]">
@@ -78,7 +92,21 @@ export default function ManagerProjectsScreen() {
           <View className="mt-7 px-5">
             <TouchableOpacity
               activeOpacity={0.86}
-              onPress={() => router.push("/screens/company/createproject")}
+              onPress={() => {
+                const companyId =
+                  adminProjects?.[0]?.company?.id ??
+                  (assignedProjects as Array<{ companyId?: string }>)[0]?.companyId;
+
+                if (!companyId) {
+                  router.push("/screens/company/createproject");
+                  return;
+                }
+
+                router.push({
+                  pathname: "/screens/company/createproject",
+                  params: { id: companyId },
+                });
+              }}
               className="h-[52px] w-full flex-row items-center justify-center gap-2 rounded-[12px] bg-[#1D4F6D] px-8 py-3"
               style={styles.buttonChrome}
             >
