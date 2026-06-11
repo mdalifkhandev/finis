@@ -4,6 +4,7 @@ export function generateMapHTML(
   zoneName = "Selected Project",
   zoneSubtext = "",
   initialPolygonCoords: Array<{ lat: number; lng: number }> = [],
+  liveWorkers: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }> = [],
 ) {
   return `<!doctype html>
 <html>
@@ -138,6 +139,7 @@ export function generateMapHTML(
       const points = ${JSON.stringify(initialPolygonCoords)};
       let polygon = null;
       const markers = [];
+      const workerMarkers = new Map();
 
       function notifyPoints() {
         if (window.ReactNativeWebView) {
@@ -176,6 +178,28 @@ export function generateMapHTML(
         notifyPoints();
       }
 
+      function redrawWorkers(workers) {
+        workerMarkers.forEach((marker) => marker.remove());
+        workerMarkers.clear();
+
+        workers.forEach((worker) => {
+          const marker = L.circleMarker([worker.lat, worker.lng], {
+            radius: 8,
+            color: worker.isInsideZone ? "#16A34A" : "#DC2626",
+            fillColor: worker.isInsideZone ? "#22C55E" : "#EF4444",
+            fillOpacity: 1,
+            weight: 2,
+          }).addTo(map);
+          marker.bindTooltip(worker.workerName, {
+            permanent: true,
+            direction: "top",
+            offset: [0, -8],
+            className: "worker-tooltip",
+          });
+          workerMarkers.set(worker.workerId, marker);
+        });
+      }
+
       map.on("click", function (event) {
         points.push({ lat: event.latlng.lat, lng: event.latlng.lng });
         redraw();
@@ -195,6 +219,14 @@ export function generateMapHTML(
         redraw();
       } else {
         notifyPoints();
+      }
+
+      redrawWorkers(${JSON.stringify(liveWorkers)});
+
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'map_ready',
+        }));
       }
 
       document.getElementById("undo").addEventListener("click", function () {
@@ -224,6 +256,10 @@ export function generateMapHTML(
       document.getElementById("recenter").addEventListener("click", function () {
         map.setView([${userLat}, ${userLng}], 17);
       });
+
+      window.renderLiveWorkers = function(workers) {
+        redrawWorkers(Array.isArray(workers) ? workers : []);
+      };
     </script>
   </body>
 </html>`;

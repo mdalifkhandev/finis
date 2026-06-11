@@ -1,12 +1,15 @@
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import { WorkerDashboardTask } from "@/api/worker/dashboard.api";
+import { useCheckInWorkerMutation, useCheckOutWorkerMutation, useTodayAttendanceQuery } from "@/hooks/worker/attendance";
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import { useWorkerDashboardQuery } from "@/hooks/worker/dashboard";
+import { emitGeofenceCheckIn, emitGeofenceCheckOut, emitGeofenceLocation, useWorkerGeofenceSocket } from "@/lib/worker-geofence-socket";
 import { API_BASE_URL } from "@/lib/config";
 import { router } from "expo-router";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
+  Alert,
   RefreshControl,
   ScrollView,
   Text,
@@ -45,6 +48,7 @@ const WEEKLY_ACTIVITY = [
 ];
 
 export default function WorkerHome() {
+  useWorkerGeofenceSocket();
   const { data: profile } = useWorkerProfileQuery();
   const {
     data: dashboard,
@@ -52,22 +56,139 @@ export default function WorkerHome() {
     refetch,
     isRefetching,
   } = useWorkerDashboardQuery();
+  const { data: attendance } = useTodayAttendanceQuery();
+  const checkInMutation = useCheckInWorkerMutation();
+  const checkOutMutation = useCheckOutWorkerMutation();
+  const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
   const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
   const subtitle = profile?.role ? `${profile.role}!` : "Worker!";
+  const activeProjectId = dashboard?.todayTasks?.[0]?.project?.id;
+
+  React.useEffect(() => {
+    console.log("[WorkerHome] dashboard API:", dashboard);
+  }, [dashboard]);
+
+  React.useEffect(() => {
+    console.log("[WorkerHome] attendance API:", JSON.stringify(attendance,null,2));
+  }, [attendance]);
 
   const todayTasksCount = dashboard?.stats?.todayTasksCount ?? 0;
   const completedToday = dashboard?.stats?.completedToday ?? 0;
-  const isClockedIn = dashboard?.stats?.clockStatus === "clocked_in";
+  const isClockedIn = attendance?.status === "clocked_in";
 
   const getClockInTime = () => {
-    if (!isClockedIn || !dashboard?.stats?.clockInTime) return undefined;
-    return new Date(dashboard.stats.clockInTime).toLocaleTimeString([], {
+    if (!isClockedIn || !attendance?.currentSessionStart) return undefined;
+    return new Date(attendance.currentSessionStart).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });
   };
+
+  const stopLiveUpdates = () => {
+    if (locationIntervalRef.current) {
+      clearInterval(locationIntervalRef.current);
+      locationIntervalRef.current = null;
+    }
+  };
+
+  const sendLocationUpdate = async () => {
+    if (!activeProjectId) return;
+    const Location = await import("expo-location");
+    const current = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+    emitGeofenceLocation({
+      lat: current.coords.latitude,
+      lng: current.coords.longitude,
+      projectId: activeProjectId,
+    });
+  };
+
+  const startLiveUpdates = () => {
+    stopLiveUpdates();
+    locationIntervalRef.current = setInterval(() => {
+      void sendLocationUpdate();
+    }, 5000);
+  };
+
+  const handleCheckIn = async () => {
+    if (checkInMutation.isPending) return;
+    if (!activeProjectId) {
+      Alert.alert("No project found", "This worker has no active project to track.");
+      return;
+    }
+
+    const Location = await import("expo-location");
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (permission.status !== "granted") {
+      Alert.alert("Location permission required", "Please allow location access to check in.");
+      return;
+    }
+
+    const current = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+
+    console.log("[WorkerHome] check-in location:", {
+      lat: current.coords.latitude,
+      lng: current.coords.longitude,
+      projectId: activeProjectId,
+    });
+
+    await checkInMutation.mutateAsync({
+      lat: current.coords.latitude,
+      lng: current.coords.longitude,
+    });
+
+    emitGeofenceCheckIn({
+      lat: current.coords.latitude,
+      lng: current.coords.longitude,
+      projectId: activeProjectId,
+    });
+
+    await sendLocationUpdate();
+    startLiveUpdates();
+  };
+
+  const handleCheckOut = async () => {
+    if (checkOutMutation.isPending || !isClockedIn) return;
+
+    const Location = await import("expo-location");
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (permission.status !== "granted") {
+      Alert.alert("Location permission required", "Please allow location access to check out.");
+      return;
+    }
+
+    const current = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+
+    console.log("[WorkerHome] check-out location:", {
+      lat: current.coords.latitude,
+      lng: current.coords.longitude,
+      projectId: activeProjectId,
+    });
+
+    await checkOutMutation.mutateAsync({
+      lat: current.coords.latitude,
+      lng: current.coords.longitude,
+    });
+
+    emitGeofenceCheckOut({
+      lat: current.coords.latitude,
+      lng: current.coords.longitude,
+      projectId: activeProjectId,
+    });
+
+    stopLiveUpdates();
+  };
+
+  useEffect(() => {
+    return () => stopLiveUpdates();
+  }, []);
 
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-white">
@@ -116,12 +237,16 @@ export default function WorkerHome() {
               <WorkerStatusCard
                 isClockedIn={isClockedIn}
                 time={getClockInTime()}
+                onCheckIn={handleCheckIn}
+                onCheckOut={handleCheckOut}
+                isCheckingIn={checkInMutation.isPending}
+                isCheckingOut={checkOutMutation.isPending}
               />
             </View>
 
-            <View className="mt-6">
+            <View className="mt-16">
               <SectionHeader
-                title="Today`s Tasks"
+                title="Today`s Tasks "
                 actionLabel="View All"
                 onPressAction={() => {}}
               />
