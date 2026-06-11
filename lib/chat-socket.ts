@@ -71,6 +71,7 @@ export function useChatSocket(threadId?: string) {
 
     const refreshThreads = () => {
       void queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "support-thread"] });
     };
 
     const refreshMessages = (messageThreadId?: string) => {

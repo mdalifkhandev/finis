@@ -8,6 +8,8 @@ import {
   getChatContacts,
   getChatMessages,
   getChatThreads,
+  getOrCreateSupportThread,
+  getSupportThread,
   resolveChatAvatar,
   sendChatMessage,
   type ChatContact,
@@ -33,7 +35,9 @@ function normalizeThreads(
 ): ChatListItemModel[] {
   return threads
     .filter((thread) =>
-      filter === "chat" ? thread.type === "direct" : thread.type !== "direct",
+      filter === "chat"
+        ? thread.type === "direct" || thread.type === "project"
+        : thread.type === "support",
     )
     .map((thread) => {
       const otherParticipant =
@@ -113,6 +117,21 @@ export function useChatThreadsQuery(filter: "chat" | "support", search: string) 
   return query;
 }
 
+export function useSupportThreadQuery() {
+  const token = useAuthStore((state) => state.token);
+  const currentUserId = useAuthStore((state) => state.user?.id);
+
+  return useQuery({
+    queryKey: ["chat", "support-thread", token, currentUserId],
+    queryFn: async () => {
+      const thread = await getSupportThread();
+      return thread ? normalizeThreads([thread], currentUserId ?? "", "support") : [];
+    },
+    enabled: !!token && !!currentUserId,
+    staleTime: 15 * 1000,
+  });
+}
+
 export function useChatContactsQuery(search: string) {
   const token = useAuthStore((state) => state.token);
   const currentUserId = useAuthStore((state) => state.user?.id);
@@ -185,6 +204,24 @@ export function useCreateDirectThreadMutation() {
     if (mutation.isError) {
       toast.error(
         mutation.error instanceof Error ? mutation.error.message : "Failed to open chat",
+      );
+    }
+  }, [mutation.error, mutation.isError]);
+
+  return mutation;
+}
+
+export function useCreateSupportThreadMutation() {
+  const mutation = useMutation({
+    mutationFn: getOrCreateSupportThread,
+  });
+
+  useEffect(() => {
+    if (mutation.isError) {
+      toast.error(
+        mutation.error instanceof Error
+          ? mutation.error.message
+          : "Failed to open support thread",
       );
     }
   }, [mutation.error, mutation.isError]);

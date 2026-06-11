@@ -4,6 +4,8 @@ import {
   useChatSocketConnection,
   useChatThreadsQuery,
   useCreateDirectThreadMutation,
+  useCreateSupportThreadMutation,
+  useSupportThreadQuery,
 } from "@/hooks/chat/chat";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -37,6 +39,8 @@ export default function ChatListScreen() {
   const threadsQuery = useChatThreadsQuery(filter, search);
   const contactsQuery = useChatContactsQuery(search);
   const openThreadMutation = useCreateDirectThreadMutation();
+  const openSupportThreadMutation = useCreateSupportThreadMutation();
+  const supportThreadQuery = useSupportThreadQuery();
   useChatSocketConnection();
 
   const filteredItems = useMemo(() => threadsQuery.data ?? [], [threadsQuery.data]);
@@ -44,10 +48,29 @@ export default function ChatListScreen() {
     () => (contactsQuery.data ?? []) as ContactItem[],
     [contactsQuery.data],
   );
+  const supportItems = useMemo(
+    () =>
+      supportThreadQuery.data && supportThreadQuery.data.length > 0
+        ? supportThreadQuery.data
+        : [
+            {
+              id: "support-thread",
+              threadId: "support-thread",
+              name: "Support",
+              preview: "Tap to start support chat",
+              time: "",
+              unreadCount: 0,
+              avatarUrl: "",
+              type: "support" as const,
+            },
+          ],
+    [supportThreadQuery.data],
+  );
   const showContactOverlay = search.trim().length > 0;
 
   const openContactChat = async (contact: ContactItem) => {
     const thread = await openThreadMutation.mutateAsync(contact.id);
+    setSearch("");
 
     router.push({
       pathname: "/screens/chat/conversation",
@@ -55,6 +78,20 @@ export default function ChatListScreen() {
         threadId: thread.id,
         name: contact.name,
         avatarUrl: contact.avatarUrl,
+      },
+    });
+  };
+
+  const openSupportChat = async () => {
+    const thread = await openSupportThreadMutation.mutateAsync();
+    setSearch("");
+
+    router.push({
+      pathname: "/screens/chat/conversation",
+      params: {
+        threadId: thread.id,
+        name: thread.name || "Support",
+        avatarUrl: thread.participants?.[0]?.avatarUrl ?? "",
       },
     });
   };
@@ -150,13 +187,19 @@ export default function ChatListScreen() {
             <ChatFilterTabs value={filter} onChange={setFilter} />
 
             <View className="mt-3">
-              {threadsQuery.isLoading ? (
+              {filter === "support" ? null : threadsQuery.isLoading ? (
                 <View className="items-center py-10">
                   <ActivityIndicator size="small" color="#1D5478" />
                 </View>
               ) : null}
 
-              {!threadsQuery.isLoading && filteredItems.length === 0 ? (
+              {filter === "support" && supportThreadQuery.isLoading ? (
+                <View className="items-center py-10">
+                  <ActivityIndicator size="small" color="#1D5478" />
+                </View>
+              ) : null}
+
+              {!threadsQuery.isLoading && filter === "chat" && filteredItems.length === 0 ? (
                 <View className="items-center py-10">
                   <Text className="text-[15px] text-[#4F5560]">
                     No conversations found
@@ -164,11 +207,20 @@ export default function ChatListScreen() {
                 </View>
               ) : null}
 
-              {filteredItems.map((item) => (
+              {filter === "support"
+                ? supportItems.map((item) => (
+                    <ChatListItem
+                      key={item.id}
+                      item={item}
+                      onPress={openSupportChat}
+                    />
+                  ))
+                : filteredItems.map((item) => (
                 <ChatListItem
                   key={item.id}
                   item={item}
-                  onPress={() =>
+                  onPress={() => {
+                    setSearch("");
                     router.push({
                       pathname: "/screens/chat/conversation",
                       params: {
@@ -176,10 +228,10 @@ export default function ChatListScreen() {
                         name: item.name,
                         avatarUrl: item.avatarUrl,
                       },
-                    })
-                  }
+                    });
+                  }}
                 />
-              ))}
+                  ))}
             </View>
           </View>
         </ScrollView>

@@ -2,7 +2,7 @@ import { api } from "@/lib/api/client";
 import { API_BASE_URL } from "@/lib/config";
 import type { ApiResponse } from "@/types/auth.types";
 
-export type ChatThreadType = "direct" | "group" | "project";
+export type ChatThreadType = "direct" | "group" | "project" | "support";
 
 export type ChatParticipant = {
   id: string;
@@ -152,7 +152,7 @@ export function formatChatTime(value: string | null | undefined) {
 }
 
 export async function getChatThreads(params: ThreadQueryParams = {}) {
-  const { data } = await api.get<ChatThreadListResponse>("/messages/threads", {
+  const { data } = await api.get<ChatThreadListResponse>("/messages/threads/chat", {
     params: {
       page: params.page ?? 1,
       limit: params.limit ?? 50,
@@ -166,6 +166,36 @@ export async function getChatThreads(params: ThreadQueryParams = {}) {
   }
 
   return data;
+}
+
+export async function getSupportThread() {
+  const { data } = await api.get<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: ChatThread | null;
+  }>("/messages/threads/support");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load support thread");
+  }
+
+  return data.data;
+}
+
+export async function getOrCreateSupportThread() {
+  const { data } = await api.post<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: ChatThread;
+  }>("/messages/support/thread");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to open support thread");
+  }
+
+  return data.data;
 }
 
 export async function getChatContacts(search?: string) {
