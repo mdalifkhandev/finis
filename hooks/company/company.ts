@@ -32,6 +32,10 @@ import {
   removeProjectWorker,
   getTaskAvailableWorkers,
   assignTaskWorker,
+  getProjectGeofences,
+  getProjectGeofenceLocationLogs,
+  getProjectGeofenceViolations,
+  getProjectGeofenceTimeSummary,
 } from "@/api/company/company.api";
 import type { CreateTaskPayload } from "@/types/company.types";
 import { useAuthStore } from "@/store/auth.store";
@@ -892,5 +896,49 @@ export function useProjectDocumentsQuery(projectId?: string) {
   }, [query.error, query.isError]);
 
   return query;
+}
+
+export function useProjectGeofencesQuery(projectId?: string) {
+  return useQuery({
+    queryKey: ["project", "geofences", projectId],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return getProjectGeofences(projectId);
+    },
+    enabled: !!projectId,
+  });
+}
+
+export function useProjectGeofenceLocationLogsQuery(projectId?: string) {
+  return useQuery({
+    queryKey: ["project", "geofences", projectId, "location-logs"],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return getProjectGeofenceLocationLogs(projectId);
+    },
+    enabled: !!projectId,
+  });
+}
+
+export function useProjectGeofenceViolationsQuery(projectId?: string) {
+  return useQuery({
+    queryKey: ["project", "geofences", projectId, "violations"],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return getProjectGeofenceViolations(projectId);
+    },
+    enabled: !!projectId,
+  });
+}
+
+export function useProjectGeofenceTimeSummaryQuery(projectId?: string) {
+  return useQuery({
+    queryKey: ["project", "geofences", projectId, "time-summary"],
+    queryFn: () => {
+      if (!projectId) throw new Error("Project ID is required");
+      return getProjectGeofenceTimeSummary(projectId);
+    },
+    enabled: !!projectId,
+  });
 }
 

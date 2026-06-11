@@ -10,7 +10,18 @@ type DeviceLocation = {
 
 type WebViewModule = typeof import("react-native-webview");
 
-export default function GeofenceMapCard() {
+type GeofenceMapCardProps = {
+  projectName?: string;
+  projectSite?: string;
+  selectedProjectId?: string;
+  onPolygonChange?: (points: Array<{ lat: number; lng: number }>) => void;
+};
+
+export default function GeofenceMapCard({
+  projectName,
+  projectSite,
+  onPolygonChange,
+}: GeofenceMapCardProps) {
   const [location, setLocation] = useState<DeviceLocation | null>(null);
   const [locationLabel, setLocationLabel] = useState("Locating your device...");
   const [loading, setLoading] = useState(true);
@@ -107,12 +118,29 @@ export default function GeofenceMapCard() {
             </View>
           ) : WebView && !webViewUnavailable ? (
             <WebView
-              source={{ html: generateMapHTML(userLat, userLng) }}
+              source={{
+                html: generateMapHTML(
+                  userLat,
+                  userLng,
+                  projectName ?? "Selected Project",
+                  projectSite ?? "",
+                ),
+              }}
               style={{ flex: 1, backgroundColor: "#EEF2F6" }}
               javaScriptEnabled
               domStorageEnabled
               originWhitelist={["*"]}
               scrollEnabled={false}
+              onMessage={(event) => {
+                try {
+                  const payload = JSON.parse(event.nativeEvent.data);
+                  if (payload?.type === "polygon_change" && Array.isArray(payload.polygonCoords)) {
+                    onPolygonChange?.(payload.polygonCoords);
+                  }
+                } catch {
+                  // ignore invalid messages
+                }
+              }}
             />
           ) : (
             <View className="h-full items-center justify-center bg-[#EEF2F6] px-6">

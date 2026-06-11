@@ -2,7 +2,17 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-export default function GeofencingSummaryCard() {
+type GeofencingSummaryCardProps = {
+  onAddNewZonePress?: () => void;
+  onProjectPress?: () => void;
+  name?: string;
+};
+
+export default function GeofencingSummaryCard({
+  onAddNewZonePress,
+  onProjectPress,
+  name
+}: GeofencingSummaryCardProps) {
   return (
     <View className="mt-6 px-5">
       <View className="rounded-3xl border border-[#E3E8ED] bg-[#F7F9FB] p-4">
@@ -22,6 +32,7 @@ export default function GeofencingSummaryCard() {
 
         <TouchableOpacity
           activeOpacity={0.86}
+          onPress={onAddNewZonePress}
           className="mt-4 h-12 flex-row items-center justify-center rounded-[14px] bg-[#BBDCED]"
         >
           <Ionicons name="add" size={22} color="#111827" />
@@ -32,9 +43,10 @@ export default function GeofencingSummaryCard() {
 
         <TouchableOpacity
           activeOpacity={0.86}
+          onPress={onProjectPress}
           className="mt-3 h-12 flex-row items-center justify-center rounded-[14px] border border-[#D6DCE3] bg-[#F6F8FA]"
         >
-          <Text className="text-[16px] text-[#1F2937]">Lakeside Towers</Text>
+          <Text className="text-[16px] text-[#1F2937]">{name || "Select Project"}</Text>
           <Ionicons
             name="chevron-down"
             size={20}

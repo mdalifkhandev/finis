@@ -762,6 +762,90 @@ export async function assignTaskWorker(taskId: string, userIds: string[]) {
   return data.data;
 }
 
+export type GeofencePoint = { lat: number; lng: number };
+export type CompanyGeofence = {
+  id: string;
+  projectId: string;
+  zoneName: string;
+  polygonCoords: GeofencePoint[];
+  totalAreaSqft: number | null;
+  perimeterFt: number | null;
+  isActive: boolean;
+};
+
+export async function getProjectGeofences(projectId: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: CompanyGeofence[];
+  }>(`/admin/projects/${projectId}/geofences`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load geofences");
+  }
+
+  return data.data;
+}
+
+export async function getProjectGeofenceLocationLogs(projectId: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: Array<{
+      id: string;
+      worker: { id: string; fullName: string; avatarUrl: string | null; role: string };
+      lat: number;
+      lng: number;
+      eventType: string;
+      zoneName: string | null;
+      loggedAt: string;
+    }>;
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }>(`/admin/projects/${projectId}/geofences/location-logs`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load location logs");
+  }
+
+  return data;
+}
+
+export async function getProjectGeofenceViolations(projectId: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: Array<{
+      id: string;
+      geofenceName: string;
+      distanceM: number;
+      description: string;
+      isResolved: boolean;
+      occurredAt: string;
+    }>;
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }>(`/admin/projects/${projectId}/geofences/violations`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load violations");
+  }
+
+  return data;
+}
+
+export async function getProjectGeofenceTimeSummary(projectId: string) {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/projects/${projectId}/geofences/time-summary`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load geofence summary");
+  }
+
+  return data.data;
+}
+
 import type { TaskDetailsData, TaskDetailsApiResponse } from "../../types/company.types";
 
 export async function getTaskDetails(taskId: string): Promise<TaskDetailsData> {
