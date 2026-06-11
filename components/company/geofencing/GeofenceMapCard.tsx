@@ -14,12 +14,14 @@ type GeofenceMapCardProps = {
   projectName?: string;
   projectSite?: string;
   selectedProjectId?: string;
+  initialPolygonCoords?: Array<{ lat: number; lng: number }>;
   onPolygonChange?: (points: Array<{ lat: number; lng: number }>) => void;
 };
 
 export default function GeofenceMapCard({
   projectName,
   projectSite,
+  initialPolygonCoords,
   onPolygonChange,
 }: GeofenceMapCardProps) {
   const [location, setLocation] = useState<DeviceLocation | null>(null);
@@ -118,14 +120,7 @@ export default function GeofenceMapCard({
             </View>
           ) : WebView && !webViewUnavailable ? (
             <WebView
-              source={{
-                html: generateMapHTML(
-                  userLat,
-                  userLng,
-                  projectName ?? "Selected Project",
-                  projectSite ?? "",
-                ),
-              }}
+              source={{ html: generateMapHTML(userLat, userLng, projectName ?? "Selected Project", projectSite ?? "", initialPolygonCoords ?? []) }}
               style={{ flex: 1, backgroundColor: "#EEF2F6" }}
               javaScriptEnabled
               domStorageEnabled
@@ -153,14 +148,12 @@ export default function GeofenceMapCard({
             </View>
           )}
 
-          <View className="absolute left-3 top-3 rounded-lg bg-[#0F172A]/80 px-3 py-2">
+          <View className="absolute right-3 top-3 rounded-lg bg-[#0F172A]/80 px-3 py-2">
             <Text className="text-[11px] font-medium text-[#E5E7EB]">GPS</Text>
             <Text className="text-[12px] text-white">{locationLabel}</Text>
           </View>
 
-          <View className="absolute bottom-40 right-14 h-16 w-16 items-center justify-center rounded-md border-2 border-dashed border-[#2F7CF6] bg-[#DCE7F9]">
-            <View className="h-4 w-4 rounded-full bg-[#17B978]" />
-          </View>
+          
           <MapLegend />
         </View>
       </View>

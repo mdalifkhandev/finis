@@ -787,6 +787,52 @@ export async function getProjectGeofences(projectId: string) {
   return data.data;
 }
 
+export async function createProjectGeofence(
+  projectId: string,
+  payload: {
+    zoneName: string;
+    polygonCoords: GeofencePoint[];
+    totalAreaSqft?: number;
+    perimeterFt?: number;
+  },
+) {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    data: CompanyGeofence;
+  }>(`/admin/projects/${projectId}/geofences`, payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to create geofence");
+  }
+
+  return data.data;
+}
+
+export async function updateProjectGeofence(
+  projectId: string,
+  geofenceId: string,
+  payload: {
+    zoneName?: string;
+    polygonCoords?: GeofencePoint[];
+    totalAreaSqft?: number;
+    perimeterFt?: number;
+    isActive?: boolean;
+  },
+) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: CompanyGeofence;
+  }>(`/admin/projects/${projectId}/geofences/${geofenceId}`, payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update geofence");
+  }
+
+  return data.data;
+}
+
 export async function getProjectGeofenceLocationLogs(projectId: string) {
   const { data } = await api.get<{
     success: boolean;

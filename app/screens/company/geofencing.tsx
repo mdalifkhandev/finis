@@ -8,10 +8,12 @@ import ZoneViolationAlertCard from "@/components/company/geofencing/ZoneViolatio
 import { LocationLog } from "@/components/company/geofencing/types";
 import { useAdminProjectsQuery } from "@/hooks/admin/admin";
 import {
+  useCreateProjectGeofenceMutation,
   useProjectGeofenceLocationLogsQuery,
   useProjectGeofenceTimeSummaryQuery,
   useProjectGeofenceViolationsQuery,
   useProjectGeofencesQuery,
+  useUpdateProjectGeofenceMutation,
 } from "@/hooks/company/company";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
@@ -66,6 +68,8 @@ export default function GeofencingRoute() {
   const logsQuery = useProjectGeofenceLocationLogsQuery(selectedProjectId);
   const violationsQuery = useProjectGeofenceViolationsQuery(selectedProjectId);
   const summaryQuery = useProjectGeofenceTimeSummaryQuery(selectedProjectId);
+  const createGeofenceMutation = useCreateProjectGeofenceMutation(selectedProjectId);
+  const updateGeofenceMutation = useUpdateProjectGeofenceMutation(selectedProjectId);
 
   const { refreshing, onRefresh } = usePullToRefresh(async () => {
     await Promise.all([
@@ -88,6 +92,11 @@ export default function GeofencingRoute() {
       status: log.eventType.toLowerCase().includes("check") ? "Check In" : "Tracking",
     }));
   }, [logsQuery.data]);
+
+  const selectedGeofence = useMemo(() => {
+    const geofences = geofencesQuery.data ?? [];
+    return geofences.find((geofence) => geofence.isActive) ?? geofences[0];
+  }, [geofencesQuery.data]);
 
   
 
@@ -126,6 +135,7 @@ export default function GeofencingRoute() {
         <GeofenceMapCard
           projectName={selectedProject?.name}
           projectSite={selectedProject?.location}
+          initialPolygonCoords={selectedGeofence?.polygonCoords ?? []}
           onPolygonChange={setDraftPoints}
         />
 
@@ -138,13 +148,43 @@ export default function GeofencingRoute() {
             </Text>
             <TouchableOpacity
               activeOpacity={0.85}
-              disabled={draftPoints.length < 3}
+              disabled={draftPoints.length < 3 || createGeofenceMutation.isPending}
+              onPress={() => {
+                if (!selectedProjectId || draftPoints.length < 3) {
+                  return;
+                }
+
+                const zonePayload = {
+                  zoneName: `${selectedProject?.name ?? "Selected Project"} Zone`,
+                  polygonCoords: draftPoints,
+                };
+
+                if (selectedGeofence?.id) {
+                  void updateGeofenceMutation.mutateAsync({
+                    geofenceId: selectedGeofence.id,
+                    payload: zonePayload,
+                  }).then(() => {
+                    setDraftPoints([]);
+                  });
+                  return;
+                }
+
+                void createGeofenceMutation.mutateAsync(zonePayload).then(() => {
+                  setDraftPoints([]);
+                });
+              }}
               className={`h-[48px] items-center justify-center rounded-[12px] ${
-                draftPoints.length >= 3 ? "bg-[#1D5478]" : "bg-[#AAB7C2]"
+                draftPoints.length >= 3 &&
+                !createGeofenceMutation.isPending &&
+                !updateGeofenceMutation.isPending
+                  ? "bg-[#1D5478]"
+                  : "bg-[#AAB7C2]"
               }`}
             >
               <Text className="text-[15px] font-semibold text-white">
-                Save Zone
+                {createGeofenceMutation.isPending || updateGeofenceMutation.isPending
+                  ? "Saving..."
+                  : "Save Zone"}
               </Text>
             </TouchableOpacity>
           </View>
