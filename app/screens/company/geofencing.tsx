@@ -16,6 +16,8 @@ import {
   useUpdateProjectGeofenceMutation,
 } from "@/hooks/company/company";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
+import { API_BASE_URL } from "@/lib/config";
+import { useAuthStore } from "@/store/auth.store";
 import { useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -30,6 +32,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { io, type Socket } from "socket.io-client";
 
 export default function GeofencingRoute() {
   const { id: companyIdParam } = useLocalSearchParams<{ id?: string }>();
@@ -39,7 +42,10 @@ export default function GeofencingRoute() {
   const [isFullHistoryVisible, setIsFullHistoryVisible] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
   const [draftPoints, setDraftPoints] = useState<Array<{ lat: number; lng: number }>>([]);
+  const [liveWorkers, setLiveWorkers] = useState<Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }>>([]);
+  const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
+  const socketRef = React.useRef<Socket | null>(null);
 
   const visibleProjects = React.useMemo(() => {
     if (!companyId) {
@@ -63,6 +69,77 @@ export default function GeofencingRoute() {
       setDraftPoints([]);
     }
   }, [visibleProjects, selectedProjectId]);
+
+  React.useEffect(() => {
+    if (!token || !selectedProjectId) {
+      return;
+    }
+
+    const socket = io(`${API_BASE_URL}/geofencing`, {
+      transports: ["websocket", "polling"],
+      auth: { token },
+    });
+    socketRef.current = socket;
+
+    const joinProject = () => {
+      socket.emit("join_project", { projectId: selectedProjectId });
+      socket.emit("get_live_workers", { projectId: selectedProjectId });
+    };
+
+    const handleActiveWorkers = (payload: { workers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }> }) => {
+      console.log("[Geofencing] active_workers:", payload);
+      setLiveWorkers(payload.workers ?? []);
+    };
+
+    const handleWorkerLocation = (payload: { workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }) => {
+      console.log("[Geofencing] worker_location:", payload);
+      setLiveWorkers((current) => {
+        const next = current.filter((worker) => worker.workerId !== payload.workerId);
+        next.push(payload);
+        return next;
+      });
+    };
+
+    const handleWorkerCheckIn = (payload: { worker: { id: string; fullName: string }; isInsideZone?: boolean }) => {
+      console.log("[Geofencing] worker_checked_in:", payload);
+      setLiveWorkers((current) => {
+        const next = current.filter((worker) => worker.workerId !== payload.worker.id);
+        next.push({
+          workerId: payload.worker.id,
+          workerName: payload.worker.fullName,
+          lat: 0,
+          lng: 0,
+          isInsideZone: payload.isInsideZone,
+        });
+        return next;
+      });
+    };
+
+    const handleWorkerCheckOut = (payload: { worker: { id: string; fullName: string } }) => {
+      console.log("[Geofencing] worker_checked_out:", payload);
+      setLiveWorkers((current) => current.filter((worker) => worker.workerId !== payload.worker.id));
+    };
+
+    socket.on("connect", joinProject);
+    socket.on("active_workers", handleActiveWorkers);
+    socket.on("worker_location", handleWorkerLocation);
+    socket.on("worker_checked_in", handleWorkerCheckIn);
+    socket.on("worker_checked_out", handleWorkerCheckOut);
+
+    if (socket.connected) {
+      joinProject();
+    }
+
+    return () => {
+      socket.off("connect", joinProject);
+      socket.off("active_workers", handleActiveWorkers);
+      socket.off("worker_location", handleWorkerLocation);
+      socket.off("worker_checked_in", handleWorkerCheckIn);
+      socket.off("worker_checked_out", handleWorkerCheckOut);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [selectedProjectId, token]);
 
   const selectedProject = visibleProjects.find((project) => project.id === selectedProjectId);
   const geofencesQuery = useProjectGeofencesQuery(selectedProjectId);
@@ -205,6 +282,7 @@ export default function GeofencingRoute() {
           projectName={selectedProject?.name}
           projectSite={selectedProject?.location}
           initialPolygonCoords={selectedGeofence?.polygonCoords ?? []}
+          liveWorkers={liveWorkers}
           onPolygonChange={setDraftPoints}
         />
 

@@ -15,6 +15,7 @@ type GeofenceMapCardProps = {
   projectSite?: string;
   selectedProjectId?: string;
   initialPolygonCoords?: Array<{ lat: number; lng: number }>;
+  liveWorkers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }>;
   onPolygonChange?: (points: Array<{ lat: number; lng: number }>) => void;
 };
 
@@ -22,6 +23,7 @@ export default function GeofenceMapCard({
   projectName,
   projectSite,
   initialPolygonCoords,
+  liveWorkers,
   onPolygonChange,
 }: GeofenceMapCardProps) {
   const [location, setLocation] = useState<DeviceLocation | null>(null);
@@ -120,7 +122,7 @@ export default function GeofenceMapCard({
             </View>
           ) : WebView && !webViewUnavailable ? (
             <WebView
-              source={{ html: generateMapHTML(userLat, userLng, projectName ?? "Selected Project", projectSite ?? "", initialPolygonCoords ?? []) }}
+              source={{ html: generateMapHTML(userLat, userLng, projectName ?? "Selected Project", projectSite ?? "", initialPolygonCoords ?? [], liveWorkers ?? []) }}
               style={{ flex: 1, backgroundColor: "#EEF2F6" }}
               javaScriptEnabled
               domStorageEnabled
