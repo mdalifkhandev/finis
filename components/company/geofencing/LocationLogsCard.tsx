@@ -5,9 +5,10 @@ import { LocationLog } from "./types";
 
 type LocationLogsCardProps = {
   logs: LocationLog[];
+  onViewFullHistory?: () => void;
 };
 
-export default function LocationLogsCard({ logs }: LocationLogsCardProps) {
+export default function LocationLogsCard({ logs, onViewFullHistory }: LocationLogsCardProps) {
   return (
     <View className="mt-4 px-5">
       <View className="rounded-3xl border border-[#E2E8EE] bg-[#F7F9FB]">
@@ -41,6 +42,7 @@ export default function LocationLogsCard({ logs }: LocationLogsCardProps) {
 
         <TouchableOpacity
           activeOpacity={0.85}
+          onPress={onViewFullHistory}
           className="items-center border-t border-[#D8DEE6] py-4"
         >
           <Text className="text-[16px] font-medium text-[#2563EB]">

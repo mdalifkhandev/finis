@@ -36,6 +36,7 @@ export default function GeofencingRoute() {
   const companyId = typeof companyIdParam === "string" ? companyIdParam : undefined;
   const { data: projects = [], isLoading: projectsLoading } = useAdminProjectsQuery();
   const [isProjectSheetVisible, setIsProjectSheetVisible] = useState(false);
+  const [isFullHistoryVisible, setIsFullHistoryVisible] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
   const [draftPoints, setDraftPoints] = useState<Array<{ lat: number; lng: number }>>([]);
   const queryClient = useQueryClient();
@@ -97,6 +98,74 @@ export default function GeofencingRoute() {
     const geofences = geofencesQuery.data ?? [];
     return geofences.find((geofence) => geofence.isActive) ?? geofences[0];
   }, [geofencesQuery.data]);
+
+  const liveTrackerStats = useMemo(() => {
+    const workers = (summaryQuery.data?.workers ?? []) as Array<{
+      totalZoneHours?: number;
+      totalOutsideHours?: number;
+    }>;
+
+    const outsideZone = workers.filter((worker) => (worker.totalOutsideHours ?? 0) > 0).length;
+
+    return {
+      workersOnSite: workers.length,
+      outsideZone,
+    };
+  }, [summaryQuery.data]);
+
+  const latestViolation = useMemo(() => {
+    return violationsQuery.data?.data?.[0] ?? null;
+  }, [violationsQuery.data]);
+
+  const activePolygon = draftPoints.length >= 3 ? draftPoints : selectedGeofence?.polygonCoords ?? [];
+
+  const polygonMetrics = useMemo(() => {
+    if (activePolygon.length < 3) {
+      return {
+        totalAreaSqft: null,
+        perimeterFt: null,
+        centerPoint: null as { lat: number; lng: number } | null,
+      };
+    }
+
+    const metersPerDegreeLat = 111_320;
+    const avgLat = activePolygon.reduce((sum, point) => sum + point.lat, 0) / activePolygon.length;
+    const metersPerDegreeLng = 111_320 * Math.cos((avgLat * Math.PI) / 180);
+
+    const pointsInMeters = activePolygon.map((point) => ({
+      x: point.lng * metersPerDegreeLng,
+      y: point.lat * metersPerDegreeLat,
+    }));
+
+    let area = 0;
+    let perimeter = 0;
+
+    for (let index = 0; index < pointsInMeters.length; index += 1) {
+      const current = pointsInMeters[index];
+      const next = pointsInMeters[(index + 1) % pointsInMeters.length];
+      area += current.x * next.y - next.x * current.y;
+      perimeter += Math.hypot(next.x - current.x, next.y - current.y);
+    }
+
+    area = Math.abs(area) / 2;
+
+    const centerPoint = activePolygon.reduce(
+      (accumulator, point) => ({
+        lat: accumulator.lat + point.lat,
+        lng: accumulator.lng + point.lng,
+      }),
+      { lat: 0, lng: 0 },
+    );
+
+    return {
+      totalAreaSqft: area * 10.7639,
+      perimeterFt: perimeter * 3.28084,
+      centerPoint: {
+        lat: centerPoint.lat / activePolygon.length,
+        lng: centerPoint.lng / activePolygon.length,
+      },
+    };
+  }, [activePolygon]);
 
   
 
@@ -190,11 +259,88 @@ export default function GeofencingRoute() {
           </View>
         ) : null}
 
-        <ZoneConfigurationCard />
-        <LiveTrackerCard />
-        <LocationLogsCard logs={logs} />
-        <ZoneViolationAlertCard />
+        <ZoneConfigurationCard
+          zoneName={selectedGeofence?.zoneName ?? selectedProject?.name}
+          isActive={selectedGeofence?.isActive ?? false}
+          definedAt={selectedGeofence ? "Saved zone" : undefined}
+          totalAreaSqft={selectedGeofence?.totalAreaSqft ?? polygonMetrics.totalAreaSqft}
+          perimeterFt={selectedGeofence?.perimeterFt ?? polygonMetrics.perimeterFt}
+          centerPoint={polygonMetrics.centerPoint}
+          monitoringMode="Polygon"
+        />
+        <LiveTrackerCard
+          workersOnSite={liveTrackerStats.workersOnSite}
+          outsideZone={liveTrackerStats.outsideZone}
+          liveStatus={selectedGeofence ? "Live" : "No Zone"}
+        />
+        <LocationLogsCard logs={logs} onViewFullHistory={() => setIsFullHistoryVisible(true)} />
+        <ZoneViolationAlertCard
+          distanceM={latestViolation?.distanceM}
+          occurredAt={latestViolation?.occurredAt}
+          geofenceName={latestViolation?.geofenceName}
+          description={latestViolation?.description}
+          onViewDetails={() => setIsFullHistoryVisible(true)}
+        />
       </ScrollView>
+
+      <Modal
+        visible={isFullHistoryVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsFullHistoryVisible(false)}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/35"
+          onPress={() => setIsFullHistoryVisible(false)}
+        >
+          <Pressable
+            className="max-h-[82%] rounded-t-[24px] bg-white px-5 pb-6 pt-4"
+            onPress={(event) => event.stopPropagation()}
+          >
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-[18px] font-semibold text-[#1F2328]">
+                Full Location History
+              </Text>
+              <TouchableOpacity onPress={() => setIsFullHistoryVisible(false)}>
+                <Text className="text-[15px] font-medium text-[#66707B]">
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {logs.length === 0 ? (
+                <View className="items-center py-10">
+                  <Text className="text-[14px] text-[#66707B]">
+                    No location history found.
+                  </Text>
+                </View>
+              ) : (
+                logs.map((log, index) => (
+                  <View
+                    key={`${log.name}-${log.time}-${index}`}
+                    className={`rounded-[14px] border border-[#E5EAF0] bg-[#F8FAFC] px-4 py-3 ${index !== logs.length - 1 ? "mb-3" : ""}`}
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-[16px] font-semibold text-[#111827]">
+                        {log.name}
+                      </Text>
+                      <View className="rounded-full border border-[#D3DAE2] bg-white px-3 py-1">
+                        <Text className="text-[11px] font-semibold text-[#111827]">
+                          {log.status}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className="mt-1 text-[14px] text-[#6B7280]">
+                      {log.time} {"\u2022"} {log.location}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal
         visible={isProjectSheetVisible}
