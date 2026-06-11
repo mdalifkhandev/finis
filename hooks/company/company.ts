@@ -36,6 +36,8 @@ import {
   getProjectGeofenceLocationLogs,
   getProjectGeofenceViolations,
   getProjectGeofenceTimeSummary,
+  createProjectGeofence,
+  updateProjectGeofence,
 } from "@/api/company/company.api";
 import type { CreateTaskPayload } from "@/types/company.types";
 import { useAuthStore } from "@/store/auth.store";
@@ -906,6 +908,71 @@ export function useProjectGeofencesQuery(projectId?: string) {
       return getProjectGeofences(projectId);
     },
     enabled: !!projectId,
+  });
+}
+
+export function useCreateProjectGeofenceMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      zoneName: string;
+      polygonCoords: Array<{ lat: number; lng: number }>;
+      totalAreaSqft?: number;
+      perimeterFt?: number;
+    }) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return createProjectGeofence(projectId, payload);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "geofences", projectId],
+        });
+      }
+      toast.success("Zone saved successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to save zone",
+      );
+    },
+  });
+}
+
+export function useUpdateProjectGeofenceMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      geofenceId,
+      payload,
+    }: {
+      geofenceId: string;
+      payload: {
+        zoneName?: string;
+        polygonCoords?: Array<{ lat: number; lng: number }>;
+        totalAreaSqft?: number;
+        perimeterFt?: number;
+        isActive?: boolean;
+      };
+    }) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return updateProjectGeofence(projectId, geofenceId, payload);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "geofences", projectId],
+        });
+      }
+      toast.success("Zone updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update zone",
+      );
+    },
   });
 }
 

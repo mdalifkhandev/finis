@@ -3,6 +3,7 @@ export function generateMapHTML(
   userLng: number,
   zoneName = "Selected Project",
   zoneSubtext = "",
+  initialPolygonCoords: Array<{ lat: number; lng: number }> = [],
 ) {
   return `<!doctype html>
 <html>
@@ -44,6 +45,26 @@ export function generateMapHTML(
         background: white;
         color: #2563eb;
         font-size: 18px;
+        font-weight: 700;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+      }
+      .draw-controls {
+        position: absolute;
+        right: 12px;
+        top: 60px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .draw-controls button {
+        width: 74px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid #d7dde4;
+        background: white;
+        color: #1f3d5c;
+        font-size: 13px;
         font-weight: 700;
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
       }
@@ -92,17 +113,17 @@ export function generateMapHTML(
   </head>
   <body>
     <div id="map"></div>
-    <div class="project-card">
-      <div class="eyebrow">Selected Project</div>
-      <div class="title">${zoneName}</div>
-      ${zoneSubtext ? `<div class="sub">${zoneSubtext}</div>` : ""}
-    </div>
     <div class="controls">
       <button id="zoomIn">+</button>
       <button id="zoomOut">−</button>
       <button id="recenter">⌖</button>
     </div>
-    <div class="hint">Tap the map to add zone points. Use Save zone when you finish.</div>
+    <div class="draw-controls">
+      <button id="undo">Undo</button>
+      <button id="reset">Reset</button>
+    </div>
+   
+   
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
       const map = L.map("map", {
@@ -114,7 +135,7 @@ export function generateMapHTML(
         maxZoom: 19,
       }).addTo(map);
 
-      const points = [];
+      const points = ${JSON.stringify(initialPolygonCoords)};
       let polygon = null;
       const markers = [];
 
@@ -170,6 +191,30 @@ export function generateMapHTML(
 
       map.setView([${userLat}, ${userLng}], 17);
 
+      if (points.length > 0) {
+        redraw();
+      } else {
+        notifyPoints();
+      }
+
+      document.getElementById("undo").addEventListener("click", function () {
+        if (points.length === 0) return;
+        points.pop();
+        redraw();
+      });
+
+      document.getElementById("reset").addEventListener("click", function () {
+        points.length = 0;
+        if (polygon) {
+          polygon.remove();
+          polygon = null;
+        }
+        markers.forEach((marker) => marker.remove());
+        markers.length = 0;
+        notifyPoints();
+        map.setView([${userLat}, ${userLng}], 17);
+      });
+
       document.getElementById("zoomIn").addEventListener("click", function () {
         map.zoomIn();
       });
@@ -177,11 +222,7 @@ export function generateMapHTML(
         map.zoomOut();
       });
       document.getElementById("recenter").addEventListener("click", function () {
-        if (polygon) {
-          map.fitBounds(polygon.getBounds(), { padding: [35, 35] });
-        } else {
-          map.setView([${userLat}, ${userLng}], 17);
-        }
+        map.setView([${userLat}, ${userLng}], 17);
       });
     </script>
   </body>
