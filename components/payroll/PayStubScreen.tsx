@@ -1,27 +1,46 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BackTitleHeader from "../common/BackTitleHeader";
-import {
-  PAY_PERIOD_LABEL,
-  getPayStubData,
-  payrollWorkerMocks,
-} from "./payrollData";
+import { useWorkerProfileQuery } from "@/hooks/profile/profile";
+import { useTodayAttendanceQuery } from "@/hooks/worker/attendance";
 import { formatCurrency } from "./utils";
 
+function parseHourlyRate(value: string | null | undefined) {
+  const numericRate = Number(value);
+  return Number.isFinite(numericRate) ? numericRate : 0;
+}
+
 export default function PayStubScreen() {
-  const { workerId } = useLocalSearchParams<{ workerId?: string }>();
+  const { data: profile } = useWorkerProfileQuery();
+  const { data: attendance } = useTodayAttendanceQuery();
 
-  const worker = useMemo(
-    () =>
-      payrollWorkerMocks.find((item) => item.id === workerId) ||
-      payrollWorkerMocks[0],
-    [workerId],
+  const hourlyRate = useMemo(
+    () => parseHourlyRate(profile?.hourlyRate),
+    [profile?.hourlyRate],
   );
-
-  const stub = useMemo(() => getPayStubData(), []);
+  const regularHours = attendance?.totalHours ?? 0;
+  const overtimeHours = 0;
+  const regularPay = useMemo(
+    () => Math.round(regularHours * hourlyRate * 100) / 100,
+    [hourlyRate, regularHours],
+  );
+  const overtimePay = 0;
+  const grossPay = useMemo(() => regularPay + overtimePay, [regularPay, overtimePay]);
+  const deductions = useMemo(() => Math.round(grossPay * 0.18 * 100) / 100, [grossPay]);
+  const netPay = useMemo(
+    () => Math.max(0, Math.round((grossPay - deductions) * 100) / 100),
+    [grossPay, deductions],
+  );
+  const payPeriodLabel = attendance?.date
+    ? new Date(attendance.date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "This week";
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -33,46 +52,50 @@ export default function PayStubScreen() {
 
         <View className="mt-4 px-4">
           <View className="rounded-[12px] border border-[#E3E6EA] bg-white p-4">
-            <Text
-              className="text-center text-[40px] font-medium text-[#101828]"
-              style={{ fontSize: 40 / 2 }}
-            >
-              {worker.name}
-            </Text>
-            <Text className="mt-1 text-center text-[16px] text-[#475467]">
-              {worker.role}
-            </Text>
-            <Text className="mt-1 text-center text-[12px] text-[#667085]">
-              Pay Period: {PAY_PERIOD_LABEL}
-            </Text>
+            <View className="items-center">
+              <View className="h-16 w-16 items-center justify-center rounded-full bg-[#1F5577]">
+                <Text className="text-[24px] font-semibold text-white">
+                  {profile?.fullName?.charAt(0)?.toUpperCase() || "W"}
+                </Text>
+              </View>
+              <Text className="mt-3 text-center text-[20px] font-semibold text-[#101828]">
+                {profile?.fullName || "Worker"}
+              </Text>
+              <Text className="mt-1 text-center text-[14px] text-[#475467]">
+                {profile?.department || profile?.role || "Worker"}
+              </Text>
+              <Text className="mt-1 text-center text-[12px] text-[#667085]">
+                Pay Period: {payPeriodLabel}
+              </Text>
+            </View>
 
             <View className="my-3 h-px bg-[#E6E8EB]" />
 
             <View className="gap-y-2.5">
               <View className="flex-row items-center justify-between">
                 <Text className="text-[15px] text-[#475467]">
-                  Regular Hours ({stub.regularHours})
+                  Regular Hours ({regularHours.toFixed(2)})
                 </Text>
                 <Text className="text-[15px] font-medium text-[#101828]">
-                  {formatCurrency(worker.total)}
+                  {formatCurrency(regularPay)}
                 </Text>
               </View>
 
               <View className="flex-row items-center justify-between">
                 <Text className="text-[15px] text-[#475467]">
-                  Overtime Hours ({stub.overtimeHours})
+                  Overtime Hours ({overtimeHours.toFixed(2)})
                 </Text>
                 <Text className="text-[15px] font-medium text-[#101828]">
-                  {formatCurrency(540)}
+                  {formatCurrency(overtimePay)}
                 </Text>
               </View>
 
               <View className="flex-row items-center justify-between">
                 <Text className="text-[15px] text-[#475467]">
-                  Site Allowance
+                  Hourly Rate
                 </Text>
                 <Text className="text-[15px] font-medium text-[#101828]">
-                  {formatCurrency(stub.siteAllowance)}
+                  {formatCurrency(hourlyRate)}
                 </Text>
               </View>
             </View>
@@ -84,7 +107,7 @@ export default function PayStubScreen() {
                 Gross Pay
               </Text>
               <Text className="text-[16px] font-medium text-[#101828]">
-                {formatCurrency(stub.grossPay)}
+                {formatCurrency(grossPay)}
               </Text>
             </View>
 
@@ -93,19 +116,12 @@ export default function PayStubScreen() {
                 Deductions
               </Text>
 
-              {stub.deductions.map((item) => (
-                <View
-                  key={item.label}
-                  className="mt-2 flex-row items-center justify-between"
-                >
-                  <Text className="text-[15px] text-[#475467]">
-                    {item.label}
-                  </Text>
-                  <Text className="text-[15px] font-medium text-[#101828]">
-                    {formatCurrency(item.amount)}
-                  </Text>
-                </View>
-              ))}
+              <View className="mt-2 flex-row items-center justify-between">
+                <Text className="text-[15px] text-[#475467]">Estimated Tax</Text>
+                <Text className="text-[15px] font-medium text-[#101828]">
+                  {formatCurrency(deductions)}
+                </Text>
+              </View>
 
               <View className="my-2.5 h-px bg-[#E6E8EB]" />
 
@@ -114,7 +130,7 @@ export default function PayStubScreen() {
                   Total Deductions
                 </Text>
                 <Text className="text-[16px] font-medium text-[#101828]">
-                  {formatCurrency(stub.totalDeductions)}
+                  {formatCurrency(deductions)}
                 </Text>
               </View>
             </View>
@@ -127,7 +143,7 @@ export default function PayStubScreen() {
                 className="mt-1 text-center text-[56px] font-medium text-[#EAF1F5]"
                 style={{ fontSize: 56 / 2 }}
               >
-                {formatCurrency(stub.netPay)}
+                {formatCurrency(netPay)}
               </Text>
             </View>
           </View>
