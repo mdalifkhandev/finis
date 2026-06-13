@@ -1,6 +1,8 @@
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { queryClient } from "@/lib/query-client";
+import { disconnectChatSocket } from "@/lib/chat-socket";
+import { disconnectWorkerGeofenceSocket } from "@/lib/worker-geofence-socket";
 import type { AuthSession, User } from "@/types/auth.types";
 
 const TOKEN_KEY = "token";
@@ -31,6 +33,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   logout: async () => {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
+    disconnectChatSocket();
+    disconnectWorkerGeofenceSocket();
     queryClient.clear();
     set({ user: null, token: null, accessToken: null });
   },
@@ -42,6 +46,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user }),
   clearSession: () => {
     void SecureStore.deleteItemAsync(TOKEN_KEY);
+    disconnectChatSocket();
+    disconnectWorkerGeofenceSocket();
     queryClient.clear();
     set({ user: null, token: null, accessToken: null });
   },

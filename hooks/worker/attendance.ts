@@ -47,9 +47,12 @@ export function useCheckOutWorkerMutation() {
 
   useEffect(() => {
     if (mutation.isError) {
-      toast.error(
-        mutation.error instanceof Error ? mutation.error.message : "Failed to check out",
-      );
+      const message =
+        mutation.error instanceof Error ? mutation.error.message : "Failed to check out";
+      if (message.includes("No active check-in found")) {
+        return;
+      }
+      toast.error(message);
     }
   }, [mutation.error, mutation.isError]);
 

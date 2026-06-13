@@ -98,3 +98,13 @@ export function useWorkerGeofenceSocket() {
     };
   }, [currentUserId, token]);
 }
+
+export function disconnectWorkerGeofenceSocket() {
+  if (socket) {
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+    activeToken = null;
+    activeSubscribers = 0;
+  }
+}

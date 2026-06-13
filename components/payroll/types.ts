@@ -9,6 +9,7 @@ export type PayrollStatus = "Approved" | "Pending";
 
 export type WorkerPayroll = {
   id: string;
+  payrollId?: string;
   name: string;
   role: string;
   hours: number;

@@ -172,18 +172,20 @@ export default function WorkerHome() {
     //   projectId: activeProjectId,
     // });
 
-    await checkOutMutation.mutateAsync({
-      lat: current.coords.latitude,
-      lng: current.coords.longitude,
-    });
+    try {
+      await checkOutMutation.mutateAsync({
+        lat: current.coords.latitude,
+        lng: current.coords.longitude,
+      });
 
-    emitGeofenceCheckOut({
-      lat: current.coords.latitude,
-      lng: current.coords.longitude,
-      projectId: activeProjectId,
-    });
-
-    stopLiveUpdates();
+      emitGeofenceCheckOut({
+        lat: current.coords.latitude,
+        lng: current.coords.longitude,
+        projectId: activeProjectId,
+      });
+    } finally {
+      stopLiveUpdates();
+    }
   };
 
   useEffect(() => {
