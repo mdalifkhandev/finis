@@ -1,10 +1,10 @@
 import React from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Text, View, type ImageSourcePropType } from "react-native";
 import { MessageModel } from "./chatData";
 
 type ChatMessageBubbleProps = {
   message: MessageModel;
-  avatarUrl: string;
+  avatarUrl: string | ImageSourcePropType;
 };
 
 export default function ChatMessageBubble({
@@ -62,7 +62,7 @@ export default function ChatMessageBubble({
   return (
     <View className="mt-4 flex-row items-end px-4">
       <Image
-        source={{ uri: resolvedAvatar }}
+        source={typeof resolvedAvatar === "string" ? { uri: resolvedAvatar } : resolvedAvatar}
         className="mr-2 h-6 w-6 rounded-full"
       />
       <View className="w-[66%] rounded-[14px] bg-[#F8FAFC] px-4 py-3">

@@ -87,6 +87,7 @@ export default function ChatListScreen() {
         threadId: thread.id,
         name: contact.name,
         avatarUrl: contact.avatarUrl,
+        userId: contact.id,
       },
     });
   };
@@ -101,6 +102,7 @@ export default function ChatListScreen() {
         threadId: thread.id,
         name: thread.name || "Support",
         avatarUrl: thread.participants?.[0]?.avatarUrl ?? "",
+        userId: thread.participants?.[0]?.id ?? "",
       },
     });
   };
@@ -239,10 +241,11 @@ export default function ChatListScreen() {
                         threadId: item.threadId ?? item.id,
                         name: item.name,
                         avatarUrl: item.avatarUrl,
+                        userId: item.profileUserId ?? "",
                       },
                     });
-                  }}
-                />
+                }}
+              />
                   ))}
             </View>
           </View>

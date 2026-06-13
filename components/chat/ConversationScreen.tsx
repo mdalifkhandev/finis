@@ -2,7 +2,7 @@ import { useChatMessagesQuery, useSendChatMessageMutation } from "@/hooks/chat/c
 import { useAuthStore } from "@/store/auth.store";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Alert, ScrollView, View } from "react-native";
+import { Alert, ImageSourcePropType, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ChatAttachmentTray from "./ChatAttachmentTray";
 import ChatComposer from "./ChatComposer";
@@ -33,11 +33,38 @@ function formatMessageTime(value?: string | null) {
   });
 }
 
+function resolveAvatarSource(value?: string | ImageSourcePropType | null) {
+  if (!value) {
+    return placeholderAvatar;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return placeholderAvatar;
+  }
+
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("file://") ||
+    trimmed.startsWith("content://")
+  ) {
+    return { uri: trimmed };
+  }
+
+  return placeholderAvatar;
+}
+
 export default function ConversationScreen() {
-  const { threadId, name, avatarUrl } = useLocalSearchParams<{
+  const { threadId, name, avatarUrl, userId: routeUserId } = useLocalSearchParams<{
     threadId?: string;
     name?: string;
     avatarUrl?: string;
+    userId?: string;
   }>();
 
   const userId = useAuthStore((state) => state.user?.id);
@@ -48,7 +75,8 @@ export default function ConversationScreen() {
   const sendMessageMutation = useSendChatMessageMutation(threadId);
 
   const resolvedName = name || "Chat";
-  const resolvedAvatar = avatarUrl || placeholderAvatar;
+  const profileUserId = typeof routeUserId === "string" ? routeUserId : undefined;
+  const resolvedAvatar = resolveAvatarSource(avatarUrl);
 
   const messages = useMemo<MessageModel[]>(() => {
     return (messagesQuery.data ?? []).map((message) => ({
@@ -94,11 +122,11 @@ export default function ConversationScreen() {
         onBack={() => router.back()}
         onPressProfile={() =>
           router.push({
-            pathname: "/screens/profile",
+            pathname: "/screens/chat/userprofile",
             params: {
               name: resolvedName,
-              avatarUrl: resolvedAvatar,
-              id: threadId ?? "",
+              avatarUrl: typeof avatarUrl === "string" ? avatarUrl : "",
+              id: profileUserId ?? threadId ?? "",
             },
           })
         }
