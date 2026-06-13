@@ -160,6 +160,7 @@ export default function WorkerProfile() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              onPress={() => router.push("/screens/worker/payroll")}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
