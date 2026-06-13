@@ -19,9 +19,7 @@ export default function ScheduledActivityCard({
       </View>
 
       <View className="mt-3 self-start rounded-[4px] bg-[#DCE8FA] px-2 py-1">
-        <Text className="text-[11px] text-[#1E5ADB]">
-          {activity.workersLabel}
-        </Text>
+        <Text className="text-[11px] text-[#1E5ADB]">{activity.workersLabel}</Text>
       </View>
     </View>
   );

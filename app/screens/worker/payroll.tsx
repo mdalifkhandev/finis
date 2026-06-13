@@ -1,5 +1,5 @@
-import SchedulingPayrollScreen from "../../../components/payroll/SchedulingPayrollScreen";
+import WorkerPayrollScreen from "../../../components/payroll/WorkerPayrollScreen";
 
 export default function WorkerPayrollRoute() {
-  return <SchedulingPayrollScreen />;
+  return <WorkerPayrollScreen />;
 }
