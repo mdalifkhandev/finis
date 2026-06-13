@@ -87,12 +87,12 @@ export default function GeofencingRoute() {
     };
 
     const handleActiveWorkers = (payload: { workers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }> }) => {
-      console.log("[Geofencing] active_workers:", payload);
+      // console.log("[Geofencing] active_workers:", payload);
       setLiveWorkers(payload.workers ?? []);
     };
 
     const handleWorkerLocation = (payload: { workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }) => {
-      console.log("[Geofencing] worker_location:", payload);
+      // console.log("[Geofencing] worker_location:", payload);
       setLiveWorkers((current) => {
         const next = current.filter((worker) => worker.workerId !== payload.workerId);
         next.push(payload);
@@ -101,7 +101,7 @@ export default function GeofencingRoute() {
     };
 
     const handleWorkerCheckIn = (payload: { worker: { id: string; fullName: string }; isInsideZone?: boolean }) => {
-      console.log("[Geofencing] worker_checked_in:", payload);
+      // console.log("[Geofencing] worker_checked_in:", payload);
       setLiveWorkers((current) => {
         const next = current.filter((worker) => worker.workerId !== payload.worker.id);
         next.push({
@@ -116,7 +116,7 @@ export default function GeofencingRoute() {
     };
 
     const handleWorkerCheckOut = (payload: { worker: { id: string; fullName: string } }) => {
-      console.log("[Geofencing] worker_checked_out:", payload);
+      // console.log("[Geofencing] worker_checked_out:", payload);
       setLiveWorkers((current) => current.filter((worker) => worker.workerId !== payload.worker.id));
     };
 

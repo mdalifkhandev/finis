@@ -44,6 +44,7 @@ function normalizeThreads(
       return {
         id: thread.id,
         threadId: thread.id,
+        profileUserId: otherParticipant?.id,
         name: thread.name || otherParticipant?.fullName || "Conversation",
         preview: formatChatPreview(thread.lastMessage),
         time: formatChatTime(thread.lastMessage?.sentAt),
@@ -102,7 +103,6 @@ export function useChatThreadsQuery(filter: "chat" | "support", search: string) 
     staleTime: 15 * 1000,
     refetchInterval: 10 * 1000,
   });
-console.log(JSON.stringify(query,null,2));
 
   useEffect(() => {
     if (query.isError) {

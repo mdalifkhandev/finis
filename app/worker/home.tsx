@@ -67,11 +67,11 @@ export default function WorkerHome() {
   const activeProjectId = dashboard?.todayTasks?.[0]?.project?.id;
 
   React.useEffect(() => {
-    console.log("[WorkerHome] dashboard API:", dashboard);
+    // console.log("[WorkerHome] dashboard API:", dashboard);
   }, [dashboard]);
 
   React.useEffect(() => {
-    console.log("[WorkerHome] attendance API:", JSON.stringify(attendance,null,2));
+    //  console.log("[WorkerHome] attendance API:", JSON.stringify(attendance,null,2));
   }, [attendance]);
 
   const todayTasksCount = dashboard?.stats?.todayTasksCount ?? 0;
@@ -131,11 +131,11 @@ export default function WorkerHome() {
       accuracy: Location.Accuracy.Balanced,
     });
 
-    console.log("[WorkerHome] check-in location:", {
-      lat: current.coords.latitude,
-      lng: current.coords.longitude,
-      projectId: activeProjectId,
-    });
+    // console.log("[WorkerHome] check-in location:", {
+    //   lat: current.coords.latitude,
+    //   lng: current.coords.longitude,
+    //   projectId: activeProjectId,
+    // });
 
     await checkInMutation.mutateAsync({
       lat: current.coords.latitude,
@@ -166,11 +166,11 @@ export default function WorkerHome() {
       accuracy: Location.Accuracy.Balanced,
     });
 
-    console.log("[WorkerHome] check-out location:", {
-      lat: current.coords.latitude,
-      lng: current.coords.longitude,
-      projectId: activeProjectId,
-    });
+    // console.log("[WorkerHome] check-out location:", {
+    //   lat: current.coords.latitude,
+    //   lng: current.coords.longitude,
+    //   projectId: activeProjectId,
+    // });
 
     await checkOutMutation.mutateAsync({
       lat: current.coords.latitude,
