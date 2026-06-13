@@ -21,11 +21,8 @@ import { useAuthStore } from "@/store/auth.store";
 import { type ChatListItemModel, type MessageModel } from "@/components/chat/chatData";
 import { useChatSocket } from "@/lib/chat-socket";
 
-const DEFAULT_CHAT_AVATAR =
-  "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?q=80&w=120&auto=format&fit=crop";
-
 function toAbsoluteAvatar(path: string | null | undefined) {
-  return resolveChatAvatar(path) ?? DEFAULT_CHAT_AVATAR;
+  return resolveChatAvatar(path) ?? "";
 }
 
 function normalizeThreads(
@@ -105,6 +102,7 @@ export function useChatThreadsQuery(filter: "chat" | "support", search: string) 
     staleTime: 15 * 1000,
     refetchInterval: 10 * 1000,
   });
+console.log(JSON.stringify(query,null,2));
 
   useEffect(() => {
     if (query.isError) {

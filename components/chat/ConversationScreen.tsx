@@ -10,6 +10,8 @@ import ChatMessageBubble from "./ChatMessageBubble";
 import ConversationHeader from "./ConversationHeader";
 import { MessageModel } from "./chatData";
 
+const placeholderAvatar = require("../../assets/images/placeholder-person.png");
+
 function getCurrentTimeLabel() {
   const now = new Date();
   return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -46,9 +48,7 @@ export default function ConversationScreen() {
   const sendMessageMutation = useSendChatMessageMutation(threadId);
 
   const resolvedName = name || "Chat";
-  const resolvedAvatar =
-    avatarUrl ||
-    "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?q=80&w=120&auto=format&fit=crop";
+  const resolvedAvatar = avatarUrl || placeholderAvatar;
 
   const messages = useMemo<MessageModel[]>(() => {
     return (messagesQuery.data ?? []).map((message) => ({
@@ -92,6 +92,16 @@ export default function ConversationScreen() {
         avatarUrl={resolvedAvatar}
         idText={threadId ? `ID: ${threadId}` : "ID: #225432"}
         onBack={() => router.back()}
+        onPressProfile={() =>
+          router.push({
+            pathname: "/screens/profile",
+            params: {
+              name: resolvedName,
+              avatarUrl: resolvedAvatar,
+              id: threadId ?? "",
+            },
+          })
+        }
       />
 
       <View className="flex-1">
