@@ -2,13 +2,34 @@ import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAdminPayrollSummaryQuery, useAdminPayrollUsersQuery } from "@/hooks/admin/payroll";
 import BackTitleHeader from "../common/BackTitleHeader";
 import PayrollStatCard from "./PayrollStatCard";
 import WorkerPayrollCard from "./WorkerPayrollCard";
-import { payrollWorkerMocks } from "./payrollData";
+import type { WorkerPayroll } from "./types";
 
 export default function PayrollSummaryScreen() {
-  const [workers, setWorkers] = useState(payrollWorkerMocks);
+  const { data } = useAdminPayrollSummaryQuery();
+  const [selectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const { data: payrollUsers } = useAdminPayrollUsersQuery(selectedDate);
+  const [workers, setWorkers] = useState<WorkerPayroll[]>([]);
+
+  React.useEffect(() => {
+    if (!payrollUsers?.users) return;
+    setWorkers(
+      payrollUsers.users.map((item) => ({
+        id: item.user.id,
+        payrollId: item.latestPayroll?.id ?? item.user.id,
+        name: item.user.fullName,
+        role: item.user.department || "Worker",
+        hours: item.payrollPreview.regularHours,
+        rate: Number(item.payrollPreview.ratePerHour ?? item.user.hourlyRate ?? 0),
+        total: item.payrollPreview.netPay,
+        status: item.latestPayroll?.status === "draft" ? "Pending" : "Approved",
+        showApproveButton: item.latestPayroll?.status === "draft",
+      })),
+    );
+  }, [payrollUsers?.users]);
 
   const pendingCount = useMemo(
     () => workers.filter((item) => item.status === "Pending").length,
@@ -25,13 +46,13 @@ export default function PayrollSummaryScreen() {
 
         <View className="mt-4 px-4">
           <View className="flex-row justify-between">
-            <PayrollStatCard value="56" label="Total Hours" />
-            <PayrollStatCard value="$29.3K" label="Total Pay" />
+            <PayrollStatCard value={String(Math.round(data?.summary.totalHours ?? 0))} label="Total Hours" />
+            <PayrollStatCard value={`$${((data?.summary.totalPay ?? 0) / 1000).toFixed(1)}K`} label="Total Pay" />
           </View>
 
           <View className="mt-3 flex-row justify-between">
             <PayrollStatCard value={String(pendingCount)} label="Pending" />
-            <PayrollStatCard value="85" label="Inventory Alerts" />
+            <PayrollStatCard value={String(data?.summary.inventoryAlerts ?? 0)} label="Inventory Alerts" />
           </View>
         </View>
 
@@ -50,7 +71,7 @@ export default function PayrollSummaryScreen() {
               onViewStub={() =>
                 router.push({
                   pathname: "/screens/payroll/paystub",
-                  params: { workerId: worker.id },
+                  params: { payrollId: worker.payrollId || worker.id },
                 })
               }
               onApprove={() => {

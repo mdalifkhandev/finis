@@ -1,41 +1,29 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAdminPayStubQuery } from "@/hooks/admin/payroll";
 import BackTitleHeader from "../common/BackTitleHeader";
-import { useWorkerProfileQuery } from "@/hooks/profile/profile";
-import { useTodayAttendanceQuery } from "@/hooks/worker/attendance";
 import { formatCurrency } from "./utils";
 
-function parseHourlyRate(value: string | null | undefined) {
-  const numericRate = Number(value);
-  return Number.isFinite(numericRate) ? numericRate : 0;
-}
-
 export default function PayStubScreen() {
-  const { data: profile } = useWorkerProfileQuery();
-  const { data: attendance } = useTodayAttendanceQuery();
+  const { payrollId } = useLocalSearchParams<{ payrollId?: string }>();
+  const { data: stub } = useAdminPayStubQuery(payrollId);
 
-  const hourlyRate = useMemo(
-    () => parseHourlyRate(profile?.hourlyRate),
-    [profile?.hourlyRate],
-  );
-  const regularHours = attendance?.totalHours ?? 0;
-  const overtimeHours = 0;
-  const regularPay = useMemo(
-    () => Math.round(regularHours * hourlyRate * 100) / 100,
-    [hourlyRate, regularHours],
-  );
-  const overtimePay = 0;
-  const grossPay = useMemo(() => regularPay + overtimePay, [regularPay, overtimePay]);
-  const deductions = useMemo(() => Math.round(grossPay * 0.18 * 100) / 100, [grossPay]);
+  const hourlyRate = Number(stub?.worker.hourlyRate ?? 0);
+  const regularHours = stub?.earnings.regularHours ?? 0;
+  const overtimeHours = stub?.earnings.overtimeHours ?? 0;
+  const regularPay = stub?.earnings.regularPay ?? 0;
+  const overtimePay = stub?.earnings.overtimePay ?? 0;
+  const grossPay = stub?.earnings.grossPay ?? 0;
+  const deductions = stub?.deductions.totalDeductions ?? 0;
   const netPay = useMemo(
     () => Math.max(0, Math.round((grossPay - deductions) * 100) / 100),
     [grossPay, deductions],
   );
-  const payPeriodLabel = attendance?.date
-    ? new Date(attendance.date).toLocaleDateString("en-US", {
+  const payPeriodLabel = stub?.payPeriod.start
+    ? new Date(stub.payPeriod.start).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
@@ -55,14 +43,14 @@ export default function PayStubScreen() {
             <View className="items-center">
               <View className="h-16 w-16 items-center justify-center rounded-full bg-[#1F5577]">
                 <Text className="text-[24px] font-semibold text-white">
-                  {profile?.fullName?.charAt(0)?.toUpperCase() || "W"}
+                  {stub?.worker.fullName?.charAt(0)?.toUpperCase() || "W"}
                 </Text>
               </View>
               <Text className="mt-3 text-center text-[20px] font-semibold text-[#101828]">
-                {profile?.fullName || "Worker"}
+                {stub?.worker.fullName || "Worker"}
               </Text>
               <Text className="mt-1 text-center text-[14px] text-[#475467]">
-                {profile?.department || profile?.role || "Worker"}
+                {stub?.worker.department || "Worker"}
               </Text>
               <Text className="mt-1 text-center text-[12px] text-[#667085]">
                 Pay Period: {payPeriodLabel}

@@ -71,7 +71,7 @@ export default function WorkerPayrollCard({
       </View>
 
       <View className="mt-3 flex-row">
-        <TouchableOpacity
+          <TouchableOpacity
           activeOpacity={0.85}
           onPress={onViewStub}
           className={

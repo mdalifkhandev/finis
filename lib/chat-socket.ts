@@ -127,3 +127,13 @@ export function useChatSocket(threadId?: string) {
     };
   }, [queryClient, currentUserId, threadId, token]);
 }
+
+export function disconnectChatSocket() {
+  if (socket) {
+    socket.removeAllListeners();
+    socket.disconnect();
+    socket = null;
+    activeToken = null;
+    activeSubscribers = 0;
+  }
+}
