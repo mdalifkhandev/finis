@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQuery } from "@tanstack/react-query";
+import { getManagerQuotes } from "@/api/manager/quotes.api";
 import AddCustomQuoteItemModal from "./quotes/AddCustomQuoteItemModal";
 import ApplyDiscountModal from "./quotes/ApplyDiscountModal";
 import QuoteBuilderForm from "./quotes/QuoteBuilderForm";
@@ -71,6 +73,33 @@ export default function ManagerQuotesScreen() {
   const [customQuantity, setCustomQuantity] = useState("1");
   const [customUnit, setCustomUnit] = useState("pcs");
   const [customUnitPrice, setCustomUnitPrice] = useState("0");
+
+  const quoteFilterQuery = useQuery({
+    queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+    queryFn: () =>
+      getManagerQuotes({
+        projectType,
+        propertyType,
+        unitType,
+      }),
+    enabled: step === 1,
+  });
+
+  // React.useEffect(() => {
+  //   if (step !== 1) return;
+  //   if (quoteFilterQuery.data !== undefined) {
+  //     console.log("[ManagerQuotes] filtered quotes:", quoteFilterQuery.data);
+  //   }
+  // }, [quoteFilterQuery.data, step]);
+
+  // React.useEffect(() => {
+  //   if (step !== 1) return;
+  //   console.log("[ManagerQuotes] filter params:", {
+  //     projectType,
+  //     propertyType,
+  //     unitType,
+  //   });
+  // }, [projectType, propertyType, step, unitType]);
 
   const catalog = useMemo(
     () => getQuoteCatalog(projectType, propertyType, unitType),
@@ -223,6 +252,7 @@ export default function ManagerQuotesScreen() {
               subtotal={subtotal}
               itemsSelected={itemsSelected}
               estimatedTotal={subtotal}
+              backendQuotes={(quoteFilterQuery.data as { quotes?: Array<{ id: string; title: string; projectType: string; propertyType: string; unitType: string; quantity: number; unit: string | null; unitPrice: number; subtotal: number; notes: string | null; isCustom: boolean; }> } | undefined)?.quotes ?? []}
               onAddCustomItem={() => setCustomItemModalVisible(true)}
               onToggleGroup={(groupId) =>
                 setWorkGroups((current) => toggleQuoteWorkGroup(current, groupId))

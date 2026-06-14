@@ -3,6 +3,7 @@ import React from "react";
 import { Text, TouchableOpacity } from "react-native";
 import QuoteSectionCard from "./QuoteSectionCard";
 import QuoteWorkGroupCard, {
+  type BackendQuote,
   type QuoteSelectedWorkGroup,
 } from "./QuoteWorkGroupCard";
 import QuoteWorkTotalsBar from "./QuoteWorkTotalsBar";
@@ -10,7 +11,7 @@ import QuoteWorkTotalsBar from "./QuoteWorkTotalsBar";
 type QuoteWorkItemsStepProps = {
   catalogTitle: string;
   catalogDescription: string;
-  groups: QuoteSelectedWorkGroup[];
+  groups: Array<QuoteSelectedWorkGroup | BackendQuote>;
   subtotal: number;
   itemsSelected: number;
   estimatedTotal: number;
@@ -25,12 +26,12 @@ type QuoteWorkItemsStepProps = {
   onAddCustomItem: () => void;
   onNext: () => void;
   onBack: () => void;
+  backendQuotes: BackendQuote[];
 };
 
 export default function QuoteWorkItemsStep({
   catalogTitle,
   catalogDescription,
-  groups,
   subtotal,
   itemsSelected,
   estimatedTotal,
@@ -41,6 +42,7 @@ export default function QuoteWorkItemsStep({
   onAddCustomItem,
   onNext,
   onBack,
+  backendQuotes,
 }: QuoteWorkItemsStepProps) {
   return (
     <>
@@ -64,7 +66,7 @@ export default function QuoteWorkItemsStep({
         </TouchableOpacity>
       </QuoteSectionCard>
 
-      {groups.map((group) => (
+      {backendQuotes.map((group) => (
         <QuoteWorkGroupCard
           key={group.id}
           group={group}
