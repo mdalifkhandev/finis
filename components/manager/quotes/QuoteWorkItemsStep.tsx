@@ -11,12 +11,13 @@ import QuoteWorkTotalsBar from "./QuoteWorkTotalsBar";
 type QuoteWorkItemsStepProps = {
   catalogTitle: string;
   catalogDescription: string;
-  groups: Array<QuoteSelectedWorkGroup | BackendQuote>;
+  groups: QuoteSelectedWorkGroup[];
   subtotal: number;
   itemsSelected: number;
   estimatedTotal: number;
   onToggleGroup: (groupId: string) => void;
   onToggleItem: (groupId: string, itemId: string) => void;
+  onEditItem: (groupId: string, itemId: string) => void;
   onChangeItemQuantity: (
     groupId: string,
     itemId: string,
@@ -32,11 +33,13 @@ type QuoteWorkItemsStepProps = {
 export default function QuoteWorkItemsStep({
   catalogTitle,
   catalogDescription,
+  groups,
   subtotal,
   itemsSelected,
   estimatedTotal,
   onToggleGroup,
   onToggleItem,
+  onEditItem,
   onChangeItemQuantity,
   onSelectItemUnit,
   onAddCustomItem,
@@ -66,12 +69,13 @@ export default function QuoteWorkItemsStep({
         </TouchableOpacity>
       </QuoteSectionCard>
 
-      {backendQuotes.map((group) => (
+      {groups.map((group) => (
         <QuoteWorkGroupCard
           key={group.id}
           group={group}
           onToggleGroup={() => onToggleGroup(group.id)}
           onToggleItem={(itemId) => onToggleItem(group.id, itemId)}
+          onEditItem={(itemId) => onEditItem(group.id, itemId)}
           onChangeItemQuantity={(itemId, value) =>
             onChangeItemQuantity(group.id, itemId, value)
           }

@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from "react";
+import { useEffect } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
 import { getManagerQuotes } from "@/api/manager/quotes.api";
 import AddCustomQuoteItemModal from "./quotes/AddCustomQuoteItemModal";
 import ApplyDiscountModal from "./quotes/ApplyDiscountModal";
+import EditQuoteItemModal from "./quotes/EditQuoteItemModal";
 import QuoteBuilderForm from "./quotes/QuoteBuilderForm";
 import QuoteFinalReviewStep from "./quotes/QuoteFinalReviewStep";
 import {
@@ -27,6 +29,7 @@ import {
   toggleQuoteWorkItem,
   updateQuoteWorkItemQuantity,
   updateQuoteWorkItemUnit,
+  updateQuoteWorkItemDetails,
 } from "./quotes/quoteWorkState";
 
 function getProjectMeta(unitType: QuoteUnitType) {
@@ -73,6 +76,13 @@ export default function ManagerQuotesScreen() {
   const [customQuantity, setCustomQuantity] = useState("1");
   const [customUnit, setCustomUnit] = useState("pcs");
   const [customUnitPrice, setCustomUnitPrice] = useState("0");
+  const [editItemModalVisible, setEditItemModalVisible] = useState(false);
+  const [editGroupId, setEditGroupId] = useState("");
+  const [editItemId, setEditItemId] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editQuantity, setEditQuantity] = useState("1");
+  const [editUnit, setEditUnit] = useState("pcs");
+  const [editUnitPrice, setEditUnitPrice] = useState("0");
 
   const quoteFilterQuery = useQuery({
     queryKey: ["manager", "quotes", projectType, propertyType, unitType],
@@ -105,6 +115,34 @@ export default function ManagerQuotesScreen() {
     () => getQuoteCatalog(projectType, propertyType, unitType),
     [projectType, propertyType, unitType],
   );
+  const backendQuotes = quoteFilterQuery.data?.quotes ?? [];
+
+  const backendWorkGroups = useMemo(
+    () =>
+      backendQuotes.map((quote, index) => ({
+        id: quote.id,
+        title: quote.title,
+        expanded: index === 0,
+        items: [
+          {
+            id: quote.id,
+            title: quote.title,
+            quantity: String(quote.quantity ?? 0),
+            unitOptions: [{ unit: quote.unit ?? "pcs", price: quote.unitPrice ?? 0 }],
+            selectedUnit: quote.unit ?? "pcs",
+            selectedUnitPrice: quote.unitPrice ?? 0,
+            selected: true,
+            isCustom: quote.isCustom,
+          },
+        ],
+      })),
+    [backendQuotes],
+  );
+
+  useEffect(() => {
+    if (step !== 2 || backendWorkGroups.length === 0) return;
+    setWorkGroups(backendWorkGroups);
+  }, [backendWorkGroups, step]);
   const estimate = useMemo(
     () => getQuoteEstimate(projectType, propertyType, unitType),
     [projectType, propertyType, unitType],
@@ -198,6 +236,37 @@ export default function ManagerQuotesScreen() {
     setCustomItemModalVisible(false);
   };
 
+  const handleOpenEditItem = (groupId: string, itemId: string) => {
+    const currentGroup = workGroups.find((group) => group.id === groupId);
+    const currentItem = currentGroup?.items.find((item) => item.id === itemId);
+    if (!currentItem) return;
+
+    setEditGroupId(groupId);
+    setEditItemId(itemId);
+    setEditTitle(currentItem.title);
+    setEditQuantity(currentItem.quantity);
+    setEditUnit(currentItem.selectedUnit);
+    setEditUnitPrice(String(currentItem.selectedUnitPrice));
+    setEditItemModalVisible(true);
+  };
+
+  const handleSaveEditItem = () => {
+    if (!editTitle.trim()) {
+      Alert.alert("Missing Service Name", "Enter a service name for the item.");
+      return;
+    }
+
+    setWorkGroups((current) =>
+      updateQuoteWorkItemDetails(current, editGroupId, editItemId, {
+        title: editTitle,
+        quantity: editQuantity,
+        unit: editUnit,
+        unitPrice: editUnitPrice,
+      }),
+    );
+    setEditItemModalVisible(false);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
@@ -252,7 +321,7 @@ export default function ManagerQuotesScreen() {
               subtotal={subtotal}
               itemsSelected={itemsSelected}
               estimatedTotal={subtotal}
-              backendQuotes={(quoteFilterQuery.data as { quotes?: Array<{ id: string; title: string; projectType: string; propertyType: string; unitType: string; quantity: number; unit: string | null; unitPrice: number; subtotal: number; notes: string | null; isCustom: boolean; }> } | undefined)?.quotes ?? []}
+              backendQuotes={backendQuotes}
               onAddCustomItem={() => setCustomItemModalVisible(true)}
               onToggleGroup={(groupId) =>
                 setWorkGroups((current) => toggleQuoteWorkGroup(current, groupId))
@@ -262,6 +331,7 @@ export default function ManagerQuotesScreen() {
                   toggleQuoteWorkItem(current, groupId, itemId),
                 )
               }
+              onEditItem={handleOpenEditItem}
               onChangeItemQuantity={(groupId, itemId, value) =>
                 setWorkGroups((current) =>
                   updateQuoteWorkItemQuantity(current, groupId, itemId, value),
@@ -330,6 +400,20 @@ export default function ManagerQuotesScreen() {
         onChangeUnitPrice={setCustomUnitPrice}
         onClose={() => setCustomItemModalVisible(false)}
         onAdd={handleAddCustomItem}
+      />
+
+      <EditQuoteItemModal
+        visible={editItemModalVisible}
+        title={editTitle}
+        quantity={editQuantity}
+        unit={editUnit}
+        unitPrice={editUnitPrice}
+        onChangeTitle={setEditTitle}
+        onChangeQuantity={setEditQuantity}
+        onChangeUnit={setEditUnit}
+        onChangeUnitPrice={setEditUnitPrice}
+        onClose={() => setEditItemModalVisible(false)}
+        onSave={handleSaveEditItem}
       />
     </SafeAreaView>
   );
