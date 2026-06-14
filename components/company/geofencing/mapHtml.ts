@@ -20,6 +20,13 @@ export function generateMapHTML(
       }
       body {
         background: #eef2f6;
+        overflow: hidden;
+        overscroll-behavior: none;
+        touch-action: none;
+      }
+      #map {
+        touch-action: none;
+        -ms-touch-action: none;
       }
       .leaflet-control-zoom {
         transform: scale(0.9);
@@ -130,6 +137,11 @@ export function generateMapHTML(
       const map = L.map("map", {
         zoomControl: true,
         attributionControl: false,
+        dragging: true,
+        scrollWheelZoom: true,
+        doubleClickZoom: true,
+        boxZoom: false,
+        keyboard: false,
       }).setView([${userLat}, ${userLng}], 17);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
