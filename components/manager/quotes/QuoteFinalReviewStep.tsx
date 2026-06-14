@@ -18,6 +18,7 @@ type QuoteFinalReviewStepProps = {
   propertyType: QuotePropertyType;
   unitType: QuoteUnitType;
   estimate: QuoteEstimate;
+  estimatedTime: string;
   workGroups: QuoteSelectedWorkGroup[];
   subtotal: number;
   itemsSelected: number;
@@ -72,6 +73,7 @@ export default function QuoteFinalReviewStep({
   propertyType,
   unitType,
   estimate,
+  estimatedTime,
   workGroups,
   subtotal,
   itemsSelected,
@@ -96,32 +98,29 @@ export default function QuoteFinalReviewStep({
   return (
     <>
       <QuoteReviewCard title="Quote Summary" onEdit={onEditSummary}>
-        <Text className="text-[14px] leading-7 text-[#66707B]">
-          Review and finalize the project quote
-        </Text>
-        <View className="mt-5">
+     
+        <View className="mt-1">
           <DetailRow
             icon="business-outline"
             label="Client"
-            value={clientName || "Acme Construction Ltd."}
+            value={clientName }
           />
           <DetailRow
             icon="location-outline"
             label="Project Address"
             value={
-              projectAddress || "1234 Maple Street, Downtown District, CA 90210"
+              projectAddress
             }
           />
           <DetailRow
             icon="document-text-outline"
             label="Project Details"
-            value={projectDetailsLabel}
-            subvalue={projectMetaLabel}
+              value={`${projectType} • ${propertyType} • ${unitType}`}
           />
           <DetailRow
             icon="calendar-outline"
             label="Estimated Timeline"
-            value={estimate.timeline}
+            value={estimatedTime }
           />
         </View>
       </QuoteReviewCard>
@@ -208,7 +207,7 @@ export default function QuoteFinalReviewStep({
         <DetailRow
           icon="calendar-outline"
           label="Estimated Timeline"
-          value={estimate.timeline}
+          value={estimatedTime }
         />
         <DetailRow
           icon="document-text-outline"

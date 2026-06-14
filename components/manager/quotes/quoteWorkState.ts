@@ -14,7 +14,7 @@ function mapItem(item: QuoteWorkItemTemplate): QuoteSelectedWorkItem {
     unitOptions: item.unitOptions,
     selectedUnit: item.unitOptions[0].unit,
     selectedUnitPrice: item.unitOptions[0].price,
-    selected: true,
+    selected: false,
   };
 }
 
@@ -118,19 +118,22 @@ export function updateQuoteWorkItemDetails(
 ): QuoteSelectedWorkGroup[] {
   const quantityValue = Number(updates.quantity) || 0;
   const unitPriceValue = Number(updates.unitPrice) || 0;
+  const nextTitle = updates.title.trim() || "";
+  const nextUnit = updates.unit.trim() || "pcs";
 
   return groups.map((group) =>
     group.id === groupId
       ? {
           ...group,
+          title: nextTitle || group.title,
           items: group.items.map((item) =>
             item.id === itemId
               ? {
                   ...item,
-                  title: updates.title.trim() || item.title,
+                  title: nextTitle || item.title,
                   quantity: String(quantityValue),
-                  unitOptions: [{ unit: updates.unit.trim() || "pcs", price: unitPriceValue }],
-                  selectedUnit: updates.unit.trim() || "pcs",
+                  unitOptions: [{ unit: nextUnit, price: unitPriceValue }],
+                  selectedUnit: nextUnit,
                   selectedUnitPrice: unitPriceValue,
                 }
               : item,

@@ -12,12 +12,17 @@ import type {
 type QuoteBuilderFormProps = {
   clientName: string;
   setClientName: (value: string) => void;
+  defaultClientName: string;
   projectAddress: string;
   setProjectAddress: (value: string) => void;
   phoneNumber: string;
   setPhoneNumber: (value: string) => void;
+  defaultPhone: string;
   email: string;
   setEmail: (value: string) => void;
+  defaultEmail: string;
+  estimatedTime: string;
+  setEstimatedTime: (value: string) => void;
   projectType: QuoteProjectType;
   setProjectType: (value: QuoteProjectType) => void;
   propertyType: QuotePropertyType;
@@ -30,12 +35,17 @@ type QuoteBuilderFormProps = {
 export default function QuoteBuilderForm({
   clientName,
   setClientName,
+  defaultClientName,
   projectAddress,
   setProjectAddress,
   phoneNumber,
   setPhoneNumber,
+  defaultPhone,
   email,
   setEmail,
+  defaultEmail,
+  estimatedTime,
+  setEstimatedTime,
   projectType,
   setProjectType,
   propertyType,
@@ -50,7 +60,7 @@ export default function QuoteBuilderForm({
         <QuoteField
           label="Client Name *"
           placeholder="Roky Islam"
-          value={clientName}
+          value={clientName || defaultClientName}
           onChangeText={setClientName}
         />
         <QuoteField
@@ -63,14 +73,20 @@ export default function QuoteBuilderForm({
         <QuoteField
           label="Phone Number"
           placeholder="+880123456789"
-          value={phoneNumber}
+          value={phoneNumber || defaultPhone}
           onChangeText={setPhoneNumber}
         />
         <QuoteField
           label="Email"
           placeholder="Enter your mail"
-          value={email}
+          value={email || defaultEmail}
           onChangeText={setEmail}
+        />
+        <QuoteField
+          label="Estimated Time"
+          placeholder="e.g. 6 - 9 weeks"
+          value={estimatedTime}
+          onChangeText={setEstimatedTime}
         />
       </QuoteSectionCard>
 

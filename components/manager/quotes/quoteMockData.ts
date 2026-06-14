@@ -201,7 +201,7 @@ export const quotePricingMap: QuotePricingMap = {
       House: {
         title: "New Build Residential House Estimate",
         subtitle: "Pricing based on new residential house construction.",
-        timeline: "14 - 18 weeks",
+        timeline: "",
         lineItems: [
           { label: "Structural work", amount: 18500 },
           { label: "Electrical installation", amount: 6200 },
@@ -211,7 +211,7 @@ export const quotePricingMap: QuotePricingMap = {
       Apartment: {
         title: "New Build Residential Apartment Estimate",
         subtitle: "Pricing based on new residential apartment work.",
-        timeline: "10 - 14 weeks",
+        timeline: "",
         lineItems: [
           { label: "Core construction", amount: 15600 },
           { label: "Electrical and HVAC", amount: 7100 },
@@ -223,7 +223,7 @@ export const quotePricingMap: QuotePricingMap = {
       House: {
         title: "New Build Commercial House Estimate",
         subtitle: "Pricing based on new commercial house development.",
-        timeline: "15 - 19 weeks",
+        timeline: "",
         lineItems: [
           { label: "Shell construction", amount: 19800 },
           { label: "Systems integration", amount: 7700 },
@@ -233,7 +233,7 @@ export const quotePricingMap: QuotePricingMap = {
       Apartment: {
         title: "New Build Commercial Apartment Estimate",
         subtitle: "Pricing based on new commercial apartment development.",
-        timeline: "13 - 17 weeks",
+        timeline: "",
         lineItems: [
           { label: "Concrete and framing", amount: 22100 },
           { label: "Vertical systems", amount: 9800 },
@@ -247,7 +247,7 @@ export const quotePricingMap: QuotePricingMap = {
       House: {
         title: "Renovations Residential House Estimate",
         subtitle: "Pricing based on residential house renovation.",
-        timeline: "5 - 8 weeks",
+        timeline: "",
         lineItems: [
           { label: "Demolition and prep", amount: 4200 },
           { label: "Electrical rework", amount: 3600 },
@@ -257,7 +257,7 @@ export const quotePricingMap: QuotePricingMap = {
       Apartment: {
         title: "Renovations Residential Apartment Estimate",
         subtitle: "Pricing based on apartment renovation.",
-        timeline: "4 - 7 weeks",
+        timeline: "",
         lineItems: [
           { label: "Interior strip-out", amount: 3500 },
           { label: "MEP upgrades", amount: 3900 },
@@ -269,7 +269,7 @@ export const quotePricingMap: QuotePricingMap = {
       House: {
         title: "Renovations Commercial House Estimate",
         subtitle: "Pricing based on commercial house renovation.",
-        timeline: "7 - 10 weeks",
+        timeline: "",
         lineItems: [
           { label: "Reinforcement works", amount: 6400 },
           { label: "Power and lighting", amount: 5200 },
@@ -279,7 +279,7 @@ export const quotePricingMap: QuotePricingMap = {
       Apartment: {
         title: "Renovations Commercial Apartment Estimate",
         subtitle: "Pricing based on commercial apartment upgrade.",
-        timeline: "6 - 9 weeks",
+        timeline: "",
         lineItems: [
           { label: "Structure refresh", amount: 7100 },
           { label: "MEP modernization", amount: 6400 },
