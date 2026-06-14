@@ -14,8 +14,26 @@ export type QuoteSelectedWorkItem = {
   isCustom?: boolean;
 };
 
+type BackendQuoteItem = {
+  id: string;
+  title: string;
+  projectType: string;
+  propertyType: string;
+  unitType: string;
+  quantity: number;
+  unit: string | null;
+  unitPrice: number;
+  subtotal: number;
+  notes: string | null;
+  isCustom: boolean;
+  unitOptions?: QuoteUnitOption[];
+  selectedUnit?: string;
+  selectedUnitPrice?: number;
+  selected?: boolean;
+};
+
 type QuoteWorkItemCardProps = {
-  item: QuoteSelectedWorkItem;
+  item: QuoteSelectedWorkItem | BackendQuoteItem;
   onToggle: () => void;
   onChangeQuantity: (value: string) => void;
   onSelectUnit: (unit: string) => void;
@@ -34,33 +52,45 @@ export default function QuoteWorkItemCard({
   onChangeQuantity,
   onSelectUnit,
 }: QuoteWorkItemCardProps) {
-  const quantity = Number(item.quantity) || 0;
-  const subtotal = quantity * item.selectedUnitPrice;
-  const currentUnitIndex = item.unitOptions.findIndex(
-    (option) => option.unit === item.selectedUnit,
+  const unitOptions = "unitOptions" in item ? item.unitOptions ?? [] : [];
+  const selectedUnit =
+    "selectedUnit" in item ? item.selectedUnit ?? "" : item.unit ?? "";
+  const selectedUnitPrice =
+    "selectedUnitPrice" in item
+      ? item.selectedUnitPrice ?? 0
+      : item.unitPrice ?? 0;
+  const quantityValue =
+    "quantity" in item ? String(item.quantity ?? 0) : "0";
+  const selected = "selected" in item ? item.selected ?? false : true;
+
+  const quantity = Number(quantityValue) || 0;
+  const subtotal = quantity * selectedUnitPrice;
+  const currentUnitIndex = unitOptions.findIndex(
+    (option) => option.unit === selectedUnit,
   );
 
+
   const handleUnitPress = () => {
-    if (!item.unitOptions.length) return;
+    if (!unitOptions.length) return;
     const nextIndex =
       currentUnitIndex >= 0
-        ? (currentUnitIndex + 1) % item.unitOptions.length
+        ? (currentUnitIndex + 1) % unitOptions.length
         : 0;
-    onSelectUnit(item.unitOptions[nextIndex].unit);
+    onSelectUnit(unitOptions[nextIndex].unit);
   };
 
   return (
     <View className="mb-3 rounded-[12px] border border-[#E6EBF1] bg-white p-3">
       <View className="mb-4 flex-row items-start justify-between">
         <Text className="flex-1 pr-3 text-[16px] font-medium text-[#1F2937]">
-          {item.title}
+          Edit
         </Text>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onToggle}
           className="h-5 w-5 items-center justify-center rounded-[4px] border border-[#C7D1DB] bg-white"
         >
-          {item.selected ? (
+          {selected ? (
             <Ionicons name="checkmark" size={14} color="#98A2B3" />
           ) : null}
         </TouchableOpacity>
@@ -70,7 +100,7 @@ export default function QuoteWorkItemCard({
         Quantity
       </Text>
       <TextInput
-        value={item.quantity}
+        value={quantityValue}
         onChangeText={onChangeQuantity}
         keyboardType="decimal-pad"
         className="mb-4 h-[58px] rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4 text-[18px] text-[#667085]"
@@ -82,8 +112,8 @@ export default function QuoteWorkItemCard({
         onPress={handleUnitPress}
         className="mb-4 h-[58px] flex-row items-center justify-between rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4"
       >
-        <Text className="text-[18px] text-[#667085]">{item.selectedUnit}</Text>
-        {item.unitOptions.length > 1 ? (
+        <Text className="text-[18px] text-[#667085]">{selectedUnit}</Text>
+        {unitOptions.length > 1 ? (
           <Ionicons name="chevron-down" size={18} color="#98A2B3" />
         ) : null}
       </TouchableOpacity>
@@ -93,7 +123,7 @@ export default function QuoteWorkItemCard({
       </Text>
       <View className="mb-4 h-[58px] justify-center rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4">
         <Text className="text-[18px] text-[#667085]">
-          {formatUnitPrice(item.selectedUnitPrice)}
+          {formatUnitPrice(selectedUnitPrice)}
         </Text>
       </View>
 
