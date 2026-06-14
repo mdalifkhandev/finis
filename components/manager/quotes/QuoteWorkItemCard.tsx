@@ -36,6 +36,7 @@ type QuoteWorkItemCardProps = {
   item: QuoteSelectedWorkItem | BackendQuoteItem;
   onToggle: () => void;
   onEdit: () => void;
+  onDelete: () => void;
   onChangeQuantity: (value: string) => void;
   onSelectUnit: (unit: string) => void;
 };
@@ -51,6 +52,7 @@ export default function QuoteWorkItemCard({
   item,
   onToggle,
   onEdit,
+  onDelete,
   onChangeQuantity,
   onSelectUnit,
 }: QuoteWorkItemCardProps) {
@@ -83,21 +85,38 @@ export default function QuoteWorkItemCard({
 
   return (
     <View className="mb-3 rounded-[12px] border border-[#E6EBF1] bg-white p-3">
-      <View className="mb-4 flex-row items-start justify-between">
-        <TouchableOpacity activeOpacity={0.8} onPress={onEdit} className="flex-1 pr-3">
-          <Text className="text-[16px] font-medium text-[#1F2937]">
-          Edit
+      <View className="mb-4 flex-row items-center justify-between">
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={onEdit}
+          className="flex-1 rounded-[10px] bg-[#F3F7FA] px-3 py-2"
+        >
+          <Text className="text-[14px] font-medium text-[#1F2937]">
+            Edit Item
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
+
+        <View className="ml-2 flex-row items-center gap-2">
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={onDelete}
+            className="h-9 w-9 items-center justify-center rounded-[10px] bg-[#FEE2E2]"
+          >
+            <Ionicons name="trash-outline" size={16} color="#B42318" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
           activeOpacity={0.85}
           onPress={onToggle}
-          className="h-5 w-5 items-center justify-center rounded-[4px] border border-[#C7D1DB] bg-white"
-        >
-          {selected ? (
-            <Ionicons name="checkmark" size={14} color="#98A2B3" />
-          ) : null}
-        </TouchableOpacity>
+            className="h-9 w-9 items-center justify-center rounded-[10px] border border-[#C7D1DB] bg-white"
+          >
+            {selected ? (
+              <Ionicons name="checkmark" size={16} color="#1F5577" />
+            ) : (
+              <Ionicons name="add" size={16} color="#98A2B3" />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text className="mb-2 text-[12px] font-medium text-[#344054]">

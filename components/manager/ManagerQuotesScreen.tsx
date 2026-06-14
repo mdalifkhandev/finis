@@ -3,7 +3,12 @@ import { useEffect } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getManagerQuotes, updateManagerQuote } from "@/api/manager/quotes.api";
+import {
+  createManagerQuote,
+  deleteManagerQuote,
+  getManagerQuotes,
+  updateManagerQuote,
+} from "@/api/manager/quotes.api";
 import { useAuthStore } from "@/store/auth.store";
 import AddCustomQuoteItemModal from "./quotes/AddCustomQuoteItemModal";
 import ApplyDiscountModal from "./quotes/ApplyDiscountModal";
@@ -26,6 +31,7 @@ import {
   addCustomQuoteWorkItem,
   buildQuoteSelectedWorkGroups,
   calculateQuoteWorkTotals,
+  deleteQuoteWorkItem,
   toggleQuoteWorkGroup,
   toggleQuoteWorkItem,
   updateQuoteWorkItemQuantity,
@@ -99,21 +105,6 @@ export default function ManagerQuotesScreen() {
     enabled: step === 1,
   });
 
-  // React.useEffect(() => {
-  //   if (step !== 1) return;
-  //   if (quoteFilterQuery.data !== undefined) {
-  //     console.log("[ManagerQuotes] filtered quotes:", quoteFilterQuery.data);
-  //   }
-  // }, [quoteFilterQuery.data, step]);
-
-  // React.useEffect(() => {
-  //   if (step !== 1) return;
-  //   console.log("[ManagerQuotes] filter params:", {
-  //     projectType,
-  //     propertyType,
-  //     unitType,
-  //   });
-  // }, [projectType, propertyType, step, unitType]);
 
   const catalog = useMemo(
     () => getQuoteCatalog(projectType, propertyType, unitType),
@@ -228,20 +219,48 @@ export default function ManagerQuotesScreen() {
       return;
     }
 
-    setWorkGroups((current) =>
-      addCustomQuoteWorkItem(
-        current,
-        customTitle,
-        customQuantity,
-        customUnit,
-        customUnitPrice,
-      ),
-    );
-    setCustomTitle("");
-    setCustomQuantity("1");
-    setCustomUnit("pcs");
-    setCustomUnitPrice("0");
-    setCustomItemModalVisible(false);
+    const nextQuantity = Number(customQuantity) || 1;
+    const nextUnitPrice = Number(customUnitPrice) || 0;
+
+    createManagerQuote({
+      projectType: projectType.toLowerCase(),
+      propertyType: propertyType.toLowerCase(),
+      unitType: unitType.toLowerCase(),
+      title: customTitle.trim(),
+      quantity: nextQuantity,
+      unit: customUnit.trim() || "pcs",
+      unitPrice: nextUnitPrice,
+      notes: "",
+      isCustom: true,
+    })
+      .then((createdQuote) => {
+        setWorkGroups((current) =>
+          addCustomQuoteWorkItem(
+            current,
+            createdQuote.title,
+            String(createdQuote.quantity),
+            createdQuote.unit ?? "pcs",
+            String(createdQuote.unitPrice),
+          ),
+        );
+        void queryClient.fetchQuery({
+          queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+          queryFn: () =>
+            getManagerQuotes({
+              projectType,
+              propertyType,
+              unitType,
+            }),
+        });
+        setCustomTitle("");
+        setCustomQuantity("1");
+        setCustomUnit("pcs");
+        setCustomUnitPrice("0");
+        setCustomItemModalVisible(false);
+      })
+      .catch(() => {
+        Alert.alert("Create Error", "Unable to add the custom item right now.");
+      });
   };
 
   const handleOpenEditItem = (groupId: string, itemId: string) => {
@@ -256,6 +275,36 @@ export default function ManagerQuotesScreen() {
     setEditUnit(currentItem.selectedUnit);
     setEditUnitPrice(String(currentItem.selectedUnitPrice));
     setEditItemModalVisible(true);
+  };
+
+  const handleDeleteItem = (groupId: string, itemId: string) => {
+    Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          deleteManagerQuote(itemId)
+            .then(() => {
+              setWorkGroups((current) =>
+                deleteQuoteWorkItem(current, groupId, itemId),
+              );
+              void queryClient.fetchQuery({
+                queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+                queryFn: () =>
+                  getManagerQuotes({
+                    projectType,
+                    propertyType,
+                    unitType,
+                  }),
+              });
+            })
+            .catch(() => {
+              Alert.alert("Delete Error", "Unable to delete the quote item.");
+            });
+        },
+      },
+    ]);
   };
 
   const handleSaveEditItem = () => {
@@ -283,8 +332,14 @@ export default function ManagerQuotesScreen() {
             unitPrice: String(updatedQuote.unitPrice),
           }),
         );
-        queryClient.invalidateQueries({
+        void queryClient.fetchQuery({
           queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+          queryFn: () =>
+            getManagerQuotes({
+              projectType,
+              propertyType,
+              unitType,
+            }),
         });
         setEditItemModalVisible(false);
       })
@@ -365,6 +420,7 @@ export default function ManagerQuotesScreen() {
                 )
               }
               onEditItem={handleOpenEditItem}
+              onDeleteItem={handleDeleteItem}
               onChangeItemQuantity={(groupId, itemId, value) =>
                 setWorkGroups((current) =>
                   updateQuoteWorkItemQuantity(current, groupId, itemId, value),
@@ -386,7 +442,7 @@ export default function ManagerQuotesScreen() {
               propertyType={propertyType}
               unitType={unitType}
               estimate={estimate}
-              estimatedTime={estimatedTime || estimate.timeline}
+              estimatedTime={estimatedTime }
               workGroups={workGroups}
               subtotal={subtotal}
               itemsSelected={itemsSelected}

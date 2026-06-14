@@ -44,8 +44,6 @@ export default function QuoteBuilderForm({
   email,
   setEmail,
   defaultEmail,
-  estimatedTime,
-  setEstimatedTime,
   projectType,
   setProjectType,
   propertyType,
@@ -82,12 +80,7 @@ export default function QuoteBuilderForm({
           value={email || defaultEmail}
           onChangeText={setEmail}
         />
-        <QuoteField
-          label="Estimated Time"
-          placeholder="e.g. 6 - 9 weeks"
-          value={estimatedTime}
-          onChangeText={setEstimatedTime}
-        />
+
       </QuoteSectionCard>
 
       <QuoteSectionCard title="Project Details" icon="home-outline">

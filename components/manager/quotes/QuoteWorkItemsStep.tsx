@@ -18,6 +18,7 @@ type QuoteWorkItemsStepProps = {
   onToggleGroup: (groupId: string) => void;
   onToggleItem: (groupId: string, itemId: string) => void;
   onEditItem: (groupId: string, itemId: string) => void;
+  onDeleteItem: (groupId: string, itemId: string) => void;
   onChangeItemQuantity: (
     groupId: string,
     itemId: string,
@@ -42,6 +43,7 @@ export default function QuoteWorkItemsStep({
   onToggleGroup,
   onToggleItem,
   onEditItem,
+  onDeleteItem,
   onChangeItemQuantity,
   onSelectItemUnit,
   onAddCustomItem,
@@ -80,6 +82,7 @@ export default function QuoteWorkItemsStep({
           onToggleGroup={() => onToggleGroup(group.id)}
           onToggleItem={(itemId) => onToggleItem(group.id, itemId)}
           onEditItem={(itemId) => onEditItem(group.id, itemId)}
+          onDeleteItem={(itemId) => onDeleteItem(group.id, itemId)}
           onChangeItemQuantity={(itemId, value) =>
             onChangeItemQuantity(group.id, itemId, value)
           }
