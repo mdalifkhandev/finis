@@ -46,6 +46,8 @@ export default function GeofencingRoute() {
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   const socketRef = React.useRef<Socket | null>(null);
+  const hasInitializedProjectRef = React.useRef(false);
+  const draftPointsByProjectRef = React.useRef<Record<string, Array<{ lat: number; lng: number }>>>({});
 
   const visibleProjects = React.useMemo(() => {
     if (!companyId) {
@@ -58,15 +60,15 @@ export default function GeofencingRoute() {
   React.useEffect(() => {
     if (visibleProjects.length === 0) {
       setSelectedProjectId(undefined);
-      setDraftPoints([]);
+      hasInitializedProjectRef.current = false;
       return;
     }
 
     const selectedProjectExists = visibleProjects.some((project) => project.id === selectedProjectId);
 
-    if (!selectedProjectId || !selectedProjectExists) {
+    if (!hasInitializedProjectRef.current || (!selectedProjectId && !selectedProjectExists)) {
       setSelectedProjectId(visibleProjects[0].id);
-      setDraftPoints([]);
+      hasInitializedProjectRef.current = true;
     }
   }, [visibleProjects, selectedProjectId]);
 
@@ -140,6 +142,11 @@ export default function GeofencingRoute() {
       socketRef.current = null;
     };
   }, [selectedProjectId, token]);
+
+  React.useEffect(() => {
+    if (!selectedProjectId) return;
+    setDraftPoints(draftPointsByProjectRef.current[selectedProjectId] ?? []);
+  }, [selectedProjectId]);
 
   const selectedProject = visibleProjects.find((project) => project.id === selectedProjectId);
   const geofencesQuery = useProjectGeofencesQuery(selectedProjectId);
@@ -312,12 +319,18 @@ export default function GeofencingRoute() {
                     payload: zonePayload,
                   }).then(() => {
                     setDraftPoints([]);
+                    if (selectedProjectId) {
+                      draftPointsByProjectRef.current[selectedProjectId] = [];
+                    }
                   });
                   return;
                 }
 
                 void createGeofenceMutation.mutateAsync(zonePayload).then(() => {
                   setDraftPoints([]);
+                  if (selectedProjectId) {
+                    draftPointsByProjectRef.current[selectedProjectId] = [];
+                  }
                 });
               }}
               className={`h-[48px] items-center justify-center rounded-[12px] ${
@@ -458,9 +471,12 @@ export default function GeofencingRoute() {
                       key={project.id}
                       activeOpacity={0.85}
                       onPress={() => {
+                        if (selectedProjectId) {
+                          draftPointsByProjectRef.current[selectedProjectId] = draftPoints;
+                        }
                         setSelectedProjectId(project.id);
                         setIsProjectSheetVisible(false);
-                        setDraftPoints([]);
+                        hasInitializedProjectRef.current = true;
                       }}
                       className={`mb-3 rounded-[12px] border px-4 py-4 ${
                         isSelected
