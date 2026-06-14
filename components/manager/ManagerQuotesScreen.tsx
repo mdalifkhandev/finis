@@ -2,8 +2,9 @@ import React, { useMemo, useState } from "react";
 import { useEffect } from "react";
 import { Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useQuery } from "@tanstack/react-query";
-import { getManagerQuotes } from "@/api/manager/quotes.api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getManagerQuotes, updateManagerQuote } from "@/api/manager/quotes.api";
+import { useAuthStore } from "@/store/auth.store";
 import AddCustomQuoteItemModal from "./quotes/AddCustomQuoteItemModal";
 import ApplyDiscountModal from "./quotes/ApplyDiscountModal";
 import EditQuoteItemModal from "./quotes/EditQuoteItemModal";
@@ -53,11 +54,14 @@ function getValidUntilLabel() {
 }
 
 export default function ManagerQuotesScreen() {
+  const queryClient = useQueryClient();
+  const currentUser = useAuthStore((state) => state.user);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [clientName, setClientName] = useState("");
   const [projectAddress, setProjectAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
+  const [estimatedTime, setEstimatedTime] = useState("");
   const [projectType, setProjectType] =
     useState<QuoteProjectType>("New Build");
   const [propertyType, setPropertyType] =
@@ -115,6 +119,9 @@ export default function ManagerQuotesScreen() {
     () => getQuoteCatalog(projectType, propertyType, unitType),
     [projectType, propertyType, unitType],
   );
+  const defaultClientName = currentUser?.fullName || currentUser?.name || "Walk-in Client";
+  const defaultEmail = currentUser?.email || "";
+  const defaultPhone = currentUser?.phone || "";
   const backendQuotes = quoteFilterQuery.data?.quotes ?? [];
 
   const backendWorkGroups = useMemo(
@@ -131,7 +138,7 @@ export default function ManagerQuotesScreen() {
             unitOptions: [{ unit: quote.unit ?? "pcs", price: quote.unitPrice ?? 0 }],
             selectedUnit: quote.unit ?? "pcs",
             selectedUnitPrice: quote.unitPrice ?? 0,
-            selected: true,
+            selected: false,
             isCustom: quote.isCustom,
           },
         ],
@@ -169,6 +176,7 @@ export default function ManagerQuotesScreen() {
     propertyType,
     unitType,
     estimate,
+    estimatedTime: estimatedTime || "",
     projectMetaLabel,
     validUntilLabel,
     workGroups,
@@ -256,15 +264,33 @@ export default function ManagerQuotesScreen() {
       return;
     }
 
-    setWorkGroups((current) =>
-      updateQuoteWorkItemDetails(current, editGroupId, editItemId, {
-        title: editTitle,
-        quantity: editQuantity,
-        unit: editUnit,
-        unitPrice: editUnitPrice,
-      }),
-    );
-    setEditItemModalVisible(false);
+    const nextQuantity = Number(editQuantity) || 0;
+    const nextUnitPrice = Number(editUnitPrice) || 0;
+
+    updateManagerQuote(editItemId, {
+      title: editTitle,
+      quantity: nextQuantity,
+      unit: editUnit,
+      unitPrice: nextUnitPrice,
+      isCustom: true,
+    })
+      .then((updatedQuote) => {
+        setWorkGroups((current) =>
+          updateQuoteWorkItemDetails(current, editGroupId, editItemId, {
+            title: updatedQuote.title,
+            quantity: String(updatedQuote.quantity),
+            unit: updatedQuote.unit ?? "pcs",
+            unitPrice: String(updatedQuote.unitPrice),
+          }),
+        );
+        queryClient.invalidateQueries({
+          queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+        });
+        setEditItemModalVisible(false);
+      })
+      .catch(() => {
+        Alert.alert("Update Error", "Unable to save the quote update right now.");
+      });
   };
 
   return (
@@ -299,6 +325,11 @@ export default function ManagerQuotesScreen() {
               setPhoneNumber={setPhoneNumber}
               email={email}
               setEmail={setEmail}
+              defaultClientName={defaultClientName}
+              defaultPhone={defaultPhone}
+              defaultEmail={defaultEmail}
+              estimatedTime={estimatedTime}
+              setEstimatedTime={setEstimatedTime}
               projectType={projectType}
               setProjectType={(value) =>
                 syncCombination(value, propertyType, unitType)
@@ -321,6 +352,8 @@ export default function ManagerQuotesScreen() {
               subtotal={subtotal}
               itemsSelected={itemsSelected}
               estimatedTotal={subtotal}
+              estimatedTime={estimatedTime}
+              onChangeEstimatedTime={setEstimatedTime}
               backendQuotes={backendQuotes}
               onAddCustomItem={() => setCustomItemModalVisible(true)}
               onToggleGroup={(groupId) =>
@@ -347,12 +380,13 @@ export default function ManagerQuotesScreen() {
             />
           ) : (
             <QuoteFinalReviewStep
-              clientName={clientName}
-              projectAddress={projectAddress}
+              clientName={clientName || defaultClientName}
+              projectAddress={projectAddress || "Address pending"}
               projectType={projectType}
               propertyType={propertyType}
               unitType={unitType}
               estimate={estimate}
+              estimatedTime={estimatedTime || estimate.timeline}
               workGroups={workGroups}
               subtotal={subtotal}
               itemsSelected={itemsSelected}

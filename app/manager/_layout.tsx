@@ -42,7 +42,7 @@ export default function ManagerLayout() {
           marginTop: 4,
         },
         tabBarStyle: {
-          height: 82,
+          height: 89,
           paddingTop: 8,
           paddingBottom: 14,
           backgroundColor: "#ffffff",

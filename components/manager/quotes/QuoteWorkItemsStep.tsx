@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { Text, TextInput, TouchableOpacity } from "react-native";
 import QuoteSectionCard from "./QuoteSectionCard";
 import QuoteWorkGroupCard, {
   type BackendQuote,
@@ -27,6 +27,8 @@ type QuoteWorkItemsStepProps = {
   onAddCustomItem: () => void;
   onNext: () => void;
   onBack: () => void;
+  estimatedTime: string;
+  onChangeEstimatedTime: (value: string) => void;
   backendQuotes: BackendQuote[];
 };
 
@@ -45,6 +47,8 @@ export default function QuoteWorkItemsStep({
   onAddCustomItem,
   onNext,
   onBack,
+  estimatedTime,
+  onChangeEstimatedTime,
   backendQuotes,
 }: QuoteWorkItemsStepProps) {
   return (
@@ -84,6 +88,17 @@ export default function QuoteWorkItemsStep({
           }
         />
       ))}
+
+      <Text className="mb-2 mt-1 text-[12px] font-medium text-[#344054]">
+        Estimated Time
+      </Text>
+      <TextInput
+        value={estimatedTime}
+        onChangeText={onChangeEstimatedTime}
+        placeholder="e.g. 6 - 9 weeks"
+        placeholderTextColor="#98A2B3"
+        className="mb-4 h-[58px] rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4 text-[18px] text-[#667085]"
+      />
 
       <QuoteWorkTotalsBar
         itemsSelected={itemsSelected}

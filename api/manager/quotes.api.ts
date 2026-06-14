@@ -29,6 +29,18 @@ export type ManagerQuotesResponse = {
   requestedBy: string;
 };
 
+export type UpdateManagerQuotePayload = {
+  title?: string;
+  quantity?: number;
+  unit?: string;
+  unitPrice?: number;
+  notes?: string;
+  isCustom?: boolean;
+  projectType?: string;
+  propertyType?: string;
+  unitType?: string;
+};
+
 export async function getManagerQuotes(params?: {
   projectType?: string;
   propertyType?: string;
@@ -48,6 +60,23 @@ export async function getManagerQuotes(params?: {
 
   if (!data.success) {
     throw new Error(data.message || "Failed to load quotes");
+  }
+
+  return data.data;
+}
+
+export async function updateManagerQuote(
+  id: string,
+  payload: UpdateManagerQuotePayload,
+) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: ManagerQuote;
+  }>(`/manager/quotes/${id}`, payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update quote");
   }
 
   return data.data;
