@@ -105,6 +105,23 @@ export function updateQuoteWorkItemUnit(
   );
 }
 
+export function deleteQuoteWorkItem(
+  groups: QuoteSelectedWorkGroup[],
+  groupId: string,
+  itemId: string,
+): QuoteSelectedWorkGroup[] {
+  return groups
+    .map((group) =>
+      group.id === groupId
+        ? {
+            ...group,
+            items: group.items.filter((item) => item.id !== itemId),
+          }
+        : group,
+    )
+    .filter((group) => group.items.length > 0);
+}
+
 export function updateQuoteWorkItemDetails(
   groups: QuoteSelectedWorkGroup[],
   groupId: string,

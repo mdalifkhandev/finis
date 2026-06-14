@@ -31,6 +31,7 @@ type QuoteWorkGroupCardProps = {
   onToggleGroup: () => void;
   onToggleItem: (itemId: string) => void;
   onEditItem: (itemId: string) => void;
+  onDeleteItem: (itemId: string) => void;
   onChangeItemQuantity: (itemId: string, value: string) => void;
   onSelectItemUnit: (itemId: string, unit: string) => void;
 };
@@ -40,6 +41,7 @@ export default function QuoteWorkGroupCard({
   onToggleGroup,
   onToggleItem,
   onEditItem,
+  onDeleteItem,
   onChangeItemQuantity,
   onSelectItemUnit,
 }: QuoteWorkGroupCardProps) {
@@ -70,6 +72,7 @@ export default function QuoteWorkGroupCard({
               item={item}
               onToggle={() => onToggleItem(item.id)}
               onEdit={() => onEditItem(item.id)}
+              onDelete={() => onDeleteItem(item.id)}
               onChangeQuantity={(value) => onChangeItemQuantity(item.id, value)}
               onSelectUnit={(unit) => onSelectItemUnit(item.id, unit)}
             />

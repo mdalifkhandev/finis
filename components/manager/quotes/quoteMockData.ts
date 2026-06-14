@@ -10,7 +10,7 @@ export type QuoteLineItem = {
 export type QuoteEstimate = {
   title: string;
   subtitle: string;
-  timeline: string;
+  timeline?: string;
   lineItems: QuoteLineItem[];
 };
 

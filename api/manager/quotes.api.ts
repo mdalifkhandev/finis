@@ -41,6 +41,18 @@ export type UpdateManagerQuotePayload = {
   unitType?: string;
 };
 
+export type CreateManagerQuotePayload = {
+  projectType: string;
+  propertyType: string;
+  unitType: string;
+  title: string;
+  quantity?: number;
+  unit?: string;
+  unitPrice?: number;
+  notes?: string;
+  isCustom?: boolean;
+};
+
 export async function getManagerQuotes(params?: {
   projectType?: string;
   propertyType?: string;
@@ -80,4 +92,31 @@ export async function updateManagerQuote(
   }
 
   return data.data;
+}
+
+export async function createManagerQuote(payload: CreateManagerQuotePayload) {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    data: ManagerQuote;
+  }>("/manager/quotes", payload);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to create quote");
+  }
+
+  return data.data;
+}
+
+export async function deleteManagerQuote(id: string) {
+  const { data } = await api.delete<{
+    success: boolean;
+    message: string;
+  }>(`/manager/quotes/${id}`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete quote");
+  }
+
+  return data;
 }
