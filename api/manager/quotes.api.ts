@@ -1,5 +1,34 @@
 import { api } from "@/lib/api/client";
 
+export type ManagerQuote = {
+  id: string;
+  createdById: string;
+  projectType: string;
+  propertyType: string;
+  unitType: string;
+  title: string;
+  quantity: number;
+  unit: string | null;
+  unitPrice: number;
+  subtotal: number;
+  notes: string | null;
+  isCustom: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    role: string;
+  };
+};
+
+export type ManagerQuotesResponse = {
+  total: number;
+  quotes: ManagerQuote[];
+  requestedBy: string;
+};
+
 export async function getManagerQuotes(params?: {
   projectType?: string;
   propertyType?: string;
@@ -12,7 +41,7 @@ export async function getManagerQuotes(params?: {
   };
 
 
-  const { data } = await api.get<{ success: boolean; message: string; data: unknown }>(
+  const { data } = await api.get<{ success: boolean; message: string; data: ManagerQuotesResponse }>(
     "/manager/quotes",
     { params: normalizedParams },
   );

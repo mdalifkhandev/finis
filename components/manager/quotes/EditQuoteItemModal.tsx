@@ -1,0 +1,128 @@
+import React from "react";
+import {
+  Modal,
+  Pressable,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+type EditQuoteItemModalProps = {
+  visible: boolean;
+  title: string;
+  quantity: string;
+  unit: string;
+  unitPrice: string;
+  onChangeTitle: (value: string) => void;
+  onChangeQuantity: (value: string) => void;
+  onChangeUnit: (value: string) => void;
+  onChangeUnitPrice: (value: string) => void;
+  onClose: () => void;
+  onSave: () => void;
+};
+
+export default function EditQuoteItemModal({
+  visible,
+  title,
+  quantity,
+  unit,
+  unitPrice,
+  onChangeTitle,
+  onChangeQuantity,
+  onChangeUnit,
+  onChangeUnitPrice,
+  onClose,
+  onSave,
+}: EditQuoteItemModalProps) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
+      <Pressable
+        className="flex-1 items-center justify-center bg-black/30 px-6"
+        onPress={onClose}
+      >
+        <Pressable
+          onPress={(event) => event.stopPropagation()}
+          className="w-full max-w-[340px] rounded-[16px] bg-white p-4 shadow-lg"
+        >
+          <Text className="text-[16px] font-semibold text-[#1F2937]">
+            Edit Item
+          </Text>
+          <Text className="mt-1 text-[13px] leading-5 text-[#66707B]">
+            Update the item details using the current values.
+          </Text>
+
+          <View className="mt-4">
+            <Text className="mb-2 text-[12px] text-[#66707B]">Service Name</Text>
+            <TextInput
+              value={title}
+              onChangeText={onChangeTitle}
+              placeholder="Service name"
+              placeholderTextColor="#98A2B3"
+              className="h-[42px] rounded-[10px] border border-[#D9E1E8] bg-[#F7F9FB] px-3 text-[13px] text-[#1F2937]"
+            />
+          </View>
+
+          <View className="mt-3">
+            <Text className="mb-2 text-[12px] text-[#66707B]">Quantity</Text>
+            <TextInput
+              value={quantity}
+              onChangeText={onChangeQuantity}
+              keyboardType="decimal-pad"
+              placeholder="1"
+              placeholderTextColor="#98A2B3"
+              className="h-[42px] rounded-[10px] border border-[#D9E1E8] bg-[#F7F9FB] px-3 text-[13px] text-[#1F2937]"
+            />
+          </View>
+
+          <View className="mt-3">
+            <Text className="mb-2 text-[12px] text-[#66707B]">
+              Unit of Measurement
+            </Text>
+            <TextInput
+              value={unit}
+              onChangeText={onChangeUnit}
+              placeholder="pcs / ft / sqm / meter"
+              placeholderTextColor="#98A2B3"
+              className="h-[42px] rounded-[10px] border border-[#D9E1E8] bg-[#F7F9FB] px-3 text-[13px] text-[#1F2937]"
+            />
+          </View>
+
+          <View className="mt-3">
+            <Text className="mb-2 text-[12px] text-[#66707B]">Unit Price</Text>
+            <View className="h-[42px] flex-row items-center rounded-[10px] border border-[#D9E1E8] bg-[#F7F9FB] px-3">
+              <Text className="mr-2 text-[13px] text-[#98A2B3]">$</Text>
+              <TextInput
+                value={unitPrice}
+                onChangeText={onChangeUnitPrice}
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor="#98A2B3"
+                className="flex-1 text-[13px] text-[#1F2937]"
+              />
+            </View>
+          </View>
+
+          <View className="mt-4 flex-row gap-3">
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onClose}
+              className="h-[42px] flex-1 items-center justify-center rounded-[10px] border border-[#D5DDE6] bg-white"
+            >
+              <Text className="text-[13px] font-medium text-[#344054]">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onSave}
+              className="h-[42px] flex-1 items-center justify-center rounded-[10px] bg-[#1F5577]"
+            >
+              <Text className="text-[13px] font-medium text-white">Save</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}

@@ -35,6 +35,7 @@ type BackendQuoteItem = {
 type QuoteWorkItemCardProps = {
   item: QuoteSelectedWorkItem | BackendQuoteItem;
   onToggle: () => void;
+  onEdit: () => void;
   onChangeQuantity: (value: string) => void;
   onSelectUnit: (unit: string) => void;
 };
@@ -49,6 +50,7 @@ function formatUnitPrice(value: number) {
 export default function QuoteWorkItemCard({
   item,
   onToggle,
+  onEdit,
   onChangeQuantity,
   onSelectUnit,
 }: QuoteWorkItemCardProps) {
@@ -82,9 +84,11 @@ export default function QuoteWorkItemCard({
   return (
     <View className="mb-3 rounded-[12px] border border-[#E6EBF1] bg-white p-3">
       <View className="mb-4 flex-row items-start justify-between">
-        <Text className="flex-1 pr-3 text-[16px] font-medium text-[#1F2937]">
+        <TouchableOpacity activeOpacity={0.8} onPress={onEdit} className="flex-1 pr-3">
+          <Text className="text-[16px] font-medium text-[#1F2937]">
           Edit
-        </Text>
+          </Text>
+        </TouchableOpacity>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onToggle}
