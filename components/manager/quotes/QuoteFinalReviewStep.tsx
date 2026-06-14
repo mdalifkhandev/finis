@@ -139,18 +139,11 @@ export default function QuoteFinalReviewStep({
                   key={group.id}
                   className="mb-4 rounded-[16px] border border-[#E2E8F0] bg-white px-4 py-4"
                 >
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-[14px] font-medium text-[#1F2937]">
-                      {group.title}
-                    </Text>
-                    <Text className="text-[14px] font-medium text-[#1F2937]">
-                      {formatCurrency(groupTotal)}
-                    </Text>
-                  </View>
+            
                   {group.items.map((item) => (
                     <View
                       key={item.id}
-                      className="mt-4 flex-row items-start justify-between"
+                      className="flex-row items-start justify-between"
                     >
                       <View className="flex-1 pr-3">
                         <Text className="text-[13px] font-medium text-[#344054]">
