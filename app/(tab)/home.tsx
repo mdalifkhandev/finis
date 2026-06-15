@@ -104,6 +104,7 @@ export default function Home() {
           name={displayName}
           subtitle={subtitle}
           avatarUrl={avatarUrl}
+          onPressBell={() => router.push("/screens/notifications")}
           onPressAvatar={() => router.push("/screens/profile")}
         />
 

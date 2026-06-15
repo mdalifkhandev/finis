@@ -46,3 +46,4 @@ app-example
 config.bat
 
 .env
+google-services.json

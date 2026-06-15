@@ -210,6 +210,7 @@ export default function WorkerHome() {
           name={displayName}
           subtitle={subtitle}
           avatarUrl={avatarUrl}
+          onPressBell={() => router.push("/screens/notifications")}
           onPressAvatar={() => router.push("/worker/profile")}
         />
 

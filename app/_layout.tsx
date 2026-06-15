@@ -1,7 +1,16 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import messaging from "@react-native-firebase/messaging";
 import AppProviders from "@/components/providers/AppProviders";
 import "../global.css";
+
+messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+  console.log("[FCM] background message:", {
+    title: remoteMessage.notification?.title,
+    body: remoteMessage.notification?.body,
+    data: remoteMessage.data,
+  });
+});
 
 export default function RootLayout() {
   return (
