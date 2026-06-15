@@ -1,8 +1,16 @@
 import { useChatMessagesQuery, useSendChatMessageMutation } from "@/hooks/chat/chat";
 import { useAuthStore } from "@/store/auth.store";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
-import { Alert, ImageSourcePropType, ScrollView, View } from "react-native";
+import React, { useMemo, useRef, useState } from "react";
+import {
+  Alert,
+  ImageSourcePropType,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ChatAttachmentTray from "./ChatAttachmentTray";
 import ChatComposer from "./ChatComposer";
@@ -70,6 +78,8 @@ export default function ConversationScreen() {
   const userId = useAuthStore((state) => state.user?.id);
   const [messageText, setMessageText] = useState("");
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const messagesQuery = useChatMessagesQuery(threadId);
   const sendMessageMutation = useSendChatMessageMutation(threadId);
@@ -113,62 +123,109 @@ export default function ConversationScreen() {
     Alert.alert("Not available", "Attachment sending is not wired yet.");
   };
 
+  const scrollToBottom = (animated = false) => {
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollToEnd({ animated });
+    });
+  };
+
+  const handleContentSizeChange = () => {
+    scrollToBottom(false);
+  };
+
+  const handleLayout = () => {
+    scrollToBottom(false);
+  };
+
+  React.useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSubscription = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates?.height ?? 0);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
-      <ConversationHeader
-        name={resolvedName}
-        avatarUrl={resolvedAvatar}
-        idText={threadId ? `ID: ${threadId}` : "ID: #225432"}
-        onBack={() => router.back()}
-        onPressProfile={() =>
-          router.push({
-            pathname: "/screens/chat/userprofile",
-            params: {
-              name: resolvedName,
-              avatarUrl: typeof avatarUrl === "string" ? avatarUrl : "",
-              id: profileUserId ?? threadId ?? "",
-            },
-          })
-        }
-      />
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 88 : 0}
+      >
+        <ConversationHeader
+          name={resolvedName}
+          avatarUrl={resolvedAvatar}
+          idText={threadId ? `ID: ${threadId}` : "ID: #225432"}
+          onBack={() => router.back()}
+          onPressProfile={() =>
+            router.push({
+              pathname: "/screens/chat/userprofile",
+              params: {
+                name: resolvedName,
+                avatarUrl: typeof avatarUrl === "string" ? avatarUrl : "",
+                id: profileUserId ?? threadId ?? "",
+              },
+            })
+          }
+        />
 
-      <View className="flex-1">
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          contentContainerStyle={{
-            paddingTop: 12,
-            paddingBottom: attachmentsOpen ? 16 : 26,
-          }}
-        >
-          {messages.map((message) => (
-            <ChatMessageBubble
-              key={message.id}
-              message={message}
-              avatarUrl={resolvedAvatar}
+        <View className="flex-1">
+          <ScrollView
+            ref={scrollViewRef}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            style={{ flex: 1 }}
+            onContentSizeChange={handleContentSizeChange}
+            onLayout={handleLayout}
+            contentContainerStyle={{
+              flexGrow: 1,
+              paddingTop: 12,
+              paddingBottom: attachmentsOpen ? 24 : 12,
+            }}
+          >
+            {messages.map((message) => (
+              <ChatMessageBubble
+                key={message.id}
+                message={message}
+                avatarUrl={resolvedAvatar}
+              />
+            ))}
+          </ScrollView>
+
+          <View
+            style={{
+              backgroundColor: "#E9EDF1",
+              paddingBottom: Math.max(keyboardHeight, 0),
+            }}
+          >
+            <ChatComposer
+              value={messageText}
+              onChangeText={setMessageText}
+              onPressSend={handleSend}
+              attachmentsOpen={attachmentsOpen}
+              onToggleAttachments={() => setAttachmentsOpen((prev) => !prev)}
             />
-          ))}
-        </ScrollView>
 
-        <View>
-          <ChatComposer
-            value={messageText}
-            onChangeText={setMessageText}
-            onPressSend={handleSend}
-            attachmentsOpen={attachmentsOpen}
-            onToggleAttachments={() => setAttachmentsOpen((prev) => !prev)}
-          />
-
-          {attachmentsOpen ? (
-            <ChatAttachmentTray
-              onPressPhoto={handlePickFromGallery}
-              onPressCamera={handleOpenCamera}
-              onPressLocation={handlePickLocation}
-            />
-          ) : null}
+            {attachmentsOpen ? (
+              <ChatAttachmentTray
+                onPressPhoto={handlePickFromGallery}
+                onPressCamera={handleOpenCamera}
+                onPressLocation={handlePickLocation}
+              />
+            ) : null}
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
