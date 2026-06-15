@@ -87,7 +87,7 @@ export default function Home() {
   }));
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-slate-50">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
