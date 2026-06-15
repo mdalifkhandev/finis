@@ -71,12 +71,15 @@ export function useFcmTokenTest() {
           const body = remoteMessage.notification?.body ?? "";
           console.log("[FCM] foreground message:", { title, body, data: remoteMessage.data });
 
-          await Notifications.presentNotificationAsync({
-            title,
-            body,
-            data: remoteMessage.data,
-            sound: "default",
-            channelId: "default",
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title,
+              body,
+              data: remoteMessage.data,
+              sound: "default",
+              channelId: "default",
+            },
+            trigger: null,
           });
         });
       } catch (error) {
