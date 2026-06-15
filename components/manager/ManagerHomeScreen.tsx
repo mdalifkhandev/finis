@@ -134,7 +134,7 @@ export default function ManagerHomeScreen() {
           ))}
         </View>
 
-        <InviteButton />
+   
 
         <View className="mt-6">
           <SectionHeader
