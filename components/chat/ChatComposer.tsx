@@ -20,7 +20,7 @@ export default function ChatComposer({
   disabled = false,
 }: ChatComposerProps) {
   return (
-    <View className="border-t border-[#E1E5EA] bg-[#E9EDF1] px-3 py-3 mb-6">
+    <View className="border-t border-[#E1E5EA] bg-[#E9EDF1] px-3 py-3">
       <View className="flex-row items-center">
         <TouchableOpacity
           activeOpacity={0.85}
@@ -41,6 +41,7 @@ export default function ChatComposer({
             placeholder="Message"
             placeholderTextColor="#A0A5AD"
             className="flex-1 text-[16px] text-[#2B2B2B]"
+            textAlignVertical="center"
           />
         </View>
 
