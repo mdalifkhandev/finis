@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Toaster } from "sonner-native";
 import { useAuthMeQuery } from "@/hooks/auth/auth";
+import { useFcmTokenTest } from "@/hooks/notifications/useFcmTokenTest";
+import { useNotificationsSocket } from "@/lib/notifications-socket";
 import { queryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -13,6 +15,8 @@ type AppProvidersProps = {
 
 function AuthBootstrap() {
   useAuthMeQuery();
+  useFcmTokenTest();
+  useNotificationsSocket();
 
   return null;
 }
