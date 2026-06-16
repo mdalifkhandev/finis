@@ -143,14 +143,12 @@ function ensureChatListeners(
   };
 
   const handleMessageNew = (payload: ServerMessage) => {
-    console.log("[ChatSocket] message:new received", payload);
     appendIncomingMessage(payload);
     refreshMessages(payload.threadId);
     refreshThreads();
   };
 
   const handleThreadUpdated = (payload: ServerThreadUpdate) => {
-    console.log("[ChatSocket] thread:updated received", payload);
     refreshThreads();
   };
 
@@ -335,14 +333,12 @@ export function useChatSocket(threadId?: string) {
     };
 
     const handleMessageNew = (payload: ServerMessage) => {
-      console.log("[ChatSocket] message:new received", payload);
       appendIncomingMessage(payload);
       refreshMessages(payload.threadId);
       refreshThreads();
     };
 
     const handleThreadUpdated = (_payload: ServerThreadUpdate) => {
-      console.log("[ChatSocket] thread:updated received", _payload);
       refreshThreads();
     };
 
@@ -428,17 +424,10 @@ export async function sendChatMessageViaSocket(
   return await new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => reject(new Error("Message send timeout")), 15000);
 
-    console.log("[ChatSocket] emit message:send", {
-      threadId: payload.threadId,
-      hasContent: !!payload.content,
-      hasMedia: !!payload.mediaUrl,
-      mediaType: payload.mediaType ?? null,
-      hasLocationUrl: !!payload.locationUrl,
-    });
+
 
     client.emit(CHAT_SOCKET_EVENTS.send, payload, (response: { status?: string; message?: any } | undefined) => {
       clearTimeout(timeoutId);
-      console.log("[ChatSocket] message:send ack", response);
       if (!response || response.status !== "ok") {
         reject(new Error(response?.message || "Failed to send message"));
         return;
@@ -473,7 +462,7 @@ export async function sendChatReadViaSocket(threadId: string, token?: string | n
     });
   }
 
-  console.log("[ChatSocket] emit message:read", { threadId });
+
   client.emit(CHAT_SOCKET_EVENTS.read, { threadId });
 }
 

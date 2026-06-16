@@ -273,12 +273,7 @@ export default function ConversationScreen() {
 
       if (!text) return;
 
-      console.log("[Conversation] send start", {
-        threadId: resolvedThreadId,
-        userId,
-        textPreview: text.slice(0, 40),
-        hasToken: !!token,
-      });
+
 
       await sendPayload({ content: text });
       setMessageText("");
@@ -481,23 +476,10 @@ export default function ConversationScreen() {
     if ((messagesQuery.data?.length ?? 0) === 0) return;
 
     readSyncedThreadRef.current = resolvedThreadId;
-    console.log("[Conversation] read sync effect", {
-      threadId: resolvedThreadId,
-      hasToken: !!token,
-      messageCount: messagesQuery.data?.length ?? 0,
-    });
+  
     void sendChatReadViaSocket(resolvedThreadId, token);
   }, [resolvedThreadId, token, messagesQuery.data?.length]);
 
-  React.useEffect(() => {
-    console.log("[Conversation] state", {
-      threadId: resolvedThreadId,
-      userId,
-      hasToken: !!token,
-      messageCount: messagesQuery.data?.length ?? 0,
-      optimisticCount: optimisticMessages.length,
-    });
-  }, [resolvedThreadId, userId, token, messagesQuery.data?.length, optimisticMessages.length]);
 
   React.useEffect(() => {
     return () => {
