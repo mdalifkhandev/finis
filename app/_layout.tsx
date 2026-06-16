@@ -10,6 +10,7 @@ messaging().setBackgroundMessageHandler(async (remoteMessage) => {
     body: remoteMessage.notification?.body,
     data: remoteMessage.data,
   });
+  console.log("[FCM] background handler triggered");
 });
 
 export default function RootLayout() {

@@ -6,7 +6,9 @@ import {
   useCreateDirectThreadMutation,
   useCreateSupportThreadMutation,
   useSupportThreadQuery,
+  useSupportSocketConnection,
 } from "@/hooks/chat/chat";
+import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -38,12 +40,14 @@ type ContactItem = {
 export default function ChatListScreen() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ChatFilter>("chat");
+  const currentUserId = useAuthStore((state) => state.user?.id);
   const threadsQuery = useChatThreadsQuery(filter, search);
   const contactsQuery = useChatContactsQuery(search);
   const openThreadMutation = useCreateDirectThreadMutation();
   const openSupportThreadMutation = useCreateSupportThreadMutation();
   const supportThreadQuery = useSupportThreadQuery();
   useChatSocketConnection();
+  useSupportSocketConnection();
   const { refreshing, onRefresh } = usePullToRefresh(async () => {
     await Promise.all([
       threadsQuery.refetch(),
@@ -95,14 +99,17 @@ export default function ChatListScreen() {
   const openSupportChat = async () => {
     const thread = await openSupportThreadMutation.mutateAsync();
     setSearch("");
+    const otherParticipant =
+      thread.participants?.find((participant) => participant.id !== currentUserId) ??
+      thread.participants?.[0];
 
     router.push({
       pathname: "/screens/chat/conversation",
       params: {
         threadId: thread.id,
         name: thread.name || "Support",
-        avatarUrl: thread.participants?.[0]?.avatarUrl ?? "",
-        userId: thread.participants?.[0]?.id ?? "",
+        avatarUrl: otherParticipant?.avatarUrl ?? "",
+        userId: otherParticipant?.id ?? "",
       },
     });
   };

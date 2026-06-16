@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { queryClient } from "@/lib/query-client";
+import { setCurrentAccessToken } from "@/lib/auth-token";
 import { disconnectChatSocket } from "@/lib/chat-socket";
 import { disconnectWorkerGeofenceSocket } from "@/lib/worker-geofence-socket";
 import type { AuthSession, User } from "@/types/auth.types";
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setAuth: async (user, token) => {
     await SecureStore.setItemAsync(TOKEN_KEY, token);
     queryClient.clear();
+    setCurrentAccessToken(token);
     set({ user, token, accessToken: token });
   },
   logout: async () => {
@@ -36,11 +38,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     disconnectChatSocket();
     disconnectWorkerGeofenceSocket();
     queryClient.clear();
+    setCurrentAccessToken(null);
     set({ user: null, token: null, accessToken: null });
   },
   setSession: ({ accessToken, user }) => {
     void SecureStore.setItemAsync(TOKEN_KEY, accessToken);
     queryClient.clear();
+    setCurrentAccessToken(accessToken);
     set({ user, token: accessToken, accessToken });
   },
   setUser: (user) => set({ user }),
@@ -49,6 +53,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     disconnectChatSocket();
     disconnectWorkerGeofenceSocket();
     queryClient.clear();
+    setCurrentAccessToken(null);
     set({ user: null, token: null, accessToken: null });
   },
   setHydrated: (hydrated) => set({ isHydrated: hydrated }),
@@ -56,6 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
 
     if (!storedToken) {
+      setCurrentAccessToken(null);
       set({ user: null, token: null, accessToken: null, isHydrated: true });
       return;
     }
@@ -68,5 +74,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: current.user,
       isHydrated: true,
     });
+    setCurrentAccessToken(storedToken);
   },
 }));

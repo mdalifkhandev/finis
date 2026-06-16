@@ -50,14 +50,21 @@ export type ChatContact = {
   status: string;
 };
 
-export type ChatMessageSender = {
-  user: {
-    id: string;
-    fullName: string;
-    avatarUrl: string | null;
-    role: string;
-  };
-};
+export type ChatMessageSender =
+  | {
+      id: string;
+      fullName: string;
+      avatarUrl: string | null;
+      role: string;
+    }
+  | {
+      user: {
+        id: string;
+        fullName: string;
+        avatarUrl: string | null;
+        role: string;
+      };
+    };
 
 export type ChatMessage = {
   id: string;
@@ -89,6 +96,13 @@ export type SendChatMessagePayload = {
   content?: string;
   mediaUrl?: string;
   mediaType?: "image" | "video" | "document" | "audio";
+  locationUrl?: string;
+};
+
+export type UploadChatFileResult = {
+  url: string;
+  originalName: string;
+  mimeType: string;
 };
 
 type ThreadQueryParams = {
@@ -254,13 +268,55 @@ export async function createDirectThread(targetUserId: string) {
 }
 
 export async function sendChatMessage(payload: SendChatMessagePayload) {
-  const { data } = await api.post<ApiResponse<ChatMessage>>(
+  const { data } = await api.post<
+    ApiResponse<ChatMessage> | ChatMessage | { data: ChatMessage }
+  >(
     "/messages/send",
     payload,
   );
 
-  if (!data.success) {
-    throw new Error(data.message || "Failed to send message");
+  if (data && typeof data === "object" && "success" in data) {
+    if (!data.success) {
+      throw new Error(data.message || "Failed to send message");
+    }
+
+    const normalized = "data" in data ? data.data : (data as ApiResponse<ChatMessage>).data;
+    return normalized;
+  }
+
+  if (data && typeof data === "object" && "id" in data) {
+    return data as ChatMessage;
+  }
+
+  if (data && typeof data === "object" && "data" in data && data.data) {
+    return data.data as ChatMessage;
+  }
+
+  throw new Error("Failed to send message");
+}
+
+export async function uploadChatFile(file: {
+  uri: string;
+  name: string;
+  type: string;
+}) {
+  const formData = new FormData();
+  formData.append("file", {
+    uri: file.uri,
+    name: file.name,
+    type: file.type,
+  } as any);
+
+  const { data } = await api.post<
+    { data?: UploadChatFileResult; message?: string }
+  >("/messages/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  if (!data?.data?.url) {
+    throw new Error(data?.message || "Failed to upload file");
   }
 
   return data.data;

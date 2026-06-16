@@ -1,20 +1,210 @@
 import { API_BASE_URL } from "@/lib/config";
+import { sendChatMessage } from "@/api/chat/chat.api";
 import { useAuthStore } from "@/store/auth.store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { io, type Socket } from "socket.io-client";
 
+export const CHAT_SOCKET_EVENTS = {
+  join: "thread:join",
+  leave: "thread:leave",
+  send: "message:send",
+  newMessage: "message:new",
+  updatedThread: "thread:updated",
+  read: "message:read",
+  typing: "message:typing",
+} as const;
+
+export const SUPPORT_SOCKET_EVENTS = {
+  newThread: "support:thread:new",
+  joinedThread: "support:thread:joined",
+} as const;
+
 type ServerMessage = {
   threadId: string;
+  id?: string;
+  content?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: "image" | "video" | "document" | "audio" | null;
+  isRead?: boolean;
+  sentAt?: string;
+  senderId?: string;
+  sender?: {
+    id?: string;
+    fullName?: string;
+    avatarUrl?: string | null;
+    role?: string;
+    user?: {
+      id?: string;
+      fullName?: string;
+      avatarUrl?: string | null;
+      role?: string;
+    };
+  };
 };
 
 type ServerThreadUpdate = {
   threadId: string;
+  lastMessage?: unknown;
 };
 
 let socket: Socket | null = null;
 let activeSubscribers = 0;
 let activeToken: string | null = null;
+let chatListenersBound = false;
+let supportListenersBound = false;
+let chatListenersClient: Socket | null = null;
+let supportListenersClient: Socket | null = null;
+let chatHandlers:
+  | {
+      connect: () => void;
+      messageNew: (payload: ServerMessage) => void;
+      threadUpdated: (payload: ServerThreadUpdate) => void;
+      messageRead: (payload: ServerMessage) => void;
+    }
+  | null = null;
+let supportHandlers:
+  | {
+      supportThreadNew: (payload: { threadId?: string }) => void;
+    }
+  | null = null;
+
+function ensureChatListeners(
+  client: Socket,
+  queryClient: ReturnType<typeof useQueryClient>,
+  currentUserId: string,
+  threadId?: string,
+) {
+  if (chatListenersBound && chatListenersClient === client) {
+    return;
+  }
+
+  if (chatListenersBound && chatListenersClient && chatHandlers) {
+    chatListenersClient.off("connect", chatHandlers.connect);
+    chatListenersClient.off(CHAT_SOCKET_EVENTS.newMessage, chatHandlers.messageNew);
+    chatListenersClient.off(CHAT_SOCKET_EVENTS.updatedThread, chatHandlers.threadUpdated);
+    chatListenersClient.off(CHAT_SOCKET_EVENTS.read, chatHandlers.messageRead);
+  }
+
+  const refreshThreads = () => {
+    void queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+    void queryClient.invalidateQueries({ queryKey: ["chat", "support-thread"] });
+  };
+
+  const refreshMessages = (messageThreadId?: string) => {
+    if (!messageThreadId) {
+      return;
+    }
+
+    void queryClient.invalidateQueries({
+      queryKey: ["chat", "messages", messageThreadId],
+    });
+  };
+
+  const appendIncomingMessage = (payload: ServerMessage) => {
+    const senderProfile = payload.sender?.user ?? payload.sender;
+    const nextMessage = {
+      id: payload.id ?? `${payload.threadId}-${payload.sentAt ?? Date.now()}`,
+      text: payload.content ?? "",
+      time: payload.sentAt ?? new Date().toISOString(),
+      sender: payload.senderId && payload.senderId === currentUserId ? "me" : "other",
+      kind:
+        payload.mediaType === "image"
+          ? "image"
+          : payload.content?.toLowerCase().startsWith("my location:")
+            ? "location"
+            : payload.mediaUrl
+              ? "location"
+              : "text",
+      imageUri: payload.mediaUrl ?? undefined,
+      mediaUrl: payload.mediaUrl ?? undefined,
+      mediaType: payload.mediaType ?? undefined,
+      senderId: payload.senderId,
+      senderName: senderProfile?.fullName,
+      senderAvatarUrl: senderProfile?.avatarUrl ?? undefined,
+    };
+
+    queryClient.setQueryData<any[]>(["chat", "messages", payload.threadId], (current) => {
+      const existing = Array.isArray(current) ? current : [];
+      if (existing.some((message) => message.id === nextMessage.id)) {
+        return existing;
+      }
+      return [...existing, nextMessage];
+    });
+  };
+
+  const handleConnect = () => {
+    console.log("[ChatSocket] connected", { threadId });
+    if (threadId) {
+      console.log("[ChatSocket] emit join", { threadId });
+      client.emit(CHAT_SOCKET_EVENTS.join, { threadId });
+      console.log("[ChatSocket] join thread", { threadId });
+    }
+  };
+
+  const handleMessageNew = (payload: ServerMessage) => {
+    console.log("[ChatSocket] message:new received", payload);
+    appendIncomingMessage(payload);
+    refreshMessages(payload.threadId);
+    refreshThreads();
+  };
+
+  const handleThreadUpdated = (payload: ServerThreadUpdate) => {
+    console.log("[ChatSocket] thread:updated received", payload);
+    refreshThreads();
+  };
+
+  const handleMessageRead = (payload: ServerMessage) => {
+    console.log("[ChatSocket] message:read received", payload);
+    refreshMessages(payload.threadId);
+    refreshThreads();
+  };
+
+  chatHandlers = {
+    connect: handleConnect,
+    messageNew: handleMessageNew,
+    threadUpdated: handleThreadUpdated,
+    messageRead: handleMessageRead,
+  };
+
+  client.on("connect", handleConnect);
+  client.on(CHAT_SOCKET_EVENTS.newMessage, handleMessageNew);
+  client.on(CHAT_SOCKET_EVENTS.updatedThread, handleThreadUpdated);
+  client.on(CHAT_SOCKET_EVENTS.read, handleMessageRead);
+
+  if (client.connected && threadId) {
+    client.emit(CHAT_SOCKET_EVENTS.join, { threadId });
+  }
+
+  chatListenersBound = true;
+  chatListenersClient = client;
+}
+
+function ensureSupportListeners(client: Socket, queryClient: ReturnType<typeof useQueryClient>) {
+  if (supportListenersBound && supportListenersClient === client) {
+    return;
+  }
+
+  if (supportListenersBound && supportListenersClient && supportHandlers) {
+    supportListenersClient.off(SUPPORT_SOCKET_EVENTS.newThread, supportHandlers.supportThreadNew);
+  }
+
+  const handleSupportThreadNew = (payload: { threadId?: string }) => {
+    console.log("[ChatSocket] support:thread:new received", payload);
+    void queryClient.invalidateQueries({ queryKey: ["chat", "support-thread"] });
+    void queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+    if (payload.threadId) {
+      void queryClient.invalidateQueries({
+        queryKey: ["chat", "messages", payload.threadId],
+      });
+    }
+  };
+
+  supportHandlers = { supportThreadNew: handleSupportThreadNew };
+  client.on(SUPPORT_SOCKET_EVENTS.newThread, handleSupportThreadNew);
+  supportListenersBound = true;
+  supportListenersClient = client;
+}
 
 function getChatSocket(token: string) {
   if (socket && activeToken === token) {
@@ -54,6 +244,12 @@ function detachSocket() {
     socket.disconnect();
     socket = null;
     activeToken = null;
+    chatListenersBound = false;
+    supportListenersBound = false;
+    chatListenersClient = null;
+    supportListenersClient = null;
+    chatHandlers = null;
+    supportHandlers = null;
   }
 }
 
@@ -68,6 +264,19 @@ export function useChatSocket(threadId?: string) {
     }
 
     const client = attachSocket(token);
+    if (chatListenersBound && chatListenersClient === client) {
+      if (threadId) {
+        client.emit(CHAT_SOCKET_EVENTS.join, { threadId });
+      }
+
+      return () => {
+        if (threadId) {
+          client.emit(CHAT_SOCKET_EVENTS.leave, { threadId });
+        }
+
+        detachSocket();
+      };
+    }
 
     const refreshThreads = () => {
       void queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
@@ -84,43 +293,82 @@ export function useChatSocket(threadId?: string) {
       });
     };
 
+    const appendIncomingMessage = (payload: ServerMessage) => {
+      const senderProfile = payload.sender?.user ?? payload.sender;
+      const nextMessage = {
+        id: payload.id ?? `${payload.threadId}-${payload.sentAt ?? Date.now()}`,
+        text: payload.content ?? "",
+        time: payload.sentAt ?? new Date().toISOString(),
+        sender: payload.senderId && payload.senderId === currentUserId ? "me" : "other",
+        kind:
+          payload.mediaType === "image"
+            ? "image"
+            : payload.content?.toLowerCase().startsWith("my location:")
+              ? "location"
+              : payload.mediaUrl
+                ? "location"
+                : "text",
+        imageUri: payload.mediaUrl ?? undefined,
+        mediaUrl: payload.mediaUrl ?? undefined,
+        mediaType: payload.mediaType ?? undefined,
+        senderId: payload.senderId,
+        senderName: senderProfile?.fullName,
+        senderAvatarUrl: senderProfile?.avatarUrl ?? undefined,
+      };
+
+      queryClient.setQueryData<any[]>(["chat", "messages", payload.threadId], (current) => {
+        const existing = Array.isArray(current) ? current : [];
+        if (existing.some((message) => message.id === nextMessage.id)) {
+          return existing;
+        }
+        return [...existing, nextMessage];
+      });
+    };
+
     const handleConnect = () => {
+      console.log("[ChatSocket] connected", { threadId });
       if (threadId) {
-        client.emit("thread:join", { threadId });
+        console.log("[ChatSocket] emit join", { threadId });
+        client.emit(CHAT_SOCKET_EVENTS.join, { threadId });
+        console.log("[ChatSocket] join thread", { threadId });
       }
     };
 
     const handleMessageNew = (payload: ServerMessage) => {
+      console.log("[ChatSocket] message:new received", payload);
+      appendIncomingMessage(payload);
       refreshMessages(payload.threadId);
       refreshThreads();
     };
 
     const handleThreadUpdated = (_payload: ServerThreadUpdate) => {
+      console.log("[ChatSocket] thread:updated received", _payload);
       refreshThreads();
     };
 
     const handleMessageRead = (payload: ServerMessage) => {
+      console.log("[ChatSocket] message:read received", payload);
       refreshMessages(payload.threadId);
       refreshThreads();
     };
 
     client.on("connect", handleConnect);
-    client.on("message:new", handleMessageNew);
-    client.on("thread:updated", handleThreadUpdated);
-    client.on("message:read", handleMessageRead);
+    client.on(CHAT_SOCKET_EVENTS.newMessage, handleMessageNew);
+    client.on(CHAT_SOCKET_EVENTS.updatedThread, handleThreadUpdated);
+    client.on(CHAT_SOCKET_EVENTS.read, handleMessageRead);
 
     if (client.connected && threadId) {
-      client.emit("thread:join", { threadId });
+      client.emit(CHAT_SOCKET_EVENTS.join, { threadId });
     }
 
     return () => {
       client.off("connect", handleConnect);
-      client.off("message:new", handleMessageNew);
-      client.off("thread:updated", handleThreadUpdated);
-      client.off("message:read", handleMessageRead);
+      client.off(CHAT_SOCKET_EVENTS.newMessage, handleMessageNew);
+      client.off(CHAT_SOCKET_EVENTS.updatedThread, handleThreadUpdated);
+      client.off(CHAT_SOCKET_EVENTS.read, handleMessageRead);
 
       if (threadId) {
-        client.emit("thread:leave", { threadId });
+        client.emit(CHAT_SOCKET_EVENTS.leave, { threadId });
       }
 
       detachSocket();
@@ -135,5 +383,156 @@ export function disconnectChatSocket() {
     socket = null;
     activeToken = null;
     activeSubscribers = 0;
+    chatListenersBound = false;
+    supportListenersBound = false;
+    chatListenersClient = null;
+    supportListenersClient = null;
+    chatHandlers = null;
+    supportHandlers = null;
   }
+}
+
+export async function sendChatMessageViaSocket(
+  payload: {
+    threadId: string;
+    content?: string;
+    mediaUrl?: string;
+    mediaType?: "image" | "video" | "document" | "audio";
+    locationUrl?: string;
+  },
+  token?: string | null,
+): Promise<any> {
+  const authToken = token ?? useAuthStore.getState().token;
+  if (!authToken) {
+    throw new Error("Authentication required");
+  }
+
+  const client = getChatSocket(authToken);
+  if (!client.connected) {
+    await new Promise<void>((resolve, reject) => {
+      const handleConnect = () => {
+        client.off("connect_error", handleError);
+        resolve();
+      };
+      const handleError = (error: unknown) => {
+        client.off("connect", handleConnect);
+        reject(error instanceof Error ? error : new Error("Socket connection failed"));
+      };
+
+      client.once("connect", handleConnect);
+      client.once("connect_error", handleError);
+      client.connect();
+    });
+  }
+
+  return await new Promise((resolve, reject) => {
+    const timeoutId = setTimeout(() => reject(new Error("Message send timeout")), 15000);
+
+    console.log("[ChatSocket] emit message:send", {
+      threadId: payload.threadId,
+      hasContent: !!payload.content,
+      hasMedia: !!payload.mediaUrl,
+      mediaType: payload.mediaType ?? null,
+      hasLocationUrl: !!payload.locationUrl,
+    });
+
+    client.emit(CHAT_SOCKET_EVENTS.send, payload, (response: { status?: string; message?: any } | undefined) => {
+      clearTimeout(timeoutId);
+      console.log("[ChatSocket] message:send ack", response);
+      if (!response || response.status !== "ok") {
+        reject(new Error(response?.message || "Failed to send message"));
+        return;
+      }
+
+      resolve(response.message);
+    });
+  });
+}
+
+export async function sendChatReadViaSocket(threadId: string, token?: string | null): Promise<void> {
+  const authToken = token ?? useAuthStore.getState().token;
+  if (!authToken) {
+    throw new Error("Authentication required");
+  }
+
+  const client = getChatSocket(authToken);
+  if (!client.connected) {
+    await new Promise<void>((resolve, reject) => {
+      const handleConnect = () => {
+        client.off("connect_error", handleError);
+        resolve();
+      };
+      const handleError = (error: unknown) => {
+        client.off("connect", handleConnect);
+        reject(error instanceof Error ? error : new Error("Socket connection failed"));
+      };
+
+      client.once("connect", handleConnect);
+      client.once("connect_error", handleError);
+      client.connect();
+    });
+  }
+
+  console.log("[ChatSocket] emit message:read", { threadId });
+  client.emit(CHAT_SOCKET_EVENTS.read, { threadId });
+}
+
+export async function sendChatMessageWithFallback(
+  payload: {
+    threadId: string;
+    content?: string;
+    mediaUrl?: string;
+    mediaType?: "image" | "video" | "document" | "audio";
+    locationUrl?: string;
+  },
+  token?: string | null,
+): Promise<any> {
+  try {
+    return await sendChatMessageViaSocket(payload, token);
+  } catch (error) {
+    return await sendChatMessage({
+      threadId: payload.threadId,
+      content: payload.content,
+      mediaUrl: payload.mediaUrl,
+      mediaType: payload.mediaType,
+      locationUrl: payload.locationUrl,
+    });
+  }
+}
+
+export function useSupportSocket() {
+  const queryClient = useQueryClient();
+  const token = useAuthStore((state) => state.token);
+  const currentUserId = useAuthStore((state) => state.user?.id);
+
+  useEffect(() => {
+    if (!token || !currentUserId) {
+      return;
+    }
+
+    const client = attachSocket(token);
+    if (supportListenersBound && supportListenersClient === client) {
+      return () => {
+        detachSocket();
+      };
+    }
+
+    const handleSupportThreadNew = (payload: { threadId?: string }) => {
+      console.log("[ChatSocket] support:thread:new received", payload);
+      void queryClient.invalidateQueries({ queryKey: ["chat", "support-thread"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+      if (payload.threadId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["chat", "messages", payload.threadId],
+        });
+      }
+    };
+
+    client.on(SUPPORT_SOCKET_EVENTS.newThread, handleSupportThreadNew);
+
+    return () => {
+      client.off(SUPPORT_SOCKET_EVENTS.newThread, handleSupportThreadNew);
+      detachSocket();
+    };
+  }, [queryClient, currentUserId, token]);
 }

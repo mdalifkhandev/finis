@@ -1,14 +1,22 @@
-import { useChatMessagesQuery, useSendChatMessageMutation } from "@/hooks/chat/chat";
+import { useChatMessagesQuery } from "@/hooks/chat/chat";
+import { uploadChatFile } from "@/api/chat/chat.api";
 import { useAuthStore } from "@/store/auth.store";
+import { useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
+import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Alert,
+  Image,
   ImageSourcePropType,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -17,6 +25,11 @@ import ChatComposer from "./ChatComposer";
 import ChatMessageBubble from "./ChatMessageBubble";
 import ConversationHeader from "./ConversationHeader";
 import { MessageModel } from "./chatData";
+import {
+  sendChatMessageWithFallback,
+  sendChatReadViaSocket,
+  useChatSocket,
+} from "@/lib/chat-socket";
 
 const placeholderAvatar = require("../../assets/images/placeholder-person.png");
 
@@ -67,6 +80,44 @@ function resolveAvatarSource(value?: string | ImageSourcePropType | null) {
   return placeholderAvatar;
 }
 
+function getUploadFileName(uri: string, fallback: string) {
+  const parts = uri.split("/");
+  return parts[parts.length - 1] || fallback;
+}
+
+function resolveMessageKind(mediaType?: string | null, locationUrl?: string | null) {
+  if (locationUrl) {
+    return "location" as const;
+  }
+
+  if (mediaType === "image") {
+    return "image" as const;
+  }
+
+  return "text" as const;
+}
+
+function formatCoordinate(value: number) {
+  return value.toFixed(6);
+}
+
+type PendingAttachment =
+  | {
+      type: "image" | "video" | "document";
+      uri: string;
+      name: string;
+      mimeType: string;
+      previewText: string;
+    }
+  | {
+      type: "location";
+      latitude: number;
+      longitude: number;
+      locationLabel: string;
+      locationUrl: string;
+      previewText: string;
+    };
+
 export default function ConversationScreen() {
   const { threadId, name, avatarUrl, userId: routeUserId } = useLocalSearchParams<{
     threadId?: string;
@@ -74,22 +125,29 @@ export default function ConversationScreen() {
     avatarUrl?: string;
     userId?: string;
   }>();
+  const resolvedThreadId = Array.isArray(threadId) ? threadId[0] : threadId;
 
   const userId = useAuthStore((state) => state.user?.id);
+  const token = useAuthStore((state) => state.token);
   const [messageText, setMessageText] = useState("");
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [optimisticMessages, setOptimisticMessages] = useState<MessageModel[]>([]);
+  const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const readSyncedThreadRef = useRef<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
+  const queryClient = useQueryClient();
 
-  const messagesQuery = useChatMessagesQuery(threadId);
-  const sendMessageMutation = useSendChatMessageMutation(threadId);
+  const messagesQuery = useChatMessagesQuery(resolvedThreadId);
+  useChatSocket(resolvedThreadId);
 
   const resolvedName = name || "Chat";
   const profileUserId = typeof routeUserId === "string" ? routeUserId : undefined;
   const resolvedAvatar = resolveAvatarSource(avatarUrl);
 
   const messages = useMemo<MessageModel[]>(() => {
-    return (messagesQuery.data ?? []).map((message) => ({
+    const serverMessages: MessageModel[] = (messagesQuery.data ?? []).map((message) => ({
       id: message.id,
       text: message.text,
       time: formatMessageTime(message.time),
@@ -100,27 +158,250 @@ export default function ConversationScreen() {
       senderName: message.senderName,
       senderAvatarUrl: message.senderAvatarUrl,
     }));
-  }, [messagesQuery.data, userId]);
+
+    const merged = [...serverMessages, ...optimisticMessages];
+    return merged.filter(
+      (message, index, array) => array.findIndex((item) => item.id === message.id) === index,
+    );
+  }, [messagesQuery.data, optimisticMessages, userId]);
+
+  const appendLocalMessage = (message: MessageModel) => {
+    if (!resolvedThreadId) {
+      return;
+    }
+
+    queryClient.setQueryData<MessageModel[]>(["chat", "messages", resolvedThreadId], (current) => {
+      const existing = Array.isArray(current) ? current : [];
+      if (existing.some((item) => item.id === message.id)) {
+        return existing;
+      }
+      return [...existing, message];
+    });
+
+    setOptimisticMessages((current) => [...current, message]);
+  };
+
+  const sendPayload = async (payload: {
+    content?: string;
+    mediaUrl?: string;
+    mediaType?: "image" | "video" | "document" | "audio";
+    locationUrl?: string;
+  }) => {
+    if (!resolvedThreadId) {
+      return;
+    }
+
+    const sentMessage = await sendChatMessageWithFallback(
+      {
+        threadId: resolvedThreadId,
+        ...payload,
+      },
+      token,
+    );
+
+    const kind = resolveMessageKind(payload.mediaType, payload.locationUrl);
+    appendLocalMessage({
+      id: sentMessage.id,
+      text:
+        sentMessage.content ??
+        payload.content ??
+        (payload.locationUrl ? "Shared a location" : payload.mediaType === "document" ? "Shared a file" : ""),
+      time: formatMessageTime(sentMessage.sentAt),
+      sender: "me",
+      kind,
+      senderId: userId,
+      imageUri: payload.mediaType === "image" ? payload.mediaUrl : undefined,
+      mediaType: payload.mediaType,
+      mediaUrl: payload.mediaUrl ?? payload.locationUrl,
+    });
+
+    await messagesQuery.refetch();
+  };
 
   const handleSend = async () => {
-    const text = messageText.trim();
-    if (!text) return;
+    if (isSending) {
+      return;
+    }
 
-    await sendMessageMutation.mutateAsync({ content: text });
-    setMessageText("");
-    messagesQuery.refetch();
+    const text = messageText.trim();
+    if (!resolvedThreadId) return;
+
+    try {
+      setIsSending(true);
+
+      if (pendingAttachment) {
+        if (pendingAttachment.type === "location") {
+          await sendPayload({
+            content: pendingAttachment.previewText,
+            locationUrl: pendingAttachment.locationUrl,
+          });
+        } else {
+          const upload = await uploadChatFile({
+            uri: pendingAttachment.uri,
+            name: pendingAttachment.name,
+            type: pendingAttachment.mimeType,
+          });
+
+          await sendPayload({
+            content: pendingAttachment.previewText,
+            mediaUrl: upload.url,
+            mediaType: pendingAttachment.type === "document" ? "document" : pendingAttachment.type,
+          });
+        }
+
+        setPendingAttachment(null);
+        setMessageText("");
+        return;
+      }
+
+      if (!text) return;
+
+      console.log("[Conversation] send start", {
+        threadId: resolvedThreadId,
+        userId,
+        textPreview: text.slice(0, 40),
+        hasToken: !!token,
+      });
+
+      await sendPayload({ content: text });
+      setMessageText("");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handlePickFromGallery = async () => {
-    Alert.alert("Not available", "Attachment sending is not wired yet.");
+    if (!resolvedThreadId) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== "granted") {
+      Alert.alert("Permission needed", "Please allow photo library access.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    setPendingAttachment({
+      type: asset.type === "video" ? "video" : "image",
+      uri: asset.uri,
+      name: asset.fileName ?? getUploadFileName(asset.uri, "chat-media"),
+      mimeType: asset.mimeType ?? (asset.type === "video" ? "video/mp4" : "image/jpeg"),
+      previewText: asset.type === "video" ? "Shared a video" : "Shared an image",
+    });
+    setAttachmentsOpen(false);
   };
 
   const handleOpenCamera = async () => {
-    Alert.alert("Not available", "Attachment sending is not wired yet.");
+    if (!resolvedThreadId) return;
+
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (permission.status !== "granted") {
+      Alert.alert("Permission needed", "Please allow camera access.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    setPendingAttachment({
+      type: "image",
+      uri: asset.uri,
+      name: asset.fileName ?? getUploadFileName(asset.uri, "camera-image.jpg"),
+      mimeType: asset.mimeType ?? "image/jpeg",
+      previewText: "Shared an image",
+    });
+    setAttachmentsOpen(false);
+  };
+
+  const handlePickFile = async () => {
+    if (!resolvedThreadId) return;
+
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["image/*", "application/pdf", "*/*"],
+      multiple: false,
+      copyToCacheDirectory: true,
+    });
+
+    if (result.canceled || !result.assets[0]) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    const mimeType = asset.mimeType ?? "application/octet-stream";
+    setPendingAttachment({
+      type: mimeType.startsWith("image/") ? "image" : "document",
+      uri: asset.uri,
+      name: asset.name,
+      mimeType,
+      previewText: mimeType.startsWith("image/") ? "Shared an image" : `Shared a file: ${asset.name}`,
+    });
+    setAttachmentsOpen(false);
   };
 
   const handlePickLocation = async () => {
-    Alert.alert("Not available", "Attachment sending is not wired yet.");
+    if (!resolvedThreadId) return;
+
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (permission.status !== "granted") {
+      Alert.alert("Permission needed", "Please allow location access.");
+      return;
+    }
+
+    const currentLocation = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Balanced,
+    });
+
+    const { latitude, longitude } = currentLocation.coords;
+    let locationLabel = `Lat ${formatCoordinate(latitude)}, Lng ${formatCoordinate(longitude)}`;
+
+    try {
+      const address = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const firstAddress = address[0];
+      if (firstAddress) {
+        const parts = [
+          firstAddress.name,
+          firstAddress.street,
+          firstAddress.city,
+          firstAddress.region,
+          firstAddress.country,
+        ].filter(Boolean);
+
+        if (parts.length > 0) {
+          locationLabel = parts.join(", ");
+        }
+      }
+    } catch (_error) {
+      console.log("[Conversation] reverse geocode failed");
+    }
+
+    const latitudeText = formatCoordinate(latitude);
+    const longitudeText = formatCoordinate(longitude);
+    const locationUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
+
+    setPendingAttachment({
+      type: "location",
+      latitude,
+      longitude,
+      locationLabel,
+      locationUrl,
+      previewText: `Shared location: ${locationLabel}\nLatitude: ${latitudeText}\nLongitude: ${longitudeText}`,
+    });
+    setAttachmentsOpen(false);
   };
 
   const scrollToBottom = (animated = false) => {
@@ -154,6 +435,30 @@ export default function ConversationScreen() {
     };
   }, []);
 
+  React.useEffect(() => {
+    if (!resolvedThreadId) return;
+    if (readSyncedThreadRef.current === resolvedThreadId) return;
+    if ((messagesQuery.data?.length ?? 0) === 0) return;
+
+    readSyncedThreadRef.current = resolvedThreadId;
+    console.log("[Conversation] read sync effect", {
+      threadId: resolvedThreadId,
+      hasToken: !!token,
+      messageCount: messagesQuery.data?.length ?? 0,
+    });
+    void sendChatReadViaSocket(resolvedThreadId, token);
+  }, [resolvedThreadId, token, messagesQuery.data?.length]);
+
+  React.useEffect(() => {
+    console.log("[Conversation] state", {
+      threadId: resolvedThreadId,
+      userId,
+      hasToken: !!token,
+      messageCount: messagesQuery.data?.length ?? 0,
+      optimisticCount: optimisticMessages.length,
+    });
+  }, [resolvedThreadId, userId, token, messagesQuery.data?.length, optimisticMessages.length]);
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <KeyboardAvoidingView
@@ -164,7 +469,7 @@ export default function ConversationScreen() {
         <ConversationHeader
           name={resolvedName}
           avatarUrl={resolvedAvatar}
-          idText={threadId ? `ID: ${threadId}` : "ID: #225432"}
+          idText={resolvedThreadId ? `ID: ${resolvedThreadId}` : "ID: #225432"}
           onBack={() => router.back()}
           onPressProfile={() =>
             router.push({
@@ -172,7 +477,7 @@ export default function ConversationScreen() {
               params: {
                 name: resolvedName,
                 avatarUrl: typeof avatarUrl === "string" ? avatarUrl : "",
-                id: profileUserId ?? threadId ?? "",
+                id: profileUserId ?? resolvedThreadId ?? "",
               },
             })
           }
@@ -208,21 +513,68 @@ export default function ConversationScreen() {
               paddingBottom: Math.max(keyboardHeight, 0),
             }}
           >
+            {pendingAttachment ? (
+              <View className="mx-4 mb-3 rounded-[16px] border border-[#D8E0E8] bg-[#F8FAFC] p-3">
+                <View className="flex-row items-start justify-between">
+                  <View className="flex-1">
+                    <Text className="text-[13px] font-semibold text-[#1D5478]">Preview</Text>
+                    {pendingAttachment.type === "image" ? (
+                      <Image
+                        source={{ uri: pendingAttachment.uri }}
+                        className="mt-2 h-36 w-full rounded-[12px]"
+                      />
+                    ) : null}
+                    {pendingAttachment.type === "location" ? (
+                      <>
+                        <Text className="mt-2 text-[14px] text-[#2B2B2B]">
+                          {pendingAttachment.locationLabel}
+                        </Text>
+                        <Text className="mt-1 text-[12px] text-[#66707B]">
+                          {`Latitude: ${formatCoordinate(pendingAttachment.latitude)}`}
+                        </Text>
+                        <Text className="mt-1 text-[12px] text-[#66707B]">
+                          {`Longitude: ${formatCoordinate(pendingAttachment.longitude)}`}
+                        </Text>
+                      </>
+                    ) : null}
+                    {pendingAttachment.type === "document" || pendingAttachment.type === "video" ? (
+                      <Text className="mt-2 text-[14px] text-[#2B2B2B]">
+                        {pendingAttachment.name}
+                      </Text>
+                    ) : null}
+                    {pendingAttachment.type !== "location" ? (
+                      <Text className="mt-1 text-[12px] text-[#66707B]">
+                        {pendingAttachment.previewText}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => setPendingAttachment(null)}
+                    className="ml-3 h-8 w-8 items-center justify-center rounded-full bg-[#E9EDF1]"
+                  >
+                    <Text className="text-[16px] text-[#475569]">x</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : null}
             <ChatComposer
               value={messageText}
               onChangeText={setMessageText}
               onPressSend={handleSend}
               attachmentsOpen={attachmentsOpen}
               onToggleAttachments={() => setAttachmentsOpen((prev) => !prev)}
+              disabled={!messageText.trim() && !pendingAttachment}
+              isSending={isSending}
             />
 
             {attachmentsOpen ? (
               <ChatAttachmentTray
-                onPressPhoto={handlePickFromGallery}
-                onPressCamera={handleOpenCamera}
-                onPressLocation={handlePickLocation}
-              />
-            ) : null}
+              onPressPhoto={handlePickFromGallery}
+              onPressCamera={handleOpenCamera}
+              onPressFile={handlePickFile}
+              onPressLocation={handlePickLocation}
+            />
+          ) : null}
           </View>
         </View>
       </KeyboardAvoidingView>

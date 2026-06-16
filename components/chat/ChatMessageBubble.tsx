@@ -13,6 +13,21 @@ export default function ChatMessageBubble({
 }: ChatMessageBubbleProps) {
   const isMe = message.sender === "me";
   const resolvedAvatar = message.senderAvatarUrl || avatarUrl;
+  const locationCoordinates = React.useMemo(() => {
+    if (message.kind !== "location" || !message.mediaUrl) {
+      return null;
+    }
+
+    const match = message.mediaUrl.match(/[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
+    if (!match) {
+      return null;
+    }
+
+    return {
+      latitude: match[1],
+      longitude: match[2],
+    };
+  }, [message.kind, message.mediaUrl]);
 
   const BubbleBody = () => {
     if (message.kind === "image" && (message.imageUri || message.mediaUrl)) {
@@ -22,6 +37,72 @@ export default function ChatMessageBubble({
             source={{ uri: message.imageUri || message.mediaUrl || "" }}
             className="h-44 w-full rounded-[10px]"
           />
+          <Text
+            className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}
+          >
+            {message.time}
+          </Text>
+        </>
+      );
+    }
+
+    if (message.kind === "location") {
+      return (
+        <>
+          <Text
+            className={`text-[16px] leading-7 ${
+              isMe ? "text-[#EAF2F8]" : "text-[#4B4B4B]"
+            }`}
+          >
+            {message.text || "Shared a location"}
+          </Text>
+          {locationCoordinates ? (
+            <Text
+              className={`mt-1 text-[12px] ${isMe ? "text-[#D4E4EF]" : "text-[#6B7280]"}`}
+            >
+              {`Latitude: ${locationCoordinates.latitude}`}
+            </Text>
+          ) : null}
+          {locationCoordinates ? (
+            <Text
+              className={`mt-1 text-[12px] ${isMe ? "text-[#D4E4EF]" : "text-[#6B7280]"}`}
+            >
+              {`Longitude: ${locationCoordinates.longitude}`}
+            </Text>
+          ) : null}
+          {message.mediaUrl ? (
+            <Text
+              className={`mt-1 text-[12px] ${isMe ? "text-[#D4E4EF]" : "text-[#6B7280]"}`}
+              numberOfLines={2}
+            >
+              {message.mediaUrl}
+            </Text>
+          ) : null}
+          <Text
+            className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}
+          >
+            {message.time}
+          </Text>
+        </>
+      );
+    }
+
+    if (message.mediaType === "document" && message.mediaUrl) {
+      return (
+        <>
+          <Text
+            className={`text-[16px] leading-7 ${
+              isMe ? "text-[#EAF2F8]" : "text-[#4B4B4B]"
+            }`}
+          >
+            {message.text || "Shared a file"}
+          </Text>
+          <Text
+            className={`mt-1 text-[12px] ${isMe ? "text-[#D4E4EF]" : "text-[#6B7280]"}`}
+            numberOfLines={2}
+          >
+            {message.mediaUrl}
+          </Text>
           <Text
             className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}
           >

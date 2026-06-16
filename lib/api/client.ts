@@ -1,6 +1,6 @@
 import { create, type InternalAxiosRequestConfig, AxiosError } from "axios";
 import { API_BASE_URL } from "@/lib/config";
-import { useAuthStore } from "@/store/auth.store";
+import { getCurrentAccessToken } from "@/lib/auth-token";
 
 export const api = create({
   baseURL: API_BASE_URL,
@@ -12,7 +12,7 @@ export const api = create({
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = useAuthStore.getState().accessToken;
+  const token = getCurrentAccessToken();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
