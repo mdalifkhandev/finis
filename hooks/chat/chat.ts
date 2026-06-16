@@ -59,6 +59,7 @@ function normalizeThreads(
         time: formatChatTime(thread.lastMessage?.sentAt),
         unreadCount: thread.unreadCount,
         avatarUrl: toAbsoluteAvatar(otherParticipant?.avatarUrl),
+        isOnline: otherParticipant?.isOnline ?? false,
         type: filter,
       };
     });
@@ -82,6 +83,7 @@ function normalizeMessages(messages: ChatMessage[], currentUserId: string): Mess
       text: message.content ?? "",
       time: formatChatTime(message.sentAt),
       sender: isMe ? "me" : "other",
+      isRead: message.isRead,
       senderId: message.senderId,
       senderName: senderProfile?.fullName ?? "Unknown",
       senderAvatarUrl: toAbsoluteAvatar(senderProfile?.avatarUrl),

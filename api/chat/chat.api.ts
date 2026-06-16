@@ -10,6 +10,8 @@ export type ChatParticipant = {
   avatarUrl: string | null;
   role?: string | null;
   status?: string | null;
+  isOnline?: boolean;
+  lastActiveAt?: string | null;
 };
 
 export type ChatThreadLastMessage = {

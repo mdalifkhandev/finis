@@ -6,6 +6,7 @@ type ConversationHeaderProps = {
   name: string;
   avatarUrl: string | ImageSourcePropType;
   idText?: string;
+  isOnline?: boolean;
   onBack: () => void;
   onPressProfile?: () => void;
 };
@@ -14,6 +15,7 @@ export default function ConversationHeader({
   name,
   avatarUrl,
   idText,
+  isOnline = false,
   onBack,
   onPressProfile,
 }: ConversationHeaderProps) {
@@ -40,10 +42,12 @@ export default function ConversationHeader({
         <View className="ml-3">
           <View className="flex-row items-center">
             <Text className="text-[17px] font-medium text-[#2B2B2B]">{name}</Text>
-            <View className="ml-2 h-2.5 w-2.5 rounded-full bg-[#0FB866]" />
+            {isOnline ? (
+              <View className="ml-2 h-2.5 w-2.5 rounded-full bg-[#0FB866]" />
+            ) : null}
           </View>
           <Text className="text-[14px] text-[#6B7280]">
-            {idText || "ID: #225432"}
+            {isOnline ? "Active now" : idText || "Offline"}
           </Text>
         </View>
       </TouchableOpacity>

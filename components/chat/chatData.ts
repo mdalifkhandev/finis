@@ -8,6 +8,7 @@ export type ChatListItemModel = {
   time: string;
   unreadCount: number;
   avatarUrl: string;
+  isOnline?: boolean;
   type: ChatFilter;
   threadId?: string;
 };
@@ -17,6 +18,7 @@ export type MessageModel = {
   text: string;
   time: string;
   sender: "me" | "other";
+  isRead?: boolean;
   kind?: "text" | "image" | "location";
   imageUri?: string;
   mediaUrl?: string;

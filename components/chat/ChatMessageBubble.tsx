@@ -5,11 +5,15 @@ import { MessageModel } from "./chatData";
 type ChatMessageBubbleProps = {
   message: MessageModel;
   avatarUrl: string | ImageSourcePropType;
+  showSeen?: boolean;
+  showSent?: boolean;
 };
 
 export default function ChatMessageBubble({
   message,
   avatarUrl,
+  showSeen = false,
+  showSent = false,
 }: ChatMessageBubbleProps) {
   const isMe = message.sender === "me";
   const resolvedAvatar = message.senderAvatarUrl || avatarUrl;
@@ -136,6 +140,11 @@ export default function ChatMessageBubble({
         <View className="w-[66%] rounded-[14px] bg-[#1D5478] px-4 py-3">
           <BubbleBody />
         </View>
+        {showSeen ? (
+          <Text className="mt-1 text-[11px] text-[#66707B]">Seen</Text>
+        ) : showSent ? (
+          <Text className="mt-1 text-[11px] text-[#66707B]">Send</Text>
+        ) : null}
       </View>
     );
   }

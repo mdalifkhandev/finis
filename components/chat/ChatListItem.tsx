@@ -22,15 +22,25 @@ export default function ChatListItem({ item, onPress }: ChatListItemProps) {
       className="border-b border-[#D9DFE7] py-4"
     >
       <View className="flex-row items-center">
-        <Image
-          source={avatarSource}
-          className="h-[56px] w-[56px] rounded-full"
-        />
+        <View className="relative">
+          <Image
+            source={avatarSource}
+            className="h-[56px] w-[56px] rounded-full"
+          />
+          {item.isOnline ? (
+            <View className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-2 border-[#E9EDF1] bg-[#0FB866]" />
+          ) : null}
+        </View>
 
         <View className="ml-4 flex-1">
-          <Text className="text-[16px] font-semibold text-[#2B2B2B]">
-            {item.name}
-          </Text>
+          <View className="flex-row items-center">
+            <Text className="text-[16px] font-semibold text-[#2B2B2B]">
+              {item.name}
+            </Text>
+            <Text className="ml-2 text-[11px] text-[#66707B]">
+              {item.isOnline ? "Active now" : ""}
+            </Text>
+          </View>
           <Text className="mt-0.5 text-[14px] text-[#4F5560]" numberOfLines={1}>
             {item.preview}
           </Text>

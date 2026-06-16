@@ -26,8 +26,10 @@ import ChatMessageBubble from "./ChatMessageBubble";
 import ConversationHeader from "./ConversationHeader";
 import { MessageModel } from "./chatData";
 import {
+  sendChatTypingViaSocket,
   sendChatMessageWithFallback,
   sendChatReadViaSocket,
+  useChatThreadPresence,
   useChatSocket,
 } from "@/lib/chat-socket";
 
@@ -119,11 +121,12 @@ type PendingAttachment =
     };
 
 export default function ConversationScreen() {
-  const { threadId, name, avatarUrl, userId: routeUserId } = useLocalSearchParams<{
+  const { threadId, name, avatarUrl, userId: routeUserId, isOnline } = useLocalSearchParams<{
     threadId?: string;
     name?: string;
     avatarUrl?: string;
     userId?: string;
+    isOnline?: string;
   }>();
   const resolvedThreadId = Array.isArray(threadId) ? threadId[0] : threadId;
 
@@ -135,16 +138,19 @@ export default function ConversationScreen() {
   const [optimisticMessages, setOptimisticMessages] = useState<MessageModel[]>([]);
   const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readSyncedThreadRef = useRef<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const queryClient = useQueryClient();
 
   const messagesQuery = useChatMessagesQuery(resolvedThreadId);
   useChatSocket(resolvedThreadId);
+  const { isOtherTyping } = useChatThreadPresence(resolvedThreadId);
 
   const resolvedName = name || "Chat";
   const profileUserId = typeof routeUserId === "string" ? routeUserId : undefined;
   const resolvedAvatar = resolveAvatarSource(avatarUrl);
+  const isParticipantOnline = isOnline === "true";
 
   const messages = useMemo<MessageModel[]>(() => {
     const serverMessages: MessageModel[] = (messagesQuery.data ?? []).map((message) => ({
@@ -152,6 +158,7 @@ export default function ConversationScreen() {
       text: message.text,
       time: formatMessageTime(message.time),
       sender: message.sender === "me" ? "me" : "other",
+      isRead: message.isRead,
       kind: message.kind,
       imageUri: message.imageUri,
       senderId: message.senderId,
@@ -164,6 +171,16 @@ export default function ConversationScreen() {
       (message, index, array) => array.findIndex((item) => item.id === message.id) === index,
     );
   }, [messagesQuery.data, optimisticMessages, userId]);
+
+  const lastOwnMessageId = useMemo(() => {
+    for (let index = messages.length - 1; index >= 0; index -= 1) {
+      if (messages[index]?.sender === "me") {
+        return messages[index].id;
+      }
+    }
+
+    return null;
+  }, [messages]);
 
   const appendLocalMessage = (message: MessageModel) => {
     if (!resolvedThreadId) {
@@ -265,8 +282,31 @@ export default function ConversationScreen() {
 
       await sendPayload({ content: text });
       setMessageText("");
+      if (resolvedThreadId) {
+        void sendChatTypingViaSocket({ threadId: resolvedThreadId, isTyping: false }, token);
+      }
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleTypingChange = (nextValue: string) => {
+    if (!resolvedThreadId) {
+      return;
+    }
+
+    const isTyping = nextValue.trim().length > 0;
+    void sendChatTypingViaSocket({ threadId: resolvedThreadId, isTyping }, token);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
+    if (isTyping) {
+      typingTimeoutRef.current = setTimeout(() => {
+        void sendChatTypingViaSocket({ threadId: resolvedThreadId, isTyping: false }, token);
+      }, 1500);
     }
   };
 
@@ -459,6 +499,14 @@ export default function ConversationScreen() {
     });
   }, [resolvedThreadId, userId, token, messagesQuery.data?.length, optimisticMessages.length]);
 
+  React.useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <KeyboardAvoidingView
@@ -470,6 +518,7 @@ export default function ConversationScreen() {
           name={resolvedName}
           avatarUrl={resolvedAvatar}
           idText={resolvedThreadId ? `ID: ${resolvedThreadId}` : "ID: #225432"}
+          isOnline={isParticipantOnline}
           onBack={() => router.back()}
           onPressProfile={() =>
             router.push({
@@ -503,6 +552,17 @@ export default function ConversationScreen() {
                 key={message.id}
                 message={message}
                 avatarUrl={resolvedAvatar}
+                showSeen={
+                  !!lastOwnMessageId &&
+                  message.id === lastOwnMessageId &&
+                  message.isRead === true
+                }
+                showSent={
+                  !!lastOwnMessageId &&
+                  message.id === lastOwnMessageId &&
+                  message.sender === "me" &&
+                  message.isRead !== true
+                }
               />
             ))}
           </ScrollView>
@@ -557,9 +617,17 @@ export default function ConversationScreen() {
                 </View>
               </View>
             ) : null}
+            {isOtherTyping ? (
+              <View className="px-5 pb-2">
+                <Text className="text-[12px] text-[#66707B]">
+                  {`${resolvedName} is typing...`}
+                </Text>
+              </View>
+            ) : null}
             <ChatComposer
               value={messageText}
               onChangeText={setMessageText}
+              onTypingChange={handleTypingChange}
               onPressSend={handleSend}
               attachmentsOpen={attachmentsOpen}
               onToggleAttachments={() => setAttachmentsOpen((prev) => !prev)}

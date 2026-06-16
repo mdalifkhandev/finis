@@ -35,6 +35,7 @@ type ContactItem = {
   role: string;
   status: string;
   avatarUrl: string;
+  isOnline?: boolean;
 };
 
 export default function ChatListScreen() {
@@ -92,6 +93,7 @@ export default function ChatListScreen() {
         name: contact.name,
         avatarUrl: contact.avatarUrl,
         userId: contact.id,
+        isOnline: contact.isOnline ? "true" : "false",
       },
     });
   };
@@ -110,6 +112,7 @@ export default function ChatListScreen() {
         name: thread.name || "Support",
         avatarUrl: otherParticipant?.avatarUrl ?? "",
         userId: otherParticipant?.id ?? "",
+        isOnline: otherParticipant?.isOnline ? "true" : "false",
       },
     });
   };
@@ -249,6 +252,7 @@ export default function ChatListScreen() {
                         name: item.name,
                         avatarUrl: item.avatarUrl,
                         userId: item.profileUserId ?? "",
+                        isOnline: item.isOnline ? "true" : "false",
                       },
                     });
                 }}
