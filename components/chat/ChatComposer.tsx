@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, TextInput, TouchableOpacity, View } from "react-native";
 
 type ChatComposerProps = {
   value: string;
@@ -9,6 +9,7 @@ type ChatComposerProps = {
   attachmentsOpen: boolean;
   onToggleAttachments: () => void;
   disabled?: boolean;
+  isSending?: boolean;
 };
 
 export default function ChatComposer({
@@ -18,6 +19,7 @@ export default function ChatComposer({
   attachmentsOpen,
   onToggleAttachments,
   disabled = false,
+  isSending = false,
 }: ChatComposerProps) {
   return (
     <View className="border-t border-[#E1E5EA] bg-[#E9EDF1] px-3 py-3">
@@ -48,10 +50,14 @@ export default function ChatComposer({
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={onPressSend}
-          disabled={disabled}
+          disabled={disabled || isSending}
           className={`h-11 w-11 items-center justify-center rounded-full bg-[#1D5478] ${disabled ? "opacity-60" : ""}`}
         >
-          <Ionicons name="send" size={21} color="#FFFFFF" />
+          {isSending ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="send" size={21} color="#FFFFFF" />
+          )}
         </TouchableOpacity>
       </View>
     </View>

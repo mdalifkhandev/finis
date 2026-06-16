@@ -19,7 +19,7 @@ import {
 } from "@/api/chat/chat.api";
 import { useAuthStore } from "@/store/auth.store";
 import { type ChatListItemModel, type MessageModel } from "@/components/chat/chatData";
-import { useChatSocket } from "@/lib/chat-socket";
+import { useChatSocket, useSupportSocket } from "@/lib/chat-socket";
 
 function toAbsoluteAvatar(path: string | null | undefined) {
   return resolveChatAvatar(path) ?? "";
@@ -58,10 +58,13 @@ function normalizeThreads(
 function normalizeMessages(messages: ChatMessage[], currentUserId: string): MessageModel[] {
   return messages.map((message) => {
     const isMe = message.senderId === currentUserId;
+    const senderProfile = "user" in message.sender ? message.sender.user : message.sender;
     const kind =
       message.mediaType === "image"
         ? "image"
         : message.content?.toLowerCase().startsWith("my location:")
+          ? "location"
+          : message.mediaUrl && !message.content
           ? "location"
           : "text";
 
@@ -71,8 +74,8 @@ function normalizeMessages(messages: ChatMessage[], currentUserId: string): Mess
       time: formatChatTime(message.sentAt),
       sender: isMe ? "me" : "other",
       senderId: message.senderId,
-      senderName: message.sender?.user?.fullName ?? "Unknown",
-      senderAvatarUrl: toAbsoluteAvatar(message.sender?.user?.avatarUrl),
+      senderName: senderProfile?.fullName ?? "Unknown",
+      senderAvatarUrl: toAbsoluteAvatar(senderProfile?.avatarUrl),
       kind,
       imageUri: resolveChatAvatar(message.mediaUrl) ?? undefined,
       mediaType: message.mediaType ?? undefined,
@@ -123,7 +126,15 @@ export function useSupportThreadQuery() {
     queryKey: ["chat", "support-thread", token, currentUserId],
     queryFn: async () => {
       const thread = await getSupportThread();
-      return thread ? normalizeThreads([thread], currentUserId ?? "", "support") : [];
+      if (!thread || !currentUserId) {
+        return [];
+      }
+
+      return normalizeThreads(
+        [{ ...thread, type: "support" }],
+        currentUserId,
+        "support",
+      );
     },
     enabled: !!token && !!currentUserId,
     staleTime: 15 * 1000,
@@ -166,7 +177,7 @@ export function useChatMessagesQuery(threadId?: string) {
   const currentUserId = useAuthStore((state) => state.user?.id);
 
   const query = useQuery({
-    queryKey: ["chat", "messages", threadId, token, currentUserId],
+    queryKey: ["chat", "messages", threadId],
     queryFn: async () => {
       if (!threadId || !currentUserId) {
         return [] as MessageModel[];
@@ -177,7 +188,10 @@ export function useChatMessagesQuery(threadId?: string) {
     },
     enabled: !!token && !!threadId && !!currentUserId,
     staleTime: 5 * 1000,
-    refetchInterval: 4 * 1000,
+    refetchInterval: 5000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: true,
   });
 
   useEffect(() => {
@@ -253,4 +267,8 @@ export function useSendChatMessageMutation(threadId?: string) {
 
 export function useChatSocketConnection(threadId?: string) {
   useChatSocket(threadId);
+}
+
+export function useSupportSocketConnection() {
+  useSupportSocket();
 }

@@ -5,10 +5,11 @@ import { Text, TouchableOpacity, View } from "react-native";
 type ChatAttachmentTrayProps = {
   onPressPhoto?: () => void;
   onPressCamera?: () => void;
+  onPressFile?: () => void;
   onPressLocation?: () => void;
 };
 
-type AttachmentKey = "photo" | "camera" | "location";
+type AttachmentKey = "photo" | "camera" | "file" | "location";
 
 const ACTIONS: {
   key: AttachmentKey;
@@ -16,18 +17,21 @@ const ACTIONS: {
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
   { key: "photo", label: "Photo", icon: "image-outline" },
-  { key: "camera", label: "camera", icon: "camera-outline" },
+  { key: "camera", label: "Camera", icon: "camera-outline" },
+  { key: "file", label: "File", icon: "document-outline" },
   { key: "location", label: "Location", icon: "location-outline" },
 ];
 
 export default function ChatAttachmentTray({
   onPressPhoto,
   onPressCamera,
+  onPressFile,
   onPressLocation,
 }: ChatAttachmentTrayProps) {
   const onPressMap: Record<AttachmentKey, (() => void) | undefined> = {
     photo: onPressPhoto,
     camera: onPressCamera,
+    file: onPressFile,
     location: onPressLocation,
   };
 

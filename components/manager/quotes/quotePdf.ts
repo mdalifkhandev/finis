@@ -64,7 +64,7 @@ function buildQuoteHtml(params: GenerateQuotePdfParams) {
         <div style="margin-top:8px"><strong>Project Address:</strong> ${escapeHtml(params.projectAddress || "1234 Maple Street, Downtown District, CA 90210")}</div>
         <div style="margin-top:8px"><strong>Project Details:</strong> ${escapeHtml(`${params.projectType} • ${params.propertyType} • ${params.unitType}`)}</div>
         <div style="margin-top:8px"><strong>Project Meta:</strong> ${escapeHtml(params.projectMetaLabel)}</div>
-        <div style="margin-top:8px"><strong>Estimated Timeline:</strong> ${escapeHtml(params.estimate.timeline)}</div>
+        <div style="margin-top:8px"><strong>Estimated Timeline:</strong> ${escapeHtml(String(params.estimate.timeline ?? ""))}</div>
         <div style="margin-top:8px"><strong>Quote Valid Until:</strong> ${escapeHtml(params.validUntilLabel)}</div>
       </div>
 
@@ -88,7 +88,7 @@ function buildQuoteHtml(params: GenerateQuotePdfParams) {
                       <div class="row">
                         <div>
                           <div>${escapeHtml(item.title)}</div>
-                          <div class="muted">${escapeHtml(item.quantity)} ${escapeHtml(item.selectedUnit)} × ${formatCurrency(item.selectedUnitPrice)}</div>
+                          <div class="muted">${escapeHtml(String(item.quantity ?? ""))} ${escapeHtml(String(item.selectedUnit ?? ""))} × ${formatCurrency(item.selectedUnitPrice)}</div>
                         </div>
                         <div>${formatCurrency((Number(item.quantity) || 0) * item.selectedUnitPrice)}</div>
                       </div>
