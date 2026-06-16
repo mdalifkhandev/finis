@@ -2,7 +2,7 @@ import { API_BASE_URL } from "@/lib/config";
 import { sendChatMessage } from "@/api/chat/chat.api";
 import { useAuthStore } from "@/store/auth.store";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 
 export const CHAT_SOCKET_EVENTS = {
@@ -477,6 +477,36 @@ export async function sendChatReadViaSocket(threadId: string, token?: string | n
   client.emit(CHAT_SOCKET_EVENTS.read, { threadId });
 }
 
+export async function sendChatTypingViaSocket(
+  payload: { threadId: string; isTyping: boolean },
+  token?: string | null,
+): Promise<void> {
+  const authToken = token ?? useAuthStore.getState().token;
+  if (!authToken) {
+    throw new Error("Authentication required");
+  }
+
+  const client = getChatSocket(authToken);
+  if (!client.connected) {
+    await new Promise<void>((resolve, reject) => {
+      const handleConnect = () => {
+        client.off("connect_error", handleError);
+        resolve();
+      };
+      const handleError = (error: unknown) => {
+        client.off("connect", handleConnect);
+        reject(error instanceof Error ? error : new Error("Socket connection failed"));
+      };
+
+      client.once("connect", handleConnect);
+      client.once("connect_error", handleError);
+      client.connect();
+    });
+  }
+
+  client.emit(CHAT_SOCKET_EVENTS.typing, payload);
+}
+
 export async function sendChatMessageWithFallback(
   payload: {
     threadId: string;
@@ -535,4 +565,64 @@ export function useSupportSocket() {
       detachSocket();
     };
   }, [queryClient, currentUserId, token]);
+}
+
+export function useChatThreadPresence(threadId?: string) {
+  const token = useAuthStore((state) => state.token);
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+
+  useEffect(() => {
+    if (!threadId || !token || !currentUserId) {
+      setIsOtherTyping(false);
+      return;
+    }
+
+    const client = attachSocket(token);
+    const typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+    const handleTyping = (payload: {
+      userId?: string;
+      threadId?: string;
+      isTyping?: boolean;
+    }) => {
+      if (
+        payload.threadId !== threadId ||
+        !payload.userId ||
+        payload.userId === currentUserId
+      ) {
+        return;
+      }
+
+      const existingTimer = typingTimers.get(payload.userId);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+
+      if (!payload.isTyping) {
+        typingTimers.delete(payload.userId);
+        setIsOtherTyping(false);
+        return;
+      }
+
+      setIsOtherTyping(true);
+      const timer = setTimeout(() => {
+        typingTimers.delete(payload.userId!);
+        setIsOtherTyping(false);
+      }, 1800);
+      typingTimers.set(payload.userId, timer);
+    };
+
+    client.on(CHAT_SOCKET_EVENTS.typing, handleTyping);
+
+    return () => {
+      client.off(CHAT_SOCKET_EVENTS.typing, handleTyping);
+      typingTimers.forEach((timer) => clearTimeout(timer));
+      detachSocket();
+    };
+  }, [currentUserId, threadId, token]);
+
+  return {
+    isOtherTyping,
+  };
 }

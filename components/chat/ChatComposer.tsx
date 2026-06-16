@@ -6,6 +6,7 @@ type ChatComposerProps = {
   value: string;
   onChangeText: (value: string) => void;
   onPressSend: () => void;
+  onTypingChange?: (value: string) => void;
   attachmentsOpen: boolean;
   onToggleAttachments: () => void;
   disabled?: boolean;
@@ -16,6 +17,7 @@ export default function ChatComposer({
   value,
   onChangeText,
   onPressSend,
+  onTypingChange,
   attachmentsOpen,
   onToggleAttachments,
   disabled = false,
@@ -39,7 +41,10 @@ export default function ChatComposer({
         <View className="mx-2 h-[46px] flex-1 flex-row items-center rounded-full bg-[#F8FAFC] px-5">
           <TextInput
             value={value}
-            onChangeText={onChangeText}
+            onChangeText={(nextValue) => {
+              onChangeText(nextValue);
+              onTypingChange?.(nextValue);
+            }}
             placeholder="Message"
             placeholderTextColor="#A0A5AD"
             className="flex-1 text-[16px] text-[#2B2B2B]"
