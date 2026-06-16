@@ -36,6 +36,15 @@ function normalizeThreads(
         ? thread.type === "direct" || thread.type === "project"
         : thread.type === "support",
     )
+    .sort((left, right) => {
+      const leftTime = left.lastMessage?.sentAt
+        ? new Date(left.lastMessage.sentAt).getTime()
+        : 0;
+      const rightTime = right.lastMessage?.sentAt
+        ? new Date(right.lastMessage.sentAt).getTime()
+        : 0;
+      return rightTime - leftTime;
+    })
     .map((thread) => {
       const otherParticipant =
         thread.participants.find((participant) => participant.id !== currentUserId) ??
