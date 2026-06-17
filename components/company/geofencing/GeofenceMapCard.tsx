@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import MapLegend from "./MapLegend";
 import { generateMapHTML } from "./mapHtml";
@@ -29,10 +29,31 @@ export default function GeofenceMapCard({
   const [location, setLocation] = useState<DeviceLocation | null>(null);
   const [locationLabel, setLocationLabel] = useState("Locating your device...");
   const [loading, setLoading] = useState(true);
+  const [isMapReady, setIsMapReady] = useState(false);
   const [webViewModule, setWebViewModule] = useState<WebViewModule | null>(
     null,
   );
   const [webViewUnavailable, setWebViewUnavailable] = useState(false);
+  const webViewRef = useRef<any>(null);
+  const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+  const mapSourceKey = useMemo(
+    () =>
+      JSON.stringify({
+        projectName: projectName ?? "",
+        projectSite: projectSite ?? "",
+        initialPolygonCoords: initialPolygonCoords ?? [],
+        googleMapsApiKey,
+      }),
+    [googleMapsApiKey, initialPolygonCoords, projectName, projectSite],
+  );
+  const liveWorkersJson = useMemo(
+    () => JSON.stringify(liveWorkers ?? []),
+    [liveWorkers],
+  );
+
+  useEffect(() => {
+    setIsMapReady(false);
+  }, [mapSourceKey]);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +74,16 @@ export default function GeofenceMapCard({
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!isMapReady || !webViewRef.current || webViewUnavailable) {
+      return;
+    }
+
+    webViewRef.current.injectJavaScript(
+      `window.renderLiveWorkers && window.renderLiveWorkers(${liveWorkersJson}); true;`,
+    );
+  }, [isMapReady, liveWorkersJson, webViewUnavailable]);
 
   useEffect(() => {
     let active = true;
@@ -122,7 +153,18 @@ export default function GeofenceMapCard({
             </View>
           ) : WebView && !webViewUnavailable ? (
             <WebView
-              source={{ html: generateMapHTML(userLat, userLng, projectName ?? "Selected Project", projectSite ?? "", initialPolygonCoords ?? [], liveWorkers ?? []) }}
+              ref={webViewRef}
+              source={{
+                html: generateMapHTML(
+                  userLat,
+                  userLng,
+                  projectName ?? "Selected Project",
+                  projectSite ?? "",
+                  initialPolygonCoords ?? [],
+                  [],
+                  googleMapsApiKey,
+                ),
+              }}
               style={{ flex: 1, backgroundColor: "#EEF2F6" }}
               javaScriptEnabled
               domStorageEnabled
@@ -131,6 +173,10 @@ export default function GeofenceMapCard({
               onMessage={(event) => {
                 try {
                   const payload = JSON.parse(event.nativeEvent.data);
+                  if (payload?.type === "map_ready") {
+                    setIsMapReady(true);
+                    return;
+                  }
                   if (payload?.type === "polygon_change" && Array.isArray(payload.polygonCoords)) {
                     onPolygonChange?.(payload.polygonCoords);
                   }

@@ -31,6 +31,16 @@ function getSocket(token: string) {
     auth: { token },
   });
 
+  socket.on("connect", () => {
+    console.log("[WorkerGeofenceSocket] connected", {
+      socketId: socket?.id,
+    });
+  });
+
+  socket.on("connect_error", (error) => {
+    console.log("[WorkerGeofenceSocket] connect_error", error?.message ?? error);
+  });
+
   return socket;
 }
 
@@ -60,6 +70,7 @@ export function emitGeofenceLocation(payload: LocationPayload) {
   if (!client.connected) {
     client.connect();
   }
+  console.log("[WorkerGeofenceSocket] emit location_update", payload);
   client.emit("location_update", payload);
 }
 
@@ -70,6 +81,7 @@ export function emitGeofenceCheckIn(payload: LocationPayload) {
   if (!client.connected) {
     client.connect();
   }
+  console.log("[WorkerGeofenceSocket] emit check_in", payload);
   client.emit("check_in", payload);
 }
 
@@ -80,6 +92,7 @@ export function emitGeofenceCheckOut(payload: LocationPayload) {
   if (!client.connected) {
     client.connect();
   }
+  console.log("[WorkerGeofenceSocket] emit check_out", payload);
   client.emit("check_out", payload);
 }
 
