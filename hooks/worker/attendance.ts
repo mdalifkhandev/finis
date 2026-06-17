@@ -18,7 +18,14 @@ export function useCheckInWorkerMutation() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: checkInWorker,
+    onMutate: (variables) => {
+      console.log("[WorkerAttendance] check-in mutate", variables);
+    },
+    onError: (error) => {
+      console.log("[WorkerAttendance] check-in error", error);
+    },
     onSuccess: async () => {
+      console.log("[WorkerAttendance] check-in success");
       await queryClient.invalidateQueries({ queryKey: ["worker", "attendance", "today"] });
       await queryClient.invalidateQueries({ queryKey: ["worker", "dashboard"] });
     },
@@ -39,7 +46,14 @@ export function useCheckOutWorkerMutation() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: checkOutWorker,
+    onMutate: (variables) => {
+      console.log("[WorkerAttendance] check-out mutate", variables);
+    },
+    onError: (error) => {
+      console.log("[WorkerAttendance] check-out error", error);
+    },
     onSuccess: async () => {
+      console.log("[WorkerAttendance] check-out success");
       await queryClient.invalidateQueries({ queryKey: ["worker", "attendance", "today"] });
       await queryClient.invalidateQueries({ queryKey: ["worker", "dashboard"] });
     },

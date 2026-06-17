@@ -60,6 +60,8 @@ export default function WorkerHome() {
   const checkInMutation = useCheckInWorkerMutation();
   const checkOutMutation = useCheckOutWorkerMutation();
   const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const liveTrackingRef = useRef(false);
+  const [attendanceAction, setAttendanceAction] = React.useState<"check-in" | "check-out" | null>(null);
 
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
   const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
@@ -77,6 +79,7 @@ export default function WorkerHome() {
   const todayTasksCount = dashboard?.stats?.todayTasksCount ?? 0;
   const completedToday = dashboard?.stats?.completedToday ?? 0;
   const isClockedIn = attendance?.status === "clocked_in";
+  const resolvedProjectId = activeProjectId ?? profile?.companyMembers?.[0]?.projectId;
 
   const getClockInTime = () => {
     if (!isClockedIn || !attendance?.currentSessionStart) return undefined;
@@ -87,104 +90,176 @@ export default function WorkerHome() {
   };
 
   const stopLiveUpdates = () => {
+    console.log("[WorkerHome] stopLiveUpdates");
     if (locationIntervalRef.current) {
       clearInterval(locationIntervalRef.current);
       locationIntervalRef.current = null;
     }
   };
 
-  const sendLocationUpdate = async () => {
-    if (!activeProjectId) return;
-    const Location = await import("expo-location");
-    const current = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
+  const sendLocationUpdate = async (coords?: { latitude: number; longitude: number }) => {
+    if (!liveTrackingRef.current) {
+      console.log("[WorkerHome] sendLocationUpdate skipped: tracking not active");
+      return;
+    }
+
+    const startedAt = Date.now();
+    console.log("[WorkerHome] sendLocationUpdate start", {
+      resolvedProjectId,
+      hasCoords: Boolean(coords),
     });
-    emitGeofenceLocation({
-      lat: current.coords.latitude,
-      lng: current.coords.longitude,
-      projectId: activeProjectId,
-    });
+
+    try {
+      const current = coords
+        ? { coords }
+        : await (async () => {
+            const Location = await import("expo-location");
+            return Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            });
+          })();
+
+      console.log("[WorkerHome] sendLocationUpdate GPS ready", {
+        elapsedMs: Date.now() - startedAt,
+        lat: current.coords.latitude,
+        lng: current.coords.longitude,
+      });
+
+      const payload = {
+        lat: current.coords.latitude,
+        lng: current.coords.longitude,
+        ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+      };
+
+      console.log("[WorkerHome] emitGeofenceLocation", payload);
+      emitGeofenceLocation(payload);
+    } catch (error) {
+      console.log("[WorkerHome] sendLocationUpdate error", error);
+    }
   };
 
   const startLiveUpdates = () => {
+    console.log("[WorkerHome] startLiveUpdates");
     stopLiveUpdates();
     locationIntervalRef.current = setInterval(() => {
       void sendLocationUpdate();
-    }, 5000);
+    }, 1000);
   };
 
   const handleCheckIn = async () => {
-    if (checkInMutation.isPending) return;
-    if (!activeProjectId) {
-      Alert.alert("No project found", "This worker has no active project to track.");
-      return;
+    if (checkInMutation.isPending || attendanceAction) return;
+    setAttendanceAction("check-in");
+
+    try {
+      const startedAt = Date.now();
+      console.log("[WorkerHome] check-in start", {
+        resolvedProjectId,
+        activeProjectId,
+      });
+
+      const Location = await import("expo-location");
+      console.log("[WorkerHome] requestForegroundPermissionsAsync...");
+      const permission = await Location.requestForegroundPermissionsAsync();
+      console.log("[WorkerHome] location permission result", permission.status);
+      if (permission.status !== "granted") {
+        Alert.alert("Location permission required", "Please allow location access to check in.");
+        return;
+      }
+
+      console.log("[WorkerHome] getCurrentPositionAsync...");
+      const current = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      console.log("[WorkerHome] GPS resolved for check-in", {
+        elapsedMs: Date.now() - startedAt,
+        lat: current.coords.latitude,
+        lng: current.coords.longitude,
+      });
+
+      console.log("[WorkerHome] attendance.checkIn mutateAsync start");
+      await checkInMutation.mutateAsync({
+        lat: current.coords.latitude,
+        lng: current.coords.longitude,
+      });
+      console.log("[WorkerHome] attendance.checkIn mutateAsync success");
+      liveTrackingRef.current = true;
+
+      const geofencePayload = {
+        lat: current.coords.latitude,
+        lng: current.coords.longitude,
+        ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+      };
+
+      console.log("[WorkerHome] emitGeofenceCheckIn", geofencePayload);
+      emitGeofenceCheckIn(geofencePayload);
+
+      console.log("[WorkerHome] sendLocationUpdate after check-in");
+      await sendLocationUpdate({
+        latitude: current.coords.latitude,
+        longitude: current.coords.longitude,
+      });
+      startLiveUpdates();
+    } finally {
+      setAttendanceAction(null);
     }
-
-    const Location = await import("expo-location");
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (permission.status !== "granted") {
-      Alert.alert("Location permission required", "Please allow location access to check in.");
-      return;
-    }
-
-    const current = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-
-    // console.log("[WorkerHome] check-in location:", {
-    //   lat: current.coords.latitude,
-    //   lng: current.coords.longitude,
-    //   projectId: activeProjectId,
-    // });
-
-    await checkInMutation.mutateAsync({
-      lat: current.coords.latitude,
-      lng: current.coords.longitude,
-    });
-
-    emitGeofenceCheckIn({
-      lat: current.coords.latitude,
-      lng: current.coords.longitude,
-      projectId: activeProjectId,
-    });
-
-    await sendLocationUpdate();
-    startLiveUpdates();
   };
 
   const handleCheckOut = async () => {
-    if (checkOutMutation.isPending || !isClockedIn) return;
-
-    const Location = await import("expo-location");
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (permission.status !== "granted") {
-      Alert.alert("Location permission required", "Please allow location access to check out.");
-      return;
-    }
-
-    const current = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-
-    // console.log("[WorkerHome] check-out location:", {
-    //   lat: current.coords.latitude,
-    //   lng: current.coords.longitude,
-    //   projectId: activeProjectId,
-    // });
+    if (checkOutMutation.isPending || !isClockedIn || attendanceAction) return;
+    setAttendanceAction("check-out");
+    liveTrackingRef.current = false;
+    stopLiveUpdates();
 
     try {
-      await checkOutMutation.mutateAsync({
-        lat: current.coords.latitude,
-        lng: current.coords.longitude,
+      const startedAt = Date.now();
+      console.log("[WorkerHome] check-out start", {
+        resolvedProjectId,
+        activeProjectId,
       });
 
-      emitGeofenceCheckOut({
-        lat: current.coords.latitude,
-        lng: current.coords.longitude,
-        projectId: activeProjectId,
+      const Location = await import("expo-location");
+      console.log("[WorkerHome] getLastKnownPositionAsync...");
+      const lastKnown = await Location.getLastKnownPositionAsync({});
+      let currentLocation =
+        lastKnown?.coords ?? null;
+
+      if (!currentLocation) {
+        console.log("[WorkerHome] getCurrentPositionAsync...");
+        const current = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+        currentLocation = current.coords;
+      }
+
+      if (!currentLocation) {
+        console.log("[WorkerHome] checkout location unavailable, using fallback");
+      }
+
+      const lat = currentLocation?.latitude ?? 0;
+      const lng = currentLocation?.longitude ?? 0;
+      console.log("[WorkerHome] GPS resolved for check-out", {
+        elapsedMs: Date.now() - startedAt,
+        lat,
+        lng,
       });
+
+      console.log("[WorkerHome] attendance.checkOut mutateAsync start");
+      await checkOutMutation.mutateAsync({
+        lat,
+        lng,
+      });
+      console.log("[WorkerHome] attendance.checkOut mutateAsync success");
+
+      const geofencePayload = {
+        lat,
+        lng,
+        ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+      };
+
+      console.log("[WorkerHome] emitGeofenceCheckOut", geofencePayload);
+      emitGeofenceCheckOut(geofencePayload);
     } finally {
-      stopLiveUpdates();
+      setAttendanceAction(null);
     }
   };
 
@@ -242,8 +317,8 @@ export default function WorkerHome() {
                 time={getClockInTime()}
                 onCheckIn={handleCheckIn}
                 onCheckOut={handleCheckOut}
-                isCheckingIn={checkInMutation.isPending}
-                isCheckingOut={checkOutMutation.isPending}
+                isCheckingIn={checkInMutation.isPending || attendanceAction === "check-in"}
+                isCheckingOut={checkOutMutation.isPending || attendanceAction === "check-out"}
               />
             </View>
 

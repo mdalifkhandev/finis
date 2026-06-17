@@ -48,6 +48,7 @@ export default function GeofencingRoute() {
   const socketRef = React.useRef<Socket | null>(null);
   const hasInitializedProjectRef = React.useRef(false);
   const draftPointsByProjectRef = React.useRef<Record<string, Array<{ lat: number; lng: number }>>>({});
+  const hiddenWorkerIdsRef = React.useRef(new Set<string>());
 
   const visibleProjects = React.useMemo(() => {
     if (!companyId) {
@@ -84,17 +85,21 @@ export default function GeofencingRoute() {
     socketRef.current = socket;
 
     const joinProject = () => {
+      console.log("[Geofencing] join_project emit", { projectId: selectedProjectId });
       socket.emit("join_project", { projectId: selectedProjectId });
       socket.emit("get_live_workers", { projectId: selectedProjectId });
     };
 
     const handleActiveWorkers = (payload: { workers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }> }) => {
-      // console.log("[Geofencing] active_workers:", payload);
-      setLiveWorkers(payload.workers ?? []);
+      console.log("[Geofencing] active_workers:", payload);
+      setLiveWorkers((payload.workers ?? []).filter((worker) => !hiddenWorkerIdsRef.current.has(worker.workerId)));
     };
 
     const handleWorkerLocation = (payload: { workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }) => {
-      // console.log("[Geofencing] worker_location:", payload);
+      console.log("[Geofencing] worker_location:", payload);
+      if (hiddenWorkerIdsRef.current.has(payload.workerId)) {
+        return;
+      }
       setLiveWorkers((current) => {
         const next = current.filter((worker) => worker.workerId !== payload.workerId);
         next.push(payload);
@@ -103,7 +108,8 @@ export default function GeofencingRoute() {
     };
 
     const handleWorkerCheckIn = (payload: { worker: { id: string; fullName: string }; isInsideZone?: boolean }) => {
-      // console.log("[Geofencing] worker_checked_in:", payload);
+      console.log("[Geofencing] worker_checked_in:", payload);
+      hiddenWorkerIdsRef.current.delete(payload.worker.id);
       setLiveWorkers((current) => {
         const next = current.filter((worker) => worker.workerId !== payload.worker.id);
         next.push({
@@ -117,10 +123,34 @@ export default function GeofencingRoute() {
       });
     };
 
-    const handleWorkerCheckOut = (payload: { worker: { id: string; fullName: string } }) => {
-      // console.log("[Geofencing] worker_checked_out:", payload);
-      setLiveWorkers((current) => current.filter((worker) => worker.workerId !== payload.worker.id));
+    const handleWorkerCheckOut = (payload: { worker?: { id?: string; fullName?: string }; workerId?: string }) => {
+      console.log("[Geofencing] worker_checked_out:", payload);
+      const workerId = payload.workerId ?? payload.worker?.id;
+      if (!workerId) {
+        return;
+      }
+      hiddenWorkerIdsRef.current.add(workerId);
+      setLiveWorkers((current) => current.filter((worker) => worker.workerId !== workerId));
     };
+
+    socket.on("connect", () => {
+      console.log("[Geofencing] socket connected", {
+        socketId: socket.id,
+        selectedProjectId,
+      });
+    });
+
+    socket.on("connect_error", (error) => {
+      console.log("[Geofencing] socket connect_error", error?.message ?? error);
+    });
+
+    socket.on("joined_project", (payload) => {
+      console.log("[Geofencing] joined_project:", payload);
+    });
+
+    socket.on("error", (error) => {
+      console.log("[Geofencing] socket error:", error?.message ?? error);
+    });
 
     socket.on("connect", joinProject);
     socket.on("active_workers", handleActiveWorkers);
@@ -134,6 +164,10 @@ export default function GeofencingRoute() {
 
     return () => {
       socket.off("connect", joinProject);
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("joined_project");
+      socket.off("error");
       socket.off("active_workers", handleActiveWorkers);
       socket.off("worker_location", handleWorkerLocation);
       socket.off("worker_checked_in", handleWorkerCheckIn);
