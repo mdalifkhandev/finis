@@ -154,6 +154,42 @@ export type AdminPayStubResponse = {
   processedAt?: string | null;
 };
 
+export type AdminApprovedPayrollRecord = {
+  payrollId: string;
+  worker: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    department: string | null;
+    hourlyRate: number | string | null;
+  };
+  project: { id: string; name: string } | null;
+  displayRole: string;
+  hours: number;
+  overtimeHours: number;
+  rate: number;
+  grossPay: number;
+  grossPayDisplay?: string;
+  deductions: number;
+  netPay: number;
+  status: string;
+  statusLabel?: string;
+  payPeriodStart: string;
+  payPeriodEnd: string;
+  processedAt: string | null;
+  canApprove?: boolean;
+};
+
+export type AdminApprovedPayrollResponse = {
+  summary: {
+    total: number;
+    approvedCount: number;
+    totalGrossPay: number;
+    totalNetPay: number;
+  };
+  records: AdminApprovedPayrollRecord[];
+};
+
 export type AdminUpdatePayrollPayload = {
   workerId?: string;
   projectId?: string;
@@ -214,6 +250,21 @@ export async function updateAdminPayroll(
   }
 
   return data.data;
+}
+
+export async function getAdminApprovedPayroll() {
+  const { data } = await api.get<{ success: boolean; message: string; summary: AdminApprovedPayrollResponse["summary"]; records: AdminApprovedPayrollRecord[] }>(
+    "/admin/payroll/approved",
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load approved payroll records");
+  }
+
+  return {
+    summary: data.summary,
+    records: data.records ?? [],
+  };
 }
 
 export async function getAdminPayrollOverview() {

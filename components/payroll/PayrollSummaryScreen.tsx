@@ -8,7 +8,6 @@ import {
   useAdminPayrollSummaryQuery,
   useAdminPayrollOverviewQuery,
   useApproveAdminPayrollMutation,
-  useProcessAdminPayrollMutation,
 } from "@/hooks/admin/payroll";
 import BackTitleHeader from "../common/BackTitleHeader";
 import EditPayrollRateSheet from "./EditPayrollRateSheet";
@@ -24,7 +23,6 @@ export default function PayrollSummaryScreen() {
   const { data } = useAdminPayrollSummaryQuery({ date: selectedDate });
   const { data: overview } = useAdminPayrollOverviewQuery();
   const approvePayroll = useApproveAdminPayrollMutation();
-  const processPayroll = useProcessAdminPayrollMutation();
   const updatePayroll = useUpdateAdminPayrollMutation();
   const [editSheetVisible, setEditSheetVisible] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<AdminPayrollSummaryWorker | null>(null);
@@ -148,12 +146,16 @@ export default function PayrollSummaryScreen() {
 
           <TouchableOpacity
             activeOpacity={0.88}
-            disabled={processPayroll.isPending}
-            onPress={() => processPayroll.mutate(undefined)}
+            onPress={() =>
+              router.push({
+                pathname: "/screens/payroll/paystub",
+                params: { mode: "approved" },
+              })
+            }
             className="mb-8 mt-3 h-12 items-center justify-center rounded-[10px] bg-[#1F5577]"
           >
             <Text className="text-[16px] font-medium text-white">
-              {processPayroll.isPending ? "Processing..." : "Process payroll"}
+              Process payroll
             </Text>
           </TouchableOpacity>
         </View>

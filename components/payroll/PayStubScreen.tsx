@@ -3,32 +3,81 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAdminPayStubQuery } from "@/hooks/admin/payroll";
+import {
+  useAdminPayStubQuery,
+  useAdminApprovedPayrollQuery,
+} from "@/hooks/admin/payroll";
 import BackTitleHeader from "../common/BackTitleHeader";
+import { downloadPayStubPdf } from "./payStubPdf";
 import { formatCurrency } from "./utils";
 
 export default function PayStubScreen() {
-  const { payrollId } = useLocalSearchParams<{ payrollId?: string }>();
-  const { data: stub } = useAdminPayStubQuery(payrollId);
+  const { payrollId, mode } = useLocalSearchParams<{
+    payrollId?: string;
+    mode?: string;
+  }>();
+  const isApprovedMode = mode === "approved";
+  const { data: approved } = useAdminApprovedPayrollQuery(isApprovedMode);
+  const { data: stub } = useAdminPayStubQuery(isApprovedMode ? undefined : payrollId);
+  const record = useMemo(() => {
+    if (!isApprovedMode) return null;
+    const records = approved?.records ?? [];
+    if (!records.length) return null;
+    if (payrollId) {
+      return records.find((item) => item.payrollId === payrollId) ?? records[0];
+    }
+    return records[0];
+  }, [approved?.records, isApprovedMode, payrollId]);
 
-  const hourlyRate = Number(stub?.worker.hourlyRate ?? 0);
-  const regularHours = stub?.earnings.regularHours ?? 0;
-  const overtimeHours = stub?.earnings.overtimeHours ?? 0;
-  const regularPay = stub?.earnings.regularPay ?? 0;
-  const overtimePay = stub?.earnings.overtimePay ?? 0;
-  const grossPay = stub?.earnings.grossPay ?? 0;
-  const deductions = stub?.deductions.totalDeductions ?? 0;
+  const hourlyRate = Number(
+    isApprovedMode ? record?.rate ?? record?.worker.hourlyRate ?? 0 : stub?.worker.hourlyRate ?? 0,
+  );
+  const regularHours = isApprovedMode ? record?.hours ?? 0 : stub?.earnings.regularHours ?? 0;
+  const overtimeHours = isApprovedMode ? record?.overtimeHours ?? 0 : stub?.earnings.overtimeHours ?? 0;
+  const regularPay = isApprovedMode ? (record?.rate ?? 0) * (record?.hours ?? 0) : stub?.earnings.regularPay ?? 0;
+  const overtimePay = isApprovedMode ? 0 : stub?.earnings.overtimePay ?? 0;
+  const grossPay = isApprovedMode ? record?.grossPay ?? 0 : stub?.earnings.grossPay ?? 0;
+  const deductions = isApprovedMode ? record?.deductions ?? 0 : stub?.deductions.totalDeductions ?? 0;
   const netPay = useMemo(
     () => Math.max(0, Math.round((grossPay - deductions) * 100) / 100),
     [grossPay, deductions],
   );
-  const payPeriodLabel = stub?.payPeriod.start
-    ? new Date(stub.payPeriod.start).toLocaleDateString("en-US", {
+  const payPeriodLabel = isApprovedMode
+    ? record?.payPeriodStart
+      ? new Date(record.payPeriodStart).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "This week"
+    : stub?.payPeriod.start
+      ? new Date(stub.payPeriod.start).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
         year: "numeric",
       })
     : "This week";
+  const displayName = isApprovedMode
+    ? record?.worker.fullName || "Worker"
+    : stub?.worker.fullName || "Worker";
+  const displayRole = isApprovedMode
+    ? record?.displayRole || record?.worker.department || "Worker"
+    : stub?.worker.department || "Worker";
+  const avatarText = displayName?.charAt(0)?.toUpperCase() || "W";
+
+  const handleDownload = async () => {
+    await downloadPayStubPdf({
+      workerName: displayName,
+      workerRole: displayRole,
+      payPeriodLabel,
+      regularHours,
+      overtimeHours,
+      hourlyRate,
+      grossPay,
+      deductions,
+      netPay,
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -43,14 +92,14 @@ export default function PayStubScreen() {
             <View className="items-center">
               <View className="h-16 w-16 items-center justify-center rounded-full bg-[#1F5577]">
                 <Text className="text-[24px] font-semibold text-white">
-                  {stub?.worker.fullName?.charAt(0)?.toUpperCase() || "W"}
+                  {avatarText}
                 </Text>
               </View>
               <Text className="mt-3 text-center text-[20px] font-semibold text-[#101828]">
-                {stub?.worker.fullName || "Worker"}
+                {displayName}
               </Text>
               <Text className="mt-1 text-center text-[14px] text-[#475467]">
-                {stub?.worker.department || "Worker"}
+                {displayRole}
               </Text>
               <Text className="mt-1 text-center text-[12px] text-[#667085]">
                 Pay Period: {payPeriodLabel}
@@ -138,6 +187,7 @@ export default function PayStubScreen() {
 
           <TouchableOpacity
             activeOpacity={0.86}
+            onPress={handleDownload}
             className="mt-4 h-12 flex-row items-center justify-center rounded-[10px] bg-[#1F5577]"
           >
             <Ionicons name="download-outline" size={20} color="#FFFFFF" />
