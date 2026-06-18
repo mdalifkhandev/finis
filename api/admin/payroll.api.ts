@@ -8,17 +8,26 @@ export type AdminPayrollSummaryWorker = {
     fullName: string;
     avatarUrl: string | null;
     department: string | null;
+    hourlyRate?: number | null;
   };
   hours: number;
+  hoursDisplay?: string;
   overtimeHours: number;
   rate: number;
-  total: number;
+  grossPay: number;
+  deductions: number;
+  netPay: number;
   status: "draft" | "approved" | "paid" | string;
+  payPeriodStart?: string;
+  payPeriodEnd?: string;
+  processedAt?: string | null;
 };
 
 export type AdminPayrollSummaryResponse = {
+  subscription?: unknown;
   summary: {
     totalHours: number;
+    totalHoursDisplay?: string;
     totalPay: number;
     pending: number;
     processing: number;
@@ -28,8 +37,29 @@ export type AdminPayrollSummaryResponse = {
   workers: AdminPayrollSummaryWorker[];
 };
 
+export type AdminPayrollOverviewResponse = {
+  subscription?: unknown;
+  summary: {
+    totalHours: number;
+    totalHoursDisplay?: string;
+    totalPay: number;
+    pending: number;
+    inventoryAlerts: number;
+    activeWorkers: number;
+  };
+};
+
+type AdminPayrollOverviewApiResponse = {
+  success: boolean;
+  message: string;
+  subscription?: unknown;
+  summary: AdminPayrollOverviewResponse["summary"];
+};
+
 export type AdminPayrollUsersResponse = {
   date: string;
+  subscription?: unknown;
+  totalUsers?: number;
   users: Array<{
     user: {
       id: string;
@@ -100,8 +130,10 @@ export type AdminPayStubResponse = {
   };
   earnings: {
     regularHours: number;
+    regularHoursDisplay?: string;
     regularPay: number;
     overtimeHours: number;
+    overtimeHoursDisplay?: string;
     overtimePay: number;
     grossPay: number;
   };
@@ -109,16 +141,55 @@ export type AdminPayStubResponse = {
     totalDeductions: number;
   };
   netPay: number;
+  employerCost?: number;
   status: string;
+  processedAt?: string | null;
 };
+
+export async function approveAdminPayroll(payrollId: string, payload?: { note?: string }) {
+  const { data } = await api.patch<{ success: boolean; message: string; data: unknown }>(
+    `/admin/payroll/${payrollId}/approve`,
+    payload ?? {},
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to approve payroll");
+  }
+
+  return data.data;
+}
+
+export async function processAdminPayroll(params?: {
+  month?: string;
+  year?: string;
+  projectId?: string;
+}) {
+  const { data } = await api.post<{ success: boolean; message: string; data: unknown }>(
+    "/admin/payroll/process",
+    null,
+    { params },
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to process payroll");
+  }
+
+  return data;
+}
+
+export async function getAdminPayrollOverview() {
+  const { data } = await api.get<AdminPayrollOverviewApiResponse>("/admin/payroll/overview");
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load payroll overview");
+  }
+  return data.summary;
+}
 
 export async function getAdminPayrollSummary(params?: {
   month?: string;
   year?: string;
   projectId?: string;
 }) {
-  console.log(params);
-  
   const { data } = await api.get<{ success: boolean; message: string; data: AdminPayrollSummaryResponse }>(
     "/admin/payroll/summary",
     { params },
@@ -129,8 +200,10 @@ export async function getAdminPayrollSummary(params?: {
   }
 
   return data.data ?? {
+    subscription: null,
     summary: {
       totalHours: 0,
+      totalHoursDisplay: "0h 0m",
       totalPay: 0,
       pending: 0,
       processing: 0,
@@ -153,6 +226,8 @@ export async function getAdminPayrollUsers(params?: { date?: string }) {
 
   return data.data ?? {
     date: params?.date ?? new Date().toISOString(),
+    subscription: null,
+    totalUsers: 0,
     users: [],
   };
 }
@@ -181,8 +256,10 @@ export async function getAdminPayStub(payrollId: string) {
     },
     earnings: {
       regularHours: 0,
+      regularHoursDisplay: "0h 0m",
       regularPay: 0,
       overtimeHours: 0,
+      overtimeHoursDisplay: "0h 0m",
       overtimePay: 0,
       grossPay: 0,
     },
@@ -190,6 +267,8 @@ export async function getAdminPayStub(payrollId: string) {
       totalDeductions: 0,
     },
     netPay: 0,
+    employerCost: 0,
     status: "draft",
+    processedAt: null,
   };
 }
