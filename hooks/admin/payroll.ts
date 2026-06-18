@@ -1,7 +1,15 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
-import { getAdminPayStub, getAdminPayrollSummary, getAdminPayrollUsers } from "@/api/admin/payroll.api";
+import {
+  approveAdminPayroll,
+  getAdminPayStub,
+  getAdminPayrollOverview,
+  getAdminPayrollSummary,
+  getAdminPayrollUsers,
+  processAdminPayroll,
+} from "@/api/admin/payroll.api";
+import { getAdminWorkerSummary } from "@/api/admin/admin.api";
 import { useAuthStore } from "@/store/auth.store";
 
 export function useAdminPayrollSummaryQuery(params?: {
@@ -83,6 +91,90 @@ export function useAdminPayrollUsersQuery(date?: string) {
     if (query.isError) {
       toast.error(
         query.error instanceof Error ? query.error.message : "Failed to load payroll users",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useApproveAdminPayrollMutation() {
+  const queryClient = useQueryClient();
+  const token = useAuthStore((state) => state.token);
+
+  return useMutation({
+    mutationFn: ({ payrollId, note }: { payrollId: string; note?: string }) => {
+      if (!token) throw new Error("Unauthorized");
+      return approveAdminPayroll(payrollId, note ? { note } : undefined);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "users"] });
+      toast.success("Payroll approved successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error instanceof Error ? error.message : "Failed to approve payroll");
+    },
+  });
+}
+
+export function useProcessAdminPayrollMutation() {
+  const queryClient = useQueryClient();
+  const token = useAuthStore((state) => state.token);
+
+  return useMutation({
+    mutationFn: (params?: { month?: string; year?: string; projectId?: string }) => {
+      if (!token) throw new Error("Unauthorized");
+      return processAdminPayroll(params);
+    },
+    onSuccess: async (response: any) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "users"] });
+      toast.success(response.message || "Payroll processing started");
+    },
+    onError: (error: any) => {
+      toast.error(error instanceof Error ? error.message : "Failed to process payroll");
+    },
+  });
+}
+
+export function useAdminWorkerSummaryQuery() {
+  const token = useAuthStore((state) => state.token);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  const query = useQuery({
+    queryKey: ["admin", "projects", "worker-summary", token],
+    queryFn: getAdminWorkerSummary,
+    enabled: isHydrated && !!token,
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load scheduled activities",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useAdminPayrollOverviewQuery() {
+  const token = useAuthStore((state) => state.token);
+  const query = useQuery({
+    queryKey: ["admin", "payroll", "overview",  token],
+    queryFn: () => getAdminPayrollOverview(),
+    enabled:  !!token,
+
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error ? query.error.message : "Failed to load payroll overview",
       );
     }
   }, [query.error, query.isError]);

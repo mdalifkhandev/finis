@@ -1,40 +1,55 @@
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAdminPayrollSummaryQuery, useAdminPayrollUsersQuery } from "@/hooks/admin/payroll";
+import {
+  useAdminPayrollSummaryQuery,
+  useAdminPayrollOverviewQuery,
+  useApproveAdminPayrollMutation,
+  useProcessAdminPayrollMutation,
+} from "@/hooks/admin/payroll";
 import BackTitleHeader from "../common/BackTitleHeader";
 import PayrollStatCard from "./PayrollStatCard";
 import WorkerPayrollCard from "./WorkerPayrollCard";
+import { formatCurrency } from "./utils";
 import type { WorkerPayroll } from "./types";
+import { getAdminPayrollOverview } from "@/api/admin/payroll.api";
 
 export default function PayrollSummaryScreen() {
   const { data } = useAdminPayrollSummaryQuery();
-  const [selectedDate] = useState(new Date().toISOString().split("T")[0]);
-  const { data: payrollUsers } = useAdminPayrollUsersQuery(selectedDate);
+  const { data: overview } = useAdminPayrollOverviewQuery();
+  const approvePayroll = useApproveAdminPayrollMutation();
+  const processPayroll = useProcessAdminPayrollMutation();
   const [workers, setWorkers] = useState<WorkerPayroll[]>([]);
 
-  React.useEffect(() => {
-    if (!payrollUsers?.users) return;
+  useEffect(() => {
+    if (!data?.workers) {
+      setWorkers([]);
+      return;
+    }
+
     setWorkers(
-      payrollUsers.users.map((item) => ({
-        id: item.user.id,
-        payrollId: item.latestPayroll?.id ?? item.user.id,
-        name: item.user.fullName,
-        role: item.user.department || "Worker",
-        hours: item.payrollPreview.regularHours,
-        rate: Number(item.payrollPreview.ratePerHour ?? item.user.hourlyRate ?? 0),
-        total: item.payrollPreview.netPay,
-        status: item.latestPayroll?.status === "draft" ? "Pending" : "Approved",
-        showApproveButton: item.latestPayroll?.status === "draft",
+      data.workers.map((item) => ({
+        id: item.payrollId,
+        payrollId: item.payrollId,
+        name: item.worker.fullName,
+        role: item.worker.department || "Worker",
+        hours: item.hours,
+        rate: Number(item.rate ?? item.worker.hourlyRate ?? 0),
+        total: item.netPay,
+        status:
+          item.status === "draft"
+            ? "Pending"
+            : item.status === "paid"
+              ? "Paid"
+              : "Approved",
+        showApproveButton: item.status === "draft",
       })),
     );
-  }, [payrollUsers?.users]);
+  }, [data?.workers]);
 
-  const pendingCount = useMemo(
-    () => workers.filter((item) => item.status === "Pending").length,
-    [workers]
-  );
+  
+console.log(overview);
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -46,14 +61,22 @@ export default function PayrollSummaryScreen() {
 
         <View className="mt-4 px-4">
           <View className="flex-row justify-between">
-            <PayrollStatCard value={String(Math.round(data?.summary.totalHours ?? 0))} label="Total Hours" />
-            <PayrollStatCard value={`$${((data?.summary.totalPay ?? 0) / 1000).toFixed(1)}K`} label="Total Pay" />
+            <PayrollStatCard
+              value={overview?.totalHoursDisplay ?? String(Math.round(overview?.totalHours ?? 0))}
+              label="Total Hours"
+            />
+            <PayrollStatCard
+              value={formatCurrency(overview?.totalPay ?? 0)}
+              label="Total Pay"
+            />
           </View>
 
           <View className="mt-3 flex-row justify-between">
-            <PayrollStatCard value={String(pendingCount)} label="Pending" />
-            <PayrollStatCard value={String(data?.summary.inventoryAlerts ?? 0)} label="Inventory Alerts" />
+            <PayrollStatCard value={String(overview?.pending ?? 0)} label="Pending" />
+            <PayrollStatCard value={String(overview?.inventoryAlerts ?? 0)} label="Inventory Alerts" />
           </View>
+
+
         </View>
 
         <View className="mt-4 flex-row items-center justify-between px-4">
@@ -66,7 +89,7 @@ export default function PayrollSummaryScreen() {
         <View className="px-4">
           {workers.map((worker) => (
             <WorkerPayrollCard
-              key={worker.id}
+              key={worker.payrollId || worker.id}
               worker={worker}
               onViewStub={() =>
                 router.push({
@@ -75,28 +98,20 @@ export default function PayrollSummaryScreen() {
                 })
               }
               onApprove={() => {
-                setWorkers((prev) =>
-                  prev.map((item) =>
-                    item.id === worker.id ? { ...item, status: "Approved" } : item
-                  )
-                );
+                approvePayroll.mutate({ payrollId: worker.payrollId || worker.id });
               }}
             />
           ))}
 
           <TouchableOpacity
             activeOpacity={0.88}
-            onPress={() => {
-              setWorkers((prev) =>
-                prev.map((item) => ({
-                  ...item,
-                  status: "Approved",
-                }))
-              );
-            }}
+            disabled={processPayroll.isPending}
+            onPress={() => processPayroll.mutate(undefined)}
             className="mb-8 mt-3 h-12 items-center justify-center rounded-[10px] bg-[#1F5577]"
           >
-            <Text className="text-[16px] font-medium text-white">Process payroll</Text>
+            <Text className="text-[16px] font-medium text-white">
+              {processPayroll.isPending ? "Processing..." : "Process payroll"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

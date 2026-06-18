@@ -215,3 +215,36 @@ export async function getAdminProfile() {
   };
 }
 
+export type AdminWorkerSummaryProject = {
+  projectId: string;
+  projectName: string;
+  endDate: string;
+  status: string;
+  company: {
+    id: string;
+    name: string;
+  };
+  workerCount: number;
+  teamMemberCount: number;
+};
+
+export type AdminWorkerSummaryResponse = {
+  totalProjects: number;
+  projects: AdminWorkerSummaryProject[];
+};
+
+export async function getAdminWorkerSummary() {
+  const { data } = await api.get<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: AdminWorkerSummaryResponse;
+  }>("/admin/projects/worker-summary");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load worker summary");
+  }
+
+  return data.data;
+}
+

@@ -5,7 +5,7 @@ export type ActivityItem = {
   workersLabel: string;
 };
 
-export type PayrollStatus = "Approved" | "Pending";
+export type PayrollStatus = "Approved" | "Pending" | "Paid";
 
 export type WorkerPayroll = {
   id: string;
