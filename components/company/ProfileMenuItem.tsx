@@ -15,10 +15,10 @@ export default function ProfileMenuItem({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      className="flex-row items-center justify-between px-6 py-6"
+      className="flex-row items-center justify-between rounded-[14px] border border-[#EDF1F5] bg-[#F8FAFC] px-4 py-4"
     >
-      <Text className="text-base text-[#13151a]">{label}</Text>
-      <Ionicons name="chevron-forward" size={20} color="#101217" />
+      <Text className="text-[16px] font-medium text-[#334155]">{label}</Text>
+      <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
     </TouchableOpacity>
   );
 }

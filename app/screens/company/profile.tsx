@@ -24,7 +24,7 @@ export default function CompanyProfileRoute() {
     <SafeAreaView className="flex-1 bg-[#e9edf1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
         <BackTitleHeader title="Company" onBack={() => router.back()} />
 
@@ -61,7 +61,7 @@ export default function CompanyProfileRoute() {
           </View>
         )}
 
-        <View className="mx-5 mt-6 rounded-3xl border border-[#d4d9de] bg-[#f5f6f8] py-2">
+        <View className="mx-5 mt-4 gap-3">
           {menuItems.map((item) => (
             <ProfileMenuItem
               key={item.label}
