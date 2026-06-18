@@ -49,7 +49,14 @@ export default function SchedulingPayrollScreen() {
 
           <TouchableOpacity
             activeOpacity={0.88}
-            onPress={() => router.push("/screens/payroll/summary")}
+            onPress={() =>
+              router.push({
+                pathname: "/screens/payroll/summary",
+                params: {
+                  date: selectedDate.toISOString().split("T")[0],
+                },
+              })
+            }
             className="mt-3 h-[56px] items-center justify-center rounded-[12px] bg-[#1F5577]"
           >
             <Text className="text-[16px] font-medium text-white">

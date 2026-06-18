@@ -56,6 +56,14 @@ type AdminPayrollOverviewApiResponse = {
   summary: AdminPayrollOverviewResponse["summary"];
 };
 
+type AdminPayrollSummaryApiResponse = {
+  success: boolean;
+  message: string;
+  subscription?: unknown;
+  summary: AdminPayrollSummaryResponse["summary"];
+  workers: AdminPayrollSummaryWorker[];
+};
+
 export type AdminPayrollUsersResponse = {
   date: string;
   subscription?: unknown;
@@ -186,11 +194,12 @@ export async function getAdminPayrollOverview() {
 }
 
 export async function getAdminPayrollSummary(params?: {
+  date?: string;
   month?: string;
   year?: string;
   projectId?: string;
 }) {
-  const { data } = await api.get<{ success: boolean; message: string; data: AdminPayrollSummaryResponse }>(
+  const { data } = await api.get<AdminPayrollSummaryApiResponse>(
     "/admin/payroll/summary",
     { params },
   );
@@ -199,9 +208,9 @@ export async function getAdminPayrollSummary(params?: {
     throw new Error(data.message || "Failed to load payroll summary");
   }
 
-  return data.data ?? {
-    subscription: null,
-    summary: {
+  return {
+    subscription: data.subscription ?? null,
+    summary: data.summary ?? {
       totalHours: 0,
       totalHoursDisplay: "0h 0m",
       totalPay: 0,
@@ -210,7 +219,7 @@ export async function getAdminPayrollSummary(params?: {
       paid: 0,
       inventoryAlerts: 0,
     },
-    workers: [],
+    workers: data.workers ?? [],
   };
 }
 

@@ -13,14 +13,16 @@ import { getAdminWorkerSummary } from "@/api/admin/admin.api";
 import { useAuthStore } from "@/store/auth.store";
 
 export function useAdminPayrollSummaryQuery(params?: {
+  date?: string;
   month?: string;
   year?: string;
   projectId?: string;
 }) {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
-  const currentDate = new Date();
+  const currentDate = params?.date ? new Date(params.date) : new Date();
   const resolvedParams = {
+    date: params?.date,
     month: params?.month ?? String(currentDate.getMonth() + 1),
     year: params?.year ?? String(currentDate.getFullYear()),
     projectId: params?.projectId,
@@ -31,6 +33,7 @@ export function useAdminPayrollSummaryQuery(params?: {
       "admin",
       "payroll",
       "summary",
+      resolvedParams.date ?? "no-date",
       resolvedParams.month,
       resolvedParams.year,
       resolvedParams.projectId,
