@@ -2,6 +2,7 @@ import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
 import {
   useAdminPayrollSummaryQuery,
   useAdminPayrollOverviewQuery,
@@ -16,7 +17,8 @@ import type { WorkerPayroll } from "./types";
 import { getAdminPayrollOverview } from "@/api/admin/payroll.api";
 
 export default function PayrollSummaryScreen() {
-  const { data } = useAdminPayrollSummaryQuery();
+  const { date } = useLocalSearchParams<{ date?: string }>();
+  const { data } = useAdminPayrollSummaryQuery({ date });
   const { data: overview } = useAdminPayrollOverviewQuery();
   const approvePayroll = useApproveAdminPayrollMutation();
   const processPayroll = useProcessAdminPayrollMutation();
