@@ -14,17 +14,14 @@ export default function ProfileStatTile({
   label,
 }: ProfileStatTileProps) {
   return (
-    <View
-      className="rounded-[18px] border border-[#EDF1F5] bg-[#F8FAFC] px-4 py-4"
-      style={styles.tile}
-    >
+    <View className="rounded-3xl px-5 py-4" style={styles.tile}>
       <View className="flex-row items-center justify-center">
-        <Ionicons name={icon} size={20} color="#1D5478" />
-        <Text className="ml-2 text-[18px] font-semibold text-[#111827]">
+        <Ionicons name={icon} size={22} color="#f0f4f8" />
+        <Text className="ml-2 text-[20px] font-semibold text-white">
           {value}
         </Text>
       </View>
-      <Text className="mt-1 text-center text-[13px] text-[#64748B]">
+      <Text className="mt-1 text-center text-[14px] text-slate-100">
         {label}
       </Text>
     </View>
@@ -33,6 +30,6 @@ export default function ProfileStatTile({
 
 const styles = StyleSheet.create({
   tile: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "rgba(136, 175, 201, 0.45)",
   },
 });
