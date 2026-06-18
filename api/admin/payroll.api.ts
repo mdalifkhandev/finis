@@ -154,6 +154,21 @@ export type AdminPayStubResponse = {
   processedAt?: string | null;
 };
 
+export type AdminUpdatePayrollPayload = {
+  workerId?: string;
+  projectId?: string;
+  companyId?: string;
+  payPeriodStart?: string;
+  payPeriodEnd?: string;
+  regularHours?: number;
+  overtimeHours?: number;
+  ratePerHour?: number;
+  grossPay?: number;
+  deductions?: number;
+  netPay?: number;
+  note?: string;
+};
+
 export async function approveAdminPayroll(payrollId: string, payload?: { note?: string }) {
   const { data } = await api.patch<{ success: boolean; message: string; data: unknown }>(
     `/admin/payroll/${payrollId}/approve`,
@@ -183,6 +198,22 @@ export async function processAdminPayroll(params?: {
   }
 
   return data;
+}
+
+export async function updateAdminPayroll(
+  payrollId: string,
+  payload: AdminUpdatePayrollPayload,
+) {
+  const { data } = await api.patch<{ success: boolean; message: string; data: unknown }>(
+    `/admin/payroll/${payrollId}`,
+    payload,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update payroll");
+  }
+
+  return data.data;
 }
 
 export async function getAdminPayrollOverview() {

@@ -13,6 +13,7 @@ export type WorkerPayroll = {
   name: string;
   role: string;
   hours: number;
+  hoursDisplay?: string;
   rate: number;
   total: number;
   status: PayrollStatus;

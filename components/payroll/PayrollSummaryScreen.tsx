@@ -1,42 +1,43 @@
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import {
+  useUpdateAdminPayrollMutation,
   useAdminPayrollSummaryQuery,
   useAdminPayrollOverviewQuery,
   useApproveAdminPayrollMutation,
   useProcessAdminPayrollMutation,
 } from "@/hooks/admin/payroll";
 import BackTitleHeader from "../common/BackTitleHeader";
+import EditPayrollRateSheet from "./EditPayrollRateSheet";
 import PayrollStatCard from "./PayrollStatCard";
 import WorkerPayrollCard from "./WorkerPayrollCard";
 import { formatCurrency } from "./utils";
 import type { WorkerPayroll } from "./types";
-import { getAdminPayrollOverview } from "@/api/admin/payroll.api";
+import type { AdminPayrollSummaryWorker } from "@/api/admin/payroll.api";
 
 export default function PayrollSummaryScreen() {
-  const { date } = useLocalSearchParams<{ date?: string }>();
-  const { data } = useAdminPayrollSummaryQuery({ date });
+  const { date } = useLocalSearchParams<{ date?: string | string[] }>();
+  const selectedDate = Array.isArray(date) ? date[0] : date;
+  const { data } = useAdminPayrollSummaryQuery({ date: selectedDate });
   const { data: overview } = useAdminPayrollOverviewQuery();
   const approvePayroll = useApproveAdminPayrollMutation();
   const processPayroll = useProcessAdminPayrollMutation();
-  const [workers, setWorkers] = useState<WorkerPayroll[]>([]);
-
-  useEffect(() => {
-    if (!data?.workers) {
-      setWorkers([]);
-      return;
-    }
-
-    setWorkers(
-      data.workers.map((item) => ({
+  const updatePayroll = useUpdateAdminPayrollMutation();
+  const [editSheetVisible, setEditSheetVisible] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState<AdminPayrollSummaryWorker | null>(null);
+  const [rateInput, setRateInput] = useState("0");
+  const workers = useMemo<WorkerPayroll[]>(
+    () =>
+      data?.workers?.map((item) => ({
         id: item.payrollId,
         payrollId: item.payrollId,
         name: item.worker.fullName,
         role: item.worker.department || "Worker",
         hours: item.hours,
+        hoursDisplay: item.hoursDisplay,
         rate: Number(item.rate ?? item.worker.hourlyRate ?? 0),
         total: item.netPay,
         status:
@@ -46,12 +47,44 @@ export default function PayrollSummaryScreen() {
               ? "Paid"
               : "Approved",
         showApproveButton: item.status === "draft",
-      })),
-    );
-  }, [data?.workers]);
+      })) ?? [],
+    [data?.workers],
+  );
 
-  
-console.log(overview);
+  const openEditSheet = (worker: AdminPayrollSummaryWorker) => {
+    setSelectedWorker(worker);
+    setRateInput(String(Number(worker.rate ?? worker.worker.hourlyRate ?? 0)));
+    setEditSheetVisible(true);
+  };
+
+  const handleUpdatePayroll = () => {
+    if (!selectedWorker) return;
+
+    const nextRate = Number(rateInput);
+    updatePayroll.mutate(
+      {
+        payrollId: selectedWorker.payrollId,
+        payload: {
+          workerId: selectedWorker.worker.id,
+          projectId: selectedWorker.project?.id,
+          payPeriodStart: selectedWorker.payPeriodStart?.split("T")[0],
+          payPeriodEnd: selectedWorker.payPeriodEnd?.split("T")[0],
+          regularHours: selectedWorker.hours,
+          overtimeHours: selectedWorker.overtimeHours,
+          ratePerHour: nextRate,
+          grossPay: selectedWorker.grossPay,
+          deductions: selectedWorker.deductions,
+          netPay: selectedWorker.netPay,
+        },
+      },
+      {
+        onSuccess: () => {
+          setEditSheetVisible(false);
+          setSelectedWorker(null);
+        },
+      },
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -99,6 +132,14 @@ console.log(overview);
                   params: { payrollId: worker.payrollId || worker.id },
                 })
               }
+              onEdit={() => {
+                const sourceWorker = data?.workers?.find(
+                  (item) => item.payrollId === worker.payrollId,
+                );
+                if (sourceWorker) {
+                  openEditSheet(sourceWorker);
+                }
+              }}
               onApprove={() => {
                 approvePayroll.mutate({ payrollId: worker.payrollId || worker.id });
               }}
@@ -117,6 +158,18 @@ console.log(overview);
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <EditPayrollRateSheet
+        visible={editSheetVisible}
+        value={rateInput}
+        onChangeValue={setRateInput}
+        onClose={() => {
+          setEditSheetVisible(false);
+          setSelectedWorker(null);
+        }}
+        onUpdate={handleUpdatePayroll}
+        isUpdating={updatePayroll.isPending}
+      />
     </SafeAreaView>
   );
 }
