@@ -7,6 +7,7 @@ import {
   getAdminPayrollOverview,
   getAdminPayrollSummary,
   getAdminPayrollUsers,
+  getAdminApprovedPayroll,
   processAdminPayroll,
   updateAdminPayroll,
 } from "@/api/admin/payroll.api";
@@ -206,6 +207,28 @@ export function useAdminPayrollOverviewQuery() {
     if (query.isError) {
       toast.error(
         query.error instanceof Error ? query.error.message : "Failed to load payroll overview",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useAdminApprovedPayrollQuery(enabled = true) {
+  const token = useAuthStore((state) => state.token);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  const query = useQuery({
+    queryKey: ["admin", "payroll", "approved", token],
+    queryFn: getAdminApprovedPayroll,
+    enabled: enabled && isHydrated && !!token,
+    staleTime: 30 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error ? query.error.message : "Failed to load approved payrolls",
       );
     }
   }, [query.error, query.isError]);
