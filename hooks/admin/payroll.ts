@@ -8,6 +8,7 @@ import {
   getAdminPayrollSummary,
   getAdminPayrollUsers,
   processAdminPayroll,
+  updateAdminPayroll,
 } from "@/api/admin/payroll.api";
 import { getAdminWorkerSummary } from "@/api/admin/admin.api";
 import { useAuthStore } from "@/store/auth.store";
@@ -137,6 +138,33 @@ export function useProcessAdminPayrollMutation() {
     },
     onError: (error: any) => {
       toast.error(error instanceof Error ? error.message : "Failed to process payroll");
+    },
+  });
+}
+
+export function useUpdateAdminPayrollMutation() {
+  const queryClient = useQueryClient();
+  const token = useAuthStore((state) => state.token);
+
+  return useMutation({
+    mutationFn: ({
+      payrollId,
+      payload,
+    }: {
+      payrollId: string;
+      payload: Parameters<typeof updateAdminPayroll>[1];
+    }) => {
+      if (!token) throw new Error("Unauthorized");
+      return updateAdminPayroll(payrollId, payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "overview"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "users"] });
+      toast.success("Payroll updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error instanceof Error ? error.message : "Failed to update payroll");
     },
   });
 }

@@ -7,14 +7,18 @@ type WorkerPayrollCardProps = {
   worker: WorkerPayroll;
   onViewStub: () => void;
   onApprove?: () => void;
+  onEdit?: () => void;
 };
 
 export default function WorkerPayrollCard({
   worker,
   onViewStub,
   onApprove,
+  onEdit,
 }: WorkerPayrollCardProps) {
   const isApproved = worker.status === "Approved";
+  const primaryLabel = worker.showApproveButton ? "Edit" : "View Stub";
+  const handlePrimaryPress = worker.showApproveButton ? onEdit : onViewStub;
 
   return (
     <View className="mt-3 rounded-[14px] border border-[#E3E6EA] bg-white px-4 py-4">
@@ -51,7 +55,7 @@ export default function WorkerPayrollCard({
         <View className="flex-1">
           <Text className="text-[11px] text-[#667085]">Hours</Text>
           <Text className="text-[12px] font-medium text-[#101828]">
-            {worker.hours}
+            {worker.hoursDisplay ?? String(worker.hours)}
           </Text>
         </View>
 
@@ -73,7 +77,7 @@ export default function WorkerPayrollCard({
       <View className="mt-3 flex-row">
           <TouchableOpacity
           activeOpacity={0.85}
-          onPress={onViewStub}
+          onPress={handlePrimaryPress}
           className={
             worker.showApproveButton
               ? "mr-2 h-11 flex-1 items-center justify-center rounded-[8px] bg-[#B9DCF3]"
@@ -81,7 +85,7 @@ export default function WorkerPayrollCard({
           }
         >
           <Text className="text-[16px] font-medium text-[#1F2937]">
-            View Stub
+            {primaryLabel}
           </Text>
         </TouchableOpacity>
 
