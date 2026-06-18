@@ -6,12 +6,14 @@ type GeofencingSummaryCardProps = {
   onAddNewZonePress?: () => void;
   onProjectPress?: () => void;
   name?: string;
+  hideProjectSelector?: boolean;
 };
 
 export default function GeofencingSummaryCard({
   onAddNewZonePress,
   onProjectPress,
-  name
+  name,
+  hideProjectSelector = false,
 }: GeofencingSummaryCardProps) {
   return (
     <View className="mt-6 px-5">
@@ -41,19 +43,27 @@ export default function GeofencingSummaryCard({
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.86}
-          onPress={onProjectPress}
-          className="mt-3 h-12 flex-row items-center justify-center rounded-[14px] border border-[#D6DCE3] bg-[#F6F8FA]"
-        >
-          <Text className="text-[16px] text-[#1F2937]">{name || "Select Project"}</Text>
-          <Ionicons
-            name="chevron-down"
-            size={20}
-            color="#111827"
-            style={{ marginLeft: 8 }}
-          />
-        </TouchableOpacity>
+        {hideProjectSelector ? (
+          <View className="mt-3 h-12 flex-row items-center justify-center rounded-[14px] border border-[#D6DCE3] bg-[#F6F8FA]">
+            <Text className="text-[16px] text-[#1F2937]">
+              {name || "Project"}
+            </Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.86}
+            onPress={onProjectPress}
+            className="mt-3 h-12 flex-row items-center justify-center rounded-[14px] border border-[#D6DCE3] bg-[#F6F8FA]"
+          >
+            <Text className="text-[16px] text-[#1F2937]">{name || "Select Project"}</Text>
+            <Ionicons
+              name="chevron-down"
+              size={20}
+              color="#111827"
+              style={{ marginLeft: 8 }}
+            />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

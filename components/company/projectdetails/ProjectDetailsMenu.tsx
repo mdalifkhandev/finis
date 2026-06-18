@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 
-const items = [
+const defaultItems = [
   "Project details",
   "Project Analysis",
   "Team",
@@ -12,10 +12,12 @@ const items = [
 
 type ProjectDetailsMenuProps = {
   onPressItem?: (item: string) => void;
+  items?: string[];
 };
 
 export default function ProjectDetailsMenu({
   onPressItem,
+  items = defaultItems,
 }: ProjectDetailsMenuProps) {
   return (
     <View className="mx-5 mt-3.5 rounded-3xl border border-[#D7DDE4] bg-[#F8FAFC] py-1.5">

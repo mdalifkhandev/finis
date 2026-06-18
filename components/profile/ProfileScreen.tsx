@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import { isAxiosError } from "axios";
@@ -46,46 +46,71 @@ export default function ProfileScreen() {
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ProfileHeaderBar title="" onBack={() => router.back()} />
 
-      <View className="mt-2 items-center px-4">
-        <View className="w-full rounded-[12px] border border-[#E0E4E9] bg-white px-4 pb-5 pt-3">
-          <View className="items-center">
-            <ProfileAvatar uri={avatarUri} size={76} />
-            <Text className="mt-3 text-[16px] font-medium text-[#2B2B2B]">
-              Rokey Mahmud
-            </Text>
-            <Text className="mt-1 text-[14px] text-[#49505A]">Admin</Text>
-          </View>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: 20, paddingBottom: 36 }}
+      >
+        <View className="items-center rounded-[24px] border border-[#E1E7ED] bg-white px-5 pb-5 pt-6">
+          <ProfileAvatar uri={avatarUri} size={100} />
 
-          <View className="mt-5">
-            <Text className="mb-2.5 text-[14px] text-[#2B2B2B]">
+          <Text className="mt-4 text-[22px] font-semibold text-[#111827]">
+            Rokey Mahmud
+          </Text>
+          <Text className="mt-1 text-[14px] text-[#64748B]">Admin</Text>
+
+          <View className="mt-6 w-full">
+            <Text className="mb-4 text-[16px] font-semibold text-[#111827]">
               Account Information
             </Text>
 
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={() => router.push("/screens/profile/personalinfo")}
-              className="flex-row items-center justify-between"
+              className="mb-3 flex-row items-center rounded-[14px] border border-[#EDF1F5] bg-[#F8FAFC] px-4 py-4"
             >
-              <View className="flex-row items-center">
-                <Ionicons name="person-outline" size={14} color="#2B2B2B" />
-                <Text className="ml-2 text-[14px] text-[#2B2B2B]">
-                  Personal info
-                </Text>
+              <View className="h-8 w-8 items-center justify-center rounded-full bg-[#D8F0FF]">
+                <Ionicons name="person-outline" size={18} color="#1D5478" />
               </View>
-              <Ionicons name="chevron-forward" size={14} color="#2B2B2B" />
+              <Text className="ml-3 flex-1 text-[16px] font-medium text-[#334155]">
+                Personal info
+              </Text>
+              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
             </TouchableOpacity>
           </View>
         </View>
 
         <TouchableOpacity
           activeOpacity={0.85}
-          onPress={handleLogout}
-          className="mt-2 w-full flex-row items-center justify-between rounded-[10px] border border-[#E0E4E9] bg-white px-3 py-3"
+          onPress={() => router.push("/screens/profile/subscription")}
+          className="mt-4 flex-row items-center justify-between rounded-[14px] border border-[#E1E7ED] bg-white px-4 py-4"
         >
-          <Text className="text-[14px] text-[#2B2B2B]">Log Out</Text>
-          <Ionicons name="log-out-outline" size={14} color="#2B2B2B" />
+          <View className="flex-row items-center">
+            <View className="h-8 w-8 items-center justify-center rounded-full bg-[#D8F0FF]">
+              <Ionicons name="card-outline" size={18} color="#1D5478" />
+            </View>
+            <Text className="ml-3 text-[16px] font-medium text-[#334155]">
+              Subscription
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
         </TouchableOpacity>
-      </View>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={handleLogout}
+          className="mt-3 flex-row items-center justify-between rounded-[14px] border border-[#F0D7DB] bg-white px-4 py-4"
+        >
+          <View className="flex-row items-center">
+            <View className="h-8 w-8 items-center justify-center rounded-full bg-[#FFE4E6]">
+              <Ionicons name="log-out-outline" size={18} color="#E11D48" />
+            </View>
+            <Text className="ml-3 text-[16px] font-medium text-[#334155]">
+              Log Out
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }

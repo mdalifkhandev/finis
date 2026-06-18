@@ -1,0 +1,432 @@
+import BackTitleHeader from "@/components/common/BackTitleHeader";
+import GeofenceMapCard from "@/components/company/geofencing/GeofenceMapCard";
+import GeofencingSummaryCard from "@/components/company/geofencing/GeofencingSummaryCard";
+import LiveTrackerCard from "@/components/company/geofencing/LiveTrackerCard";
+import LocationLogsCard from "@/components/company/geofencing/LocationLogsCard";
+import ZoneConfigurationCard from "@/components/company/geofencing/ZoneConfigurationCard";
+import ZoneViolationAlertCard from "@/components/company/geofencing/ZoneViolationAlertCard";
+import { LocationLog } from "@/components/company/geofencing/types";
+import {
+  useCreateProjectGeofenceMutation,
+  useProjectGeofenceLocationLogsQuery,
+  useProjectGeofenceTimeSummaryQuery,
+  useProjectGeofenceViolationsQuery,
+  useProjectGeofencesQuery,
+  useProjectProfileQuery,
+  useUpdateProjectGeofenceMutation,
+} from "@/hooks/company/company";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
+import { API_BASE_URL } from "@/lib/config";
+import { queryClient } from "@/lib/query-client";
+import { useAuthStore } from "@/store/auth.store";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { io, type Socket } from "socket.io-client";
+
+export default function ManagerGeofencingRoute() {
+  const { id: projectIdParam } = useLocalSearchParams<{ id?: string }>();
+  const projectId = typeof projectIdParam === "string" ? projectIdParam : undefined;
+  const [draftPoints, setDraftPoints] = useState<Array<{ lat: number; lng: number }>>([]);
+  const [liveWorkers, setLiveWorkers] = useState<Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }>>([]);
+  const [isFullHistoryVisible, setIsFullHistoryVisible] = useState(false);
+  const token = useAuthStore((state) => state.token);
+  const socketRef = useRef<Socket | null>(null);
+  const { data: project, isLoading: projectLoading } = useProjectProfileQuery(projectId);
+  const geofencesQuery = useProjectGeofencesQuery(projectId);
+  const logsQuery = useProjectGeofenceLocationLogsQuery(projectId);
+  const violationsQuery = useProjectGeofenceViolationsQuery(projectId);
+  const summaryQuery = useProjectGeofenceTimeSummaryQuery(projectId);
+  const createGeofenceMutation = useCreateProjectGeofenceMutation(projectId);
+  const updateGeofenceMutation = useUpdateProjectGeofenceMutation(projectId);
+
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    await Promise.all([
+      geofencesQuery.refetch(),
+      logsQuery.refetch(),
+      violationsQuery.refetch(),
+      summaryQuery.refetch(),
+      projectId
+        ? queryClient.invalidateQueries({ queryKey: ["project", "profile", projectId] })
+        : Promise.resolve(),
+    ]);
+  });
+
+  const logs: LocationLog[] = useMemo(() => {
+    return (logsQuery.data?.data ?? []).map((log: any) => ({
+      name: log.worker.fullName,
+      time: new Date(log.loggedAt).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+      location: `${log.lat.toFixed(4)}, ${log.lng.toFixed(4)}`,
+      status: log.eventType.toLowerCase().includes("check") ? "Check In" : "Tracking",
+    }));
+  }, [logsQuery.data]);
+
+  const selectedGeofence = useMemo(() => {
+    const geofences = geofencesQuery.data ?? [];
+    return geofences.find((geofence) => geofence.isActive) ?? geofences[0];
+  }, [geofencesQuery.data]);
+
+  const liveTrackerStats = useMemo(() => {
+    const workers = (summaryQuery.data?.workers ?? []) as Array<{
+      totalZoneHours?: number;
+      totalOutsideHours?: number;
+    }>;
+
+    const outsideZone = workers.filter((worker) => (worker.totalOutsideHours ?? 0) > 0).length;
+
+    return {
+      workersOnSite: workers.length,
+      outsideZone,
+    };
+  }, [summaryQuery.data]);
+
+  const latestViolation = useMemo(() => {
+    return violationsQuery.data?.data?.[0] ?? null;
+  }, [violationsQuery.data]);
+
+  const activePolygon = draftPoints.length >= 3 ? draftPoints : selectedGeofence?.polygonCoords ?? [];
+
+  useEffect(() => {
+    if (!token || !projectId) {
+      return;
+    }
+
+    const socket = io(`${API_BASE_URL}/geofencing`, {
+      transports: ["websocket", "polling"],
+      auth: { token },
+    });
+    socketRef.current = socket;
+
+    const joinProject = () => {
+      console.log("[ManagerGeofencing] join_project emit", { projectId });
+      socket.emit("join_project", { projectId });
+      socket.emit("get_live_workers", { projectId });
+    };
+
+    const handleActiveWorkers = (payload: { workers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }> }) => {
+      console.log("[ManagerGeofencing] active_workers:", payload);
+      setLiveWorkers(payload.workers ?? []);
+    };
+
+    const handleWorkerLocation = (payload: { workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }) => {
+      console.log("[ManagerGeofencing] worker_location:", payload);
+      setLiveWorkers((current) => {
+        const next = current.filter((worker) => worker.workerId !== payload.workerId);
+        next.push(payload);
+        return next;
+      });
+    };
+
+    const handleWorkerCheckIn = (payload: { worker: { id: string; fullName: string }; isInsideZone?: boolean }) => {
+      console.log("[ManagerGeofencing] worker_checked_in:", payload);
+      setLiveWorkers((current) => {
+        const next = current.filter((worker) => worker.workerId !== payload.worker.id);
+        next.push({
+          workerId: payload.worker.id,
+          workerName: payload.worker.fullName,
+          lat: 0,
+          lng: 0,
+          isInsideZone: payload.isInsideZone,
+        });
+        return next;
+      });
+    };
+
+    const handleWorkerCheckOut = (payload: { worker?: { id?: string; fullName?: string }; workerId?: string }) => {
+      console.log("[ManagerGeofencing] worker_checked_out:", payload);
+      const workerId = payload.workerId ?? payload.worker?.id;
+      if (!workerId) {
+        return;
+      }
+      setLiveWorkers((current) => current.filter((worker) => worker.workerId !== workerId));
+    };
+
+    socket.on("connect", () => {
+      console.log("[ManagerGeofencing] socket connected", { socketId: socket.id, projectId });
+    });
+    socket.on("connect_error", (error) => {
+      console.log("[ManagerGeofencing] socket connect_error", error?.message ?? error);
+    });
+    socket.on("error", (error) => {
+      console.log("[ManagerGeofencing] socket error:", error?.message ?? error);
+    });
+    socket.on("joined_project", (payload) => {
+      console.log("[ManagerGeofencing] joined_project:", payload);
+    });
+    socket.on("connect", joinProject);
+    socket.on("active_workers", handleActiveWorkers);
+    socket.on("worker_location", handleWorkerLocation);
+    socket.on("worker_checked_in", handleWorkerCheckIn);
+    socket.on("worker_checked_out", handleWorkerCheckOut);
+
+    if (socket.connected) {
+      joinProject();
+    }
+
+    return () => {
+      socket.off("connect", joinProject);
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("error");
+      socket.off("joined_project");
+      socket.off("active_workers", handleActiveWorkers);
+      socket.off("worker_location", handleWorkerLocation);
+      socket.off("worker_checked_in", handleWorkerCheckIn);
+      socket.off("worker_checked_out", handleWorkerCheckOut);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [projectId, token]);
+
+  const polygonMetrics = useMemo(() => {
+    if (activePolygon.length < 3) {
+      return {
+        totalAreaSqft: null,
+        perimeterFt: null,
+        centerPoint: null as { lat: number; lng: number } | null,
+      };
+    }
+
+    const metersPerDegreeLat = 111_320;
+    const avgLat = activePolygon.reduce((sum, point) => sum + point.lat, 0) / activePolygon.length;
+    const metersPerDegreeLng = 111_320 * Math.cos((avgLat * Math.PI) / 180);
+
+    const pointsInMeters = activePolygon.map((point) => ({
+      x: point.lng * metersPerDegreeLng,
+      y: point.lat * metersPerDegreeLat,
+    }));
+
+    let area = 0;
+    let perimeter = 0;
+
+    for (let index = 0; index < pointsInMeters.length; index += 1) {
+      const current = pointsInMeters[index];
+      const next = pointsInMeters[(index + 1) % pointsInMeters.length];
+      area += current.x * next.y - next.x * current.y;
+      perimeter += Math.hypot(next.x - current.x, next.y - current.y);
+    }
+
+    area = Math.abs(area) / 2;
+
+    const centerPoint = activePolygon.reduce(
+      (accumulator, point) => ({
+        lat: accumulator.lat + point.lat,
+        lng: accumulator.lng + point.lng,
+      }),
+      { lat: 0, lng: 0 },
+    );
+
+    return {
+      totalAreaSqft: area * 10.7639,
+      perimeterFt: perimeter * 3.28084,
+      centerPoint: {
+        lat: centerPoint.lat / activePolygon.length,
+        lng: centerPoint.lng / activePolygon.length,
+      },
+    };
+  }, [activePolygon]);
+
+  if (!projectId) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+        <BackTitleHeader title="Geofencing" onBack={() => router.back()} />
+        <View className="mt-10 items-center px-5">
+          <Text className="text-[14px] text-[#66707B]">
+            Project not found.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 36 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1f3d5c"
+            colors={["#1f3d5c"]}
+          />
+        }
+      >
+        <BackTitleHeader title="Geofencing" onBack={() => router.back()} />
+
+        {projectLoading && !project ? (
+          <View className="mt-10 items-center">
+            <ActivityIndicator size="small" color="#1f3d5c" />
+            <Text className="mt-2 text-xs text-slate-500">
+              Loading project...
+            </Text>
+          </View>
+        ) : null}
+
+        <GeofencingSummaryCard
+          onAddNewZonePress={() => {}}
+          name={project?.name}
+          hideProjectSelector
+        />
+
+        <View className="px-5 pt-2">
+          <Text className="text-[14px] text-[#66707B]">
+            Tap on the map to draw your zone. Use Undo/Clear if needed.
+          </Text>
+        </View>
+
+        <GeofenceMapCard
+          projectName={project?.name}
+          projectSite={project?.location}
+          initialPolygonCoords={selectedGeofence?.polygonCoords ?? []}
+          liveWorkers={liveWorkers}
+          onPolygonChange={setDraftPoints}
+        />
+
+        <View className="px-5 pt-3">
+          <Text className="mb-2 text-[12px] text-[#66707B]">
+            {draftPoints.length >= 3
+              ? `${draftPoints.length} points selected.`
+              : "Select at least 3 points to enable save."}
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            disabled={draftPoints.length < 3 || createGeofenceMutation.isPending}
+            onPress={() => {
+              if (draftPoints.length < 3) {
+                return;
+              }
+
+              const zonePayload = {
+                zoneName: `${project?.name ?? "Selected Project"} Zone`,
+                polygonCoords: draftPoints,
+              };
+
+              if (selectedGeofence?.id) {
+                void updateGeofenceMutation.mutateAsync({
+                  geofenceId: selectedGeofence.id,
+                  payload: zonePayload,
+                }).then(() => setDraftPoints([]));
+                return;
+              }
+
+              void createGeofenceMutation.mutateAsync(zonePayload).then(() => setDraftPoints([]));
+            }}
+            className={`h-[48px] items-center justify-center rounded-[12px] ${
+              draftPoints.length >= 3 &&
+              !createGeofenceMutation.isPending &&
+              !updateGeofenceMutation.isPending
+                ? "bg-[#1D5478]"
+                : "bg-[#AAB7C2]"
+            }`}
+          >
+            <Text className="text-[15px] font-semibold text-white">
+              {createGeofenceMutation.isPending || updateGeofenceMutation.isPending
+                ? "Saving..."
+                : "Save Zone"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <ZoneConfigurationCard
+          zoneName={selectedGeofence?.zoneName ?? project?.name}
+          isActive={selectedGeofence?.isActive ?? false}
+          definedAt={selectedGeofence ? "Saved zone" : undefined}
+          totalAreaSqft={selectedGeofence?.totalAreaSqft ?? polygonMetrics.totalAreaSqft}
+          perimeterFt={selectedGeofence?.perimeterFt ?? polygonMetrics.perimeterFt}
+          centerPoint={polygonMetrics.centerPoint}
+          monitoringMode="Polygon"
+        />
+
+        <LiveTrackerCard
+          workersOnSite={liveTrackerStats.workersOnSite}
+          outsideZone={liveTrackerStats.outsideZone}
+          liveStatus={selectedGeofence ? "Live" : "No Zone"}
+        />
+
+        <LocationLogsCard logs={logs} onViewFullHistory={() => setIsFullHistoryVisible(true)} />
+
+        <ZoneViolationAlertCard
+          distanceM={latestViolation?.distanceM}
+          occurredAt={latestViolation?.occurredAt}
+          geofenceName={latestViolation?.geofenceName}
+          description={latestViolation?.description}
+          onViewDetails={() => setIsFullHistoryVisible(true)}
+        />
+      </ScrollView>
+
+      <Modal
+        visible={isFullHistoryVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsFullHistoryVisible(false)}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/35"
+          onPress={() => setIsFullHistoryVisible(false)}
+        >
+          <Pressable
+            className="max-h-[82%] rounded-t-[24px] bg-white px-5 pb-6 pt-4"
+            onPress={(event) => event.stopPropagation()}
+          >
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-[18px] font-semibold text-[#1F2328]">
+                Full Location History
+              </Text>
+              <TouchableOpacity onPress={() => setIsFullHistoryVisible(false)}>
+                <Text className="text-[15px] font-medium text-[#66707B]">
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {logs.length === 0 ? (
+                <View className="items-center py-10">
+                  <Text className="text-[14px] text-[#66707B]">
+                    No location history found.
+                  </Text>
+                </View>
+              ) : (
+                logs.map((log, index) => (
+                  <View
+                    key={`${log.name}-${log.time}-${index}`}
+                    className={`rounded-[14px] border border-[#E5EAF0] bg-[#F8FAFC] px-4 py-3 ${index !== logs.length - 1 ? "mb-3" : ""}`}
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-[16px] font-semibold text-[#111827]">
+                        {log.name}
+                      </Text>
+                      <View className="rounded-full border border-[#D3DAE2] bg-white px-3 py-1">
+                        <Text className="text-[11px] font-semibold text-[#111827]">
+                          {log.status}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className="mt-1 text-[14px] text-[#6B7280]">
+                      {log.time} {"\u2022"} {log.location}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </SafeAreaView>
+  );
+}
