@@ -8,6 +8,13 @@ import ScheduledActivityCard from "./ScheduledActivityCard";
 import { useAdminWorkerSummaryQuery } from "@/hooks/admin/payroll";
 import type { ActivityItem } from "./types";
 
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export default function SchedulingPayrollScreen() {
   const [monthDate, setMonthDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -53,7 +60,7 @@ export default function SchedulingPayrollScreen() {
               router.push({
                 pathname: "/screens/payroll/summary",
                 params: {
-                  date: selectedDate.toISOString().split("T")[0],
+                  date: formatLocalDate(selectedDate),
                 },
               })
             }

@@ -15,6 +15,7 @@ export type AdminPayrollSummaryWorker = {
   overtimeHours: number;
   rate: number;
   grossPay: number;
+  grossPayDisplay?: string;
   deductions: number;
   netPay: number;
   status: "draft" | "approved" | "paid" | string;
@@ -252,9 +253,14 @@ export async function updateAdminPayroll(
   return data.data;
 }
 
-export async function getAdminApprovedPayroll() {
+export async function getAdminApprovedPayroll(params?: { date?: string }) {
+  console.log("[AdminApprovedPayrollAPI] request", {
+    input: params,
+  });
+
   const { data } = await api.get<{ success: boolean; message: string; summary: AdminApprovedPayrollResponse["summary"]; records: AdminApprovedPayrollRecord[] }>(
     "/admin/payroll/approved",
+    { params },
   );
 
   if (!data.success) {
@@ -267,8 +273,26 @@ export async function getAdminApprovedPayroll() {
   };
 }
 
-export async function getAdminPayrollOverview() {
-  const { data } = await api.get<AdminPayrollOverviewApiResponse>("/admin/payroll/overview");
+export async function getAdminPayrollOverview(params?: {
+  date?: string;
+  month?: string;
+  year?: string;
+}) {
+  const currentDate = params?.date ? new Date(params.date) : new Date();
+  const resolvedParams = {
+    date: params?.date,
+    month: params?.month ?? String(currentDate.getMonth() + 1),
+    year: params?.year ?? String(currentDate.getFullYear()),
+  };
+
+  console.log("[AdminPayrollOverviewAPI] request", {
+    input: params,
+    resolvedParams,
+  });
+
+  const { data } = await api.get<AdminPayrollOverviewApiResponse>("/admin/payroll/overview", {
+    params: resolvedParams,
+  });
   if (!data.success) {
     throw new Error(data.message || "Failed to load payroll overview");
   }

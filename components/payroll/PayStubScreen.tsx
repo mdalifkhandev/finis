@@ -12,12 +12,17 @@ import { downloadPayStubPdf } from "./payStubPdf";
 import { formatCurrency } from "./utils";
 
 export default function PayStubScreen() {
-  const { payrollId, mode } = useLocalSearchParams<{
+  const { payrollId, mode, date } = useLocalSearchParams<{
     payrollId?: string;
     mode?: string;
+    date?: string;
   }>();
   const isApprovedMode = mode === "approved";
-  const { data: approved } = useAdminApprovedPayrollQuery(isApprovedMode);
+  const selectedDate = Array.isArray(date) ? date[0] : date;
+  const { data: approved } = useAdminApprovedPayrollQuery(
+    selectedDate ? { date: selectedDate } : undefined,
+    isApprovedMode,
+  );
   const { data: stub } = useAdminPayStubQuery(isApprovedMode ? undefined : payrollId);
   const record = useMemo(() => {
     if (!isApprovedMode) return null;

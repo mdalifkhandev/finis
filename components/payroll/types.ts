@@ -16,6 +16,7 @@ export type WorkerPayroll = {
   hoursDisplay?: string;
   rate: number;
   total: number;
+  totalDisplay?: string;
   status: PayrollStatus;
   showApproveButton?: boolean;
 };
