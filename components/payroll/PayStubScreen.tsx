@@ -172,7 +172,11 @@ export default function PayStubScreen() {
               </View>
             </View>
 
-            <View className="mt-4 rounded-[10px] bg-[#1F5577] px-4 py-4">
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={handleDownload}
+              className="mt-4 rounded-[10px] bg-[#1F5577] px-4 py-4"
+            >
               <Text className="text-center text-[16px] text-[#EAF1F5]">
                 Net Pay
               </Text>
@@ -182,7 +186,7 @@ export default function PayStubScreen() {
               >
                 {formatCurrency(netPay)}
               </Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity

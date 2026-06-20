@@ -15,8 +15,8 @@ function parseHourlyRate(value: string | null | undefined) {
 }
 
 export default function WorkerPayrollScreen() {
-  const [monthDate, setMonthDate] = useState(new Date(2024, 8, 1));
-  const [selectedDate, setSelectedDate] = useState(new Date(2024, 8, 27));
+  const [monthDate, setMonthDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const { data: profile } = useWorkerProfileQuery();
   const { data: attendance } = useTodayAttendanceQuery();
 
