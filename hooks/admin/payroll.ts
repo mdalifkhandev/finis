@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import {
   approveAdminPayroll,
+  bulkPaidAdminPayroll,
   getAdminPayStub,
   getAdminPayrollOverview,
   getAdminPayrollSummary,
@@ -272,4 +273,26 @@ export function useAdminApprovedPayrollQuery(params?: { date?: string }, enabled
   }, [query.error, query.isError]);
 
   return query;
+}
+
+export function useBulkPaidAdminPayrollMutation() {
+  const queryClient = useQueryClient();
+  const token = useAuthStore((state) => state.token);
+
+  return useMutation({
+    mutationFn: (payload: { payrollIds: string[] }) => {
+      if (!token) throw new Error("Unauthorized");
+      return bulkPaidAdminPayroll(payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "approved"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "summary"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "overview"] });
+      await queryClient.invalidateQueries({ queryKey: ["admin", "payroll", "users"] });
+      toast.success("Payroll marked as paid successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error instanceof Error ? error.message : "Failed to mark payrolls as paid");
+    },
+  });
 }

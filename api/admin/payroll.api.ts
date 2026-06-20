@@ -194,6 +194,10 @@ export type AdminApprovedPayrollResponse = {
   records: AdminApprovedPayrollRecord[];
 };
 
+export type AdminBulkPaidPayrollPayload = {
+  payrollIds: string[];
+};
+
 export type AdminUpdatePayrollPayload = {
   workerId?: string;
   projectId?: string;
@@ -274,6 +278,25 @@ export async function getAdminApprovedPayroll(params?: { date?: string }) {
     summary: data.summary,
     records: data.records ?? [],
   };
+}
+
+export async function bulkPaidAdminPayroll(payload: AdminBulkPaidPayrollPayload) {
+  const results = await Promise.all(
+    payload.payrollIds.map(async (payrollId) => {
+      const { data } = await api.patch<{ success: boolean; message: string; data?: unknown }>(
+        `/admin/payroll/${payrollId}/paid`,
+        {},
+      );
+
+      if (!data.success) {
+        throw new Error(data.message || `Failed to mark payroll ${payrollId} as paid`);
+      }
+
+      return data.data ?? null;
+    }),
+  );
+
+  return results;
 }
 
 export async function getAdminPayrollOverview(params?: {
