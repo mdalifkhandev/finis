@@ -3,6 +3,7 @@ import GeofenceMapCard from "@/components/company/geofencing/GeofenceMapCard";
 import GeofencingSummaryCard from "@/components/company/geofencing/GeofencingSummaryCard";
 import LiveTrackerCard from "@/components/company/geofencing/LiveTrackerCard";
 import LocationLogsCard from "@/components/company/geofencing/LocationLogsCard";
+import MapLegend from "@/components/company/geofencing/MapLegend";
 import ZoneConfigurationCard from "@/components/company/geofencing/ZoneConfigurationCard";
 import ZoneViolationAlertCard from "@/components/company/geofencing/ZoneViolationAlertCard";
 import { LocationLog } from "@/components/company/geofencing/types";
@@ -326,6 +327,10 @@ export default function GeofencingRoute() {
           liveWorkers={liveWorkers}
           onPolygonChange={setDraftPoints}
         />
+
+        <View className="px-5 pt-3">
+          <MapLegend />
+        </View>
 
         {selectedProjectId ? (
           <View className="px-5 pt-3">
