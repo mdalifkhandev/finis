@@ -1,6 +1,6 @@
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import {
@@ -20,13 +20,20 @@ import type { AdminPayrollSummaryWorker } from "@/api/admin/payroll.api";
 export default function PayrollSummaryScreen() {
   const { date } = useLocalSearchParams<{ date?: string | string[] }>();
   const selectedDate = Array.isArray(date) ? date[0] : date;
-  const { data } = useAdminPayrollSummaryQuery({ date: selectedDate });
-  const { data: overview } = useAdminPayrollOverviewQuery();
+  const {
+    data,
+    refetch: refetchSummary,
+  } = useAdminPayrollSummaryQuery({ date: selectedDate });
+  const {
+    data: overview,
+    refetch: refetchOverview,
+  } = useAdminPayrollOverviewQuery();
   const approvePayroll = useApproveAdminPayrollMutation();
   const updatePayroll = useUpdateAdminPayrollMutation();
   const [editSheetVisible, setEditSheetVisible] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<AdminPayrollSummaryWorker | null>(null);
   const [rateInput, setRateInput] = useState("0");
+  const [refreshing, setRefreshing] = useState(false);
   const workers = useMemo<WorkerPayroll[]>(
     () =>
       data?.workers?.map((item) => ({
@@ -84,11 +91,23 @@ export default function PayrollSummaryScreen() {
     );
   };
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([refetchSummary(), refetchOverview()]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchOverview, refetchSummary]);
+
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 28 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         <BackTitleHeader title="Payroll Summary" onBack={() => router.back()} />
 

@@ -9,8 +9,8 @@ import { useAdminWorkerSummaryQuery } from "@/hooks/admin/payroll";
 import type { ActivityItem } from "./types";
 
 export default function SchedulingPayrollScreen() {
-  const [monthDate, setMonthDate] = useState(new Date(2024, 8, 1));
-  const [selectedDate, setSelectedDate] = useState(new Date(2024, 8, 27));
+  const [monthDate, setMonthDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const { data } = useAdminWorkerSummaryQuery();
 
   const activities = useMemo<ActivityItem[]>(() => {
