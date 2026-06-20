@@ -159,34 +159,37 @@ export type AdminApprovedPayrollRecord = {
   payrollId: string;
   worker: {
     id: string;
-    fullName: string;
-    avatarUrl: string | null;
-    department: string | null;
-    hourlyRate: number | string | null;
+    fullName?: string;
+    avatarUrl?: string | null;
+    department?: string | null;
+    hourlyRate?: number | string | null;
   };
-  project: { id: string; name: string } | null;
-  displayRole: string;
-  hours: number;
-  overtimeHours: number;
-  rate: number;
-  grossPay: number;
+  project?: { id: string; name: string } | null;
+  displayRole?: string;
+  hours?: number;
+  overtimeHours?: number;
+  rate?: number;
+  grossPay?: number;
   grossPayDisplay?: string;
-  deductions: number;
-  netPay: number;
-  status: string;
+  deductions?: number;
+  netPay?: number;
+  status?: string;
   statusLabel?: string;
-  payPeriodStart: string;
-  payPeriodEnd: string;
-  processedAt: string | null;
+  payPeriodStart?: string;
+  payPeriodEnd?: string;
+  processedAt?: string | null;
   canApprove?: boolean;
 };
 
 export type AdminApprovedPayrollResponse = {
   summary: {
-    total: number;
-    approvedCount: number;
-    totalGrossPay: number;
-    totalNetPay: number;
+    totalWorkers: number;
+    totalHours: number;
+    totalHoursDisplay?: string;
+    averageHourlyRate: number;
+    grossPay: number;
+    totalDeductions: number;
+    totalPay: number;
   };
   records: AdminApprovedPayrollRecord[];
 };
