@@ -107,12 +107,12 @@ export function generateMapHTML(
         background: #eef2f6;
         overflow: hidden;
         overscroll-behavior: none;
-        touch-action: none;
+        touch-action: auto;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       }
       #map {
-        touch-action: none;
-        -ms-touch-action: none;
+        touch-action: auto;
+        -ms-touch-action: auto;
       }
       .controls {
         position: absolute;
@@ -425,6 +425,8 @@ export function generateMapHTML(
           disableDefaultUI: true,
           clickableIcons: false,
           gestureHandling: 'greedy',
+          draggable: true,
+          scrollwheel: true,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
