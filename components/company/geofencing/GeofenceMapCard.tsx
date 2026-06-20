@@ -169,7 +169,9 @@ export default function GeofenceMapCard({
               javaScriptEnabled
               domStorageEnabled
               originWhitelist={["*"]}
-              scrollEnabled={false}
+              scrollEnabled
+              nestedScrollEnabled
+              bounces={false}
               onMessage={(event) => {
                 try {
                   const payload = JSON.parse(event.nativeEvent.data);
