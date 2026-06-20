@@ -3,7 +3,7 @@ import { Text, View } from "react-native";
 
 export default function MapLegend() {
   return (
-    <View className="absolute bottom-4 left-2 right-2 rounded-2xl bg-white/95 p-3">
+    <View className="rounded-2xl bg-white/95 p-3 border border-[#E5EAF0]">
       <Text className="text-[14px] font-medium text-[#6B7280]">Map Legend</Text>
       <View className="mt-2 flex-row flex-wrap items-center gap-y-2">
         <View className="mr-4 flex-row items-center">

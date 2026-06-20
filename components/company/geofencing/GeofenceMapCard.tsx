@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
-import MapLegend from "./MapLegend";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { generateMapHTML } from "./mapHtml";
 
 type DeviceLocation = {
@@ -50,6 +49,7 @@ export default function GeofenceMapCard({
     () => JSON.stringify(liveWorkers ?? []),
     [liveWorkers],
   );
+  const canControlMap = Boolean(webViewRef.current && !webViewUnavailable);
 
   useEffect(() => {
     setIsMapReady(false);
@@ -84,6 +84,20 @@ export default function GeofenceMapCard({
       `window.renderLiveWorkers && window.renderLiveWorkers(${liveWorkersJson}); true;`,
     );
   }, [isMapReady, liveWorkersJson, webViewUnavailable]);
+
+  const injectMapAction = (action: "undo" | "reset") => {
+    if (!webViewRef.current || webViewUnavailable) {
+      return;
+    }
+
+    const methodName = action === "undo" ? "__geofenceUndo" : "__geofenceReset";
+    webViewRef.current?.injectJavaScript(
+      `window.${methodName} && window.${methodName}(); true;`,
+    );
+  };
+
+  const handleUndo = () => injectMapAction("undo");
+  const handleReset = () => injectMapAction("reset");
 
   useEffect(() => {
     let active = true;
@@ -143,7 +157,45 @@ export default function GeofenceMapCard({
   return (
     <View className="mt-4 px-5">
       <View className="overflow-hidden rounded-2xl border border-[#DEE4EA] bg-white">
-        <View className="h-[500px] w-full">
+        <View className="border-b border-[#E5EAF0] px-3 py-3">
+          <View className="flex-row items-start justify-between gap-3">
+            <View className="max-w-[64%] rounded-[12px] bg-white/95 px-3 py-2 shadow-sm shadow-black/10 border border-[#D7DDE4]">
+              <Text className="text-[10px] uppercase tracking-[0.8px] text-[#64748B]">
+                Selected Project
+              </Text>
+              <Text className="mt-0.5 text-[13px] font-bold text-[#111827]">
+                {projectName ?? "Selected Project"}
+              </Text>
+              <Text className="mt-0.5 text-[11px] text-[#64748B]">
+                {projectSite || "Tap the map to draw your geofence zone"}
+              </Text>
+            </View>
+
+            <View className="items-end gap-2">
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleUndo}
+                className={`h-[34px] w-[74px] items-center justify-center rounded-[10px] border border-[#d7dde4] bg-white shadow-sm shadow-black/10 ${!canControlMap ? "opacity-50" : ""}`}
+              >
+                <Text className="text-[13px] font-bold text-[#1f3d5c]">
+                  Undo
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleReset}
+                className={`h-[34px] w-[74px] items-center justify-center rounded-[10px] border border-[#d7dde4] bg-white shadow-sm shadow-black/10 ${!canControlMap ? "opacity-50" : ""}`}
+              >
+                <Text className="text-[13px] font-bold text-[#1f3d5c]">
+                  Reset
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View className="h-[430px] w-full">
           {loading ? (
             <View className="h-full items-center justify-center bg-[#EEF2F6]">
               <ActivityIndicator size="large" color="#1D5677" />
@@ -172,6 +224,9 @@ export default function GeofenceMapCard({
               scrollEnabled
               nestedScrollEnabled
               bounces={false}
+              onLoadEnd={() => {
+                setIsMapReady(true);
+              }}
               onMessage={(event) => {
                 try {
                   const payload = JSON.parse(event.nativeEvent.data);
@@ -202,9 +257,6 @@ export default function GeofenceMapCard({
             <Text className="text-[11px] font-medium text-[#E5E7EB]">GPS</Text>
             <Text className="text-[12px] text-white">{locationLabel}</Text>
           </View>
-
-          
-          <MapLegend />
         </View>
       </View>
     </View>

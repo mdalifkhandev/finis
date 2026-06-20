@@ -135,55 +135,6 @@ export function generateMapHTML(
         font-weight: 700;
         box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
       }
-      .draw-controls {
-        position: absolute;
-        right: 12px;
-        top: 60px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-      .draw-controls button {
-        width: 74px;
-        height: 34px;
-        border-radius: 10px;
-        border: 1px solid #d7dde4;
-        background: white;
-        color: #1f3d5c;
-        font-size: 13px;
-        font-weight: 700;
-        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
-      }
-      .project-card {
-        position: absolute;
-        left: 12px;
-        top: 12px;
-        z-index: 9999;
-        background: rgba(255,255,255,0.95);
-        padding: 10px 12px;
-        border-radius: 12px;
-        box-shadow: 0 12px 24px rgba(15,23,42,0.12);
-        min-width: 128px;
-      }
-      .project-card .eyebrow {
-        font-size: 10px;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: .8px;
-      }
-      .project-card .title {
-        font-size: 13px;
-        line-height: 1.2;
-        font-weight: 700;
-        color: #111827;
-        margin-top: 2px;
-      }
-      .project-card .sub {
-        font-size: 11px;
-        color: #64748b;
-        margin-top: 2px;
-      }
       .hint {
         position: absolute;
         left: 12px;
@@ -229,19 +180,10 @@ export function generateMapHTML(
   </head>
   <body>
     <div id="map"></div>
-    <div class="project-card">
-      <div class="eyebrow">Selected Project</div>
-      <div class="title">${escapeHtml(zoneName)}</div>
-      <div class="sub">${escapeHtml(zoneSubtext || "Tap the map to draw your geofence zone")}</div>
-    </div>
     <div class="controls">
       <button id="zoomIn">+</button>
       <button id="zoomOut">−</button>
       <button id="recenter">⌖</button>
-    </div>
-    <div class="draw-controls">
-      <button id="undo">Undo</button>
-      <button id="reset">Reset</button>
     </div>
     <div class="status-badge" id="statusBadge">
       <strong>Map ready</strong>
@@ -416,6 +358,35 @@ export function generateMapHTML(
         map.setZoom(17);
       }
 
+      function undoLastPoint() {
+        if (!map) {
+          return;
+        }
+
+        if (points.length === 0) {
+          return;
+        }
+
+        points.pop();
+        setStatus('Undo last point', points.length + ' point(s) selected');
+        syncPolygon();
+      }
+
+      function resetDrawing() {
+        if (!map) {
+          return;
+        }
+
+        points.length = 0;
+        clearDrawingOverlays();
+        setStatus('Zone cleared', 'Tap anywhere to start again');
+        postPoints();
+        recenter();
+      }
+
+      window.__geofenceUndo = undoLastPoint;
+      window.__geofenceReset = resetDrawing;
+
       function initMap() {
         statusBadge = document.getElementById('statusBadge');
 
@@ -457,23 +428,6 @@ export function generateMapHTML(
           });
           setStatus('Drawing zone', points.length + ' point(s) selected');
           syncPolygon();
-        });
-
-        document.getElementById('undo').addEventListener('click', function () {
-          if (points.length === 0) {
-            return;
-          }
-          points.pop();
-          setStatus('Undo last point', points.length + ' point(s) selected');
-          syncPolygon();
-        });
-
-        document.getElementById('reset').addEventListener('click', function () {
-          points.length = 0;
-          clearDrawingOverlays();
-          setStatus('Zone cleared', 'Tap anywhere to start again');
-          postPoints();
-          recenter();
         });
 
         document.getElementById('zoomIn').addEventListener('click', function () {
