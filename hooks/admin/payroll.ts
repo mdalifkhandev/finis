@@ -14,6 +14,13 @@ import {
 import { getAdminWorkerSummary } from "@/api/admin/admin.api";
 import { useAuthStore } from "@/store/auth.store";
 
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 export function useAdminPayrollSummaryQuery(params?: {
   date?: string;
   month?: string;
@@ -83,7 +90,7 @@ export function useAdminPayrollUsersQuery(date?: string) {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const currentDate = new Date();
-  const resolvedDate = date ?? currentDate.toISOString().split("T")[0];
+  const resolvedDate = date ?? formatLocalDate(currentDate);
 
   const query = useQuery({
     queryKey: ["admin", "payroll", "users", resolvedDate, token],
@@ -194,12 +201,40 @@ export function useAdminWorkerSummaryQuery() {
   return query;
 }
 
-export function useAdminPayrollOverviewQuery() {
+export function useAdminPayrollOverviewQuery(params?: {
+  date?: string;
+  month?: string;
+  year?: string;
+}) {
   const token = useAuthStore((state) => state.token);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+  const currentDate = params?.date ? new Date(params.date) : new Date();
+  const resolvedParams = {
+    date: params?.date,
+    month: params?.month ?? String(currentDate.getMonth() + 1),
+    year: params?.year ?? String(currentDate.getFullYear()),
+  };
+
+  useEffect(() => {
+    console.log("[AdminPayrollOverviewQuery] params", {
+      input: params,
+      resolvedParams,
+    });
+  }, [params, resolvedParams.date, resolvedParams.month, resolvedParams.year]);
+
   const query = useQuery({
-    queryKey: ["admin", "payroll", "overview",  token],
-    queryFn: () => getAdminPayrollOverview(),
-    enabled:  !!token,
+    queryKey: [
+      "admin",
+      "payroll",
+      "overview",
+      resolvedParams.date ?? "no-date",
+      resolvedParams.month,
+      resolvedParams.year,
+      token,
+    ],
+    queryFn: () => getAdminPayrollOverview(resolvedParams),
+    enabled: isHydrated && !!token,
+    staleTime: 60 * 1000,
 
   });
 
@@ -214,13 +249,16 @@ export function useAdminPayrollOverviewQuery() {
   return query;
 }
 
-export function useAdminApprovedPayrollQuery(enabled = true) {
+export function useAdminApprovedPayrollQuery(params?: { date?: string }, enabled = true) {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const resolvedParams = {
+    date: params?.date,
+  };
 
   const query = useQuery({
-    queryKey: ["admin", "payroll", "approved", token],
-    queryFn: getAdminApprovedPayroll,
+    queryKey: ["admin", "payroll", "approved", resolvedParams.date ?? "no-date", token],
+    queryFn: () => getAdminApprovedPayroll(resolvedParams),
     enabled: enabled && isHydrated && !!token,
     staleTime: 30 * 1000,
   });

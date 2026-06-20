@@ -27,7 +27,7 @@ export default function PayrollSummaryScreen() {
   const {
     data: overview,
     refetch: refetchOverview,
-  } = useAdminPayrollOverviewQuery();
+  } = useAdminPayrollOverviewQuery({ date: selectedDate });
   const approvePayroll = useApproveAdminPayrollMutation();
   const updatePayroll = useUpdateAdminPayrollMutation();
   const [editSheetVisible, setEditSheetVisible] = useState(false);
@@ -44,7 +44,8 @@ export default function PayrollSummaryScreen() {
         hours: item.hours,
         hoursDisplay: item.hoursDisplay,
         rate: Number(item.rate ?? item.worker.hourlyRate ?? 0),
-        total: item.netPay,
+        total: item.grossPay,
+        totalDisplay: item.grossPayDisplay,
         status:
           item.status === "draft"
             ? "Pending"
@@ -168,7 +169,10 @@ export default function PayrollSummaryScreen() {
             onPress={() =>
               router.push({
                 pathname: "/screens/payroll/paystub",
-                params: { mode: "approved" },
+                params: {
+                  mode: "approved",
+                  date: selectedDate ?? undefined,
+                },
               })
             }
             className="mb-8 mt-3 h-12 items-center justify-center rounded-[10px] bg-[#1F5577]"

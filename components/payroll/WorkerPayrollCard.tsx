@@ -69,7 +69,7 @@ export default function WorkerPayrollCard({
         <View className="flex-1">
           <Text className="text-[11px] text-[#667085]">Total</Text>
           <Text className="text-[12px] font-medium text-[#1F5577]">
-            {formatCurrency(worker.total)}
+            {worker.totalDisplay ?? formatCurrency(worker.total)}
           </Text>
         </View>
       </View>
