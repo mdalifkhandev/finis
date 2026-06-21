@@ -14,11 +14,12 @@ import { useAuthStore } from "@/store/auth.store";
 export function useAdminDashboardQuery() {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const role = useAuthStore.getState().user?.role;
 
   const query = useQuery({
     queryKey: ["admin", "dashboard", token],
     queryFn: getAdminDashboard,
-    enabled: isHydrated && !!token,
+    enabled: isHydrated && !!token && (role === "admin" || role === "manager"),
     staleTime: 60 * 1000,
   });
 
