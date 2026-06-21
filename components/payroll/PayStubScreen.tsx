@@ -1,13 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   useAdminPayStubQuery,
   useAdminApprovedPayrollQuery,
   useBulkPaidAdminPayrollMutation,
 } from "@/hooks/admin/payroll";
+import { useWorkerPayrollQuery } from "@/hooks/worker/payroll";
 import BackTitleHeader from "../common/BackTitleHeader";
 import { downloadPayStubPdf } from "./payStubPdf";
 import { formatCurrency } from "./utils";
@@ -37,14 +38,20 @@ export default function PayStubScreen() {
   const resolvedPayrollId = Array.isArray(payrollId) ? payrollId[0] : payrollId;
   const resolvedMode = Array.isArray(mode) ? mode[0] : mode;
   const isApprovedMode = resolvedMode === "approved";
+  const isWorkerMode = resolvedMode === "worker";
   const selectedDate = Array.isArray(date) ? date[0] : date;
   const resolvedApprovedDate = selectedDate ?? formatLocalDate(new Date());
+  const { data: workerPayroll, isLoading: isWorkerPayrollLoading } = useWorkerPayrollQuery(
+    isWorkerMode ? resolvedApprovedDate : undefined,
+  );
   const { data: approved } = useAdminApprovedPayrollQuery(
     { date: resolvedApprovedDate },
     isApprovedMode,
   );
   const { data: stub } = useAdminPayStubQuery(isApprovedMode ? undefined : resolvedPayrollId);
   const bulkPaidMutation = useBulkPaidAdminPayrollMutation();
+  const workerSummary = workerPayroll?.lifetimeSummary;
+  const workerProjects = workerPayroll?.projects ?? [];
   const approvedSummary = approved?.summary;
   const approvedRecords = approved?.records ?? [];
   const approvedPayrollIds = useMemo(
@@ -128,6 +135,77 @@ export default function PayStubScreen() {
 
     await bulkPaidMutation.mutateAsync({ payrollIds: [resolvedPayrollId] });
   };
+
+  if (isWorkerMode) {
+    return (
+      <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        >
+          <BackTitleHeader title="Pay Stub" onBack={() => router.back()} />
+
+          <View className="mt-4 px-4">
+            <View className="rounded-[12px] border border-[#E3E6EA] bg-white p-4 mt-4">
+              <Text className="text-center text-[12px] text-[#667085] mt-2">
+                Pay Period: {resolvedApprovedDate}
+              </Text>
+
+              <View className="my-3 h-px bg-[#E6E8EB] mt-2" />
+
+              <View className="gap-y-2.5">
+                <View className="flex-row items-center justify-between mt-2">
+                  <Text className="text-[15px] text-[#475467]">Total Hours</Text>
+                  <Text className="text-[15px] font-medium text-[#101828]">
+                    {workerSummary?.totalHoursDisplay ?? "0h 0m"}
+                  </Text>
+                </View>
+
+                <View className="flex-row items-center justify-between mt-2">
+                  <Text className="text-[15px] text-[#475467]">Gross Pay</Text>
+                  <Text className="text-[15px] font-medium text-[#101828]">
+                    {formatMaybeMoney(workerSummary?.grossPay)}
+                  </Text>
+                </View>
+
+                <View className="flex-row items-center justify-between mt-2">
+                  <Text className="text-[15px] text-[#475467]">Total Deductions</Text>
+                  <Text className="text-[15px] font-medium text-[#101828]">
+                    {formatMaybeMoney(workerSummary?.totalDeductions)}
+                  </Text>
+                </View>
+
+                <View className="flex-row items-center justify-between mt-2">
+                  <Text className="text-[15px] text-[#475467]">Average Hourly Rate</Text>
+                  <Text className="text-[15px] font-medium text-[#101828]">
+                    {formatMaybeMoney(workerSummary?.averageHourlyRate)}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="my-3 h-px bg-[#E6E8EB] mt-2" />
+
+              <TouchableOpacity
+                activeOpacity={0.88}
+                disabled={true}
+                className="rounded-[10px] bg-[#1F5577] px-4 py-4 opacity-100 mt-2"
+              >
+                <Text className="text-center text-[16px] text-[#EAF1F5]">
+                  Total Paid
+                </Text>
+                <Text
+                  className="mt-1 text-center text-[56px] font-medium text-[#EAF1F5]"
+                  style={{ fontSize: 56 / 2 }}
+                >
+                  {formatMaybeMoney(workerSummary?.totalPay)}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   if (isApprovedMode) {
     return (
