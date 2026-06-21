@@ -59,11 +59,12 @@ import { toast } from "sonner-native";
 export function useCompaniesQuery(page: number, limit: number) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const canAccessCompanyData = role === "admin" || role === "manager";
 
   const query = useQuery({
     queryKey: ["company", "companies", page, limit, token],
     queryFn: () => getCompanies({ page, limit }),
-    enabled: !!token ,
+    enabled: !!token && canAccessCompanyData,
     staleTime: 60 * 1000,
   });
 
@@ -154,11 +155,12 @@ export function useUpdateCompanyMutation(companyId?: string) {
 export function useCompanyQuery(id?: string) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const canAccessCompanyData = role === "admin" || role === "manager";
 
   const query = useQuery({
     queryKey: ["company", "detail", id, token],
     queryFn: () => getCompany(id as string),
-    enabled: !!id && !!token ,
+    enabled: !!id && !!token && canAccessCompanyData,
     staleTime: 60 * 1000,
   });
 
@@ -213,11 +215,12 @@ export function useCreateProjectMutation(companyId?: string) {
 export function useCompanyProjectsQuery(id?: string) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const canAccessCompanyData = role === "admin" || role === "manager";
 
   const query = useQuery<CompanyProject[]>({
     queryKey: ["company", "projects", id, token],
     queryFn: () => getCompanyProjects(id as string),
-    enabled: !!id && !!token  ,
+    enabled: !!id && !!token && canAccessCompanyData,
     staleTime: 60 * 1000,
   });
 
@@ -237,11 +240,12 @@ export function useCompanyProjectsQuery(id?: string) {
 export function useCompanyContactsQuery(id?: string) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const canAccessCompanyData = role === "admin" || role === "manager";
 
   const query = useQuery<CompanyContact[]>({
     queryKey: ["company", "contacts", id, token],
     queryFn: () => getCompanyContacts(id as string),
-    enabled: !!id && !!token  ,
+    enabled: !!id && !!token && canAccessCompanyData,
     staleTime: 60 * 1000,
   });
 
@@ -261,11 +265,12 @@ export function useCompanyContactsQuery(id?: string) {
 export function useProjectProfileQuery(id?: string) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const canAccessCompanyData = role === "admin" || role === "manager";
 
   const query = useQuery<ProjectProfile>({
     queryKey: ["project", "profile", id, token],
     queryFn: () => getProjectProfile(id as string),
-    enabled: !!id && !!token  ,
+    enabled: !!id && !!token && canAccessCompanyData,
     staleTime: 60 * 1000,
   });
 
@@ -285,11 +290,12 @@ export function useProjectProfileQuery(id?: string) {
 export function useProjectFloorPlanQuery(id?: string) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const canAccessCompanyData = role === "admin" || role === "manager";
 
   const query = useQuery<ProjectFloorPlanFloor[]>({
     queryKey: ["project", "floor-plan", id, token],
     queryFn: () => getProjectFloorPlan(id as string),
-    enabled: !!id && !!token ,
+    enabled: !!id && !!token && canAccessCompanyData,
     staleTime: 60 * 1000,
   });
 
@@ -358,11 +364,12 @@ export function useUpdateProjectMutation(
 export function useProjectAnalysisQuery(id?: string) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const canAccessCompanyData = role === "admin" || role === "manager";
 
   const query = useQuery<ProjectAnalysisData>({
     queryKey: ["project", "analysis", id, token],
     queryFn: () => getProjectAnalysis(id as string),
-    enabled: !!id && !!token  ,
+    enabled: !!id && !!token && canAccessCompanyData,
     staleTime: 60 * 1000,
   });
 
@@ -388,11 +395,12 @@ export function useTasksQuery(params: {
 }) {
   const token = useAuthStore((state) => state.token);
   const role = useAuthStore((state) => state.user?.role);
+  const canAccessCompanyData = role === "admin" || role === "manager";
 
   const query = useQuery({
     queryKey: ["project", "tasks", params, token],
     queryFn: () => getTasks(params),
-    enabled: !!token  ,
+    enabled: !!token && canAccessCompanyData,
     staleTime: 10 * 1000,
   });
 
