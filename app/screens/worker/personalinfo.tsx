@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import {
     Image,
+    RefreshControl,
     ScrollView,
     StatusBar,
     Text,
@@ -86,9 +87,10 @@ const InfoRow = ({
 );
 
 const PersonalInfoScreen = () => {
-  const { data: profile } = useWorkerProfileQuery();
+  const { data: profile, refetch } = useWorkerProfileQuery();
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [imageFailed, setImageFailed] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const pickProfileImage = async () => {
     try {
@@ -105,6 +107,16 @@ const PersonalInfoScreen = () => {
       }
     } catch {
       alert("Image picker is unavailable in this runtime.");
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      setImageFailed(false);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -171,6 +183,14 @@ const PersonalInfoScreen = () => {
           paddingTop: 32,
           paddingBottom: 40,
         }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={THEME.colors.darkCircle}
+            colors={[THEME.colors.darkCircle]}
+          />
+        }
       >
         {/* Profile Section */}
         <View style={{ alignItems: "center", marginBottom: 32 }}>
@@ -186,24 +206,7 @@ const PersonalInfoScreen = () => {
               onError={() => setImageFailed(true)}
               style={{ width: "100%", height: "100%", borderRadius: 60 }}
             />
-            <TouchableOpacity
-              onPress={pickProfileImage}
-              style={{
-                position: "absolute",
-                bottom: 0,
-                right: 0,
-                width: 34,
-                height: 34,
-                borderRadius: 17,
-                backgroundColor: "#1D4F6D",
-                borderWidth: 2,
-                borderColor: "white",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Ionicons name="camera" size={18} color="white" />
-            </TouchableOpacity>
+ 
           </View>
           <Text
             style={{
