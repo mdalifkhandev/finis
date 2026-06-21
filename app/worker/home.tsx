@@ -1,18 +1,24 @@
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
+import { getWorkerProjects } from "@/api/worker/attendance.api";
 import { WorkerDashboardTask } from "@/api/worker/dashboard.api";
 import { useCheckInWorkerMutation, useCheckOutWorkerMutation, useTodayAttendanceQuery } from "@/hooks/worker/attendance";
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import { useWorkerDashboardQuery } from "@/hooks/worker/dashboard";
 import { emitGeofenceCheckIn, emitGeofenceCheckOut, emitGeofenceLocation, useWorkerGeofenceSocket } from "@/lib/worker-geofence-socket";
 import { API_BASE_URL } from "@/lib/config";
+import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
+  FlatList,
+  Modal,
+  Pressable,
   RefreshControl,
   ScrollView,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -61,7 +67,20 @@ export default function WorkerHome() {
   const checkOutMutation = useCheckOutWorkerMutation();
   const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const liveTrackingRef = useRef(false);
+  const attendanceProjectIdRef = useRef<string | null>(null);
   const [attendanceAction, setAttendanceAction] = React.useState<"check-in" | "check-out" | null>(null);
+  const [isCheckInSheetVisible, setIsCheckInSheetVisible] = React.useState(false);
+  const [selectedCheckInProjectId, setSelectedCheckInProjectId] = React.useState<string | null>(null);
+
+  const {
+    data: workerProjects = [],
+    isLoading: isWorkerProjectsLoading,
+  } = useQuery({
+    queryKey: ["worker", "projects"],
+    queryFn: getWorkerProjects,
+    enabled: isCheckInSheetVisible,
+    staleTime: 60 * 1000,
+  });
 
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
   const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
@@ -105,7 +124,7 @@ export default function WorkerHome() {
 
     const startedAt = Date.now();
     console.log("[WorkerHome] sendLocationUpdate start", {
-      resolvedProjectId,
+      projectId: attendanceProjectIdRef.current ?? resolvedProjectId,
       hasCoords: Boolean(coords),
     });
 
@@ -125,10 +144,11 @@ export default function WorkerHome() {
         lng: current.coords.longitude,
       });
 
+      const projectId = attendanceProjectIdRef.current ?? resolvedProjectId;
       const payload = {
         lat: current.coords.latitude,
         lng: current.coords.longitude,
-        ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+        ...(projectId ? { projectId } : {}),
       };
 
       console.log("[WorkerHome] emitGeofenceLocation", payload);
@@ -148,12 +168,24 @@ export default function WorkerHome() {
 
   const handleCheckIn = async () => {
     if (checkInMutation.isPending || attendanceAction) return;
+    setSelectedCheckInProjectId(null);
+    setIsCheckInSheetVisible(true);
+  };
+
+  const handleConfirmCheckIn = async () => {
+    if (checkInMutation.isPending || attendanceAction || !selectedCheckInProjectId) {
+      if (!selectedCheckInProjectId) {
+        Alert.alert("Select a project", "Please choose a project before checking in.");
+      }
+      return;
+    }
+
     setAttendanceAction("check-in");
 
     try {
       const startedAt = Date.now();
       console.log("[WorkerHome] check-in start", {
-        resolvedProjectId,
+        projectId: selectedCheckInProjectId,
         activeProjectId,
       });
 
@@ -178,16 +210,18 @@ export default function WorkerHome() {
 
       console.log("[WorkerHome] attendance.checkIn mutateAsync start");
       await checkInMutation.mutateAsync({
+        projectId: selectedCheckInProjectId,
         lat: current.coords.latitude,
         lng: current.coords.longitude,
       });
       console.log("[WorkerHome] attendance.checkIn mutateAsync success");
+      attendanceProjectIdRef.current = selectedCheckInProjectId;
       liveTrackingRef.current = true;
 
       const geofencePayload = {
         lat: current.coords.latitude,
         lng: current.coords.longitude,
-        ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+        projectId: selectedCheckInProjectId,
       };
 
       console.log("[WorkerHome] emitGeofenceCheckIn", geofencePayload);
@@ -198,6 +232,7 @@ export default function WorkerHome() {
         latitude: current.coords.latitude,
         longitude: current.coords.longitude,
       });
+      setIsCheckInSheetVisible(false);
       startLiveUpdates();
     } finally {
       setAttendanceAction(null);
@@ -250,10 +285,11 @@ export default function WorkerHome() {
       });
       console.log("[WorkerHome] attendance.checkOut mutateAsync success");
 
+      const projectId = attendanceProjectIdRef.current ?? resolvedProjectId;
       const geofencePayload = {
         lat,
         lng,
-        ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+        ...(projectId ? { projectId } : {}),
       };
 
       console.log("[WorkerHome] emitGeofenceCheckOut", geofencePayload);
@@ -376,6 +412,109 @@ export default function WorkerHome() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={isCheckInSheetVisible}
+        transparent
+        animationType="slide"
+        statusBarTranslucent
+        onRequestClose={() => setIsCheckInSheetVisible(false)}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/40"
+          onPress={() => setIsCheckInSheetVisible(false)}
+        >
+          <Pressable
+            className="max-h-[78%] rounded-t-[24px] bg-white px-5 pb-6 pt-4"
+            onPress={() => {}}
+          >
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-[18px] font-semibold text-[#101828]">
+                Select Project
+              </Text>
+              <Pressable onPress={() => setIsCheckInSheetVisible(false)}>
+                <Text className="text-[22px] leading-6 text-[#667085]">×</Text>
+              </Pressable>
+            </View>
+
+            <Text className="mb-3 text-[13px] text-[#667085]">
+              Choose the project you want to check in for.
+            </Text>
+
+            {isWorkerProjectsLoading ? (
+              <View className="min-h-[140px] items-center justify-center">
+                <ActivityIndicator size="small" color="#1f3d5c" />
+              </View>
+            ) : workerProjects.length > 0 ? (
+              <FlatList
+                data={workerProjects}
+                keyExtractor={(item) => item.projectId}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 12 }}
+                renderItem={({ item }) => {
+                  const isSelected = selectedCheckInProjectId === item.projectId;
+                  return (
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => setSelectedCheckInProjectId(item.projectId)}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: isSelected ? "#1F5577" : "#E2E8F0",
+                        backgroundColor: isSelected ? "#F0F7FB" : "#FFFFFF",
+                        borderRadius: 16,
+                        paddingHorizontal: 16,
+                        paddingVertical: 14,
+                        marginBottom: 12,
+                      }}
+                    >
+                      <Text style={{ fontSize: 16, fontWeight: "600", color: "#101828" }}>
+                        {item.projectName}
+                      </Text>
+                      <Text style={{ marginTop: 4, fontSize: 12, color: "#667085" }}>
+                        {item.location || "No location"} • {item.status}
+                      </Text>
+                      <Text style={{ marginTop: 4, fontSize: 12, color: "#667085" }}>
+                        {item.hasZone ? item.zoneName || "Zone available" : "No zone"}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }}
+              />
+            ) : (
+              <View className="min-h-[140px] items-center justify-center">
+                <Text className="text-[13px] text-[#667085]">
+                  No projects found.
+                </Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              activeOpacity={0.88}
+              disabled={!selectedCheckInProjectId || attendanceAction === "check-in"}
+              onPress={handleConfirmCheckIn}
+              className="mt-2 rounded-[10px] bg-[#1F5577] px-4 py-4 disabled:opacity-50"
+            >
+              {attendanceAction === "check-in" ? (
+                <ActivityIndicator color="#EAF1F5" />
+              ) : (
+                <Text className="text-center text-[16px] text-[#EAF1F5]">
+                  Confirm Check In
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={() => setIsCheckInSheetVisible(false)}
+              className="mt-3 rounded-[10px] border border-[#D0D5DD] bg-white px-4 py-4"
+            >
+              <Text className="text-center text-[16px] text-[#344054]">
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
