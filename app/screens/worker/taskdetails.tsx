@@ -171,6 +171,7 @@ const TaskDetailsScreen = () => {
       alert(error.message || "Failed to complete task.");
     }
   };
+console.log(JSON.stringify(task,null,2));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }}>
@@ -621,7 +622,7 @@ const TaskDetailsScreen = () => {
                               color: "#475569",
                             }}
                           >
-                            {item.name}
+                            {item.name} ({item.maxQty})
                           </Text>
                         </View>
 
@@ -842,7 +843,7 @@ const TaskDetailsScreen = () => {
               >
                 Notes (Optional)
               </Text>
-              <TextInput
+      {task?.status !== "completed" ? (        <TextInput
                 placeholder="Add any additional notes about this task..."
                 multiline
                 textAlignVertical="top"
@@ -857,7 +858,7 @@ const TaskDetailsScreen = () => {
                 }}
                 value={notes}
                 onChangeText={setNotes}
-              />
+              />):<Text>{task.reports?.[0]?.notes}</Text>}
             </View>
 
             {/* Action Button */}

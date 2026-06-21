@@ -87,11 +87,12 @@ export function useActiveProjectsQuery(page: number, limit: number) {
 export function useAdminProjectsQuery() {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
+  const role = useAuthStore.getState().user?.role;
 
   const query = useQuery({
     queryKey: ["admin", "projects", token],
     queryFn: getAdminProjects,
-    enabled: isHydrated && !!token,
+    enabled: isHydrated && !!token && (role === "admin" || role === "manager") ,
     staleTime: 60 * 1000,
   });
 
