@@ -358,6 +358,25 @@ export function generateMapHTML(
         map.setZoom(17);
       }
 
+      function setCenter(lat, lng) {
+        if (!map || !userMarker) {
+          return;
+        }
+
+        const nextCenter = {
+          lat: Number(lat),
+          lng: Number(lng),
+        };
+
+        if (!Number.isFinite(nextCenter.lat) || !Number.isFinite(nextCenter.lng)) {
+          return;
+        }
+
+        window.__CENTER__ = nextCenter;
+        userMarker.setPosition(nextCenter);
+        map.panTo(nextCenter);
+      }
+
       function undoLastPoint() {
         if (!map) {
           return;
@@ -386,6 +405,7 @@ export function generateMapHTML(
 
       window.__geofenceUndo = undoLastPoint;
       window.__geofenceReset = resetDrawing;
+      window.__geofenceSetCenter = setCenter;
 
       function initMap() {
         statusBadge = document.getElementById('statusBadge');
