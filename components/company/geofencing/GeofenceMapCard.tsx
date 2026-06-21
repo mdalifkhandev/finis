@@ -27,7 +27,7 @@ export default function GeofenceMapCard({
 }: GeofenceMapCardProps) {
   const [location, setLocation] = useState<DeviceLocation | null>(null);
   const [locationLabel, setLocationLabel] = useState("Locating your device...");
-  const [loading, setLoading] = useState(true);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(true);
   const [isMapReady, setIsMapReady] = useState(false);
   const [webViewModule, setWebViewModule] = useState<WebViewModule | null>(
     null,
@@ -35,6 +35,22 @@ export default function GeofenceMapCard({
   const [webViewUnavailable, setWebViewUnavailable] = useState(false);
   const webViewRef = useRef<any>(null);
   const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
+  const fallbackLat = 23.7808;
+  const fallbackLng = 90.4067;
+  const mapHtml = useMemo(
+    () =>
+      generateMapHTML(
+        fallbackLat,
+        fallbackLng,
+        projectName ?? "Selected Project",
+        projectSite ?? "",
+        initialPolygonCoords ?? [],
+        [],
+        googleMapsApiKey,
+      ),
+    [fallbackLat, fallbackLng, googleMapsApiKey, initialPolygonCoords, projectName, projectSite],
+  );
+  const mapSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
   const mapSourceKey = useMemo(
     () =>
       JSON.stringify({
@@ -85,6 +101,16 @@ export default function GeofenceMapCard({
     );
   }, [isMapReady, liveWorkersJson, webViewUnavailable]);
 
+  useEffect(() => {
+    if (!isMapReady || !webViewRef.current || webViewUnavailable || !location) {
+      return;
+    }
+
+    webViewRef.current.injectJavaScript(
+      `window.__geofenceSetCenter && window.__geofenceSetCenter(${location.latitude}, ${location.longitude}); true;`,
+    );
+  }, [isMapReady, location, webViewUnavailable]);
+
   const injectMapAction = (action: "undo" | "reset") => {
     if (!webViewRef.current || webViewUnavailable) {
       return;
@@ -109,7 +135,7 @@ export default function GeofenceMapCard({
 
       if (status !== "granted") {
         setLocationLabel("Location permission denied");
-        setLoading(false);
+        setIsFetchingLocation(false);
         return;
       }
 
@@ -136,13 +162,13 @@ export default function GeofenceMapCard({
       setLocationLabel(
         `${current.coords.latitude.toFixed(4)}, ${current.coords.longitude.toFixed(4)}`,
       );
-      setLoading(false);
+      setIsFetchingLocation(false);
     };
 
     loadLocation().catch(() => {
       if (!active) return;
       setLocationLabel("Unable to fetch location");
-      setLoading(false);
+      setIsFetchingLocation(false);
     });
 
     return () => {
@@ -150,8 +176,6 @@ export default function GeofenceMapCard({
     };
   }, []);
 
-  const userLat = location?.latitude ?? 23.7808;
-  const userLng = location?.longitude ?? 90.4067;
   const WebView = webViewModule?.WebView;
 
   return (
@@ -196,27 +220,19 @@ export default function GeofenceMapCard({
         </View>
 
         <View className="h-[430px] w-full">
-          {loading ? (
-            <View className="h-full items-center justify-center bg-[#EEF2F6]">
-              <ActivityIndicator size="large" color="#1D5677" />
-              <Text className="mt-2 text-[14px] text-[#6B7280]">
-                Loading map...
+          {webViewUnavailable ? (
+            <View className="h-full items-center justify-center bg-[#EEF2F6] px-6">
+              <Text className="text-center text-[14px] text-[#475569]">
+                Map preview is unavailable in this runtime.
+              </Text>
+              <Text className="mt-1 text-center text-[12px] text-[#64748B]">
+                Build a dev client to enable WebView map rendering.
               </Text>
             </View>
-          ) : WebView && !webViewUnavailable ? (
+          ) : WebView ? (
             <WebView
               ref={webViewRef}
-              source={{
-                html: generateMapHTML(
-                  userLat,
-                  userLng,
-                  projectName ?? "Selected Project",
-                  projectSite ?? "",
-                  initialPolygonCoords ?? [],
-                  [],
-                  googleMapsApiKey,
-                ),
-              }}
+              source={mapSource}
               style={{ flex: 1, backgroundColor: "#EEF2F6" }}
               javaScriptEnabled
               domStorageEnabled
@@ -243,19 +259,19 @@ export default function GeofenceMapCard({
               }}
             />
           ) : (
-            <View className="h-full items-center justify-center bg-[#EEF2F6] px-6">
-              <Text className="text-center text-[14px] text-[#475569]">
-                Map preview is unavailable in this runtime.
-              </Text>
-              <Text className="mt-1 text-center text-[12px] text-[#64748B]">
-                Build a dev client to enable WebView map rendering.
+            <View className="h-full items-center justify-center bg-[#EEF2F6]">
+              <ActivityIndicator size="large" color="#1D5677" />
+              <Text className="mt-2 text-[14px] text-[#6B7280]">
+                Loading map...
               </Text>
             </View>
           )}
 
           <View className="absolute right-3 top-3 rounded-lg bg-[#0F172A]/80 px-3 py-2">
             <Text className="text-[11px] font-medium text-[#E5E7EB]">GPS</Text>
-            <Text className="text-[12px] text-white">{locationLabel}</Text>
+            <Text className="text-[12px] text-white">
+              {isFetchingLocation ? "Locating..." : locationLabel}
+            </Text>
           </View>
         </View>
       </View>
