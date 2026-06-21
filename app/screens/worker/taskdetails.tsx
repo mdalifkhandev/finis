@@ -213,7 +213,7 @@ console.log(JSON.stringify(task,null,2));
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 280 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}

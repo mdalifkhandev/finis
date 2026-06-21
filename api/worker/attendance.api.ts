@@ -18,6 +18,15 @@ export type WorkerTodayAttendance = {
   currentSessionStart: string | null;
 };
 
+export type WorkerProjectOption = {
+  projectId: string;
+  projectName: string;
+  status: string;
+  location: string | null;
+  hasZone: boolean;
+  zoneName: string | null;
+};
+
 export async function getTodayAttendance() {
   const { data } = await api.get<ApiResponse<WorkerTodayAttendance>>("/worker/attendance/today");
 
@@ -28,7 +37,7 @@ export async function getTodayAttendance() {
   return data.data;
 }
 
-export async function checkInWorker(payload?: { lat?: number; lng?: number }) {
+export async function checkInWorker(payload?: { projectId?: string; lat?: number; lng?: number }) {
   const { data } = await api.post<ApiResponse<{ sessionId: string; message: string }>>(
     "/worker/attendance/check-in",
     payload ?? {},
@@ -36,6 +45,16 @@ export async function checkInWorker(payload?: { lat?: number; lng?: number }) {
 
   if (!data.success) {
     throw new Error(data.message || "Failed to check in");
+  }
+
+  return data.data;
+}
+
+export async function getWorkerProjects() {
+  const { data } = await api.get<ApiResponse<WorkerProjectOption[]>>("/worker/projects");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to fetch worker projects");
   }
 
   return data.data;
