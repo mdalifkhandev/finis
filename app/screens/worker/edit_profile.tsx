@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import React, { useState, useEffect } from "react";
 import {
     KeyboardAvoidingView,
+    Image,
     Modal,
     Platform,
     Pressable,
@@ -17,6 +18,24 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useWorkerProfileQuery, useUpdateWorkerProfileMutation } from "@/hooks/profile/profile";
+import { API_BASE_URL } from "@/lib/config";
+import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
+
+function resolveAvatarUrl(avatarUrl?: string | null) {
+  if (!avatarUrl) {
+    return DEFAULT_AVATAR_URL;
+  }
+
+  if (
+    avatarUrl.startsWith("http://") ||
+    avatarUrl.startsWith("https://") ||
+    avatarUrl.startsWith("file://")
+  ) {
+    return avatarUrl;
+  }
+
+  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+}
 
 const THEME = {
   colors: {
@@ -107,6 +126,7 @@ const EditProfileScreen = () => {
   const [phone, setPhone] = useState("");
   const [dob, setDob] = useState<Date | null>(null);
   const [gender, setGender] = useState("Male");
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -131,10 +151,36 @@ const EditProfileScreen = () => {
       if (dob) formData.append("dateOfBirth", dob.toISOString());
       formData.append("gender", gender);
 
+      if (avatarUri) {
+        formData.append("avatarUrl", {
+          uri: avatarUri,
+          name: "avatar.jpg",
+          type: "image/jpeg",
+        } as any);
+      }
+
       await updateProfile(formData as any);
       router.back();
     } catch (error) {
       // Error handled in mutation
+    }
+  };
+
+  const pickAvatar = async () => {
+    try {
+      const ImagePicker = await import("expo-image-picker");
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        setAvatarUri(result.assets[0].uri);
+      }
+    } catch {
+      // ignore picker errors
     }
   };
 
@@ -190,6 +236,43 @@ const EditProfileScreen = () => {
             paddingBottom: 40,
           }}
         >
+          <View style={{ alignItems: "center", marginBottom: 24 }}>
+            <View
+              style={{
+                width: 104,
+                height: 104,
+                borderRadius: 52,
+                overflow: "hidden",
+                backgroundColor: "#E2E8F0",
+                marginBottom: 12,
+                borderWidth: 2,
+                borderColor: "#D6DEE6",
+              }}
+            >
+              <Image
+                source={{ uri: avatarUri ?? resolveAvatarUrl(profile?.avatarUrl) }}
+                style={{ width: "100%", height: "100%" }}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={pickAvatar}
+              style={{
+                paddingHorizontal: 16,
+                height: 40,
+                borderRadius: 999,
+                backgroundColor: THEME.colors.bluePrimary,
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "row",
+              }}
+            >
+              <Feather name="camera" size={16} color="white" />
+              <Text style={{ color: "white", fontSize: 14, fontWeight: "700", marginLeft: 8 }}>
+                Change Photo
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <CustomInput
             placeholder="Full name"
             value={name}
