@@ -148,16 +148,58 @@ export function generateMapHTML(
         max-width: 220px;
       }
       .worker-label {
-        background: rgba(255,255,255,0.96);
+        min-width: 80px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(241,245,249,0.98));
         border: 1px solid #d7dde4;
         border-radius: 999px;
-        padding: 4px 8px;
-        font-size: 11px;
+        padding: 6px 10px 6px 12px;
+        font-size: 10px;
         font-weight: 700;
         color: #1f2937;
-        box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.14);
         transform: translateY(-6px);
         white-space: nowrap;
+      }
+      .worker-label-main {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+      }
+      .worker-label-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #22c55e;
+        flex: 0 0 auto;
+      }
+      .worker-label-text {
+        max-width: 92px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .worker-label-close {
+        width: 20px;
+        height: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.06);
+        color: #475569;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+        flex: 0 0 auto;
+      }
+      .worker-label-close:active {
+        transform: scale(0.96);
       }
       .status-badge {
         position: absolute;
@@ -324,6 +366,13 @@ export function generateMapHTML(
         clearWorkerOverlays();
 
         (Array.isArray(workers) ? workers : []).forEach((worker) => {
+          const shortName = String(worker.workerName || 'Worker')
+            .split(' ')
+            .filter(Boolean)[0]
+            .slice(0, 12);
+          const closeButtonId =
+            'worker-label-close-' +
+            String(worker.workerId || '').replace(/[^a-zA-Z0-9_-]/g, '');
           const marker = new google.maps.Marker({
             position: { lat: worker.lat, lng: worker.lng },
             map,
@@ -339,10 +388,32 @@ export function generateMapHTML(
           });
 
           const infoWindow = new google.maps.InfoWindow({
-            content: '<div class="worker-label">' + escapeHtml(worker.workerName) + '</div>',
+            content:
+              '<div class="worker-label">' +
+              '<div class="worker-label-main">' +
+              '<span class="worker-label-dot" style="background:' +
+              (worker.isInsideZone ? '#22c55e' : '#ef4444') +
+              '"></span>' +
+              '<span class="worker-label-text">' +
+              escapeHtml(shortName) +
+              '</span>' +
+              '</div>' +
+              '<button type="button" id="' +
+              closeButtonId +
+              '" class="worker-label-close" aria-label="Close worker label">×</button>' +
+              '</div>',
             disableAutoPan: true,
+            headerDisabled: true,
           });
           infoWindow.open({ map, anchor: marker });
+          google.maps.event.addListenerOnce(infoWindow, 'domready', function () {
+            const closeButton = document.getElementById(closeButtonId);
+            if (closeButton) {
+              closeButton.addEventListener('click', function () {
+                infoWindow.close();
+              });
+            }
+          });
 
           workerMarkers.push(marker);
           workerInfoWindows.push(infoWindow);
