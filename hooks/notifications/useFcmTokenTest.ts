@@ -46,9 +46,21 @@ export function useFcmTokenTest() {
    
     }
 
+    async function requestNotificationPermission() {
+      const existingPermission = await Notifications.getPermissionsAsync();
+      if (existingPermission.granted) {
+        return true;
+      }
+
+      const requestedPermission = await Notifications.requestPermissionsAsync();
+      return requestedPermission.granted;
+    }
+
     async function initFCM() {
       try {
-        const authorizationStatus = await messaging().requestPermission();
+        await messaging().registerDeviceForRemoteMessages();
+        await requestNotificationPermission();
+        await messaging().requestPermission();
 
         const token = await messaging().getToken();
        

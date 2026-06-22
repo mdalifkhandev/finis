@@ -61,7 +61,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/icon.png"
         }
       ],
       "./plugins/withFirebaseMessagingManifest.js",
