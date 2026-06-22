@@ -47,7 +47,7 @@ export default function ConversationHeader({
             ) : null}
           </View>
           <Text className="text-[14px] text-[#6B7280]">
-            {isOnline ? "Active now" : idText || "Offline"}
+            {isOnline ? "Active now" : "Offline"}
           </Text>
         </View>
       </TouchableOpacity>

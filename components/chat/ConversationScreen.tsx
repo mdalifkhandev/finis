@@ -30,6 +30,7 @@ import {
   sendChatMessageWithFallback,
   sendChatReadViaSocket,
   useChatThreadPresence,
+  useChatUserOnlineStatus,
   useChatSocket,
 } from "@/lib/chat-socket";
 
@@ -150,7 +151,10 @@ export default function ConversationScreen() {
   const resolvedName = name || "Chat";
   const profileUserId = typeof routeUserId === "string" ? routeUserId : undefined;
   const resolvedAvatar = resolveAvatarSource(avatarUrl);
-  const isParticipantOnline = isOnline === "true";
+  const isParticipantOnline = useChatUserOnlineStatus(
+    profileUserId ?? resolvedThreadId,
+    isOnline === "true",
+  );
 
   const messages = useMemo<MessageModel[]>(() => {
     const serverMessages: MessageModel[] = (messagesQuery.data ?? []).map((message) => ({
@@ -232,7 +236,7 @@ export default function ConversationScreen() {
       mediaUrl: payload.mediaUrl ?? payload.locationUrl,
     });
 
-    await messagesQuery.refetch();
+    void messagesQuery.refetch();
   };
 
   const handleSend = async () => {
