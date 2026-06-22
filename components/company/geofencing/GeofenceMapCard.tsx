@@ -16,6 +16,8 @@ type GeofenceMapCardProps = {
   initialPolygonCoords?: Array<{ lat: number; lng: number }>;
   liveWorkers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }>;
   onPolygonChange?: (points: Array<{ lat: number; lng: number }>) => void;
+  onMapReady?: () => void;
+  reloadToken?: number;
 };
 
 export default function GeofenceMapCard({
@@ -24,6 +26,8 @@ export default function GeofenceMapCard({
   initialPolygonCoords,
   liveWorkers,
   onPolygonChange,
+  onMapReady,
+  reloadToken = 0,
 }: GeofenceMapCardProps) {
   const [location, setLocation] = useState<DeviceLocation | null>(null);
   const [locationLabel, setLocationLabel] = useState("Locating your device...");
@@ -58,8 +62,9 @@ export default function GeofenceMapCard({
         projectSite: projectSite ?? "",
         initialPolygonCoords: initialPolygonCoords ?? [],
         googleMapsApiKey,
+        reloadToken,
       }),
-    [googleMapsApiKey, initialPolygonCoords, projectName, projectSite],
+    [googleMapsApiKey, initialPolygonCoords, projectName, projectSite, reloadToken],
   );
   const liveWorkersJson = useMemo(
     () => JSON.stringify(liveWorkers ?? []),
@@ -231,6 +236,7 @@ export default function GeofenceMapCard({
             </View>
           ) : WebView ? (
             <WebView
+              key={mapSourceKey}
               ref={webViewRef}
               source={mapSource}
               style={{ flex: 1, backgroundColor: "#EEF2F6" }}
@@ -241,13 +247,14 @@ export default function GeofenceMapCard({
               nestedScrollEnabled
               bounces={false}
               onLoadEnd={() => {
-                setIsMapReady(true);
+                // Wait for the in-page `map_ready` signal so JS helpers are available.
               }}
               onMessage={(event) => {
                 try {
                   const payload = JSON.parse(event.nativeEvent.data);
                   if (payload?.type === "map_ready") {
                     setIsMapReady(true);
+                    onMapReady?.();
                     return;
                   }
                   if (payload?.type === "polygon_change" && Array.isArray(payload.polygonCoords)) {

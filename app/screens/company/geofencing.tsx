@@ -44,6 +44,7 @@ export default function GeofencingRoute() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
   const [draftPoints, setDraftPoints] = useState<Array<{ lat: number; lng: number }>>([]);
   const [liveWorkers, setLiveWorkers] = useState<Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }>>([]);
+  const [mapReloadToken, setMapReloadToken] = useState(0);
   const token = useAuthStore((state) => state.token);
   const queryClient = useQueryClient();
   const socketRef = React.useRef<Socket | null>(null);
@@ -91,9 +92,18 @@ export default function GeofencingRoute() {
       socket.emit("get_live_workers", { projectId: selectedProjectId });
     };
 
+    const applyLiveWorkers = (payload: { workers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }> }) => {
+      setLiveWorkers((payload.workers ?? []).filter((worker) => !hiddenWorkerIdsRef.current.has(worker.workerId)));
+    };
+
     const handleActiveWorkers = (payload: { workers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }> }) => {
       console.log("[Geofencing] active_workers:", payload);
-      setLiveWorkers((payload.workers ?? []).filter((worker) => !hiddenWorkerIdsRef.current.has(worker.workerId)));
+      applyLiveWorkers(payload);
+    };
+
+    const handleLiveWorkers = (payload: { workers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }> }) => {
+      console.log("[Geofencing] live_workers:", payload);
+      applyLiveWorkers(payload);
     };
 
     const handleWorkerLocation = (payload: { workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }) => {
@@ -134,6 +144,16 @@ export default function GeofencingRoute() {
       setLiveWorkers((current) => current.filter((worker) => worker.workerId !== workerId));
     };
 
+    const handleLocationSharingStopped = (payload: { workerId?: string; workerName?: string }) => {
+      console.log("[Geofencing] location_sharing_stopped:", payload);
+      const workerId = payload.workerId;
+      if (!workerId) {
+        return;
+      }
+      hiddenWorkerIdsRef.current.add(workerId);
+      setLiveWorkers((current) => current.filter((worker) => worker.workerId !== workerId));
+    };
+
     socket.on("connect", () => {
       console.log("[Geofencing] socket connected", {
         socketId: socket.id,
@@ -155,9 +175,12 @@ export default function GeofencingRoute() {
 
     socket.on("connect", joinProject);
     socket.on("active_workers", handleActiveWorkers);
+    socket.on("live_workers", handleLiveWorkers);
     socket.on("worker_location", handleWorkerLocation);
     socket.on("worker_checked_in", handleWorkerCheckIn);
     socket.on("worker_checked_out", handleWorkerCheckOut);
+    socket.on("location_sharing_stopped", handleLocationSharingStopped);
+    socket.on("worker_offline", handleLocationSharingStopped);
 
     if (socket.connected) {
       joinProject();
@@ -170,9 +193,12 @@ export default function GeofencingRoute() {
       socket.off("joined_project");
       socket.off("error");
       socket.off("active_workers", handleActiveWorkers);
+      socket.off("live_workers", handleLiveWorkers);
       socket.off("worker_location", handleWorkerLocation);
       socket.off("worker_checked_in", handleWorkerCheckIn);
       socket.off("worker_checked_out", handleWorkerCheckOut);
+      socket.off("location_sharing_stopped", handleLocationSharingStopped);
+      socket.off("worker_offline", handleLocationSharingStopped);
       socket.disconnect();
       socketRef.current = null;
     };
@@ -199,6 +225,7 @@ export default function GeofencingRoute() {
       summaryQuery.refetch(),
       queryClient.invalidateQueries({ queryKey: ["project", "geofences"] }),
     ]);
+    setMapReloadToken((current) => current + 1);
   });
 
   const logs: LocationLog[] = useMemo(() => {
@@ -326,6 +353,12 @@ export default function GeofencingRoute() {
           initialPolygonCoords={selectedGeofence?.polygonCoords ?? []}
           liveWorkers={liveWorkers}
           onPolygonChange={setDraftPoints}
+          onMapReady={() => {
+            if (selectedProjectId && socketRef.current) {
+              socketRef.current.emit("get_live_workers", { projectId: selectedProjectId });
+            }
+          }}
+          reloadToken={mapReloadToken}
         />
 
         <View className="px-5 pt-3">

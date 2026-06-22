@@ -116,6 +116,8 @@ export default function WorkerHome() {
     }
   };
 
+  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
   const sendLocationUpdate = async (coords?: { latitude: number; longitude: number }) => {
     if (!liveTrackingRef.current) {
       console.log("[WorkerHome] sendLocationUpdate skipped: tracking not active");
@@ -226,6 +228,8 @@ export default function WorkerHome() {
 
       console.log("[WorkerHome] emitGeofenceCheckIn", geofencePayload);
       emitGeofenceCheckIn(geofencePayload);
+
+      await wait(800);
 
       console.log("[WorkerHome] sendLocationUpdate after check-in");
       await sendLocationUpdate({
