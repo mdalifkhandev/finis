@@ -54,7 +54,7 @@ export default function TaskCard({
             size={18}
             color="#2A66FF"
           />
-          <Text className="ml-2 text-[16px] text-[#2A313B]">{task.title}</Text>
+          <Text className="ml-2 text-[16px] text-[#2A313B] w-[200px]" numberOfLines={1}>{task.title}</Text>
         </View>
         <View
           className="self-start rounded-full px-2.5 py-0.5"

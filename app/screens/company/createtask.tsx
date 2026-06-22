@@ -243,7 +243,7 @@ export default function CreateTaskRoute() {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text className="text-[16px] font-medium text-[#F4F8FA]">
-                  Create Task
+                  Create Task 
                 </Text>
               )}
             </TouchableOpacity>
