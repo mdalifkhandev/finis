@@ -13,6 +13,9 @@ export const CHAT_SOCKET_EVENTS = {
   updatedThread: "thread:updated",
   read: "message:read",
   typing: "message:typing",
+  userOnline: "user:online",
+  userOffline: "user:offline",
+  userStatus: "user:status",
 } as const;
 
 export const SUPPORT_SOCKET_EVENTS = {
@@ -61,6 +64,8 @@ let chatHandlers:
       messageNew: (payload: ServerMessage) => void;
       threadUpdated: (payload: ServerThreadUpdate) => void;
       messageRead: (payload: ServerMessage) => void;
+      userOnline: (payload: { userId?: string }) => void;
+      userOffline: (payload: { userId?: string }) => void;
     }
   | null = null;
 let supportHandlers:
@@ -84,6 +89,8 @@ function ensureChatListeners(
     chatListenersClient.off(CHAT_SOCKET_EVENTS.newMessage, chatHandlers.messageNew);
     chatListenersClient.off(CHAT_SOCKET_EVENTS.updatedThread, chatHandlers.threadUpdated);
     chatListenersClient.off(CHAT_SOCKET_EVENTS.read, chatHandlers.messageRead);
+    chatListenersClient.off(CHAT_SOCKET_EVENTS.userOnline, chatHandlers.userOnline);
+    chatListenersClient.off(CHAT_SOCKET_EVENTS.userOffline, chatHandlers.userOffline);
   }
 
   const refreshThreads = () => {
@@ -158,17 +165,29 @@ function ensureChatListeners(
     refreshThreads();
   };
 
+  const handleUserOnline = (_payload: { userId?: string }) => {
+    refreshThreads();
+  };
+
+  const handleUserOffline = (_payload: { userId?: string }) => {
+    refreshThreads();
+  };
+
   chatHandlers = {
     connect: handleConnect,
     messageNew: handleMessageNew,
     threadUpdated: handleThreadUpdated,
     messageRead: handleMessageRead,
+    userOnline: handleUserOnline,
+    userOffline: handleUserOffline,
   };
 
   client.on("connect", handleConnect);
   client.on(CHAT_SOCKET_EVENTS.newMessage, handleMessageNew);
   client.on(CHAT_SOCKET_EVENTS.updatedThread, handleThreadUpdated);
   client.on(CHAT_SOCKET_EVENTS.read, handleMessageRead);
+  client.on(CHAT_SOCKET_EVENTS.userOnline, handleUserOnline);
+  client.on(CHAT_SOCKET_EVENTS.userOffline, handleUserOffline);
 
   if (client.connected && threadId) {
     client.emit(CHAT_SOCKET_EVENTS.join, { threadId });
@@ -348,10 +367,20 @@ export function useChatSocket(threadId?: string) {
       refreshThreads();
     };
 
+    const handleUserOnline = (_payload: { userId?: string }) => {
+      refreshThreads();
+    };
+
+    const handleUserOffline = (_payload: { userId?: string }) => {
+      refreshThreads();
+    };
+
     client.on("connect", handleConnect);
     client.on(CHAT_SOCKET_EVENTS.newMessage, handleMessageNew);
     client.on(CHAT_SOCKET_EVENTS.updatedThread, handleThreadUpdated);
     client.on(CHAT_SOCKET_EVENTS.read, handleMessageRead);
+    client.on(CHAT_SOCKET_EVENTS.userOnline, handleUserOnline);
+    client.on(CHAT_SOCKET_EVENTS.userOffline, handleUserOffline);
 
     if (client.connected && threadId) {
       client.emit(CHAT_SOCKET_EVENTS.join, { threadId });
@@ -362,6 +391,8 @@ export function useChatSocket(threadId?: string) {
       client.off(CHAT_SOCKET_EVENTS.newMessage, handleMessageNew);
       client.off(CHAT_SOCKET_EVENTS.updatedThread, handleThreadUpdated);
       client.off(CHAT_SOCKET_EVENTS.read, handleMessageRead);
+      client.off(CHAT_SOCKET_EVENTS.userOnline, handleUserOnline);
+      client.off(CHAT_SOCKET_EVENTS.userOffline, handleUserOffline);
 
       if (threadId) {
         client.emit(CHAT_SOCKET_EVENTS.leave, { threadId });
@@ -547,10 +578,26 @@ export function useSupportSocket() {
       }
     };
 
+    const handleUserOnline = () => {
+      void queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "contacts"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "support-thread"] });
+    };
+
+    const handleUserOffline = () => {
+      void queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "contacts"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "support-thread"] });
+    };
+
     client.on(SUPPORT_SOCKET_EVENTS.newThread, handleSupportThreadNew);
+    client.on(CHAT_SOCKET_EVENTS.userOnline, handleUserOnline);
+    client.on(CHAT_SOCKET_EVENTS.userOffline, handleUserOffline);
 
     return () => {
       client.off(SUPPORT_SOCKET_EVENTS.newThread, handleSupportThreadNew);
+      client.off(CHAT_SOCKET_EVENTS.userOnline, handleUserOnline);
+      client.off(CHAT_SOCKET_EVENTS.userOffline, handleUserOffline);
       detachSocket();
     };
   }, [queryClient, currentUserId, token]);
@@ -614,4 +661,71 @@ export function useChatThreadPresence(threadId?: string) {
   return {
     isOtherTyping,
   };
+}
+
+export function useChatUserOnlineStatus(userId?: string, initialOnline = false) {
+  const token = useAuthStore((state) => state.token);
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const [isOnline, setIsOnline] = useState(initialOnline);
+
+  useEffect(() => {
+    setIsOnline(initialOnline);
+  }, [initialOnline, userId]);
+
+  useEffect(() => {
+    if (!userId || !token || !currentUserId) {
+      setIsOnline(false);
+      return;
+    }
+
+    const client = attachSocket(token);
+
+    const syncStatus = () => {
+      client.emit(
+        CHAT_SOCKET_EVENTS.userStatus,
+        { userIds: [userId] },
+        (response?: {
+          statuses?: Record<string, boolean>;
+          onlineStatuses?: Record<string, boolean>;
+        }) => {
+          const nextStatus =
+            response?.statuses?.[userId] ?? response?.onlineStatuses?.[userId];
+
+          if (typeof nextStatus === "boolean") {
+            setIsOnline(nextStatus);
+          }
+        },
+      );
+    };
+
+    const handleUserOnline = (payload: { userId?: string }) => {
+      if (payload.userId === userId) {
+        setIsOnline(true);
+      }
+    };
+
+    const handleUserOffline = (payload: { userId?: string }) => {
+      if (payload.userId === userId) {
+        setIsOnline(false);
+      }
+    };
+
+    client.on(CHAT_SOCKET_EVENTS.userOnline, handleUserOnline);
+    client.on(CHAT_SOCKET_EVENTS.userOffline, handleUserOffline);
+
+    if (client.connected) {
+      syncStatus();
+    } else {
+      client.once("connect", syncStatus);
+    }
+
+    return () => {
+      client.off(CHAT_SOCKET_EVENTS.userOnline, handleUserOnline);
+      client.off(CHAT_SOCKET_EVENTS.userOffline, handleUserOffline);
+      client.off("connect", syncStatus);
+      detachSocket();
+    };
+  }, [currentUserId, token, userId]);
+
+  return isOnline;
 }
