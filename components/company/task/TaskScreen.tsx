@@ -111,7 +111,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
       >
         <Ionicons name="add" size={22} color="#F4F8FA" />
         <Text className="ml-2 text-[16px] font-medium text-[#F4F8FA]">
-          Create New Task
+          Create New Task 
         </Text>
       </TouchableOpacity>
 
