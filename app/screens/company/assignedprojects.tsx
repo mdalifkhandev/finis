@@ -18,15 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 
 function resolveAvatarUrl(avatarUrl: string | null) {
-  if (!avatarUrl) {
-    return null;
-  }
-
-  if (/^https?:\/\//i.test(avatarUrl)) {
-    return avatarUrl;
-  }
-
-  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+  return avatarUrl;
 }
 
 function formatDate(date: string) {

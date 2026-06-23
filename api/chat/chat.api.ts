@@ -1,5 +1,4 @@
 import { api } from "@/lib/api/client";
-import { API_BASE_URL } from "@/lib/config";
 import type { ApiResponse } from "@/types/auth.types";
 
 export type ChatThreadType = "direct" | "group" | "project" | "support";
@@ -120,23 +119,11 @@ type MessageQueryParams = {
 };
 
 function resolveMediaUrl(path: string | null | undefined) {
-  if (!path) {
-    return null;
-  }
-
-  if (
-    /^https?:\/\//i.test(path) ||
-    path.startsWith("file://") ||
-    path.startsWith("content://")
-  ) {
-    return path;
-  }
-
-  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  return path ?? null;
 }
 
 export function resolveChatAvatar(path: string | null | undefined) {
-  return resolveMediaUrl(path);
+  return path ?? null;
 }
 
 export function formatChatPreview(message: ChatThreadLastMessage | null) {
@@ -230,7 +217,7 @@ export async function getChatContacts(search?: string) {
 
   return data.data.map((contact) => ({
     ...contact,
-    avatarUrl: resolveMediaUrl(contact.avatarUrl),
+    avatarUrl: contact.avatarUrl,
   }));
 }
 

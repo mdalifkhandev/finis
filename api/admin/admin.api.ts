@@ -1,5 +1,4 @@
 import { api } from "@/lib/api/client";
-import { API_BASE_URL } from "@/lib/config";
 import type {
   AdminActiveWorker,
   AdminActiveWorkersResponse,
@@ -11,15 +10,7 @@ import type {
 } from "@/types/admin.types";
 
 function resolveMediaUrl(path: string | null) {
-  if (!path) {
-    return null;
-  }
-
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
-  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  return path;
 }
 
 export async function getAdminDashboard() {
@@ -35,7 +26,7 @@ export async function getAdminDashboard() {
       ...data.data.workersOnSite,
       data: data.data.workersOnSite.data.map((worker: AdminDashboardWorker) => ({
         ...worker,
-        avatarUrl: resolveMediaUrl(worker.avatarUrl),
+        avatarUrl: worker.avatarUrl,
       })),
     },
   } as AdminDashboardData;
@@ -61,7 +52,7 @@ export async function getActiveWorkers(params: ActiveWorkersParams = {}) {
 
   return data.data.map((worker: AdminActiveWorker) => ({
     ...worker,
-    avatarUrl: resolveMediaUrl(worker.avatarUrl),
+    avatarUrl: worker.avatarUrl,
   }));
 }
 
@@ -142,13 +133,13 @@ export async function getAdminProjects() {
     ...project,
     company: {
       ...project.company,
-      logoUrl: resolveMediaUrl(project.company.logoUrl),
+      logoUrl: project.company.logoUrl,
     },
     teamMembers: project.teamMembers.map((member) => ({
       ...member,
       user: {
         ...member.user,
-        avatarUrl: resolveMediaUrl(member.user.avatarUrl),
+        avatarUrl: member.user.avatarUrl,
       },
     })),
   }));
@@ -211,7 +202,7 @@ export async function getAdminProfile() {
   
   return {
     ...data.data,
-    avatarUrl: resolveMediaUrl(data.data.avatarUrl)
+    avatarUrl: data.data.avatarUrl
   };
 }
 

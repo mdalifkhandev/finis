@@ -1,5 +1,4 @@
 import { api } from "@/lib/api/client";
-import { API_BASE_URL } from "@/lib/config";
 import type { ApiResponse } from "@/types/auth.types";
 
 export type ChatUserProfile = {
@@ -17,9 +16,7 @@ export type ChatUserProfile = {
 };
 
 function resolveMediaUrl(path: string | null) {
-  if (!path) return null;
-  if (/^https?:\/\//i.test(path)) return path;
-  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  return path;
 }
 
 export async function getChatUserProfile(userId: string) {
@@ -31,6 +28,6 @@ export async function getChatUserProfile(userId: string) {
 
   return {
     ...data.data,
-    avatarUrl: resolveMediaUrl(data.data.avatarUrl),
+    avatarUrl: data.data.avatarUrl,
   };
 }

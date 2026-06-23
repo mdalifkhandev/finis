@@ -1,5 +1,4 @@
 import { api } from "@/lib/api/client";
-import { API_BASE_URL } from "@/lib/config";
 import type {
   ApiResponse,
   AuthResponse,
@@ -23,21 +22,13 @@ function normalizeUser(
     name: user.name ?? user.fullName ?? user.email,
     fullName: user.fullName ?? user.name ?? user.email,
     role: user.role,
-    avatarUrl: resolveMediaUrl(user.avatarUrl) ?? null,
+    avatarUrl: user.avatarUrl ?? null,
     phone: user.phone ?? null,
   };
 }
 
 function resolveMediaUrl(path: string | null | undefined) {
-  if (!path) {
-    return null;
-  }
-
-  if (path.startsWith("http://") || path.startsWith("https://")) {
-    return path;
-  }
-
-  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  return path ?? null;
 }
 
 export const loginApi = async (payload: LoginPayload) => {
@@ -84,7 +75,7 @@ export const meRequest = async () => {
 
   return normalizeUser({
     ...data.data,
-    avatarUrl: resolveMediaUrl(data.data.avatarUrl) ?? data.data.avatarUrl,
+    avatarUrl: data.data.avatarUrl,
   });
 };
 

@@ -1,7 +1,6 @@
 import type { DocumentItem } from "@/components/company/documents/types";
 import { AxiosError } from "axios";
 import { api } from "@/lib/api/client";
-import { API_BASE_URL } from "@/lib/config";
 import type { AdminCompaniesResponse } from "@/types/admin.types";
 import type { AdminCompanyDetailResponse } from "@/types/admin.types";
 import type { ApiResponse } from "@/types/auth.types";
@@ -25,15 +24,7 @@ import type {
   CreateTaskResponse,
 } from "@/types/company.types";
 function resolveMediaUrl(path: string | null) {
-  if (!path) {
-    return null;
-  }
-
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
-  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  return path;
 }
 
 type CompaniesParams = {
@@ -110,7 +101,7 @@ export async function getCompanies(params: CompaniesParams = {}) {
   return {
     data: data.data.map((company) => ({
       ...company,
-      logoUrl: resolveMediaUrl(company.logoUrl),
+      logoUrl: company.logoUrl,
     })),
     meta: data.meta,
   };
@@ -127,7 +118,7 @@ export async function getCompany(id: string) {
 
   return {
     ...data.data,
-    logoUrl: resolveMediaUrl(data.data.logoUrl),
+    logoUrl: data.data.logoUrl,
   };
 }
 
@@ -150,7 +141,7 @@ export async function getCompanyProjects(id: string) {
       ...member,
       user: {
         ...member.user,
-        avatarUrl: resolveMediaUrl(member.user.avatarUrl),
+        avatarUrl: member.user.avatarUrl,
       },
     })),
   }));
@@ -167,7 +158,7 @@ export async function getCompanyContacts(id: string) {
 
   return data.data.map((contact) => ({
     ...contact,
-    avatarUrl: resolveMediaUrl(contact.avatarUrl),
+    avatarUrl: contact.avatarUrl,
   }));
 }
 

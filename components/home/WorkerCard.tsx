@@ -7,15 +7,7 @@ import { cardShadow } from "./styles";
 const placeholderAvatar = require("../../assets/images/placeholder-person.png");
 
 function resolveAvatarUrl(avatarUrl: string) {
-  if (!avatarUrl) {
-    return null;
-  }
-
-  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
-    return avatarUrl;
-  }
-
-  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+  return avatarUrl;
 }
 
 type WorkerCardProps = {
