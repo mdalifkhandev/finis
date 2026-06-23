@@ -34,7 +34,7 @@ export default function LiveTrackerCard({
 
         <View className="mt-3 flex-row justify-between">
           <Text className="text-[14px] text-[#B8C1D1]">Workers on Site</Text>
-          <Text className="text-[24px] font-semibold text-white">{safeWorkers}</Text>
+          <Text className="text-[24px] font-semibold text-white">{safeWorkers-1}</Text>
         </View>
         <View className="mt-1 flex-row justify-between">
           <Text className="text-[14px] text-[#B8C1D1]">Outside Zone</Text>
