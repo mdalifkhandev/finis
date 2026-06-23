@@ -1,7 +1,12 @@
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import { getWorkerProjects } from "@/api/worker/attendance.api";
 import { WorkerDashboardTask } from "@/api/worker/dashboard.api";
-import { useCheckInWorkerMutation, useCheckOutWorkerMutation, useTodayAttendanceQuery } from "@/hooks/worker/attendance";
+import {
+  useCheckInWorkerMutation,
+  useCheckOutWorkerMutation,
+  useTodayAttendanceQuery,
+  useWorkerWeeklyAttendanceSummaryQuery,
+} from "@/hooks/worker/attendance";
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import { useWorkerDashboardQuery } from "@/hooks/worker/dashboard";
 import { emitGeofenceCheckIn, emitGeofenceCheckOut, emitGeofenceLocation, useWorkerGeofenceSocket } from "@/lib/worker-geofence-socket";
@@ -37,15 +42,12 @@ function resolveAvatarUrl(avatarUrl?: string | null) {
   return avatarUrl;
 }
 
-const WEEKLY_ACTIVITY = [
-  { day: "Monday", status: "8 hours", type: "completed" as const },
-  {
-    day: "Tuesday",
-    status: "2h 34m (In Progress)",
-    type: "in-progress" as const,
-  },
-  { day: "Wednesday", status: "Scheduled", type: "scheduled" as const },
-];
+function formatLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function WorkerHome() {
   useWorkerGeofenceSocket();
@@ -57,6 +59,11 @@ export default function WorkerHome() {
     isRefetching,
   } = useWorkerDashboardQuery();
   const { data: attendance, isLoading: isAttendanceLoading } = useTodayAttendanceQuery();
+  const {
+    data: weeklySummary,
+    isLoading: isWeeklySummaryLoading,
+    refetch: refetchWeeklySummary,
+  } = useWorkerWeeklyAttendanceSummaryQuery();
   const checkInMutation = useCheckInWorkerMutation();
   const checkOutMutation = useCheckOutWorkerMutation();
   const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -93,6 +100,20 @@ export default function WorkerHome() {
   const completedToday = dashboard?.stats?.completedToday ?? 0;
   const isClockedIn = attendance?.status === "clocked_in";
   const resolvedProjectId = activeProjectId ?? profile?.companyMembers?.[0]?.projectId;
+  const weeklyActivity = React.useMemo(
+    () =>
+      weeklySummary?.days?.map((day) => ({
+        day: day.dayLabel,
+        status: day.totalHoursDisplay,
+        type:
+          day.totalHours > 0
+            ? day.date === formatLocalDateKey(new Date())
+              ? ("in-progress" as const)
+              : ("completed" as const)
+            : ("scheduled" as const),
+      })) ?? [],
+    [weeklySummary],
+  );
 
   const getClockInTime = () => {
     if (!isClockedIn || !attendance?.currentSessionStart) return undefined;
@@ -349,7 +370,10 @@ export default function WorkerHome() {
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}
-            onRefresh={refetch}
+            onRefresh={() => {
+              void refetch();
+              void refetchWeeklySummary();
+            }}
             tintColor="#1f3d5c"
             colors={["#1f3d5c"]}
           />
@@ -439,14 +463,29 @@ export default function WorkerHome() {
             onPressAction={() => {}}
           />
           <View className="mx-5 mt-2 rounded-3xl bg-white p-5 border border-slate-100 shadow-sm">
-            {WEEKLY_ACTIVITY.map((item, index) => (
-              <WeeklyActivityItem
-                key={index}
-                day={item.day}
-                status={item.status}
-                type={item.type}
-              />
-            ))}
+            {isWeeklySummaryLoading && !weeklySummary ? (
+              <View className="items-center py-4">
+                <ActivityIndicator size="small" color="#1f3d5c" />
+                <Text className="mt-2 text-xs text-slate-500">
+                  Loading weekly summary...
+                </Text>
+              </View>
+            ) : weeklyActivity.length > 0 ? (
+              weeklyActivity.map((item, index) => (
+                <WeeklyActivityItem
+                  key={`${item.day}-${index}`}
+                  day={item.day}
+                  status={item.status}
+                  type={item.type}
+                />
+              ))
+            ) : (
+              <View className="items-center py-4">
+                <Text className="text-slate-500 text-sm">
+                  No weekly attendance data.
+                </Text>
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>

@@ -87,6 +87,31 @@ export type WorkerLocationUpdateResponse = {
   zoneName: string | null;
 };
 
+export type WorkerWeeklySummaryProject = {
+  projectId: string | null;
+  projectName: string | null;
+  hours: number;
+};
+
+export type WorkerWeeklySummaryDay = {
+  date: string;
+  dayLabel: string;
+  totalHours: number;
+  totalHoursDisplay: string;
+  sessionCount: number;
+  projects: WorkerWeeklySummaryProject[];
+};
+
+export type WorkerWeeklyAttendanceSummary = {
+  dateRange: {
+    start: string;
+    end: string;
+  };
+  totalHours: number;
+  totalHoursDisplay: string;
+  days: WorkerWeeklySummaryDay[];
+};
+
 export async function updateWorkerLocation(payload: WorkerLocationUpdatePayload) {
   const { data } = await api.post<ApiResponse<WorkerLocationUpdateResponse>>(
     "/worker/location",
@@ -95,6 +120,18 @@ export async function updateWorkerLocation(payload: WorkerLocationUpdatePayload)
 
   if (!data.success) {
     throw new Error(data.message || "Failed to update worker location");
+  }
+
+  return data.data;
+}
+
+export async function getWorkerWeeklyAttendanceSummary() {
+  const { data } = await api.get<ApiResponse<WorkerWeeklyAttendanceSummary>>(
+    "/worker/attendance/weekly-summary",
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to fetch weekly attendance summary");
   }
 
   return data.data;
