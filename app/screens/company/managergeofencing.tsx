@@ -52,6 +52,19 @@ export default function ManagerGeofencingRoute() {
   const createGeofenceMutation = useCreateProjectGeofenceMutation(projectId);
   const updateGeofenceMutation = useUpdateProjectGeofenceMutation(projectId);
 
+  const getLocationLogStatus = (eventType?: string) => {
+    const normalized = (eventType ?? "").toLowerCase();
+    return ["check_in", "enter"].some((type) => normalized.includes(type))
+      ? "Check In"
+      : ["check_out", "exit"].some((type) => normalized.includes(type))
+        ? "Check Out"
+        : normalized.includes("in_zone")
+          ? "In Zone"
+          : normalized.includes("out_of_zone")
+            ? "Out of Zone"
+        : "Out of Zone";
+  };
+
   const { refreshing, onRefresh } = usePullToRefresh(async () => {
     await Promise.all([
       geofencesQuery.refetch(),
@@ -73,7 +86,7 @@ export default function ManagerGeofencingRoute() {
         minute: "2-digit",
       }),
       location: `${log.lat.toFixed(4)}, ${log.lng.toFixed(4)}`,
-      status: log.eventType.toLowerCase().includes("check") ? "Check In" : "Tracking",
+      status: getLocationLogStatus(log.eventType),
     }));
   }, [logsQuery.data]);
 
@@ -92,18 +105,14 @@ export default function ManagerGeofencingRoute() {
   }, [isZoneEditable]);
 
   const liveTrackerStats = useMemo(() => {
-    const workers = (summaryQuery.data?.workers ?? []) as Array<{
-      totalZoneHours?: number;
-      totalOutsideHours?: number;
-    }>;
-
-    const outsideZone = workers.filter((worker) => (worker.totalOutsideHours ?? 0) > 0).length;
+    const onSite = liveWorkers.filter((worker) => worker.isInsideZone === true).length;
+    const outsideZone = liveWorkers.filter((worker) => worker.isInsideZone === false).length;
 
     return {
-      workersOnSite: workers.length,
+      workersOnSite: onSite,
       outsideZone,
     };
-  }, [summaryQuery.data]);
+  }, [liveWorkers]);
 
   const latestViolation = useMemo(() => {
     return violationsQuery.data?.data?.[0] ?? null;
@@ -431,7 +440,7 @@ export default function ManagerGeofencingRoute() {
           onPress={() => setIsFullHistoryVisible(false)}
         >
           <Pressable
-            className="max-h-[82%] rounded-t-[24px] bg-white px-5 pb-6 pt-4"
+            className="max-h-[82%] flex-1 rounded-t-[24px] bg-white px-5 pb-6 pt-4"
             onPress={(event) => event.stopPropagation()}
           >
             <View className="mb-4 flex-row items-center justify-between">
@@ -445,7 +454,13 @@ export default function ManagerGeofencingRoute() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 24 }}
+            >
               {logs.length === 0 ? (
                 <View className="items-center py-10">
                   <Text className="text-[14px] text-[#66707B]">

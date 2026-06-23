@@ -5,6 +5,7 @@ import { useCheckInWorkerMutation, useCheckOutWorkerMutation, useTodayAttendance
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import { useWorkerDashboardQuery } from "@/hooks/worker/dashboard";
 import { emitGeofenceCheckIn, emitGeofenceCheckOut, emitGeofenceLocation, useWorkerGeofenceSocket } from "@/lib/worker-geofence-socket";
+import { startWorkerLocationTracking, stopWorkerLocationTracking } from "@/lib/worker-location-task";
 import { API_BASE_URL } from "@/lib/config";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -55,7 +56,7 @@ export default function WorkerHome() {
     refetch,
     isRefetching,
   } = useWorkerDashboardQuery();
-  const { data: attendance } = useTodayAttendanceQuery();
+  const { data: attendance, isLoading: isAttendanceLoading } = useTodayAttendanceQuery();
   const checkInMutation = useCheckInWorkerMutation();
   const checkOutMutation = useCheckOutWorkerMutation();
   const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -193,6 +194,16 @@ export default function WorkerHome() {
         return;
       }
 
+      console.log("[WorkerHome] requestBackgroundPermissionsAsync...");
+      const backgroundPermission = await Location.requestBackgroundPermissionsAsync();
+      console.log("[WorkerHome] background location permission result", backgroundPermission.status);
+      if (backgroundPermission.status !== "granted") {
+        Alert.alert(
+          "Background location disabled",
+          "Allow background location to keep live tracking active when the app is closed.",
+        );
+      }
+
       console.log("[WorkerHome] getCurrentPositionAsync...");
       const current = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
@@ -229,6 +240,14 @@ export default function WorkerHome() {
         latitude: current.coords.latitude,
         longitude: current.coords.longitude,
       });
+      if (backgroundPermission.status === "granted") {
+        try {
+          await startWorkerLocationTracking();
+          console.log("[WorkerHome] background location tracking started");
+        } catch (trackingError) {
+          console.log("[WorkerHome] startWorkerLocationTracking error", trackingError);
+        }
+      }
       setIsCheckInSheetVisible(false);
       startLiveUpdates();
     } finally {
@@ -291,13 +310,35 @@ export default function WorkerHome() {
 
       console.log("[WorkerHome] emitGeofenceCheckOut", geofencePayload);
       emitGeofenceCheckOut(geofencePayload);
+      await stopWorkerLocationTracking();
     } finally {
       setAttendanceAction(null);
     }
   };
 
   useEffect(() => {
-    return () => stopLiveUpdates();
+    if (isAttendanceLoading || !attendance) {
+      return;
+    }
+
+    if (isClockedIn) {
+      void startWorkerLocationTracking().catch((error) => {
+        console.log("[WorkerHome] ensureWorkerLocationTracking error", error);
+      });
+    } else {
+      void stopWorkerLocationTracking().catch((error) => {
+        console.log("[WorkerHome] stopWorkerLocationTracking error", error);
+      });
+    }
+  }, [attendance, isAttendanceLoading, isClockedIn]);
+
+  useEffect(() => {
+    return () => {
+      stopLiveUpdates();
+      void stopWorkerLocationTracking().catch((error) => {
+        console.log("[WorkerHome] cleanup stopWorkerLocationTracking error", error);
+      });
+    };
   }, []);
 
   return (

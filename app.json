@@ -55,7 +55,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow Finis to access your location."
+          "locationWhenInUsePermission": "Allow Finis to access your location.",
+          "locationAlwaysAndWhenInUsePermission": "Allow Finis to access your location in the background.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       [

@@ -4,6 +4,7 @@ import { queryClient } from "@/lib/query-client";
 import { setCurrentAccessToken } from "@/lib/auth-token";
 import { disconnectChatSocket } from "@/lib/chat-socket";
 import { disconnectWorkerGeofenceSocket } from "@/lib/worker-geofence-socket";
+import { stopWorkerLocationTracking } from "@/lib/worker-location-task";
 import type { AuthSession, User } from "@/types/auth.types";
 
 const TOKEN_KEY = "token";
@@ -34,6 +35,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user, token, accessToken: token });
   },
   logout: async () => {
+    await stopWorkerLocationTracking();
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     disconnectChatSocket();
     disconnectWorkerGeofenceSocket();
@@ -49,6 +51,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   setUser: (user) => set({ user }),
   clearSession: () => {
+    void stopWorkerLocationTracking();
     void SecureStore.deleteItemAsync(TOKEN_KEY);
     disconnectChatSocket();
     disconnectWorkerGeofenceSocket();

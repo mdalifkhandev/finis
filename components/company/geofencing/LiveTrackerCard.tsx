@@ -15,7 +15,10 @@ export default function LiveTrackerCard({
 }: LiveTrackerCardProps) {
   const safeWorkers = Number.isFinite(workersOnSite) ? workersOnSite : 0;
   const safeOutside = Number.isFinite(outsideZone) ? outsideZone : 0;
-  const progress = safeWorkers > 0 ? Math.max(8, Math.min(100, ((safeWorkers - safeOutside) / safeWorkers) * 100)) : 0;
+  const totalTracked = safeWorkers + safeOutside;
+  const progress = totalTracked > 0
+    ? Math.max(8, Math.min(100, (safeWorkers / totalTracked) * 100))
+    : 0;
 
   return (
     <View className="mt-4 px-5">
@@ -34,7 +37,7 @@ export default function LiveTrackerCard({
 
         <View className="mt-3 flex-row justify-between">
           <Text className="text-[14px] text-[#B8C1D1]">Workers on Site</Text>
-          <Text className="text-[24px] font-semibold text-white">{safeWorkers-1}</Text>
+          <Text className="text-[24px] font-semibold text-white">{safeWorkers}</Text>
         </View>
         <View className="mt-1 flex-row justify-between">
           <Text className="text-[14px] text-[#B8C1D1]">Outside Zone</Text>
