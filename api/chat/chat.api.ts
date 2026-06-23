@@ -238,12 +238,14 @@ export async function getChatMessages(
   threadId: string,
   params: MessageQueryParams = {},
 ) {
+  console.log(params);
+  
   const { data } = await api.get<ChatMessageListResponse>(
     `/messages/threads/${threadId}/messages`,
     {
       params: {
         page: params.page ?? 1,
-        limit: params.limit ?? 50,
+        limit: params.limit ?? 20,
       },
     },
   );

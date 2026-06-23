@@ -3,10 +3,24 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 
 export default function PrivacyRoute() {
   const router = useRouter();
   const [accepted, setAccepted] = useState(false);
+
+  const handleClose = () => {
+    toast.error("Please accept the Privacy & Policy to continue.");
+  };
+
+  const handleNext = () => {
+    if (!accepted) {
+      toast.error("Please accept the Privacy & Policy to continue.");
+      return;
+    }
+
+    router.push("/screens/auth/faq");
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-[#A8A8A8]">
@@ -16,7 +30,7 @@ export default function PrivacyRoute() {
             <Text className="text-[32px] font-semibold text-[#262626]">
               Privacy & Policy
             </Text>
-            <TouchableOpacity onPress={() => router.back()}>
+            <TouchableOpacity onPress={handleClose}>
               <Ionicons name="close" size={24} color="#141414" />
             </TouchableOpacity>
           </View>
@@ -78,9 +92,8 @@ export default function PrivacyRoute() {
                 ? "border-[#19557A] bg-white"
                 : "border-[#A8B0B8] bg-[#E7EAED]"
             }`}
-            onPress={() => accepted && router.push("/screens/auth/faq")}
+            onPress={handleNext}
             activeOpacity={0.85}
-            disabled={!accepted}
           >
             <Text
               className={`text-[18px] font-semibold ${

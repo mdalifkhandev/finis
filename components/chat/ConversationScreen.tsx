@@ -1,7 +1,6 @@
 import { useChatMessagesQuery } from "@/hooks/chat/chat";
 import { uploadChatFile } from "@/api/chat/chat.api";
 import { useAuthStore } from "@/store/auth.store";
-import { useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -35,6 +34,9 @@ import {
 } from "@/lib/chat-socket";
 
 const placeholderAvatar = require("../../assets/images/placeholder-person.png");
+const MESSAGE_BATCH_SIZE = 20;
+const TOP_LOAD_THRESHOLD = 80;
+const BOTTOM_STICKY_THRESHOLD = 80;
 
 function getCurrentTimeLabel() {
   const now = new Date();
@@ -139,10 +141,17 @@ export default function ConversationScreen() {
   const [optimisticMessages, setOptimisticMessages] = useState<MessageModel[]>([]);
   const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [visibleMessageCount, setVisibleMessageCount] = useState(MESSAGE_BATCH_SIZE);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readSyncedThreadRef = useRef<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
-  const queryClient = useQueryClient();
+  const initialScrollDoneRef = useRef(false);
+  const topLoadArmedRef = useRef(false);
+  const preserveScrollRef = useRef(false);
+  const currentScrollOffsetRef = useRef(0);
+  const currentContentHeightRef = useRef(0);
+  const previousContentHeightRef = useRef(0);
+  const isNearBottomRef = useRef(true);
 
   const messagesQuery = useChatMessagesQuery(resolvedThreadId);
   useChatSocket(resolvedThreadId);
@@ -156,7 +165,7 @@ export default function ConversationScreen() {
     isOnline === "true",
   );
 
-  const messages = useMemo<MessageModel[]>(() => {
+  const allMessages = useMemo<MessageModel[]>(() => {
     const serverMessages: MessageModel[] = (messagesQuery.data ?? []).map((message) => ({
       id: message.id,
       text: message.text,
@@ -176,28 +185,29 @@ export default function ConversationScreen() {
     );
   }, [messagesQuery.data, optimisticMessages, userId]);
 
+  const visibleMessages = useMemo(() => {
+    if (allMessages.length <= visibleMessageCount) {
+      return allMessages;
+    }
+
+    const startIndex = Math.max(0, allMessages.length - visibleMessageCount);
+    return allMessages.slice(startIndex);
+  }, [allMessages, visibleMessageCount]);
+
   const lastOwnMessageId = useMemo(() => {
-    for (let index = messages.length - 1; index >= 0; index -= 1) {
-      if (messages[index]?.sender === "me") {
-        return messages[index].id;
+    for (let index = allMessages.length - 1; index >= 0; index -= 1) {
+      if (allMessages[index]?.sender === "me") {
+        return allMessages[index].id;
       }
     }
 
     return null;
-  }, [messages]);
+  }, [allMessages]);
 
   const appendLocalMessage = (message: MessageModel) => {
     if (!resolvedThreadId) {
       return;
     }
-
-    queryClient.setQueryData<MessageModel[]>(["chat", "messages", resolvedThreadId], (current) => {
-      const existing = Array.isArray(current) ? current : [];
-      if (existing.some((item) => item.id === message.id)) {
-        return existing;
-      }
-      return [...existing, message];
-    });
 
     setOptimisticMessages((current) => [...current, message]);
   };
@@ -281,6 +291,9 @@ export default function ConversationScreen() {
 
       await sendPayload({ content: text });
       setMessageText("");
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      });
       if (resolvedThreadId) {
         void sendChatTypingViaSocket({ threadId: resolvedThreadId, isTyping: false }, token);
       }
@@ -449,15 +462,76 @@ export default function ConversationScreen() {
     });
   };
 
-  const handleContentSizeChange = () => {
-    scrollToBottom(false);
+  const handleScroll = (event: any) => {
+    const {
+      contentOffset,
+      contentSize,
+      layoutMeasurement,
+    } = event.nativeEvent;
+
+    currentScrollOffsetRef.current = contentOffset?.y ?? 0;
+    currentContentHeightRef.current = contentSize?.height ?? currentContentHeightRef.current;
+
+    const distanceFromBottom =
+      (contentSize?.height ?? 0) -
+      ((contentOffset?.y ?? 0) + (layoutMeasurement?.height ?? 0));
+    isNearBottomRef.current = distanceFromBottom <= BOTTOM_STICKY_THRESHOLD;
+
+    if ((contentOffset?.y ?? 0) > TOP_LOAD_THRESHOLD) {
+      topLoadArmedRef.current = false;
+    }
+
+    if (
+      (contentOffset?.y ?? 0) <= TOP_LOAD_THRESHOLD &&
+      messagesQuery.hasNextPage &&
+      !topLoadArmedRef.current &&
+      !messagesQuery.isFetchingNextPage
+    ) {
+      topLoadArmedRef.current = true;
+      preserveScrollRef.current = true;
+      previousContentHeightRef.current = currentContentHeightRef.current;
+      void messagesQuery.fetchNextPage().then(() => {
+        setVisibleMessageCount((current) => current + MESSAGE_BATCH_SIZE);
+      });
+    }
   };
 
-  const handleLayout = () => {
-    scrollToBottom(false);
+  const handleContentSizeChange = (_contentWidth: number, contentHeight: number) => {
+    currentContentHeightRef.current = contentHeight;
+
+    if (preserveScrollRef.current) {
+      const heightDelta = contentHeight - previousContentHeightRef.current;
+      const nextOffset = Math.max(0, currentScrollOffsetRef.current + Math.max(heightDelta, 0));
+
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollTo({ y: nextOffset, animated: false });
+      });
+
+      preserveScrollRef.current = false;
+      return;
+    }
+
+    if (!initialScrollDoneRef.current && visibleMessages.length > 0) {
+      scrollToBottom(false);
+      initialScrollDoneRef.current = true;
+      return;
+    }
+
+    if (isNearBottomRef.current) {
+      scrollToBottom(false);
+    }
   };
 
   React.useEffect(() => {
+    initialScrollDoneRef.current = false;
+    topLoadArmedRef.current = false;
+    preserveScrollRef.current = false;
+    currentScrollOffsetRef.current = 0;
+    currentContentHeightRef.current = 0;
+    previousContentHeightRef.current = 0;
+    isNearBottomRef.current = true;
+    setVisibleMessageCount(MESSAGE_BATCH_SIZE);
+
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
     const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
@@ -524,16 +598,17 @@ export default function ConversationScreen() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             style={{ flex: 1 }}
             onContentSizeChange={handleContentSizeChange}
-            onLayout={handleLayout}
             contentContainerStyle={{
               flexGrow: 1,
               paddingTop: 12,
               paddingBottom: attachmentsOpen ? 24 : 12,
             }}
           >
-            {messages.map((message) => (
+            {visibleMessages.map((message) => (
               <ChatMessageBubble
                 key={message.id}
                 message={message}
