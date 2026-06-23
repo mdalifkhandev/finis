@@ -12,6 +12,7 @@ export type WorkerPayroll = {
   payrollId?: string;
   name: string;
   role: string;
+  avatarUrl?: string | null;
   hours: number;
   hoursDisplay?: string;
   rate: number;

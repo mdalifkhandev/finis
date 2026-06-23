@@ -41,6 +41,7 @@ export default function PayrollSummaryScreen() {
         payrollId: item.payrollId,
         name: item.worker.fullName,
         role: item.worker.department || "Worker",
+        avatarUrl: item.worker.avatarUrl,
         hours: item.hours,
         hoursDisplay: item.hoursDisplay,
         rate: Number(item.rate ?? item.worker.hourlyRate ?? 0),

@@ -1,7 +1,7 @@
 import React from "react";
 import { Image, Text, View } from "react-native";
 import ContactActionButton from "./ContactActionButton";
-const placeholderImage = require("../../../assets/images/placeholder-image.png");
+const placeholderImage = require("../../../assets/images/placeholder-person.png");
 
 type ContactCardProps = {
   name: string;

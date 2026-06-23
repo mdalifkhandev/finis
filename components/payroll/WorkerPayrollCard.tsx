@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
+import { Image } from "react-native";
 import { Text, TouchableOpacity, View } from "react-native";
 import { WorkerPayroll } from "./types";
 import { formatCurrency } from "./utils";
+const placeholderAvatar = require("../../assets/images/placeholder-person.png");
 
 type WorkerPayrollCardProps = {
   worker: WorkerPayroll;
@@ -19,15 +21,22 @@ export default function WorkerPayrollCard({
   const isApproved = worker.status === "Approved";
   const primaryLabel = worker.showApproveButton ? "Edit" : "View Stub";
   const handlePrimaryPress = worker.showApproveButton ? onEdit : onViewStub;
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <View className="mt-3 rounded-[14px] border border-[#E3E6EA] bg-white px-4 py-4">
       <View className="flex-row items-start justify-between">
         <View className="flex-row items-center">
-          <View className="h-[42px] w-[42px] items-center justify-center rounded-full bg-[#1F5577]">
-            <Text className="text-[18px] font-medium text-white">
-              {worker.name.charAt(0)}
-            </Text>
+          <View className="h-[42px] w-[42px] overflow-hidden rounded-full bg-[#EEF2F6]">
+            <Image
+              source={
+                worker.avatarUrl && !imageFailed
+                  ? { uri: worker.avatarUrl }
+                  : placeholderAvatar
+              }
+              className="h-[42px] w-[42px]"
+              onError={() => setImageFailed(true)}
+            />
           </View>
 
           <View className="ml-3">
