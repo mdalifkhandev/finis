@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import {
@@ -186,16 +186,35 @@ export function useChatContactsQuery(search: string) {
 export function useChatMessagesQuery(threadId?: string) {
   const token = useAuthStore((state) => state.token);
   const currentUserId = useAuthStore((state) => state.user?.id);
+  const messagePageSize = 20;
+  const [page, setPage] = useState(1);
+  const [pagesByNumber, setPagesByNumber] = useState<Record<number, MessageModel[]>>({});
+  const [meta, setMeta] = useState<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
+
+  useEffect(() => {
+    setPage(1);
+    setPagesByNumber({});
+    setMeta(null);
+  }, [threadId, currentUserId]);
 
   const query = useQuery({
-    queryKey: ["chat", "messages", threadId],
+    queryKey: ["chat", "messages", threadId, page],
     queryFn: async () => {
       if (!threadId || !currentUserId) {
-        return [] as MessageModel[];
+        return {
+          messages: [] as MessageModel[],
+          meta: { page: 1, limit: messagePageSize, total: 0, totalPages: 1 },
+        };
       }
 
-      const response = await getChatMessages(threadId, { limit: 100 });
-      return normalizeMessages(response.data, currentUserId);
+      const response = await getChatMessages(threadId, {
+        page,
+        limit: messagePageSize,
+      });
+      return {
+        messages: normalizeMessages(response.data, currentUserId),
+        meta: response.meta,
+      };
     },
     enabled: !!token && !!threadId && !!currentUserId,
     staleTime: 5 * 1000,
@@ -215,7 +234,42 @@ export function useChatMessagesQuery(threadId?: string) {
     }
   }, [query.error, query.isError]);
 
-  return query;
+  useEffect(() => {
+    if (!query.data) return;
+
+    setMeta(query.data.meta);
+    setPagesByNumber((current) => ({
+      ...current,
+      [page]: query.data.messages,
+    }));
+  }, [page, query.data]);
+
+  const messages = useMemo(
+    () =>
+      Object.keys(pagesByNumber)
+        .map(Number)
+        .sort((left, right) => right - left)
+        .flatMap((pageNumber) => pagesByNumber[pageNumber] ?? []),
+    [pagesByNumber],
+  );
+
+  const hasNextPage = !!meta && page < meta.totalPages;
+  const isFetchingNextPage = query.isFetching && page > 1;
+  const fetchNextPage = async () => {
+    if (!hasNextPage || query.isFetching) {
+      return;
+    }
+
+    setPage((current) => current + 1);
+  };
+
+  return {
+    ...query,
+    data: messages,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  };
 }
 
 export function useCreateDirectThreadMutation() {

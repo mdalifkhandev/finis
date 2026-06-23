@@ -1,7 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useState } from "react";
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import { isAxiosError } from "axios";
@@ -15,6 +22,17 @@ import { useProfileAvatar } from "./profileStore";
 export default function ProfileScreen() {
   const avatarUri = useProfileAvatar();
   const clearSession = useAuthStore((state) => state.clearSession);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -49,6 +67,14 @@ export default function ProfileScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 36 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#1D5478"
+            colors={["#1D5478"]}
+          />
+        }
       >
         <View className="items-center rounded-[24px] border border-[#E1E7ED] bg-white px-5 pb-5 pt-6">
           <ProfileAvatar uri={avatarUri} size={100} />

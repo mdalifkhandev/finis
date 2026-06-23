@@ -1,8 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React from "react";
-import { Text, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 import ProfileAvatar from "./ProfileAvatar";
 import ProfileHeaderBar from "./ProfileHeaderBar";
 import { pickProfileAvatar, useProfileAvatar } from "./profileStore";
@@ -11,6 +19,18 @@ import { useAdminProfileQuery } from "@/hooks/profile/profile";
 export default function PersonalInfoScreen() {
   const avatarUri = useProfileAvatar();
   const { data: profile, isLoading } = useAdminProfileQuery();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "profile"] });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+  
 
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
@@ -26,7 +46,18 @@ export default function PersonalInfoScreen() {
           <ActivityIndicator size="large" color="#1F506D" />
         </View>
       ) : profile ? (
-        <>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor="#1F506D"
+              colors={["#1F506D"]}
+            />
+          }
+        >
           <View className="mt-5 items-center px-4">
             <ProfileAvatar
               uri={profile.avatarUrl || avatarUri}
@@ -86,7 +117,7 @@ export default function PersonalInfoScreen() {
               <Ionicons name="chevron-forward" size={14} color="#2B2B2B" />
             </TouchableOpacity>
           </View>
-        </>
+        </ScrollView>
       ) : (
         <View className="mt-10 items-center justify-center">
           <Text className="text-[#697487]">Failed to load profile</Text>
