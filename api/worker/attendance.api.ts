@@ -72,3 +72,30 @@ export async function checkOutWorker(payload?: { lat?: number; lng?: number }) {
 
   return data.data;
 }
+
+export type WorkerLocationUpdatePayload = {
+  lat: number;
+  lng: number;
+  geofenceId?: string;
+  eventType?: "enter" | "exit" | "update";
+};
+
+export type WorkerLocationUpdateResponse = {
+  message: string;
+  log: unknown;
+  isInsideZone: boolean;
+  zoneName: string | null;
+};
+
+export async function updateWorkerLocation(payload: WorkerLocationUpdatePayload) {
+  const { data } = await api.post<ApiResponse<WorkerLocationUpdateResponse>>(
+    "/worker/location",
+    payload,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update worker location");
+  }
+
+  return data.data;
+}

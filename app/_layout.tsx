@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import messaging from "@react-native-firebase/messaging";
 import AppProviders from "@/components/providers/AppProviders";
+import "@/lib/worker-location-task";
 import "../global.css";
 
 

@@ -9,6 +9,9 @@ type LocationLogsCardProps = {
 };
 
 export default function LocationLogsCard({ logs, onViewFullHistory }: LocationLogsCardProps) {
+
+  console.log(JSON.stringify(logs,null,2));
+  
   return (
     <View className="mt-4 px-5">
       <View className="rounded-3xl border border-[#E2E8EE] bg-[#F7F9FB]">
