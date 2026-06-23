@@ -60,12 +60,13 @@ export default function Home() {
       label: "Payroll Pending",
     },
     {
-      icon: "alert-circle-outline" as const,
+      icon: "warning-outline" as const,
       value: String(dashboard?.stats.inventoryAlerts ?? 0),
       label: "Inventory Alerts",
     },
   ];
   const projects = (dashboard?.activeProjects.data ?? []).map((project) => ({
+    projectId: project.id,
     title: project.name || "Project",
     status: (project.status?.toLowerCase() === "delayed"
       ? "Delayed"
@@ -146,6 +147,7 @@ export default function Home() {
           {projects.map((project, index) => (
             <ProjectCard
               key={`${project.title}-${index}`}
+              projectId={project.projectId}
               title={project.title}
               status={project.status}
               workers={project.workers}

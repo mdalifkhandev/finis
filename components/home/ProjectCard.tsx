@@ -1,10 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import ProgressBar from "./ProgressBar";
 import { cardShadow } from "./styles";
 
 type ProjectCardProps = {
+  projectId: string;
   title: string;
   workers: string;
   progress: number;
@@ -23,6 +25,7 @@ const statusStyles = {
 };
 
 export default function ProjectCard({
+  projectId,
   title,
   workers,
   progress,
@@ -30,8 +33,20 @@ export default function ProjectCard({
 }: ProjectCardProps) {
   const styles = statusStyles[status];
 
+  const handlePress = () => {
+    router.push({
+      pathname: "/screens/company/projectdetails",
+      params: { id: projectId },
+    });
+  };
+
   return (
-    <View className="mx-5 mt-4 rounded-2xl bg-white p-4" style={cardShadow}>
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPress={handlePress}
+      className="mx-5 mt-4 rounded-2xl bg-white p-4"
+      style={cardShadow}
+    >
       <View className="flex-row items-center justify-between">
         <Text className="text-sm font-semibold text-slate-900">{title}</Text>
         <View className={`rounded-full px-2 py-1 ${styles.badge}`}>
@@ -48,6 +63,6 @@ export default function ProjectCard({
         <Text className="text-xs text-slate-500">{progress}% complete</Text>
       </View>
       <ProgressBar value={progress} />
-    </View>
+    </TouchableOpacity>
   );
 }
