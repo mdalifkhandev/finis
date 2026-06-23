@@ -1,7 +1,8 @@
 import { API_BASE_URL } from "@/lib/config";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import React, { useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 import { cardShadow } from "./styles";
 
 const placeholderAvatar = require("../../assets/images/placeholder-person.png");
@@ -11,6 +12,7 @@ function resolveAvatarUrl(avatarUrl: string) {
 }
 
 type WorkerCardProps = {
+  workerId?: string;
   name: string;
   role: string;
   location: string;
@@ -30,6 +32,7 @@ const statusStyles = {
 };
 
 export default function WorkerCard({
+  workerId,
   name,
   role,
   location,
@@ -39,9 +42,24 @@ export default function WorkerCard({
   const styles = statusStyles[status];
   const [imageFailed, setImageFailed] = useState(false);
   const resolvedAvatarUrl = resolveAvatarUrl(avatarUrl);
+  const openProfile = () => {
+    router.push({
+      pathname: "/screens/chat/userprofile",
+      params: {
+        ...(workerId ? { id: workerId } : {}),
+        name,
+        avatarUrl: resolvedAvatarUrl,
+      },
+    });
+  };
 
   return (
-    <View className="mx-5 mt-3 rounded-2xl bg-white p-3" style={cardShadow}>
+    <Pressable
+      onPress={openProfile}
+      className="mx-5 mt-3 rounded-2xl bg-white p-3"
+      style={cardShadow}
+      android_ripple={{ color: "#E8EEF4" }}
+    >
       <View className="flex-row items-center justify-between">
         <View className="flex-1 flex-row items-center pr-3">
           <Image
@@ -75,6 +93,6 @@ export default function WorkerCard({
           </View>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
