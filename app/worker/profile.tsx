@@ -5,6 +5,7 @@ import {
     Image,
     Modal,
     Pressable,
+    RefreshControl,
     ScrollView,
     StatusBar,
     Text,
@@ -45,7 +46,8 @@ const placeholderAvatar = require("../../assets/images/placeholder-person.png");
 export default function WorkerProfile() {
   const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
-  const { data: profile } = useWorkerProfileQuery();
+  const { data: profile, refetch } = useWorkerProfileQuery();
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleLogout = () => {
     setIsLogoutModalVisible(false);
@@ -53,6 +55,14 @@ export default function WorkerProfile() {
   };
 
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   return (
     <SafeAreaView
@@ -64,6 +74,14 @@ export default function WorkerProfile() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor="#3B82F6"
+            colors={["#3B82F6"]}
+          />
+        }
       >
         {/* Profile Header Card */}
         <View
@@ -92,7 +110,7 @@ export default function WorkerProfile() {
             }}
           >
             <Image
-              source={avatarUrl && !imageFailed ? { uri: avatarUrl } : placeholderAvatar}
+              source={avatarUrl ? { uri: avatarUrl } : placeholderAvatar}
               onError={() => setImageFailed(true)}
               style={{ width: "100%", height: "100%" }}
             />

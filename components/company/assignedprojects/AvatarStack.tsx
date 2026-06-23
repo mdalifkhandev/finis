@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { Image, Text, View } from "react-native";
-const placeholderImage = require("../../../assets/images/placeholder-image.png");
+const placeholderImage = require("../../../assets/images/placeholder-person.png");
 
 type AvatarStackProps = {
   avatars: Array<string | null>;
@@ -14,9 +14,9 @@ export default function AvatarStack({ avatars, extraCount }: AvatarStackProps) {
   return (
     <View className="flex-row items-center">
       {visibleAvatars.map((avatar, index) => (
-        <Image
+        <AvatarThumb
           key={`${avatar ?? "placeholder"}-${index}`}
-          source={avatar ? { uri: avatar } : placeholderImage}
+          avatar={avatar}
           className={`h-9 w-9 rounded-full border-[1.5px] border-white ${
             index === 0 ? "" : "-ml-2"
           }`}
@@ -28,5 +28,23 @@ export default function AvatarStack({ avatars, extraCount }: AvatarStackProps) {
         </Text>
       </View>
     </View>
+  );
+}
+
+function AvatarThumb({
+  avatar,
+  className,
+}: {
+  avatar: string | null;
+  className: string;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  return (
+    <Image
+      source={avatar && !imageFailed ? { uri: avatar } : placeholderImage}
+      className={className}
+      onError={() => setImageFailed(true)}
+    />
   );
 }
