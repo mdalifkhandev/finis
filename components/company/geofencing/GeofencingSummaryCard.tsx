@@ -32,16 +32,7 @@ export default function GeofencingSummaryCard({
           </View>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.86}
-          onPress={onAddNewZonePress}
-          className="mt-4 h-12 flex-row items-center justify-center rounded-[14px] bg-[#BBDCED]"
-        >
-          <Ionicons name="add" size={22} color="#111827" />
-          <Text className="ml-2 text-[16px] font-medium text-[#111827]">
-            Add New Zone
-          </Text>
-        </TouchableOpacity>
+  
 
         {hideProjectSelector ? (
           <View className="mt-3 h-12 flex-row items-center justify-center rounded-[14px] border border-[#D6DCE3] bg-[#F6F8FA]">
