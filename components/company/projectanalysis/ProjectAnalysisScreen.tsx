@@ -1,7 +1,7 @@
-import { useProjectAnalysisQuery } from "@/hooks/company/company";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import ProjectAnalysisTaskCard from "./ProjectAnalysisTaskCard";
+import type { ProjectAnalysisData } from "@/types/company.types";
 
 type AnalysisTaskStatus =
   | "Completed"
@@ -19,7 +19,8 @@ type AnalysisTask = {
 };
 
 type ProjectAnalysisScreenProps = {
-  projectId?: string;
+  data?: ProjectAnalysisData;
+  isLoading: boolean;
 };
 
 function mapStatus(status: string): AnalysisTaskStatus {
@@ -31,9 +32,9 @@ function mapStatus(status: string): AnalysisTaskStatus {
 }
 
 export default function ProjectAnalysisScreen({
-  projectId,
+  data,
+  isLoading,
 }: ProjectAnalysisScreenProps) {
-  const { data, isLoading } = useProjectAnalysisQuery(projectId);
   const [tasks, setTasks] = useState<AnalysisTask[]>([]);
 
   useEffect(() => {
@@ -50,18 +51,7 @@ export default function ProjectAnalysisScreen({
     }
   }, [data]);
 
-  const handleToggleTask = (id: string) => {
-    setTasks((previous) =>
-      previous.map((task) =>
-        task.id === id
-          ? {
-              ...task,
-              status: task.status === "Completed" ? "Pending" : "Completed",
-            }
-          : task,
-      ),
-    );
-  };
+
 
   if (isLoading) {
     return (

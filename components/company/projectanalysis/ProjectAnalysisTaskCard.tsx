@@ -24,8 +24,8 @@ export default function ProjectAnalysisTaskCard({
     status === "Completed"
       ? "#5C61F0"
       : status === "Pending"
-        ? "#F4B501"
-        : "#BFC1C5";
+        ? "#BFC1C5"
+        : "#F4B501";
 
   return (
     <TouchableOpacity
