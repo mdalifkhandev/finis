@@ -75,6 +75,7 @@ export default function Home() {
     progress: Number(project.progress ?? 0),
   }));
   const workers = (dashboard?.workersOnSite.data ?? []).map((worker) => ({
+    workerId: worker.id,
     name: worker.fullName || "Worker",
     role: worker.role || "Worker",
     location: "On Site",
@@ -165,6 +166,7 @@ export default function Home() {
           {workers.map((worker, index) => (
             <WorkerCard
               key={`${worker.name}-${index}`}
+              workerId={worker.workerId}
               name={worker.name}
               role={worker.role}
               location={worker.location}

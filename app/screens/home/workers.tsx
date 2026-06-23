@@ -20,6 +20,7 @@ export default function WorkersScreen() {
   const { data, isLoading, isFetching } = useActiveWorkersQuery(page, limit);
 
   const workers = (data ?? []).map((worker) => ({
+    workerId: worker.id,
     name: worker.fullName || "Worker",
     role: worker.role || "Worker",
     location: `${worker.location.lat}, ${worker.location.lng}`,
@@ -50,6 +51,7 @@ export default function WorkersScreen() {
           workers.map((worker, index) => (
             <WorkerCard
               key={`${worker.name}-${index}`}
+              workerId={worker.workerId}
               name={worker.name}
               role={worker.role}
               location={worker.location}
