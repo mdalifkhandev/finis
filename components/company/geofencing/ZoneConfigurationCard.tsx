@@ -1,6 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Alert, Text, TouchableOpacity, View } from "react-native";
+import {
+  useDeleteProjectGeofenceMutation,
+  useUpdateProjectGeofenceMutation,
+} from "@/hooks/company/company";
 
 function MetricCard({
   label,
@@ -18,6 +22,8 @@ function MetricCard({
 }
 
 type ZoneConfigurationCardProps = {
+  projectId?: string;
+  geofenceId?: string;
   zoneName?: string;
   isActive?: boolean;
   definedAt?: string;
@@ -28,6 +34,8 @@ type ZoneConfigurationCardProps = {
 };
 
 export default function ZoneConfigurationCard({
+  projectId,
+  geofenceId,
   zoneName,
   isActive,
   definedAt,
@@ -36,6 +44,35 @@ export default function ZoneConfigurationCard({
   centerPoint,
   monitoringMode,
 }: ZoneConfigurationCardProps) {
+  const updateGeofenceMutation = useUpdateProjectGeofenceMutation(projectId);
+  const deleteGeofenceMutation = useDeleteProjectGeofenceMutation(projectId);
+
+  const handleToggleActive = () => {
+    if (!projectId || !geofenceId) {
+      return;
+    }
+
+    void updateGeofenceMutation.mutateAsync({
+      geofenceId,
+      payload: { isActive: !isActive },
+    });
+  };
+
+  const handleDelete = () => {
+    if (!projectId || !geofenceId) {
+      return;
+    }
+
+    Alert.alert("Delete zone?", "This action cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => void deleteGeofenceMutation.mutateAsync(geofenceId),
+      },
+    ]);
+  };
+
   return (
     <View className="mt-4 px-5">
       <View className="rounded-3xl border border-[#E2E8EE] bg-[#F7F9FB] p-4">
@@ -60,13 +97,33 @@ export default function ZoneConfigurationCard({
             </View>
             <TouchableOpacity
               activeOpacity={0.85}
+              onPress={handleToggleActive}
+              disabled={
+                !projectId ||
+                !geofenceId ||
+                updateGeofenceMutation.isPending ||
+                deleteGeofenceMutation.isPending
+              }
               className="mt-2 h-10 flex-row items-center rounded-xl border border-[#CFD6DD] bg-[#F8FAFC] px-4"
             >
-              <Ionicons name="eye-off-outline" size={18} color="#111827" />
-              <Text className="ml-2 text-[16px] text-[#111827]">Disable</Text>
+              <Ionicons
+                name={isActive ? "eye-off-outline" : "eye-outline"}
+                size={18}
+                color="#111827"
+              />
+              <Text className="ml-2 text-[16px] text-[#111827]">
+                {isActive ? "Disable" : "Enable"}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               activeOpacity={0.85}
+              onPress={handleDelete}
+              disabled={
+                !projectId ||
+                !geofenceId ||
+                updateGeofenceMutation.isPending ||
+                deleteGeofenceMutation.isPending
+              }
               className="mt-2 h-10 flex-row items-center rounded-xl border border-[#F3C6C6] bg-[#FFF7F7] px-4"
             >
               <Ionicons name="trash-outline" size={18} color="#DC2626" />

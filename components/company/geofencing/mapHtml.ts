@@ -21,6 +21,7 @@ export function generateMapHTML(
     isInsideZone?: boolean;
   }> = [],
   googleMapsApiKey = "",
+  isEditingEnabled = true,
 ) {
   const apiKey = googleMapsApiKey.trim();
 
@@ -124,6 +125,9 @@ export function generateMapHTML(
         flex-direction: column;
         gap: 8px;
       }
+      .controls.hidden {
+        display: none;
+      }
       .controls button {
         width: 38px;
         height: 38px;
@@ -146,6 +150,9 @@ export function generateMapHTML(
         padding: 8px 10px;
         border-radius: 10px;
         max-width: 220px;
+      }
+      .hint.hidden {
+        display: none;
       }
       .worker-label {
         min-width: 80px;
@@ -248,13 +255,17 @@ export function generateMapHTML(
       window.__CENTER__ = { lat: ${Number(userLat)}, lng: ${Number(userLng)} };
       window.__ZONE_NAME__ = ${JSON.stringify(zoneName)};
       window.__ZONE_SUBTEXT__ = ${JSON.stringify(zoneSubtext)};
+      window.__IS_EDITING_ENABLED__ = ${JSON.stringify(Boolean(isEditingEnabled))};
 
       let map;
       let polygon = null;
       let previewLine = null;
       let userMarker = null;
       let statusBadge = null;
-      const points = Array.isArray(window.__INITIAL_POINTS__) ? window.__INITIAL_POINTS__.slice() : [];
+      const points =
+        window.__IS_EDITING_ENABLED__ && Array.isArray(window.__INITIAL_POINTS__)
+          ? window.__INITIAL_POINTS__.slice()
+          : [];
       let pointMarkers = [];
       let workerMarkers = [];
       let workerInfoWindows = [];
@@ -449,7 +460,7 @@ export function generateMapHTML(
       }
 
       function undoLastPoint() {
-        if (!map) {
+        if (!map || !window.__IS_EDITING_ENABLED__) {
           return;
         }
 
@@ -463,7 +474,7 @@ export function generateMapHTML(
       }
 
       function resetDrawing() {
-        if (!map) {
+        if (!map || !window.__IS_EDITING_ENABLED__) {
           return;
         }
 
@@ -512,14 +523,18 @@ export function generateMapHTML(
           },
         });
 
-        map.addListener('click', function (event) {
-          points.push({
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng(),
+        if (window.__IS_EDITING_ENABLED__) {
+          map.addListener('click', function (event) {
+            points.push({
+              lat: event.latLng.lat(),
+              lng: event.latLng.lng(),
+            });
+            setStatus('Drawing zone', points.length + ' point(s) selected');
+            syncPolygon();
           });
-          setStatus('Drawing zone', points.length + ' point(s) selected');
-          syncPolygon();
-        });
+        } else {
+          setStatus('Zone inactive', 'Enable the zone to edit it');
+        }
 
         document.getElementById('zoomIn').addEventListener('click', function () {
           map.setZoom((map.getZoom() || 17) + 1);
@@ -547,7 +562,10 @@ export function generateMapHTML(
           }));
         }
 
-        setStatus('Map ready', 'Tap anywhere to add zone points');
+        setStatus(
+          window.__IS_EDITING_ENABLED__ ? 'Map ready' : 'Zone inactive',
+          window.__IS_EDITING_ENABLED__ ? 'Tap anywhere to add zone points' : 'Enable the zone to edit it',
+        );
       }
     </script>
     <script

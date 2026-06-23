@@ -38,6 +38,7 @@ import {
   getProjectGeofenceTimeSummary,
   createProjectGeofence,
   updateProjectGeofence,
+  deleteProjectGeofence,
 } from "@/api/company/company.api";
 import type { CreateTaskPayload } from "@/types/company.types";
 import { useAuthStore } from "@/store/auth.store";
@@ -979,6 +980,30 @@ export function useUpdateProjectGeofenceMutation(projectId?: string) {
     onError: (error: any) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to update zone",
+      );
+    },
+  });
+}
+
+export function useDeleteProjectGeofenceMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (geofenceId: string) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return deleteProjectGeofence(projectId, geofenceId);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "geofences", projectId],
+        });
+      }
+      toast.success("Zone deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete zone",
       );
     },
   });
