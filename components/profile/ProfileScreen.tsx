@@ -13,22 +13,25 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import { isAxiosError } from "axios";
 import { logoutRequest } from "@/api/auth/auth.api";
+import { useAuthMeQuery } from "@/hooks/auth/auth";
 import { queryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/store/auth.store";
 import ProfileAvatar from "./ProfileAvatar";
 import ProfileHeaderBar from "./ProfileHeaderBar";
-import { useProfileAvatar } from "./profileStore";
 
 export default function ProfileScreen() {
-  const avatarUri = useProfileAvatar();
+  const { data: profile, refetch } = useAuthMeQuery();
   const clearSession = useAuthStore((state) => state.clearSession);
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
-      await queryClient.invalidateQueries({ queryKey: ["profile"] });
+      await Promise.all([
+        refetch(),
+        queryClient.invalidateQueries({ queryKey: ["auth", "me"] }),
+        queryClient.invalidateQueries({ queryKey: ["profile"] }),
+      ]);
     } finally {
       setRefreshing(false);
     }
@@ -77,12 +80,14 @@ export default function ProfileScreen() {
         }
       >
         <View className="items-center rounded-[24px] border border-[#E1E7ED] bg-white px-5 pb-5 pt-6">
-          <ProfileAvatar uri={avatarUri} size={100} />
+          <ProfileAvatar uri={profile?.avatarUrl ?? ""} size={100} />
 
           <Text className="mt-4 text-[22px] font-semibold text-[#111827]">
-            Rokey Mahmud
+            {profile?.fullName ?? "User"}
           </Text>
-          <Text className="mt-1 text-[14px] text-[#64748B]">Admin</Text>
+          <Text className="mt-1 text-[14px] text-[#64748B]">
+            {profile?.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : "Role"}
+          </Text>
 
           <View className="mt-6 w-full">
             <Text className="mb-4 text-[16px] font-semibold text-[#111827]">
@@ -105,7 +110,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
+    {profile?.role==='admin'&&    <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => router.push("/screens/profile/subscription")}
           className="mt-4 flex-row items-center justify-between rounded-[14px] border border-[#E1E7ED] bg-white px-4 py-4"
@@ -119,7 +124,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-        </TouchableOpacity>
+        </TouchableOpacity>}
 
         <TouchableOpacity
           activeOpacity={0.85}
