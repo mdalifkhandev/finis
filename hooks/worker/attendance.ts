@@ -5,12 +5,20 @@ import {
   checkInWorker,
   checkOutWorker,
   getTodayAttendance,
+  getWorkerWeeklyAttendanceSummary,
 } from "@/api/worker/attendance.api";
 
 export function useTodayAttendanceQuery() {
   return useQuery({
     queryKey: ["worker", "attendance", "today"],
     queryFn: getTodayAttendance,
+  });
+}
+
+export function useWorkerWeeklyAttendanceSummaryQuery() {
+  return useQuery({
+    queryKey: ["worker", "attendance", "weekly-summary"],
+    queryFn: getWorkerWeeklyAttendanceSummary,
   });
 }
 
