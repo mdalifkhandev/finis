@@ -244,6 +244,18 @@ export default function GeofencingRoute() {
     const geofences = geofencesQuery.data ?? [];
     return geofences.find((geofence) => geofence.isActive) ?? geofences[0];
   }, [geofencesQuery.data]);
+  const isZoneEditable = !selectedGeofence || selectedGeofence.isActive;
+
+  React.useEffect(() => {
+    if (isZoneEditable) {
+      return;
+    }
+
+    setDraftPoints([]);
+    if (selectedProjectId) {
+      draftPointsByProjectRef.current[selectedProjectId] = [];
+    }
+  }, [isZoneEditable, selectedProjectId]);
 
   const liveTrackerStats = useMemo(() => {
     const workers = (summaryQuery.data?.workers ?? []) as Array<{
@@ -350,7 +362,8 @@ export default function GeofencingRoute() {
         <GeofenceMapCard
           projectName={selectedProject?.name}
           projectSite={selectedProject?.location}
-          initialPolygonCoords={selectedGeofence?.polygonCoords ?? []}
+          initialPolygonCoords={isZoneEditable ? selectedGeofence?.polygonCoords ?? [] : []}
+          isEditingEnabled={isZoneEditable}
           liveWorkers={liveWorkers}
           onPolygonChange={setDraftPoints}
           onMapReady={() => {
@@ -365,7 +378,7 @@ export default function GeofencingRoute() {
           <MapLegend />
         </View>
 
-        {selectedProjectId ? (
+        {selectedProjectId && isZoneEditable ? (
           <View className="px-5 pt-3">
             <Text className="mb-2 text-[12px] text-[#66707B]">
               {draftPoints.length >= 3
@@ -423,6 +436,8 @@ export default function GeofencingRoute() {
         ) : null}
 
         <ZoneConfigurationCard
+          projectId={selectedProjectId}
+          geofenceId={selectedGeofence?.id}
           zoneName={selectedGeofence?.zoneName ?? selectedProject?.name}
           isActive={selectedGeofence?.isActive ?? false}
           definedAt={selectedGeofence ? "Saved zone" : undefined}

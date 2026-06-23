@@ -14,6 +14,7 @@ type GeofenceMapCardProps = {
   projectSite?: string;
   selectedProjectId?: string;
   initialPolygonCoords?: Array<{ lat: number; lng: number }>;
+  isEditingEnabled?: boolean;
   liveWorkers?: Array<{ workerId: string; workerName: string; lat: number; lng: number; isInsideZone?: boolean }>;
   onPolygonChange?: (points: Array<{ lat: number; lng: number }>) => void;
   onMapReady?: () => void;
@@ -24,6 +25,7 @@ export default function GeofenceMapCard({
   projectName,
   projectSite,
   initialPolygonCoords,
+  isEditingEnabled = true,
   liveWorkers,
   onPolygonChange,
   onMapReady,
@@ -48,11 +50,12 @@ export default function GeofenceMapCard({
         fallbackLng,
         projectName ?? "Selected Project",
         projectSite ?? "",
-        initialPolygonCoords ?? [],
+        isEditingEnabled ? initialPolygonCoords ?? [] : [],
         [],
         googleMapsApiKey,
+        isEditingEnabled,
       ),
-    [fallbackLat, fallbackLng, googleMapsApiKey, initialPolygonCoords, projectName, projectSite],
+    [fallbackLat, fallbackLng, googleMapsApiKey, initialPolygonCoords, isEditingEnabled, projectName, projectSite],
   );
   const mapSource = useMemo(() => ({ html: mapHtml }), [mapHtml]);
   const mapSourceKey = useMemo(
@@ -60,11 +63,12 @@ export default function GeofenceMapCard({
       JSON.stringify({
         projectName: projectName ?? "",
         projectSite: projectSite ?? "",
-        initialPolygonCoords: initialPolygonCoords ?? [],
+        initialPolygonCoords: isEditingEnabled ? initialPolygonCoords ?? [] : [],
+        isEditingEnabled,
         googleMapsApiKey,
         reloadToken,
       }),
-    [googleMapsApiKey, initialPolygonCoords, projectName, projectSite, reloadToken],
+    [googleMapsApiKey, initialPolygonCoords, isEditingEnabled, projectName, projectSite, reloadToken],
   );
   const liveWorkersJson = useMemo(
     () => JSON.stringify(liveWorkers ?? []),
@@ -200,27 +204,29 @@ export default function GeofenceMapCard({
               </Text>
             </View>
 
-            <View className="items-end gap-2">
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleUndo}
-                className={`h-[34px] w-[74px] items-center justify-center rounded-[10px] border border-[#d7dde4] bg-white shadow-sm shadow-black/10 ${!canControlMap ? "opacity-50" : ""}`}
-              >
-                <Text className="text-[13px] font-bold text-[#1f3d5c]">
-                  Undo
-                </Text>
-              </TouchableOpacity>
+            {isEditingEnabled ? (
+              <View className="items-end gap-2">
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={handleUndo}
+                  className={`h-[34px] w-[74px] items-center justify-center rounded-[10px] border border-[#d7dde4] bg-white shadow-sm shadow-black/10 ${!canControlMap ? "opacity-50" : ""}`}
+                >
+                  <Text className="text-[13px] font-bold text-[#1f3d5c]">
+                    Undo
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={handleReset}
-                className={`h-[34px] w-[74px] items-center justify-center rounded-[10px] border border-[#d7dde4] bg-white shadow-sm shadow-black/10 ${!canControlMap ? "opacity-50" : ""}`}
-              >
-                <Text className="text-[13px] font-bold text-[#1f3d5c]">
-                  Reset
-                </Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={handleReset}
+                  className={`h-[34px] w-[74px] items-center justify-center rounded-[10px] border border-[#d7dde4] bg-white shadow-sm shadow-black/10 ${!canControlMap ? "opacity-50" : ""}`}
+                >
+                  <Text className="text-[13px] font-bold text-[#1f3d5c]">
+                    Reset
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -274,12 +280,14 @@ export default function GeofenceMapCard({
             </View>
           )}
 
-          <View className="absolute right-3 top-3 rounded-lg bg-[#0F172A]/80 px-3 py-2">
+          {isEditingEnabled ? (
+            <View className="absolute right-3 top-3 rounded-lg bg-[#0F172A]/80 px-3 py-2">
             <Text className="text-[11px] font-medium text-[#E5E7EB]">GPS</Text>
             <Text className="text-[12px] text-white">
               {isFetchingLocation ? "Locating..." : locationLabel}
             </Text>
-          </View>
+            </View>
+          ) : null}
         </View>
       </View>
     </View>

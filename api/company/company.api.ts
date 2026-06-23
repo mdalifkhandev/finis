@@ -824,6 +824,20 @@ export async function updateProjectGeofence(
   return data.data;
 }
 
+export async function deleteProjectGeofence(projectId: string, geofenceId: string) {
+  const { data } = await api.delete<{
+    success: boolean;
+    message: string;
+    data: CompanyGeofence;
+  }>(`/admin/projects/${projectId}/geofences/${geofenceId}`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete geofence");
+  }
+
+  return data.data;
+}
+
 export async function getProjectGeofenceLocationLogs(projectId: string) {
   const { data } = await api.get<{
     success: boolean;

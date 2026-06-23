@@ -81,6 +81,15 @@ export default function ManagerGeofencingRoute() {
     const geofences = geofencesQuery.data ?? [];
     return geofences.find((geofence) => geofence.isActive) ?? geofences[0];
   }, [geofencesQuery.data]);
+  const isZoneEditable = !selectedGeofence || selectedGeofence.isActive;
+
+  useEffect(() => {
+    if (isZoneEditable) {
+      return;
+    }
+
+    setDraftPoints([]);
+  }, [isZoneEditable]);
 
   const liveTrackerStats = useMemo(() => {
     const workers = (summaryQuery.data?.workers ?? []) as Array<{
@@ -319,7 +328,8 @@ export default function ManagerGeofencingRoute() {
         <GeofenceMapCard
           projectName={project?.name}
           projectSite={project?.location}
-          initialPolygonCoords={selectedGeofence?.polygonCoords ?? []}
+          initialPolygonCoords={isZoneEditable ? selectedGeofence?.polygonCoords ?? [] : []}
+          isEditingEnabled={isZoneEditable}
           liveWorkers={liveWorkers}
           onPolygonChange={setDraftPoints}
           onMapReady={() => {
@@ -334,52 +344,56 @@ export default function ManagerGeofencingRoute() {
           <MapLegend />
         </View>
 
-        <View className="px-5 pt-3">
-          <Text className="mb-2 text-[12px] text-[#66707B]">
-            {draftPoints.length >= 3
-              ? `${draftPoints.length} points selected.`
-              : "Select at least 3 points to enable save."}
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            disabled={draftPoints.length < 3 || createGeofenceMutation.isPending}
-            onPress={() => {
-              if (draftPoints.length < 3) {
-                return;
-              }
-
-              const zonePayload = {
-                zoneName: `${project?.name ?? "Selected Project"} Zone`,
-                polygonCoords: draftPoints,
-              };
-
-              if (selectedGeofence?.id) {
-                void updateGeofenceMutation.mutateAsync({
-                  geofenceId: selectedGeofence.id,
-                  payload: zonePayload,
-                }).then(() => setDraftPoints([]));
-                return;
-              }
-
-              void createGeofenceMutation.mutateAsync(zonePayload).then(() => setDraftPoints([]));
-            }}
-            className={`h-[48px] items-center justify-center rounded-[12px] ${
-              draftPoints.length >= 3 &&
-              !createGeofenceMutation.isPending &&
-              !updateGeofenceMutation.isPending
-                ? "bg-[#1D5478]"
-                : "bg-[#AAB7C2]"
-            }`}
-          >
-            <Text className="text-[15px] font-semibold text-white">
-              {createGeofenceMutation.isPending || updateGeofenceMutation.isPending
-                ? "Saving..."
-                : "Save Zone"}
+        {isZoneEditable ? (
+          <View className="px-5 pt-3">
+            <Text className="mb-2 text-[12px] text-[#66707B]">
+              {draftPoints.length >= 3
+                ? `${draftPoints.length} points selected.`
+                : "Select at least 3 points to enable save."}
             </Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              disabled={draftPoints.length < 3 || createGeofenceMutation.isPending}
+              onPress={() => {
+                if (draftPoints.length < 3) {
+                  return;
+                }
+
+                const zonePayload = {
+                  zoneName: `${project?.name ?? "Selected Project"} Zone`,
+                  polygonCoords: draftPoints,
+                };
+
+                if (selectedGeofence?.id) {
+                  void updateGeofenceMutation.mutateAsync({
+                    geofenceId: selectedGeofence.id,
+                    payload: zonePayload,
+                  }).then(() => setDraftPoints([]));
+                  return;
+                }
+
+                void createGeofenceMutation.mutateAsync(zonePayload).then(() => setDraftPoints([]));
+              }}
+              className={`h-[48px] items-center justify-center rounded-[12px] ${
+                draftPoints.length >= 3 &&
+                !createGeofenceMutation.isPending &&
+                !updateGeofenceMutation.isPending
+                  ? "bg-[#1D5478]"
+                  : "bg-[#AAB7C2]"
+              }`}
+            >
+              <Text className="text-[15px] font-semibold text-white">
+                {createGeofenceMutation.isPending || updateGeofenceMutation.isPending
+                  ? "Saving..."
+                  : "Save Zone"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <ZoneConfigurationCard
+          projectId={projectId}
+          geofenceId={selectedGeofence?.id}
           zoneName={selectedGeofence?.zoneName ?? project?.name}
           isActive={selectedGeofence?.isActive ?? false}
           definedAt={selectedGeofence ? "Saved zone" : undefined}
