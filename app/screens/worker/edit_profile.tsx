@@ -25,16 +25,7 @@ function resolveAvatarUrl(avatarUrl?: string | null) {
   if (!avatarUrl) {
     return DEFAULT_AVATAR_URL;
   }
-
-  if (
-    avatarUrl.startsWith("http://") ||
-    avatarUrl.startsWith("https://") ||
-    avatarUrl.startsWith("file://")
-  ) {
-    return avatarUrl;
-  }
-
-  return `${API_BASE_URL}${avatarUrl.startsWith("/") ? "" : "/"}${avatarUrl}`;
+  return avatarUrl;
 }
 
 const THEME = {
