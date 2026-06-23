@@ -68,6 +68,7 @@ export default function ManagerHomeScreen() {
   ];
 
   const projects = (dashboard?.activeProjects.data ?? []).map((project) => ({
+    projectId: project.id,
     title: project.name || "Project",
     status: (project.status?.toLowerCase() === "delayed"
       ? "Delayed"
@@ -137,6 +138,7 @@ export default function ManagerHomeScreen() {
           {projects.map((project, index) => (
             <ProjectCard
               key={`${project.title}-${index}`}
+              projectId={project.projectId}
               title={project.title}
               status={project.status}
               workers={project.workers}

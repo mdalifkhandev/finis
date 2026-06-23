@@ -19,6 +19,7 @@ export default function ProjectsScreen() {
   const { data, isLoading, isFetching } = useActiveProjectsQuery(page, limit);
 
   const projects = (data ?? []).map((project) => ({
+    projectId: project.id,
     title: project.name || "Project",
     status: (project.status?.toLowerCase() === "delayed"
       ? "Delayed"
@@ -50,6 +51,7 @@ export default function ProjectsScreen() {
           projects.map((project, index) => (
             <ProjectCard
               key={`${project.title}-${index}`}
+              projectId={project.projectId}
               title={project.title}
               status={project.status}
               workers={project.workers}
