@@ -924,3 +924,52 @@ export async function reviewTaskReport(taskId: string, reportId: string, reviewD
   return data.data;
 }
 
+export type UpdateAdminTaskPayload = {
+  title?: string;
+  description?: string;
+  priority?: string;
+  dueDate?: string;
+  estimatedHours?: number;
+  actualHours?: number;
+  expenseDescription?: string;
+  expenseAmount?: number;
+};
+
+export async function updateTask(
+  taskId: string,
+  payload: UpdateAdminTaskPayload,
+  file?: { uri: string; name?: string | null; type?: string | null } | null,
+) {
+  const formData = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      formData.append(key, String(value));
+    }
+  });
+
+  if (file?.uri && !file.uri.startsWith("http")) {
+    formData.append("file", {
+      uri: file.uri,
+      name: file.name || "task-expense.jpg",
+      type: file.type || "image/jpeg",
+    } as any);
+  }
+
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: TaskDetailsData & { expense?: unknown };
+  }>(`/admin/tasks/${taskId}`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update task");
+  }
+
+  return data.data;
+}
+

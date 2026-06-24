@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useReviewTaskReportMutation } from "@/hooks/company/company";
 import { toast } from "sonner-native";
 import type { TaskDetailsData } from "@/types/company.types";
@@ -13,6 +13,17 @@ import { getTaskDetailsPreset } from "./taskDetailsPreset";
 
 type TaskDetailsScreenProps = {
   task?: TaskDetailsData;
+  updateTaskMutation?: {
+    isPending: boolean;
+    mutateAsync: (params: {
+      taskId: string;
+      payload: {
+        expenseDescription?: string;
+        expenseAmount?: number;
+      };
+      file?: { uri: string; name?: string | null; type?: string | null };
+    }) => Promise<unknown>;
+  };
 };
 
 function toStatusBadge(status: TaskStatus | undefined) {
@@ -21,10 +32,15 @@ function toStatusBadge(status: TaskStatus | undefined) {
   return status.toUpperCase();
 }
 
-export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
+function formatMoney(value: number) {
+  return `$${value.toFixed(2)}`;
+}
+
+export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDetailsScreenProps) {
   const preset = getTaskDetailsPreset(task?.status as TaskStatus);
   const description = task?.description?.trim() || preset.description;
   const [reviewDescription, setReviewDescription] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<TaskExpenseDocument[]>([]);
 
   const reportId = task?.reports?.[0]?.id;
@@ -38,7 +54,30 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
     }
     
     try {
+      const selectedFile = uploadedFiles[0];
+      const parsedAmount = Number.parseFloat(expenseAmount);
+
+      if (task?.id && updateTaskMutation && !updateTaskMutation.isPending) {
+        await updateTaskMutation.mutateAsync({
+          taskId: task.id,
+          payload: {
+            expenseDescription: reviewDescription.trim() || task.title || "Task expense",
+            expenseAmount: Number.isFinite(parsedAmount) ? parsedAmount : 0,
+          },
+          file: selectedFile
+            ? {
+                uri: selectedFile.uri,
+                name: selectedFile.name,
+                type: selectedFile.mimeType,
+              }
+            : undefined,
+        });
+      }
+
       await reviewMutation.mutateAsync(decision);
+      setReviewDescription(decision === "approved" ? "Approved" : "Rejected");
+      setExpenseAmount("");
+      setUploadedFiles([]);
       toast.success(decision === "approved" ? "Task approved successfully" : "Task rejected successfully");
     } catch {
       // Error handled by hook
@@ -64,6 +103,7 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
         return;
       }
 
+      const firstAsset = result.assets[0];
       setUploadedFiles((previous) => {
         const existing = new Set(previous.map((file) => file.id));
         const nextFiles = result.assets
@@ -78,6 +118,7 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
 
         return [...previous, ...nextFiles];
       });
+
     } catch {
       Alert.alert("Upload failed", "Unable to pick files right now.");
     }
@@ -133,8 +174,8 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
       </View>
 
       <View className="mt-6">
-        <Text className="text-[12px] font-medium uppercase tracking-[1.8px] text-[#8B9BB5]">
-          Inventory Used
+        <Text className="text-[16px] font-medium  text-[#222325]">
+          Inventory Used 
         </Text>
 
         <View className="mt-3 gap-3">
@@ -152,10 +193,66 @@ export default function TaskDetailsScreen({ task }: TaskDetailsScreenProps) {
         <Text className="text-[15px] font-semibold text-[#1F2937]">
           Task Expenses
         </Text>
+          {task?.expenses?.length ? (
+            <View className="mt-3 rounded-[14px] border border-[#DADFE5] bg-white p-4">
+              <Text className="text-[13px] font-semibold text-[#1F2937]">
+                Backend Expenses
+              </Text>
+              <View className="mt-3 gap-3">
+                {task.expenses.map((expense) => (
+                  <View
+                    key={expense.id}
+                    className="rounded-[12px] border border-[#E5EAF0] bg-[#FAFBFC] px-3 py-3"
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <Text className="text-[14px] font-medium text-[#111827]">
+                        {expense.description}
+                      </Text>
+                      <Text className="text-[14px] font-semibold text-[#1E5371]">
+                        {formatMoney(expense.amount)}
+                      </Text>
+                    </View>
+                    <View className="mt-1 flex-row items-center justify-between">
+                      <Text className="text-[12px] text-[#6B7280]">
+                        {expense.category}
+                      </Text>
+                      <Text className="text-[12px] text-[#6B7280]">
+                        {new Date(expense.date).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    {expense.receiptUrl ? (
+                      <View className="mt-3 overflow-hidden rounded-[10px] border border-[#D7DEE7] bg-white">
+                        <Image
+                          source={{ uri: expense.receiptUrl }}
+                          resizeMode="cover"
+                          className="h-[140px] w-full bg-[#EEF3F8]"
+                        />
+                      </View>
+                    ) : null}
+                    <Text className="mt-1 text-[12px] text-[#14803C]">
+                      {expense.status}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
+        <View className="mt-3">
+          <Text className="text-[13px] text-[#374151]">Total Expenses Amount</Text>
+          <TextInput
+            value={expenseAmount}
+            onChangeText={setExpenseAmount}
+            placeholder="Enter total expenses amount"
+            placeholderTextColor="#A0A8B5"
+            keyboardType="decimal-pad"
+            className="mt-2 h-[48px] rounded-[12px] border border-[#D7DEE7] bg-white px-4 text-[15px] text-[#111827]"
+          />
+        </View>
         <TaskExpensesCard
           documents={uploadedFiles}
           onRemoveDocument={handleRemoveDocument}
         />
+
       </View>
 
       <View className="mt-6">

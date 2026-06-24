@@ -355,6 +355,7 @@ export type TaskDetailsExpense = {
   amount: number;
   status: string;
   date: string;
+  receiptUrl: string | null;
 };
 
 export type TaskDetailsData = {
