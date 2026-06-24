@@ -27,6 +27,7 @@ export default function WorkersScreen() {
     status: "Active" as const,
     avatarUrl: worker.avatarUrl || DEFAULT_AVATAR_URL,
   }));
+  const hasMoreWorkers = workers.length === limit;
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
@@ -82,11 +83,14 @@ export default function WorkersScreen() {
           <Text className="text-xs text-slate-500">Page {page}</Text>
 
           <TouchableOpacity
+            disabled={!hasMoreWorkers || isFetching}
             onPress={() => setPage((current) => current + 1)}
-            className="rounded-full bg-slate-900 px-4 py-2"
+            className={`rounded-full px-4 py-2 ${!hasMoreWorkers || isFetching ? "bg-slate-300" : "bg-slate-900"}`}
             activeOpacity={0.85}
           >
-            <Text className="text-xs font-semibold text-white">Next</Text>
+            <Text className={`text-xs font-semibold ${!hasMoreWorkers || isFetching ? "text-slate-500" : "text-white"}`}>
+              Next
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
