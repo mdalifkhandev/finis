@@ -4,7 +4,7 @@ import type {
   QuoteCatalog,
   QuoteWorkGroup,
   QuoteWorkItemTemplate,
-} from "./quoteMockData";
+} from "./quoteTypes";
 
 function mapItem(item: QuoteWorkItemTemplate): QuoteSelectedWorkItem {
   return {

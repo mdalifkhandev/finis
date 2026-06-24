@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
-import { formatCurrency, type QuoteUnitOption } from "./quoteMockData";
+import { formatCurrency, type QuoteUnitOption } from "./quoteTypes";
 
 export type QuoteSelectedWorkItem = {
   id: string;

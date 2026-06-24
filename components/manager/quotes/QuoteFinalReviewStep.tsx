@@ -3,11 +3,10 @@ import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import {
   formatCurrency,
-  type QuoteEstimate,
   type QuoteProjectType,
   type QuotePropertyType,
   type QuoteUnitType,
-} from "./quoteMockData";
+} from "./quoteTypes";
 import QuoteReviewCard from "./QuoteReviewCard";
 import type { QuoteSelectedWorkGroup } from "./QuoteWorkGroupCard";
 
@@ -17,7 +16,6 @@ type QuoteFinalReviewStepProps = {
   projectType: QuoteProjectType;
   propertyType: QuotePropertyType;
   unitType: QuoteUnitType;
-  estimate: QuoteEstimate;
   estimatedTime: string;
   workGroups: QuoteSelectedWorkGroup[];
   subtotal: number;
@@ -72,7 +70,6 @@ export default function QuoteFinalReviewStep({
   projectType,
   propertyType,
   unitType,
-  estimate,
   estimatedTime,
   workGroups,
   subtotal,

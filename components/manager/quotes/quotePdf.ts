@@ -3,11 +3,10 @@ import * as Sharing from "expo-sharing";
 import { Alert, Linking } from "react-native";
 import {
   formatCurrency,
-  type QuoteEstimate,
   type QuoteProjectType,
   type QuotePropertyType,
   type QuoteUnitType,
-} from "./quoteMockData";
+} from "./quoteTypes";
 import type { QuoteSelectedWorkGroup } from "./QuoteWorkGroupCard";
 
 function escapeHtml(value: string) {
@@ -25,7 +24,7 @@ export type GenerateQuotePdfParams = {
   projectType: QuoteProjectType;
   propertyType: QuotePropertyType;
   unitType: QuoteUnitType;
-  estimate: QuoteEstimate;
+  estimatedTime: string;
   projectMetaLabel: string;
   validUntilLabel: string;
   workGroups: QuoteSelectedWorkGroup[];
@@ -64,7 +63,7 @@ function buildQuoteHtml(params: GenerateQuotePdfParams) {
         <div style="margin-top:8px"><strong>Project Address:</strong> ${escapeHtml(params.projectAddress || "1234 Maple Street, Downtown District, CA 90210")}</div>
         <div style="margin-top:8px"><strong>Project Details:</strong> ${escapeHtml(`${params.projectType} • ${params.propertyType} • ${params.unitType}`)}</div>
         <div style="margin-top:8px"><strong>Project Meta:</strong> ${escapeHtml(params.projectMetaLabel)}</div>
-        <div style="margin-top:8px"><strong>Estimated Timeline:</strong> ${escapeHtml(String(params.estimate.timeline ?? ""))}</div>
+        <div style="margin-top:8px"><strong>Estimated Timeline:</strong> ${escapeHtml(params.estimatedTime || "")}</div>
         <div style="margin-top:8px"><strong>Quote Valid Until:</strong> ${escapeHtml(params.validUntilLabel)}</div>
       </div>
 

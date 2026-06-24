@@ -17,19 +17,16 @@ import QuoteBuilderForm from "./quotes/QuoteBuilderForm";
 import QuoteFinalReviewStep from "./quotes/QuoteFinalReviewStep";
 import {
   formatCurrency,
-  getQuoteCatalog,
-  getQuoteEstimate,
   type QuoteProjectType,
   type QuotePropertyType,
   type QuoteUnitType,
-} from "./quotes/quoteMockData";
+} from "./quotes/quoteTypes";
 import { emailQuotePdf, generateQuotePdf } from "./quotes/quotePdf";
 import QuoteStepIndicator from "./quotes/QuoteStepIndicator";
 import type { QuoteSelectedWorkGroup } from "./quotes/QuoteWorkGroupCard";
 import QuoteWorkItemsStep from "./quotes/QuoteWorkItemsStep";
 import {
   addCustomQuoteWorkItem,
-  buildQuoteSelectedWorkGroups,
   calculateQuoteWorkTotals,
   deleteQuoteWorkItem,
   toggleQuoteWorkGroup,
@@ -73,11 +70,7 @@ export default function ManagerQuotesScreen() {
   const [propertyType, setPropertyType] =
     useState<QuotePropertyType>("Residential");
   const [unitType, setUnitType] = useState<QuoteUnitType>("Apartment");
-  const [workGroups, setWorkGroups] = useState<QuoteSelectedWorkGroup[]>(() =>
-    buildQuoteSelectedWorkGroups(
-      getQuoteCatalog("New Build", "Residential", "Apartment"),
-    ),
-  );
+  const [workGroups, setWorkGroups] = useState<QuoteSelectedWorkGroup[]>([]);
   const [discountModalVisible, setDiscountModalVisible] = useState(false);
   const [discountPercentInput, setDiscountPercentInput] = useState("0");
   const [appliedDiscountPercent, setAppliedDiscountPercent] = useState(0);
@@ -104,12 +97,6 @@ export default function ManagerQuotesScreen() {
       }),
     enabled: step === 1,
   });
-
-
-  const catalog = useMemo(
-    () => getQuoteCatalog(projectType, propertyType, unitType),
-    [projectType, propertyType, unitType],
-  );
   const defaultClientName = currentUser?.fullName || currentUser?.name || "Walk-in Client";
   const defaultEmail = currentUser?.email || "";
   const defaultPhone = currentUser?.phone || "";
@@ -141,10 +128,6 @@ export default function ManagerQuotesScreen() {
     if (step !== 2 || backendWorkGroups.length === 0) return;
     setWorkGroups(backendWorkGroups);
   }, [backendWorkGroups, step]);
-  const estimate = useMemo(
-    () => getQuoteEstimate(projectType, propertyType, unitType),
-    [projectType, propertyType, unitType],
-  );
 
   const { subtotal, itemsSelected } = useMemo(
     () => calculateQuoteWorkTotals(workGroups),
@@ -166,7 +149,6 @@ export default function ManagerQuotesScreen() {
     projectType,
     propertyType,
     unitType,
-    estimate,
     estimatedTime: estimatedTime || "",
     projectMetaLabel,
     validUntilLabel,
@@ -184,11 +166,7 @@ export default function ManagerQuotesScreen() {
     setProjectType(nextProjectType);
     setPropertyType(nextPropertyType);
     setUnitType(nextUnitType);
-    setWorkGroups(
-      buildQuoteSelectedWorkGroups(
-        getQuoteCatalog(nextProjectType, nextPropertyType, nextUnitType),
-      ),
-    );
+    setWorkGroups([]);
   };
 
   const handleGeneratePdf = async () => {
@@ -401,15 +379,18 @@ export default function ManagerQuotesScreen() {
             />
           ) : step === 2 ? (
             <QuoteWorkItemsStep
-              catalogTitle={catalog.title}
-              catalogDescription={catalog.description}
+              catalogTitle={backendQuotes.length ? "Backend Quote Items" : "No Backend Quote Items"}
+              catalogDescription={
+                backendQuotes.length
+                  ? "These items are loaded from the server."
+                  : "No quotes returned from the backend for this combination."
+              }
               groups={workGroups}
               subtotal={subtotal}
               itemsSelected={itemsSelected}
               estimatedTotal={subtotal}
               estimatedTime={estimatedTime}
               onChangeEstimatedTime={setEstimatedTime}
-              backendQuotes={backendQuotes}
               onAddCustomItem={() => setCustomItemModalVisible(true)}
               onToggleGroup={(groupId) =>
                 setWorkGroups((current) => toggleQuoteWorkGroup(current, groupId))
@@ -441,7 +422,6 @@ export default function ManagerQuotesScreen() {
               projectType={projectType}
               propertyType={propertyType}
               unitType={unitType}
-              estimate={estimate}
               estimatedTime={estimatedTime }
               workGroups={workGroups}
               subtotal={subtotal}

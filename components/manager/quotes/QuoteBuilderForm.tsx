@@ -7,7 +7,7 @@ import type {
   QuoteProjectType,
   QuotePropertyType,
   QuoteUnitType,
-} from "./quoteMockData";
+} from "./quoteTypes";
 
 type QuoteBuilderFormProps = {
   clientName: string;
