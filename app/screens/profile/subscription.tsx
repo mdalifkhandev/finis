@@ -3,8 +3,8 @@ import BackTitleHeader from "@/components/common/BackTitleHeader";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
-import React, { useMemo } from "react";
-import { Linking, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Linking, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "@/store/auth.store";
 
@@ -29,12 +29,13 @@ export default function SubscriptionScreen() {
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const role = useAuthStore((state) => state.user?.role);
 
-  const { data: subscription } = useQuery({
+  const { data: subscription, refetch } = useQuery({
     queryKey: ["admin", "subscription", "history", token],
     queryFn: getAdminSubscriptionHistory,
     enabled: isHydrated && !!token && (role === "admin" || role === "manager"),
     staleTime: 60 * 1000,
   });
+  const [refreshing, setRefreshing] = useState(false);
 
   const current = subscription?.current ?? null;
   const currentPeriodStart = formatDateLabel(current?.startDate);
@@ -97,6 +98,15 @@ export default function SubscriptionScreen() {
   const handleUpgradePlan = async () => {
     await Linking.openURL("https://b7ds5k81-5173.inc1.devtunnels.ms/plans");
   };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <BackTitleHeader title="Subscription" onBack={() => router.back()} />
@@ -104,6 +114,9 @@ export default function SubscriptionScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 28 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         <View className="px-5 pt-4">
           <View className="rounded-[18px] border border-[#DEE4EA] bg-white px-4 py-4">
