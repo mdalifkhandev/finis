@@ -876,7 +876,7 @@ export function useReviewTaskReportMutation(taskId: string, reportId: string) {
     mutationFn: (reviewDecision: string) => reviewTaskReport(taskId, reportId, reviewDecision),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
       queryClient.invalidateQueries({ queryKey: ["project-analysis"] });
     },
     onError: (error) => {
