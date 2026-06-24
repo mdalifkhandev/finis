@@ -143,7 +143,7 @@ export default function CreateTaskRoute() {
   const projectName = projectProfile?.name || "";
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView className="flex-1 bg-[#E9EDF1]" edges={['left','right',"top",'bottom']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
