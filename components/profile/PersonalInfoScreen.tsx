@@ -62,8 +62,8 @@ export default function PersonalInfoScreen() {
             <ProfileAvatar
               uri={profile.avatarUrl || avatarUri}
               size={74}
-              showCamera
-              onPressCamera={pickProfileAvatar}
+            
+           
             />
             <Text className="mt-2 text-[16px] font-medium text-[#2B2B2B]">
               {profile.fullName.split(" ")[0] || "User"}

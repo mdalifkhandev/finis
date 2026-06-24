@@ -152,7 +152,7 @@ const PersonalInfoScreen = () => {
             color: THEME.colors.textMain,
           }}
         >
-          Personal info
+          Personal info 
         </Text>
         <TouchableOpacity
           onPress={() => router.push("/screens/worker/edit_profile")}

@@ -27,6 +27,7 @@ export default function ProjectsScreen() {
     workers: `${project.teamCount ?? 0} workers`,
     progress: Number(project.progress ?? 0),
   }));
+  const hasMoreProjects = projects.length === limit;
 
   return (
     <SafeAreaView className="flex-1 bg-slate-50">
@@ -81,11 +82,14 @@ export default function ProjectsScreen() {
           <Text className="text-xs text-slate-500">Page {page}</Text>
 
           <TouchableOpacity
+            disabled={!hasMoreProjects || isFetching}
             onPress={() => setPage((current) => current + 1)}
-            className="rounded-full bg-slate-900 px-4 py-2"
+            className={`rounded-full px-4 py-2 ${!hasMoreProjects || isFetching ? "bg-slate-300" : "bg-slate-900"}`}
             activeOpacity={0.85}
           >
-            <Text className="text-xs font-semibold text-white">Next</Text>
+            <Text className={`text-xs font-semibold ${!hasMoreProjects || isFetching ? "text-slate-500" : "text-white"}`}>
+              Next
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
