@@ -45,7 +45,6 @@ export default function SubscriptionScreen() {
     : "MONTHLY BILLING";
   const planPrice = formatCurrencyAmount(current?.amount);
   const planBadge = current?.isExpired ? "Expired" : current?.isActive ? "Active" : "Inactive";
-const time= current?.planInterval
   const featureRows = useMemo(
     () =>
       current
@@ -98,8 +97,6 @@ const time= current?.planInterval
   const handleUpgradePlan = async () => {
     await Linking.openURL("https://b7ds5k81-5173.inc1.devtunnels.ms/plans");
   };
-
-  console.log(featureRows);
   return (
     <SafeAreaView className="flex-1 bg-[#E9EDF1]">
       <BackTitleHeader title="Subscription" onBack={() => router.back()} />
@@ -170,7 +167,7 @@ const time= current?.planInterval
                       {planPrice}
                       <Text className="text-[16px] font-semibold text-[#6B7280]">
                         {" "}
-                        / {time}
+                        / month
                       </Text>
                     </Text>
                     <Text className="mt-1 text-[13px] text-[#6B7280]">

@@ -62,6 +62,7 @@ const TaskDetailsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [notes, setNotes] = useState("");
   const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
+  const [hideCompleteButton, setHideCompleteButton] = useState(false);
 
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
 
@@ -147,6 +148,10 @@ const TaskDetailsScreen = () => {
   };
 
   const handleComplete = async () => {
+    if (hideCompleteButton || completeTaskMutation.isPending) {
+      return;
+    }
+
     if (!afterPhoto) {
       alert("Please take or upload an 'After Photo' to complete the task.");
       return;
@@ -165,6 +170,7 @@ const TaskDetailsScreen = () => {
         notes: notes,
       });
 
+      setHideCompleteButton(true);
       alert("Task marked as completed successfully!");
       router.back();
     } catch (error: any) {
@@ -862,9 +868,10 @@ console.log(JSON.stringify(task,null,2));
             </View>
 
             {/* Action Button */}
-            {task?.status !== "completed" && (
+            {task?.status !== "completed" && !hideCompleteButton && (
               <TouchableOpacity
                 onPress={handleComplete}
+                disabled={completeTaskMutation.isPending}
                 style={{
                   height: 56,
                   backgroundColor: "#1D4F6D",
@@ -873,9 +880,13 @@ console.log(JSON.stringify(task,null,2));
                   justifyContent: "center",
                 }}
               >
-                <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
-                  Mark as Completed
-                </Text>
+                {completeTaskMutation.isPending ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={{ color: "white", fontSize: 16, fontWeight: "700" }}>
+                    Mark as Completed
+                  </Text>
+                )}
               </TouchableOpacity>
             )}
           </>
