@@ -7,7 +7,7 @@ import {
   type QuoteProjectType,
   type QuotePropertyType,
   type QuoteUnitType,
-} from "./quoteMockData";
+} from "./quoteTypes";
 
 type QuotePricingSummaryProps = {
   clientName: string;

@@ -2,10 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TextInput, TouchableOpacity } from "react-native";
 import QuoteSectionCard from "./QuoteSectionCard";
-import QuoteWorkGroupCard, {
-  type BackendQuote,
-  type QuoteSelectedWorkGroup,
-} from "./QuoteWorkGroupCard";
+import QuoteWorkGroupCard, { type QuoteSelectedWorkGroup } from "./QuoteWorkGroupCard";
 import QuoteWorkTotalsBar from "./QuoteWorkTotalsBar";
 
 type QuoteWorkItemsStepProps = {
@@ -30,7 +27,6 @@ type QuoteWorkItemsStepProps = {
   onBack: () => void;
   estimatedTime: string;
   onChangeEstimatedTime: (value: string) => void;
-  backendQuotes: BackendQuote[];
 };
 
 export default function QuoteWorkItemsStep({
@@ -51,7 +47,6 @@ export default function QuoteWorkItemsStep({
   onBack,
   estimatedTime,
   onChangeEstimatedTime,
-  backendQuotes,
 }: QuoteWorkItemsStepProps) {
   return (
     <>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { formatCurrency } from "./quoteMockData";
+import { formatCurrency } from "./quoteTypes";
 
 type QuoteWorkTotalsBarProps = {
   itemsSelected: number;
