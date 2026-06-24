@@ -868,7 +868,7 @@ export function useTaskDetailsQuery(taskId?: string) {
 }
 
 
-import { reviewTaskReport } from "../../api/company/company.api";
+import { reviewTaskReport, updateTask } from "../../api/company/company.api";
 
 export function useReviewTaskReportMutation(taskId: string, reportId: string) {
   const queryClient = useQueryClient();
@@ -945,6 +945,26 @@ export function useCreateProjectGeofenceMutation(projectId?: string) {
       toast.error(
         error instanceof Error ? error.message : "Failed to save zone",
       );
+    },
+  });
+}
+
+export function useUpdateTaskMutation(taskId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      taskId: string;
+      payload: Parameters<typeof updateTask>[1];
+      file?: Parameters<typeof updateTask>[2];
+    }) => updateTask(params.taskId, params.payload, params.file),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
+      await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+      await queryClient.invalidateQueries({ queryKey: ["project-analysis"] });
+      toast.success("Task updated successfully");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to update task");
     },
   });
 }

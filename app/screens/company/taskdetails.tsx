@@ -1,5 +1,5 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
-import { useTaskDetailsQuery } from "@/hooks/company/company";
+import { useTaskDetailsQuery, useUpdateTaskMutation } from "@/hooks/company/company";
 import { getTaskDetailsPreset } from "@/components/company/taskdetails/taskDetailsPreset";
 import TaskDetailsScreen from "@/components/company/taskdetails/TaskDetailsScreen";
 import { TaskStatus } from "@/components/company/task/types";
@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function TaskDetailsRoute() {
   const { taskId } = useLocalSearchParams<{ taskId?: string }>();
   const { data: task, isLoading } = useTaskDetailsQuery(taskId);
+  const updateTaskMutation = useUpdateTaskMutation(task?.id || "");
 
   if (isLoading) {
     return (
@@ -31,7 +32,7 @@ export default function TaskDetailsRoute() {
           title={task?.title || preset.screenTitle}
           onBack={() => router.back()}
         />
-        <TaskDetailsScreen task={task} />
+        <TaskDetailsScreen task={task} updateTaskMutation={updateTaskMutation} />
       </ScrollView>
     </SafeAreaView>
   );
