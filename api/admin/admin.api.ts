@@ -219,6 +219,90 @@ export type AdminWorkerSummaryProject = {
   teamMemberCount: number;
 };
 
+export type AdminSubscriptionHistoryPlan = {
+  id: string;
+  name: string;
+  priceMonthly: number;
+  priceYearly: number;
+  maxCompanies: number;
+  maxProjects: number;
+  maxUsers: number;
+  hasGeofencing: boolean;
+  hasAdvancedReporting: boolean;
+  hasCustomReporting: boolean;
+  hasWhiteLabel: boolean;
+  supportLevel: string;
+};
+
+export type AdminSubscriptionHistoryItem = {
+  id: string;
+  planId: string;
+  planName: string;
+  interval: "monthly" | "yearly" | string;
+  amount: number;
+  status: string;
+  startedAt: string;
+  endedAt: string | null;
+  canceledAt: string | null;
+  plan: AdminSubscriptionHistoryPlan;
+};
+
+export type AdminSubscriptionHistoryCurrent = {
+  planName: string;
+  subscriptionStatus: string;
+  planInterval: "monthly" | "yearly" | string;
+  amount: number;
+  startDate: string | null;
+  daysLeft: number | null;
+  currentPeriodEnd: string | null;
+  isActive: boolean;
+  isExpired: boolean;
+  permissions: {
+    companies: {
+      used: number | null;
+      max: number;
+      unlimited: boolean;
+    };
+    projects: {
+      used: number | null;
+      max: number;
+      unlimited: boolean;
+    };
+    users: {
+      used: number | null;
+      max: number;
+      unlimited: boolean;
+    };
+    features: {
+      geofencing: boolean;
+      advancedReporting: boolean;
+      customReporting: boolean;
+      whiteLabel: boolean;
+    };
+  };
+};
+
+export type AdminSubscriptionHistoryResponse = {
+  tenantId: string;
+  current: AdminSubscriptionHistoryCurrent;
+  history?: AdminSubscriptionHistoryItem[];
+};
+
+export async function getAdminSubscriptionHistory() {
+  const { data } = await api.get<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: AdminSubscriptionHistoryResponse;
+  }>("/admin/subscription/history");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load subscription history");
+  }
+
+  return data.data;
+}
+
 export type AdminWorkerSummaryResponse = {
   totalProjects: number;
   projects: AdminWorkerSummaryProject[];
