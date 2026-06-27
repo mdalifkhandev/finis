@@ -9,6 +9,7 @@ type ConversationHeaderProps = {
   isOnline?: boolean;
   onBack: () => void;
   onPressProfile?: () => void;
+  onPressMenu?: () => void;
 };
 
 export default function ConversationHeader({
@@ -18,6 +19,7 @@ export default function ConversationHeader({
   isOnline = false,
   onBack,
   onPressProfile,
+  onPressMenu,
 }: ConversationHeaderProps) {
   return (
     <View className="mt-2 flex-row items-center px-5">
@@ -32,7 +34,7 @@ export default function ConversationHeader({
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={onPressProfile}
-        className="flex-row items-center"
+        className="flex-1 flex-row items-center"
       >
         <Image
           source={typeof avatarUrl === "string" ? { uri: avatarUrl } : avatarUrl}
@@ -50,6 +52,14 @@ export default function ConversationHeader({
             {isOnline ? "Active now" : "Offline"}
           </Text>
         </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onPressMenu}
+        className="ml-2 h-10 w-10 items-center justify-center"
+      >
+        <Ionicons name="ellipsis-vertical" size={20} color="#2B2B2B" />
       </TouchableOpacity>
     </View>
   );

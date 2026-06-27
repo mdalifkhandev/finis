@@ -6,19 +6,24 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import React, { useMemo, useRef, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ImageSourcePropType,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Modal,
   ScrollView,
   Text,
+  Pressable,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import ChatAttachmentTray from "./ChatAttachmentTray";
 import ChatComposer from "./ChatComposer";
 import ChatMessageBubble from "./ChatMessageBubble";
@@ -32,6 +37,11 @@ import {
   useChatUserOnlineStatus,
   useChatSocket,
 } from "@/lib/chat-socket";
+import {
+  useBlockedChatUsersQuery,
+  useBlockChatUserMutation,
+  useUnblockChatUserMutation,
+} from "@/hooks/chat/chat";
 
 const placeholderAvatar = require("../../assets/images/placeholder-person.png");
 const MESSAGE_BATCH_SIZE = 20;
@@ -129,9 +139,11 @@ export default function ConversationScreen() {
     name?: string;
     avatarUrl?: string;
     userId?: string;
+    role?: string;
     isOnline?: string;
   }>();
   const resolvedThreadId = Array.isArray(threadId) ? threadId[0] : threadId;
+  const resolvedRoleParam = useLocalSearchParams<{ role?: string }>().role;
 
   const userId = useAuthStore((state) => state.user?.id);
   const token = useAuthStore((state) => state.token);
@@ -159,11 +171,61 @@ export default function ConversationScreen() {
 
   const resolvedName = name || "Chat";
   const profileUserId = typeof routeUserId === "string" ? routeUserId : undefined;
+  const profileRole = Array.isArray(resolvedRoleParam) ? resolvedRoleParam[0] : resolvedRoleParam;
   const resolvedAvatar = resolveAvatarSource(avatarUrl);
   const isParticipantOnline = useChatUserOnlineStatus(
     profileUserId ?? resolvedThreadId,
     isOnline === "true",
   );
+  const currentRole = useAuthStore((state) => state.user?.role);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const blockedUsersQuery = useBlockedChatUsersQuery();
+  const blockMutation = useBlockChatUserMutation();
+  const unblockMutation = useUnblockChatUserMutation();
+  const blockedUserIds = useMemo(
+    () => new Set((blockedUsersQuery.data ?? []).map((user: { id: string }) => user.id)),
+    [blockedUsersQuery.data],
+  );
+  const isBlocked = !!profileUserId && blockedUserIds.has(profileUserId);
+  const canBlockTarget = useMemo(() => {
+    if (!profileUserId || profileUserId === userId) {
+      return false;
+    }
+
+    if (currentRole === "admin") {
+      return profileRole === "manager" || profileRole === "worker" || !profileRole;
+    }
+
+    if (currentRole === "manager") {
+      return profileRole === "worker" || !profileRole;
+    }
+
+    return false;
+  }, [currentRole, profileRole, profileUserId]);
+
+  const handleToggleBlock = async () => {
+    if (!profileUserId) {
+      setMenuVisible(false);
+      return;
+    }
+
+    if (!canBlockTarget) {
+      Alert.alert("Not allowed", "You cannot block this user.");
+      setMenuVisible(false);
+      return;
+    }
+
+    try {
+      if (isBlocked) {
+        await unblockMutation.mutateAsync(profileUserId);
+      } else {
+        await blockMutation.mutateAsync(profileUserId);
+      }
+      setMenuVisible(false);
+    } catch (_error) {
+      // mutation already shows toast
+    }
+  };
 
   const allMessages = useMemo<MessageModel[]>(() => {
     const serverMessages: MessageModel[] = (messagesQuery.data ?? []).map((message) => ({
@@ -297,6 +359,10 @@ export default function ConversationScreen() {
       if (resolvedThreadId) {
         void sendChatTypingViaSocket({ threadId: resolvedThreadId, isTyping: false }, token);
       }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to send message right now";
+      toast.error(message);
     } finally {
       setIsSending(false);
     }
@@ -590,6 +656,7 @@ export default function ConversationScreen() {
               },
             })
           }
+          onPressMenu={() => setMenuVisible(true)}
         />
 
         <View className="flex-1">
@@ -707,6 +774,84 @@ export default function ConversationScreen() {
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <Modal transparent visible={menuVisible} animationType="fade" onRequestClose={() => setMenuVisible(false)}>
+        <Pressable
+          className="flex-1 justify-end bg-black/30"
+          onPress={() => setMenuVisible(false)}
+        >
+          <Pressable
+            onPress={(event) => event.stopPropagation()}
+            className="rounded-t-[24px] bg-white px-4 pb-6 pt-3"
+          >
+            <View className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-[#D0D5DD]" />
+            <Text className="mb-4 text-[16px] font-semibold text-[#101828]">
+              Chat Options
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                setMenuVisible(false);
+                router.push({
+                  pathname: "/screens/chat/userprofile",
+                  params: {
+                    name: resolvedName,
+                    avatarUrl: typeof avatarUrl === "string" ? avatarUrl : "",
+                    id: profileUserId ?? resolvedThreadId ?? "",
+                  },
+                });
+              }}
+              className="mb-3 h-12 flex-row items-center justify-between rounded-[14px] bg-[#F8FAFC] px-4"
+            >
+              <Text className="text-[15px] font-medium text-[#101828]">
+                View Profile
+              </Text>
+              <Ionicons name="person-outline" size={18} color="#475467" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              disabled={!canBlockTarget || blockMutation.isPending || unblockMutation.isPending}
+              onPress={handleToggleBlock}
+              className={`h-12 flex-row items-center justify-between rounded-[14px] px-4 ${
+                !canBlockTarget ? "bg-[#F3F4F6]" : isBlocked ? "bg-[#FEE4E2]" : "bg-[#EEF4FF]"
+              }`}
+            >
+              <Text
+                className={`text-[15px] font-semibold ${
+                  !canBlockTarget ? "text-[#98A2B3]" : isBlocked ? "text-[#B42318]" : "text-[#1D4ED8]"
+                }`}
+              >
+                {blockMutation.isPending || unblockMutation.isPending
+                  ? "Please wait..."
+                  : !canBlockTarget
+                    ? "Block unavailable"
+                    : isBlocked
+                      ? "Unblock"
+                      : "Block"}
+              </Text>
+              {(blockMutation.isPending || unblockMutation.isPending) ? (
+                <ActivityIndicator size="small" color="#1D4ED8" />
+              ) : (
+                <Ionicons
+                  name={isBlocked ? "lock-open-outline" : "ban-outline"}
+                  size={18}
+                  color={!canBlockTarget ? "#98A2B3" : isBlocked ? "#B42318" : "#1D4ED8"}
+                />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setMenuVisible(false)}
+              className="mt-3 h-12 items-center justify-center rounded-[14px] bg-[#F8FAFC]"
+            >
+              <Text className="text-[15px] font-medium text-[#344054]">Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
