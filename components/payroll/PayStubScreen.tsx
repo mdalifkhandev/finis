@@ -30,15 +30,23 @@ function formatLocalDate(date: Date) {
 }
 
 export default function PayStubScreen() {
-  const { payrollId, mode, date } = useLocalSearchParams<{
+  const { payrollId, mode, date, range, startDate, endDate, projectId } = useLocalSearchParams<{
     payrollId?: string;
     mode?: string;
     date?: string;
+    range?: string;
+    startDate?: string;
+    endDate?: string;
+    projectId?: string;
   }>();
 
   const resolvedPayrollId = Array.isArray(payrollId) ? payrollId[0] : payrollId;
   const resolvedMode = Array.isArray(mode) ? mode[0] : mode;
   const selectedDate = Array.isArray(date) ? date[0] : date;
+  const selectedRange = Array.isArray(range) ? range[0] : range;
+  const selectedStartDate = Array.isArray(startDate) ? startDate[0] : startDate;
+  const selectedEndDate = Array.isArray(endDate) ? endDate[0] : endDate;
+  const selectedProjectId = Array.isArray(projectId) ? projectId[0] : projectId;
   const resolvedDate = selectedDate ?? formatLocalDate(new Date());
 
   if (resolvedMode === "worker") {
@@ -46,7 +54,16 @@ export default function PayStubScreen() {
   }
 
   if (resolvedMode === "approved") {
-    return <ApprovedModePayStubContent date={resolvedDate} payrollId={resolvedPayrollId} />;
+    return (
+      <ApprovedModePayStubContent
+        date={resolvedDate}
+        payrollId={resolvedPayrollId}
+        range={selectedRange}
+        startDate={selectedStartDate}
+        endDate={selectedEndDate}
+        projectId={selectedProjectId}
+      />
+    );
   }
 
   return <DefaultModePayStubContent payrollId={resolvedPayrollId} />;
@@ -195,11 +212,28 @@ function WorkerModePayStubContent({ date }: { date: string }) {
 function ApprovedModePayStubContent({
   date,
   payrollId,
+  range,
+  startDate,
+  endDate,
+  projectId,
 }: {
   date: string;
   payrollId?: string;
+  range?: string;
+  startDate?: string;
+  endDate?: string;
+  projectId?: string;
 }) {
-  const { data: approved } = useAdminApprovedPayrollQuery({ date }, true);
+  const { data: approved } = useAdminApprovedPayrollQuery(
+    {
+      date,
+      range: range as any,
+      startDate,
+      endDate,
+      projectId,
+    },
+    true,
+  );
   const bulkPaidMutation = useBulkPaidAdminPayrollMutation();
 
   const approvedSummary = approved?.summary;

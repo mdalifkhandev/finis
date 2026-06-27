@@ -15,13 +15,25 @@ function formatLocalDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function mapPeriodModeToBackendRange(mode: PayrollCalendarMode) {
+  if (mode === "weekly") return "weekly";
+  if (mode === "biweekly") return "bi-weekly";
+  if (mode === "monthly") return "monthly";
+  if (mode === "bimonthly") return "bi-monthly";
+  return "custom";
+}
+
 export default function SchedulingPayrollScreen() {
   const [monthDate, setMonthDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedRangeEnd, setSelectedRangeEnd] = useState<Date | null>(null);
   const [periodMode, setPeriodMode] = useState<PayrollCalendarMode>("custom");
   const { data, refetch } = useAdminWorkerSummaryQuery();
   const [refreshing, setRefreshing] = useState(false);
+  const summaryAnchorDate = selectedDate ?? new Date();
+  const summaryStartDate = selectedDate ?? summaryAnchorDate;
+  const summaryEndDate = selectedRangeEnd ?? summaryStartDate;
+  const backendRange = mapPeriodModeToBackendRange(periodMode);
 
   const activities = useMemo<ActivityItem[]>(() => {
     return (
@@ -67,11 +79,12 @@ export default function SchedulingPayrollScreen() {
             selectedDate={selectedDate}
             periodMode={periodMode}
             selectedRangeEnd={selectedRangeEnd}
-            onSelectDate={setSelectedDate}
+            onSelectDate={(date) => setSelectedDate(date)}
             onSelectRangeEnd={setSelectedRangeEnd}
             onMonthDateChange={setMonthDate}
             onPeriodModeChange={(mode) => {
               setPeriodMode(mode);
+              setSelectedDate(null);
               setSelectedRangeEnd(null);
             }}
           />
@@ -82,7 +95,10 @@ export default function SchedulingPayrollScreen() {
               router.push({
                 pathname: "/screens/payroll/summary",
                 params: {
-                  date: formatLocalDate(selectedDate),
+                  date: formatLocalDate(summaryAnchorDate),
+                  range: backendRange,
+                  startDate: formatLocalDate(summaryStartDate),
+                  endDate: formatLocalDate(summaryEndDate),
                 },
               })
             }

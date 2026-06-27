@@ -26,6 +26,9 @@ export function useAdminPayrollSummaryQuery(params?: {
   date?: string;
   month?: string;
   year?: string;
+  range?: "custom" | "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "yearly";
+  startDate?: string;
+  endDate?: string;
   projectId?: string;
 }) {
   const token = useAuthStore((state) => state.token);
@@ -35,6 +38,9 @@ export function useAdminPayrollSummaryQuery(params?: {
     date: params?.date,
     month: params?.month ?? String(currentDate.getMonth() + 1),
     year: params?.year ?? String(currentDate.getFullYear()),
+    range: params?.range,
+    startDate: params?.startDate,
+    endDate: params?.endDate,
     projectId: params?.projectId,
   };
 
@@ -46,6 +52,9 @@ export function useAdminPayrollSummaryQuery(params?: {
       resolvedParams.date ?? "no-date",
       resolvedParams.month,
       resolvedParams.year,
+      resolvedParams.range ?? "no-range",
+      resolvedParams.startDate ?? "no-start",
+      resolvedParams.endDate ?? "no-end",
       resolvedParams.projectId,
       token,
     ],
@@ -206,6 +215,9 @@ export function useAdminPayrollOverviewQuery(params?: {
   date?: string;
   month?: string;
   year?: string;
+  range?: "custom" | "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "yearly";
+  startDate?: string;
+  endDate?: string;
 }) {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
@@ -214,6 +226,9 @@ export function useAdminPayrollOverviewQuery(params?: {
     date: params?.date,
     month: params?.month ?? String(currentDate.getMonth() + 1),
     year: params?.year ?? String(currentDate.getFullYear()),
+    range: params?.range,
+    startDate: params?.startDate,
+    endDate: params?.endDate,
   };
 
   useEffect(() => {
@@ -231,6 +246,9 @@ export function useAdminPayrollOverviewQuery(params?: {
       resolvedParams.date ?? "no-date",
       resolvedParams.month,
       resolvedParams.year,
+      resolvedParams.range ?? "no-range",
+      resolvedParams.startDate ?? "no-start",
+      resolvedParams.endDate ?? "no-end",
       token,
     ],
     queryFn: () => getAdminPayrollOverview(resolvedParams),
@@ -250,15 +268,44 @@ export function useAdminPayrollOverviewQuery(params?: {
   return query;
 }
 
-export function useAdminApprovedPayrollQuery(params?: { date?: string }, enabled = true) {
+export function useAdminApprovedPayrollQuery(
+  params?: {
+    date?: string;
+    month?: string;
+    year?: string;
+    range?: "custom" | "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "yearly";
+    startDate?: string;
+    endDate?: string;
+    projectId?: string;
+  },
+  enabled = true,
+) {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const resolvedParams = {
     date: params?.date,
+    month: params?.month,
+    year: params?.year,
+    range: params?.range,
+    startDate: params?.startDate,
+    endDate: params?.endDate,
+    projectId: params?.projectId,
   };
 
   const query = useQuery({
-    queryKey: ["admin", "payroll", "approved", resolvedParams.date ?? "no-date", token],
+    queryKey: [
+      "admin",
+      "payroll",
+      "approved",
+      resolvedParams.date ?? "no-date",
+      resolvedParams.month ?? "no-month",
+      resolvedParams.year ?? "no-year",
+      resolvedParams.range ?? "no-range",
+      resolvedParams.startDate ?? "no-start",
+      resolvedParams.endDate ?? "no-end",
+      resolvedParams.projectId ?? "no-project",
+      token,
+    ],
     queryFn: () => getAdminApprovedPayroll(resolvedParams),
     enabled: enabled && isHydrated && !!token,
     staleTime: 30 * 1000,
