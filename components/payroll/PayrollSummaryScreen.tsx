@@ -18,16 +18,37 @@ import type { WorkerPayroll } from "./types";
 import type { AdminPayrollSummaryWorker } from "@/api/admin/payroll.api";
 
 export default function PayrollSummaryScreen() {
-  const { date } = useLocalSearchParams<{ date?: string | string[] }>();
+  const { date, range, startDate, endDate, projectId } = useLocalSearchParams<{
+    date?: string | string[];
+    range?: string | string[];
+    startDate?: string | string[];
+    endDate?: string | string[];
+    projectId?: string | string[];
+  }>();
   const selectedDate = Array.isArray(date) ? date[0] : date;
+  const selectedRange = Array.isArray(range) ? range[0] : range;
+  const selectedStartDate = Array.isArray(startDate) ? startDate[0] : startDate;
+  const selectedEndDate = Array.isArray(endDate) ? endDate[0] : endDate;
+  const selectedProjectId = Array.isArray(projectId) ? projectId[0] : projectId;
   const {
     data,
     refetch: refetchSummary,
-  } = useAdminPayrollSummaryQuery({ date: selectedDate });
+  } = useAdminPayrollSummaryQuery({
+    date: selectedDate,
+    range: selectedRange as any,
+    startDate: selectedStartDate,
+    endDate: selectedEndDate,
+    projectId: selectedProjectId,
+  });
   const {
     data: overview,
     refetch: refetchOverview,
-  } = useAdminPayrollOverviewQuery({ date: selectedDate });
+  } = useAdminPayrollOverviewQuery({
+    date: selectedDate,
+    range: selectedRange as any,
+    startDate: selectedStartDate,
+    endDate: selectedEndDate,
+  });
   const approvePayroll = useApproveAdminPayrollMutation();
   const updatePayroll = useUpdateAdminPayrollMutation();
   const [editSheetVisible, setEditSheetVisible] = useState(false);
@@ -173,6 +194,10 @@ export default function PayrollSummaryScreen() {
                 params: {
                   mode: "approved",
                   date: selectedDate ?? undefined,
+                  range: selectedRange ?? undefined,
+                  startDate: selectedStartDate ?? undefined,
+                  endDate: selectedEndDate ?? undefined,
+                  projectId: selectedProjectId ?? undefined,
                 },
               })
             }

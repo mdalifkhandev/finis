@@ -4,11 +4,11 @@ import DateTimePicker, {
   type DateType,
   useDefaultStyles,
 } from "react-native-ui-datepicker";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Modal, Text, TouchableOpacity, View } from "react-native";
 
 type PayrollCalendarCardProps = {
   monthDate: Date;
-  selectedDate: Date;
+  selectedDate: Date | null;
   periodMode?: PayrollCalendarMode;
   selectedRangeEnd?: Date | null;
   onSelectDate: (date: Date) => void;
@@ -175,7 +175,8 @@ export default function PayrollCalendarCard({
           start: selectedDate,
           end: selectedRangeEnd ?? selectedDate,
         }
-      : {
+      : selectedDate
+        ? {
           start: selectedDate,
           end:
             periodMode === "weekly"
@@ -189,7 +190,8 @@ export default function PayrollCalendarCard({
                       return next;
                     })()
                   : endOfBimonthly(selectedDate),
-        };
+          }
+        : undefined;
 
   return (
     <View className="rounded-[18px] border border-[#D8DDE3] bg-white px-3 py-3">
@@ -209,34 +211,54 @@ export default function PayrollCalendarCard({
           />
         </TouchableOpacity>
 
-        {menuOpen ? (
-          <View className="mt-2 overflow-hidden rounded-[12px] border border-[#D8DDE3] bg-white">
-            {PERIOD_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.value}
-                activeOpacity={0.85}
-                onPress={() => {
-                  onPeriodModeChange(option.value);
-                  onSelectRangeEnd?.(null);
-                  setMenuOpen(false);
-                }}
-                className={`h-11 flex-row items-center px-3 ${
-                  option.value === periodMode ? "bg-[#EAF3F8]" : "bg-white"
-                }`}
-              >
-                <Text
-                  className={`text-[14px] ${
-                    option.value === periodMode
-                      ? "font-medium text-[#1F5577]"
-                      : "text-[#344054]"
+        <Modal
+          transparent
+          visible={menuOpen}
+          animationType="slide"
+          onRequestClose={() => setMenuOpen(false)}
+        >
+          <View className="flex-1 justify-end">
+            <TouchableOpacity
+              activeOpacity={1}
+              onPress={() => setMenuOpen(false)}
+              className="absolute inset-0 bg-black/35"
+            />
+            <View className="rounded-t-[24px] bg-white px-4 pb-6 pt-3">
+              <View className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-[#D0D5DD]" />
+              <Text className="mb-4 text-[16px] font-semibold text-[#101828]">
+                Select Payroll Period
+              </Text>
+
+              {PERIOD_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    onPeriodModeChange(option.value);
+                    onSelectRangeEnd?.(null);
+                    setMenuOpen(false);
+                  }}
+                  className={`mb-2 h-12 flex-row items-center justify-between rounded-[14px] px-4 ${
+                    option.value === periodMode ? "bg-[#EAF3F8]" : "bg-[#F8FAFC]"
                   }`}
                 >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    className={`text-[15px] ${
+                      option.value === periodMode
+                        ? "font-semibold text-[#1F5577]"
+                        : "text-[#344054]"
+                    }`}
+                  >
+                    {option.label}
+                  </Text>
+                  {option.value === periodMode ? (
+                    <Ionicons name="checkmark-circle" size={18} color="#1F5577" />
+                  ) : null}
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        ) : null}
+        </Modal>
       </View>
 
       <DateTimePicker
@@ -250,7 +272,6 @@ export default function PayrollCalendarCard({
         weekdaysFormat="short"
         showOutsideDays
         maxDate={endOfToday()}
-        allowRangeReset
         styles={calendarStyles}
         onChange={(payload: any) => {
           const anchor = toDate(payload?.date ?? payload?.startDate ?? payload?.endDate);

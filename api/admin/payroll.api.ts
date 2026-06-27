@@ -50,6 +50,16 @@ export type AdminPayrollOverviewResponse = {
   };
 };
 
+export type AdminPayrollQueryParams = {
+  date?: string;
+  month?: string;
+  year?: string;
+  range?: "custom" | "weekly" | "bi-weekly" | "monthly" | "bi-monthly" | "yearly";
+  startDate?: string;
+  endDate?: string;
+  projectId?: string;
+};
+
 type AdminPayrollOverviewApiResponse = {
   success: boolean;
   message: string;
@@ -260,7 +270,15 @@ export async function updateAdminPayroll(
   return data.data;
 }
 
-export async function getAdminApprovedPayroll(params?: { date?: string }) {
+export async function getAdminApprovedPayroll(params?: {
+  date?: string;
+  month?: string;
+  year?: string;
+  range?: AdminPayrollQueryParams["range"];
+  startDate?: string;
+  endDate?: string;
+  projectId?: string;
+}) {
   console.log("[AdminApprovedPayrollAPI] request", {
     input: params,
   });
@@ -303,12 +321,18 @@ export async function getAdminPayrollOverview(params?: {
   date?: string;
   month?: string;
   year?: string;
+  range?: AdminPayrollQueryParams["range"];
+  startDate?: string;
+  endDate?: string;
 }) {
   const currentDate = params?.date ? new Date(params.date) : new Date();
   const resolvedParams = {
     date: params?.date,
     month: params?.month ?? String(currentDate.getMonth() + 1),
     year: params?.year ?? String(currentDate.getFullYear()),
+    range: params?.range,
+    startDate: params?.startDate,
+    endDate: params?.endDate,
   };
 
   console.log("[AdminPayrollOverviewAPI] request", {
@@ -330,6 +354,9 @@ export async function getAdminPayrollSummary(params?: {
   month?: string;
   year?: string;
   projectId?: string;
+  range?: AdminPayrollQueryParams["range"];
+  startDate?: string;
+  endDate?: string;
 }) {
   const { data } = await api.get<AdminPayrollSummaryApiResponse>(
     "/admin/payroll/summary",
