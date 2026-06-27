@@ -608,9 +608,9 @@ export default function ConversationScreen() {
               paddingBottom: attachmentsOpen ? 24 : 12,
             }}
           >
-            {visibleMessages.map((message) => (
+            {visibleMessages.map((message, index) => (
               <ChatMessageBubble
-                key={message.id}
+                key={`${message.id ?? "message"}-${index}`}
                 message={message}
                 avatarUrl={resolvedAvatar}
                 showSeen={

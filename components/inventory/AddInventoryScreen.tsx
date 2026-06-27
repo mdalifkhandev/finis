@@ -59,10 +59,10 @@ export default function AddInventoryScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView className="flex-1 bg-[#E9EDF1] " edges={['top','left',"right"]}>
       <KeyboardAvoidingView
         className="flex-1"
-        behavior="padding"
+       
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
         <ScrollView
@@ -70,7 +70,7 @@ export default function AddInventoryScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 120, flexGrow: 1 }}
         >
-          <InventoryHeader title="Add Inventory" onBack={() => router.back()} />
+          <InventoryHeader title="Add Inventory " onBack={() => router.back()} />
 
           <View className="mt-6 flex-1 px-5">
             <View className="rounded-[24px] border border-[#DEE4EA] bg-[#F7F9FB] p-4">
