@@ -390,7 +390,7 @@ export default function EditProjectRoute() {
 
                   <View className="mt-3">
                     <ProjectInputField
-                      label="Rooms per Floor"
+                      label="Units per Floor"
                       placeholder="e.g. 20"
                       value={roomsPerFloor}
                       onChangeText={setRoomsPerFloor}
@@ -398,7 +398,7 @@ export default function EditProjectRoute() {
                     />
                   </View>
                 </>
-              ) : (
+              ):(
                 <>
                   <View className="mt-3 flex-row items-center">
                     <ProjectCheckboxOption

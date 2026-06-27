@@ -104,6 +104,7 @@ export default function WorkerHome() {
     () =>
       weeklySummary?.days?.map((day) => ({
         day: day.dayLabel,
+        date: day.date,
         status: day.totalHoursDisplay,
         type:
           day.totalHours > 0
@@ -475,6 +476,7 @@ export default function WorkerHome() {
                 <WeeklyActivityItem
                   key={`${item.day}-${index}`}
                   day={item.day}
+                  date={item.date}
                   status={item.status}
                   type={item.type}
                 />
