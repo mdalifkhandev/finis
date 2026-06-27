@@ -21,7 +21,7 @@ export default function CompanyProfileRoute() {
   const { data, isLoading } = useCompanyQuery(companyId);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#e9edf1]">
+    <SafeAreaView className="flex-1 bg-[#e9edf1]" edges={['bottom','top','left','right']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 48 }}
