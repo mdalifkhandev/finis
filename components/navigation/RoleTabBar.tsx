@@ -145,8 +145,11 @@ export default function RoleTabBar({ role }: { role?: AppRole }) {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const tabs = useMemo(() => getTabsForRole(role), [role]);
+  const hideTabBar =
+    pathname.startsWith("/screens/chat/conversation") ||
+    pathname.startsWith("/screens/chat/userprofile");
 
-  if (tabs.length === 0) {
+  if (tabs.length === 0 || hideTabBar) {
     return null;
   }
 
@@ -182,7 +185,11 @@ export default function RoleTabBar({ role }: { role?: AppRole }) {
             return (
               <Pressable
                 key={tab.route}
-                onPress={() => router.replace(tab.route as never)}
+                onPress={() => {
+                  if (!focused) {
+                    router.navigate(tab.route as never);
+                  }
+                }}
                 style={{
                   flex: 1,
                   alignItems: "center",
