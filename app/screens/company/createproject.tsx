@@ -84,7 +84,6 @@ export default function CreateProjectRoute() {
   const [startDateValue, setStartDateValue] = useState(new Date());
   const [endDateValue, setEndDateValue] = useState(new Date());
 
-  const isApartment = projectType === "Apartment Building";
   const houseSectionOptions = [
     "Basement",
     "Upstairs",
@@ -151,27 +150,16 @@ export default function CreateProjectRoute() {
     const floorsMaxNumber = parseOptionalNumber(numFloorsMax);
     const unitMinNumber = parseOptionalNumber(unitPerFloorMin);
     const unitMaxNumber = parseOptionalNumber(unitPerFloorMax);
-    const floorsNumber = isApartment ? Number(floors) : 1;
-    const roomsNumber = isApartment ? Number(roomsPerFloor) : 1;
     const mappedHouseSections = selectedSections.map(mapSectionToApiValue);
 
     if (
-      floorsMinNumber === null ||
-      floorsMaxNumber === null ||
-      unitMinNumber === null ||
-      unitMaxNumber === null
+      projectType !== "House" &&
+      (floorsMinNumber == null ||
+        floorsMaxNumber == null ||
+        unitMinNumber == null ||
+        unitMaxNumber == null)
     ) {
       toast.error("Please enter valid floor and unit range values.");
-      return;
-    }
-
-    if (
-      Number.isNaN(floorsNumber) ||
-      Number.isNaN(roomsNumber) ||
-      floorsNumber <= 0 ||
-      roomsNumber <= 0
-    ) {
-      toast.error("Please enter valid floor and room counts.");
       return;
     }
 
@@ -192,14 +180,12 @@ export default function CreateProjectRoute() {
         budget: budgetNumber,
         location: location.trim(),
         description: description.trim(),
-        ...(type === "apartment"
+        ...(type !== "house"
           ? {
-              numFloors: floorsNumber,
-              ...(floorsMinNumber !== undefined ? { numFloorsMin: floorsMinNumber } : {}),
-              ...(floorsMaxNumber !== undefined ? { numFloorsMax: floorsMaxNumber } : {}),
-              unitPerFloor: roomsNumber,
-              ...(unitMinNumber !== undefined ? { unitPerFloorMin: unitMinNumber } : {}),
-              ...(unitMaxNumber !== undefined ? { unitPerFloorMax: unitMaxNumber } : {}),
+              ...(floorsMinNumber != null ? { numFloorsMin: floorsMinNumber } : {}),
+              ...(floorsMaxNumber != null ? { numFloorsMax: floorsMaxNumber } : {}),
+              ...(unitMinNumber != null ? { unitPerFloorMin: unitMinNumber } : {}),
+              ...(unitMaxNumber != null ? { unitPerFloorMax: unitMaxNumber } : {}),
             }
           : projectType === "House"
             ? {
@@ -211,7 +197,7 @@ export default function CreateProjectRoute() {
                   : {}),
               }
             : {}),
-        autoGenerateFloors: type === "apartment",
+        autoGenerateFloors: type !== "house",
       });
     } catch {
       return;

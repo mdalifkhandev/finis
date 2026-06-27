@@ -277,8 +277,6 @@ export default function EditProjectRoute() {
 
     const budgetNumber = Number(budget || "0");
     const progressNumber = Number(progress || "0");
-    const floorsNumber = useFloorAndUnitFields ? Number(floors || "0") : 1;
-    const roomsNumber = useFloorAndUnitFields ? Number(roomsPerFloor || "0") : 1;
     const floorsMinNumber = parseOptionalNumber(numFloorsMin);
     const floorsMaxNumber = parseOptionalNumber(numFloorsMax);
     const unitMinNumber = parseOptionalNumber(unitPerFloorMin);
@@ -288,9 +286,7 @@ export default function EditProjectRoute() {
 
     if (
       Number.isNaN(budgetNumber) ||
-      Number.isNaN(progressNumber) ||
-      (useFloorAndUnitFields &&
-        (Number.isNaN(floorsNumber) || Number.isNaN(roomsNumber)))
+      Number.isNaN(progressNumber)
     ) {
       toast.error("Please enter valid numeric values.");
       return;
@@ -327,14 +323,12 @@ export default function EditProjectRoute() {
         description: description.trim(),
         ...(useFloorAndUnitFields
           ? {
-              numFloors: floorsNumber,
               ...(floorsMinNumber !== undefined && floorsMinNumber !== null
                 ? { numFloorsMin: floorsMinNumber }
                 : {}),
               ...(floorsMaxNumber !== undefined && floorsMaxNumber !== null
                 ? { numFloorsMax: floorsMaxNumber }
                 : {}),
-              unitPerFloor: roomsNumber,
               ...(unitMinNumber !== undefined && unitMinNumber !== null
                 ? { unitPerFloorMin: unitMinNumber }
                 : {}),
@@ -440,25 +434,7 @@ export default function EditProjectRoute() {
 
               {useFloorAndUnitFields ? (
                 <>
-                  {/* <View className="mt-3">
-                    <ProjectInputField
-                      label="Number of Floors"
-                      placeholder="e.g. 5"
-                      value={floors}
-                      onChangeText={setFloors}
-                      keyboardType="number-pad"
-                    />
-                  </View> */}
-
-                  {/* <View className="mt-3">
-                    <ProjectInputField
-                      label="Units per Floor"
-                      placeholder="e.g. 20"
-                      value={roomsPerFloor}
-                      onChangeText={setRoomsPerFloor}
-                      keyboardType="number-pad"
-                    />
-                  </View> */}
+       
 
                   <View className="mt-3">
                     <Text className="mb-2 text-[15px] font-medium text-[#1F2937]">
