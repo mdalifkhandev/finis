@@ -40,6 +40,7 @@ import {
 import {
   useBlockedChatUsersQuery,
   useBlockChatUserMutation,
+  useChatContactsQuery,
   useUnblockChatUserMutation,
 } from "@/hooks/chat/chat";
 
@@ -179,6 +180,7 @@ export default function ConversationScreen() {
   );
   const currentRole = useAuthStore((state) => state.user?.role);
   const [menuVisible, setMenuVisible] = useState(false);
+  const chatContactsQuery = useChatContactsQuery("");
   const blockedUsersQuery = useBlockedChatUsersQuery();
   const blockMutation = useBlockChatUserMutation();
   const unblockMutation = useUnblockChatUserMutation();
@@ -187,6 +189,14 @@ export default function ConversationScreen() {
     [blockedUsersQuery.data],
   );
   const isBlocked = !!profileUserId && blockedUserIds.has(profileUserId);
+  const isVisibleContact = useMemo(() => {
+    if (!profileUserId) {
+      return true;
+    }
+
+    return (chatContactsQuery.data ?? []).some((contact) => contact.id === profileUserId);
+  }, [chatContactsQuery.data, profileUserId]);
+  const hideComposer = isBlocked || (!!profileUserId && !isVisibleContact && !chatContactsQuery.isLoading);
   const canBlockTarget = useMemo(() => {
     if (!profileUserId || profileUserId === userId) {
       return false;
@@ -202,6 +212,13 @@ export default function ConversationScreen() {
 
     return false;
   }, [currentRole, profileRole, profileUserId]);
+
+  React.useEffect(() => {
+    if (hideComposer) {
+      setAttachmentsOpen(false);
+      setPendingAttachment(null);
+    }
+  }, [hideComposer]);
 
   const handleToggleBlock = async () => {
     if (!profileUserId) {
@@ -701,7 +718,7 @@ export default function ConversationScreen() {
               paddingBottom: Math.max(keyboardHeight, 0),
             }}
           >
-            {pendingAttachment ? (
+            {!hideComposer && pendingAttachment ? (
               <View className="mx-4 mb-3 rounded-[16px] border border-[#D8E0E8] bg-[#F8FAFC] p-3">
                 <View className="flex-row items-start justify-between">
                   <View className="flex-1">
@@ -745,32 +762,44 @@ export default function ConversationScreen() {
                 </View>
               </View>
             ) : null}
-            {isOtherTyping ? (
+            {!hideComposer && isOtherTyping ? (
               <View className="px-5 pb-2">
                 <Text className="text-[12px] text-[#66707B]">
                   {`${resolvedName} is typing...`}
                 </Text>
               </View>
             ) : null}
-            <ChatComposer
-              value={messageText}
-              onChangeText={setMessageText}
-              onTypingChange={handleTypingChange}
-              onPressSend={handleSend}
-              attachmentsOpen={attachmentsOpen}
-              onToggleAttachments={() => setAttachmentsOpen((prev) => !prev)}
-              disabled={!messageText.trim() && !pendingAttachment}
-              isSending={isSending}
-            />
+            {!hideComposer ? (
+              <>
+                <ChatComposer
+                  value={messageText}
+                  onChangeText={setMessageText}
+                  onTypingChange={handleTypingChange}
+                  onPressSend={handleSend}
+                  attachmentsOpen={attachmentsOpen}
+                  onToggleAttachments={() => setAttachmentsOpen((prev) => !prev)}
+                  disabled={!messageText.trim() && !pendingAttachment}
+                  isSending={isSending}
+                />
 
-            {attachmentsOpen ? (
-              <ChatAttachmentTray
-              onPressPhoto={handlePickFromGallery}
-              onPressCamera={handleOpenCamera}
-              onPressFile={handlePickFile}
-              onPressLocation={handlePickLocation}
-            />
-          ) : null}
+                {attachmentsOpen ? (
+                  <ChatAttachmentTray
+                    onPressPhoto={handlePickFromGallery}
+                    onPressCamera={handleOpenCamera}
+                    onPressFile={handlePickFile}
+                    onPressLocation={handlePickLocation}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <View className="px-5 pb-4 pt-2 mb-8">
+                <View className="rounded-[14px] border border-[#FECACA] bg-[#FFF1F2] px-4 py-3">
+                  <Text className="text-[14px] font-medium text-[#B42318]">
+                    Chat composer hidden because this user is blocked.
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
         </View>
       </KeyboardAvoidingView>
