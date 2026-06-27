@@ -29,7 +29,7 @@ export default function ChatComposer({
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onToggleAttachments}
-          className="h-10 w-8 items-center justify-center"
+          className="h-10 w-8 mb-8 items-center justify-center"
         >
           <Ionicons
             name={attachmentsOpen ? "keypad-outline" : "add"}
@@ -56,7 +56,7 @@ export default function ChatComposer({
           activeOpacity={0.9}
           onPress={onPressSend}
           disabled={disabled || isSending}
-          className={`h-11 w-11 items-center justify-center rounded-full bg-[#1D5478] ${disabled ? "opacity-60" : ""}`}
+          className={`h-11 w-11 items-center mb-8 justify-center rounded-full bg-[#1D5478] ${disabled ? "opacity-60" : ""}`}
         >
           {isSending ? (
             <ActivityIndicator size="small" color="#FFFFFF" />

@@ -51,6 +51,14 @@ export type ChatContact = {
   status: string;
 };
 
+export type BlockedChatUser = {
+  id: string;
+  fullName: string;
+  avatarUrl: string | null;
+  role: string | null;
+  status: string | null;
+};
+
 export type ChatMessageSender =
   | {
       id: string;
@@ -311,4 +319,49 @@ export async function uploadChatFile(file: {
   }
 
   return data.data;
+}
+
+export async function getBlockedChatUsers() {
+  const { data } = await api.get<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data: BlockedChatUser[];
+  }>("/messages/blocked");
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load blocked users");
+  }
+
+  return data.data;
+}
+
+export async function blockChatUser(targetUserId: string) {
+  const { data } = await api.post<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data?: unknown;
+  }>("/messages/block", { targetUserId });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to block user");
+  }
+
+  return data.message;
+}
+
+export async function unblockChatUser(targetUserId: string) {
+  const { data } = await api.post<{
+    success: boolean;
+    statusCode: number;
+    message: string;
+    data?: unknown;
+  }>("/messages/unblock", { targetUserId });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to unblock user");
+  }
+
+  return data.message;
 }

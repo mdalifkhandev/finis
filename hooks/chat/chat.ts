@@ -2,15 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner-native";
 import {
+  blockChatUser,
   createDirectThread,
   formatChatPreview,
   formatChatTime,
+  getBlockedChatUsers,
   getChatContacts,
   getChatMessages,
   getChatThreads,
   getOrCreateSupportThread,
   getSupportThread,
   resolveChatAvatar,
+  unblockChatUser,
   sendChatMessage,
   type ChatContact,
   type ChatMessage,
@@ -54,6 +57,7 @@ function normalizeThreads(
         id: thread.id,
         threadId: thread.id,
         profileUserId: otherParticipant?.id,
+        profileRole: otherParticipant?.role,
         name: thread.name || otherParticipant?.fullName || "Conversation",
         preview: formatChatPreview(thread.lastMessage),
         time: formatChatTime(thread.lastMessage?.sentAt),
@@ -304,6 +308,60 @@ export function useCreateSupportThreadMutation() {
   }, [mutation.error, mutation.isError]);
 
   return mutation;
+}
+
+export function useBlockedChatUsersQuery() {
+  const token = useAuthStore((state) => state.token);
+  const currentUserId = useAuthStore((state) => state.user?.id);
+
+  const query = useQuery({
+    queryKey: ["chat", "blocked-users", token, currentUserId],
+    queryFn: async () => getBlockedChatUsers(),
+    enabled: !!token && !!currentUserId,
+    staleTime: 15 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error ? query.error.message : "Failed to load blocked users",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
+
+export function useBlockChatUserMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: blockChatUser,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["chat", "blocked-users"] });
+      await queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+      await queryClient.invalidateQueries({ queryKey: ["chat", "messages"] });
+    },
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to block user");
+    },
+  });
+}
+
+export function useUnblockChatUserMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: unblockChatUser,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["chat", "blocked-users"] });
+      await queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+      await queryClient.invalidateQueries({ queryKey: ["chat", "messages"] });
+    },
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : "Failed to unblock user");
+    },
+  });
 }
 
 export function useSendChatMessageMutation(threadId?: string) {

@@ -42,6 +42,7 @@ export default function ChatListScreen() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ChatFilter>("chat");
   const currentUserId = useAuthStore((state) => state.user?.id);
+  const currentUserRole = useAuthStore((state) => state.user?.role);
   const threadsQuery = useChatThreadsQuery(filter, search);
   const contactsQuery = useChatContactsQuery(search);
   const openThreadMutation = useCreateDirectThreadMutation();
@@ -81,21 +82,49 @@ export default function ChatListScreen() {
     [supportThreadQuery.data],
   );
   const showContactOverlay = search.trim().length > 0;
+  const canStartDirectChat = (targetRole?: string) => {
+    if (!currentUserRole || !targetRole) {
+      return false;
+    }
+
+    if (currentUserRole === "admin") {
+      return targetRole === "manager" || targetRole === "worker";
+    }
+
+    if (currentUserRole === "manager") {
+      return targetRole === "admin" || targetRole === "worker";
+    }
+
+    if (currentUserRole === "worker") {
+      return targetRole === "manager";
+    }
+
+    return false;
+  };
 
   const openContactChat = async (contact: ContactItem) => {
-    const thread = await openThreadMutation.mutateAsync(contact.id);
-    setSearch("");
+    if (!canStartDirectChat(contact.role)) {
+      return;
+    }
 
-    router.push({
-      pathname: "/screens/chat/conversation",
-      params: {
-        threadId: thread.id,
-        name: contact.name,
-        avatarUrl: contact.avatarUrl,
-        userId: contact.id,
-        isOnline: contact.isOnline ? "true" : "false",
-      },
-    });
+    try {
+      const thread = await openThreadMutation.mutateAsync(contact.id);
+      setSearch("");
+
+      router.push({
+        pathname: "/screens/chat/conversation",
+        params: {
+          threadId: thread.id,
+          name: contact.name,
+          avatarUrl: contact.avatarUrl,
+          userId: contact.id,
+          role: contact.role,
+          isOnline: contact.isOnline ? "true" : "false",
+        },
+      });
+    } catch (_error) {
+      // mutation already shows toast
+    }
   };
 
   const openSupportChat = async () => {
@@ -112,6 +141,7 @@ export default function ChatListScreen() {
         name: thread.name || "Support",
         avatarUrl: otherParticipant?.avatarUrl ?? "",
         userId: otherParticipant?.id ?? "",
+        role: otherParticipant?.role ?? "",
         isOnline: otherParticipant?.isOnline ? "true" : "false",
       },
     });
@@ -174,9 +204,10 @@ export default function ChatListScreen() {
                     ) : null}
 
                     {contacts.map((contact) => (
-                      <Pressable
-                        key={contact.id}
+                    <Pressable
+                      key={contact.id}
                         onPress={() => void openContactChat(contact)}
+                        disabled={!canStartDirectChat(contact.role)}
                         className="flex-row items-center px-4 py-3 active:bg-[#F7FAFC]"
                       >
                         <View className="h-11 w-11 overflow-hidden rounded-full bg-[#E9EDF1]">
@@ -247,14 +278,15 @@ export default function ChatListScreen() {
                     setSearch("");
                     router.push({
                       pathname: "/screens/chat/conversation",
-                      params: {
-                        threadId: item.threadId ?? item.id,
-                        name: item.name,
-                        avatarUrl: item.avatarUrl,
-                        userId: item.profileUserId ?? "",
-                        isOnline: item.isOnline ? "true" : "false",
-                      },
-                    });
+                    params: {
+                      threadId: item.threadId ?? item.id,
+                      name: item.name,
+                      avatarUrl: item.avatarUrl,
+                      userId: item.profileUserId ?? "",
+                      role: item.profileRole ?? "",
+                      isOnline: item.isOnline ? "true" : "false",
+                    },
+                  });
                 }}
               />
                   ))}

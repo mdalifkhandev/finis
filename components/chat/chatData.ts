@@ -3,6 +3,7 @@ export type ChatFilter = "chat" | "support";
 export type ChatListItemModel = {
   id: string;
   profileUserId?: string;
+  profileRole?: string | null;
   name: string;
   preview: string;
   time: string;
