@@ -157,7 +157,7 @@ export default function CreateProjectRoute() {
         ...(type === "apartment"
           ? {
               numFloors: floorsNumber,
-              roomsPerFloor: roomsNumber,
+              unitPerFloor: roomsNumber,
             }
           : {
               isWholeHouse: houseScope === "whole",

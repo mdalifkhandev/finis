@@ -62,7 +62,7 @@ export default function FloorSetupCard({
             {floorName}
           </Text>
           <Text className="mt-0.5 text-[14px] text-[#4E5B6D]">
-            {roomCount} rooms
+            {roomCount} units
           </Text>
         </View>
 
@@ -97,7 +97,7 @@ export default function FloorSetupCard({
         className="mt-4 self-start"
       >
         <Text className="text-[16px] font-medium text-[#245E7D]">
-          View Room Details
+          View Unit Details
         </Text>
       </TouchableOpacity>
 
@@ -110,14 +110,14 @@ export default function FloorSetupCard({
           >
             <Ionicons name="add" size={22} color="#1F252E" />
             <Text className="ml-1.5 text-[16px] font-semibold text-[#1F252E]">
-              Add New Room
+              Add New Unit
             </Text>
           </TouchableOpacity>
 
           {roomList.map((room, index) => (
             <FloorRoomItem
               key={room.id}
-              name={`Room : ${room.roomNumber ?? index + 1}`}
+              name={`Unit : ${room.roomNumber ?? index + 1}`}
               details={room.details}
               status={room.status}
               onEdit={() => onEditRoom?.(room)}

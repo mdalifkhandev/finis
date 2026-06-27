@@ -34,6 +34,7 @@ export type CreateProjectPayload = {
   location: string;
   description: string;
   numFloors?: number;
+  unitPerFloor?: number;
   roomsPerFloor?: number;
   isWholeHouse?: boolean;
   houseSections?: string[];
@@ -69,6 +70,7 @@ export type CompanyProject = {
   budget: number;
   location: string;
   priority: "LOW" | "MEDIUM" | "HIGH";
+  unitPerFloor?: number;
   _count: {
     teamMembers: number;
     tasks: number;
@@ -122,6 +124,7 @@ export type ProjectProfile = {
   isWholeHouse?: boolean;
   houseSections?: string[];
   numFloors: number;
+  unitPerFloor?: number;
   roomsPerFloor: number;
   budget: number;
   spent: number;
@@ -159,9 +162,11 @@ export type ProjectFloorPlanFloor = {
   floorNumber: number;
   status: string;
   progress: number;
-  totalRooms: number;
+  totalRooms?: number;
+  totalUnits?: number;
   taskCounts: ProjectFloorPlanTaskCounts;
-  rooms: ProjectFloorPlanRoom[];
+  rooms?: ProjectFloorPlanRoom[];
+  units?: ProjectFloorPlanRoom[];
 };
 
 export type ProjectFloorPlanResponse = ApiResponse<ProjectFloorPlanFloor[]>;
@@ -178,6 +183,7 @@ export type UpdateProjectPayload = {
   location?: string;
   description?: string;
   numFloors?: number;
+  unitPerFloor?: number;
   roomsPerFloor?: number;
   isWholeHouse?: boolean;
   houseSections?: string[];

@@ -70,7 +70,8 @@ export function mapApiToProjectData(apiData: {
   startDate: string;
   endDate: string;
   numFloors: number;
-  roomsPerFloor: number;
+  unitPerFloor?: number;
+  roomsPerFloor?: number;
   budget: number;
   location: string;
   description: string;
@@ -86,7 +87,7 @@ export function mapApiToProjectData(apiData: {
     projectType:
       apiData.type === "apartment" ? "Apartment Building" : "House",
     floors: String(apiData.numFloors),
-    roomsPerFloor: String(apiData.roomsPerFloor),
+    roomsPerFloor: String(apiData.unitPerFloor ?? apiData.roomsPerFloor ?? 0),
     budgetEnabled: apiData.budget > 0,
     budget: String(apiData.budget),
     location: apiData.location,
