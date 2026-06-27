@@ -254,7 +254,7 @@ export default function CreateProjectRoute() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView className="flex-1 bg-[#E9EDF1]" edges={['bottom','top','right','left']}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
