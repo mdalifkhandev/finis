@@ -26,7 +26,7 @@ export default function LocationRoute() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <View className="flex-1 items-center justify-center px-5">
         <View className="h-16 w-16 items-center justify-center rounded-full bg-[#1F5577]">
           <Ionicons name="location-outline" size={30} color="white" />

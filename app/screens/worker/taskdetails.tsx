@@ -192,7 +192,7 @@ const TaskDetailsScreen = () => {
 console.log(JSON.stringify(task,null,2));
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }}>
+    <SafeAreaView edges={['top','left',"right"]} style={{ flex: 1, backgroundColor: THEME.colors.background }}>
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}

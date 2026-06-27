@@ -155,7 +155,7 @@ export default function CreateCompanyRoute() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}

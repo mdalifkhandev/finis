@@ -30,7 +30,7 @@ export default function ProjectsScreen() {
   const hasMoreProjects = projects.length === limit;
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-50">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-slate-50">
       <View className="flex-row items-center px-5 py-4">
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
           <Ionicons name="chevron-back" size={24} color="#1f2937" />

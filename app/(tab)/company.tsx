@@ -47,7 +47,7 @@ export default function Company() {
   const refreshing = isFetching && !isLoading;
 
   return (
-    <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-slate-50">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-slate-50">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}

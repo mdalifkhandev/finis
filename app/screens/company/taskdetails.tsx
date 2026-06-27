@@ -15,7 +15,7 @@ export default function TaskDetailsRoute() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#E9EDF1] items-center justify-center">
+      <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1] items-center justify-center">
         <ActivityIndicator size="large" color="#1F506D" />
       </SafeAreaView>
     );
@@ -23,7 +23,7 @@ export default function TaskDetailsRoute() {
   const preset = getTaskDetailsPreset(task?.status as TaskStatus);
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 36 }}

@@ -79,7 +79,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <View className="h-16 flex-row items-center border-b border-[#DBE0E5] px-5">
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#1E2329" />

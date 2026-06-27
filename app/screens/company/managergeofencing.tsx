@@ -286,7 +286,7 @@ export default function ManagerGeofencingRoute() {
 
   if (!projectId) {
     return (
-      <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+      <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
         <BackTitleHeader title="Geofencing" onBack={() => router.back()} />
         <View className="mt-10 items-center px-5">
           <Text className="text-[14px] text-[#66707B]">
@@ -298,7 +298,7 @@ export default function ManagerGeofencingRoute() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 36 }}

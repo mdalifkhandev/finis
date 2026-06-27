@@ -207,7 +207,7 @@ export default function WorkerTasks() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: THEME.colors.background }}
-      edges={["top"]}
+      edges={['top','left',"right"]}
     >
       <StatusBar barStyle="dark-content" />
 

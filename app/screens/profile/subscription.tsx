@@ -108,7 +108,7 @@ export default function SubscriptionScreen() {
     }
   };
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <BackTitleHeader title="Subscription" onBack={() => router.back()} />
 
       <ScrollView

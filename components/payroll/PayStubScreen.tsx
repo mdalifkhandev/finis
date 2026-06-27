@@ -75,7 +75,7 @@ function WorkerModePayStubContent({ date }: { date: string }) {
   const workerProjects = workerPayroll?.projects ?? [];
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
         <BackTitleHeader title="Pay Stub" onBack={() => router.back()} />
 
@@ -282,7 +282,7 @@ function ApprovedModePayStubContent({
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
         <BackTitleHeader title="Pay Stub" onBack={() => router.back()} />
 
@@ -423,7 +423,7 @@ function DefaultModePayStubContent({ payrollId }: { payrollId?: string }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
         <BackTitleHeader title="Pay Stub" onBack={() => router.back()} />
 

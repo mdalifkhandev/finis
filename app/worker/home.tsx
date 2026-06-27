@@ -364,7 +364,7 @@ export default function WorkerHome() {
   }, []);
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-white">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-white">
       <ScrollView
         showsVerticalScrollIndicator={false}
         className="flex-1"

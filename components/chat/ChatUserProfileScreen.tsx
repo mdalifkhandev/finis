@@ -35,7 +35,7 @@ export default function ChatUserProfileScreen() {
   const imageSource = resolvedAvatar ? { uri: resolvedAvatar } : placeholderAvatar;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <BackTitleHeader title="Profile" onBack={() => router.back()} />
       <ScrollView
         showsVerticalScrollIndicator={false}
