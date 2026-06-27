@@ -38,7 +38,7 @@ export default function ChatComposer({
           />
         </TouchableOpacity>
 
-        <View className="mx-2 h-[46px] flex-1 flex-row items-center rounded-full bg-[#F8FAFC] px-5">
+        <View className="mx-2 mb-8 h-[46px] flex-1 flex-row items-center rounded-full bg-[#F8FAFC] px-5">
           <TextInput
             value={value}
             onChangeText={(nextValue) => {

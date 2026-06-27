@@ -37,6 +37,7 @@ export default function ManagerLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        freezeOnBlur: true,
         tabBarActiveTintColor: "#1f3d5c",
         tabBarInactiveTintColor: "#6b7280",
         tabBarHideOnKeyboard: true,
