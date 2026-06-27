@@ -13,6 +13,8 @@ type ProjectTypeDropdownProps = {
 const PROJECT_TYPE_OPTIONS: ProjectTypeValue[] = [
   "Apartment Building",
   "House",
+  "Commercial",
+  "Industrial",
 ];
 
 export default function ProjectTypeDropdown({

@@ -214,11 +214,7 @@ export async function updateCompany(
 }
 
 export async function createProject(payload: CreateProjectPayload) {
-  const { data } = await api.post<{
-    success: boolean;
-    message: string;
-    data: { id: string };
-  }>("/admin/projects", payload);
+  const { data } = await api.post<ProjectProfileResponse>("/admin/projects", payload);
 
   if (!data.success) {
     throw new Error(data.message || "Failed to create project");
@@ -259,11 +255,7 @@ export async function getProjectFloorPlan(id: string) {
 }
 
 export async function updateProject(id: string, payload: UpdateProjectPayload) {
-  const { data } = await api.put<{
-    success: boolean;
-    message: string;
-    data: { id: string };
-  }>(`/admin/projects/${id}`, payload);
+  const { data } = await api.put<ProjectProfileResponse>(`/admin/projects/${id}`, payload);
 
   if (!data.success) {
     throw new Error(data.message || "Failed to update project");
