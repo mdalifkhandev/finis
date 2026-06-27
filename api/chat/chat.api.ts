@@ -233,8 +233,6 @@ export async function getChatMessages(
   threadId: string,
   params: MessageQueryParams = {},
 ) {
-  console.log(params);
-  
   const { data } = await api.get<ChatMessageListResponse>(
     `/messages/threads/${threadId}/messages`,
     {

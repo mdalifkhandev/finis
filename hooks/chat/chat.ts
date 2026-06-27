@@ -338,6 +338,7 @@ export function useBlockChatUserMutation() {
   return useMutation({
     mutationFn: blockChatUser,
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["chat", "contacts"] });
       await queryClient.invalidateQueries({ queryKey: ["chat", "blocked-users"] });
       await queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
       await queryClient.invalidateQueries({ queryKey: ["chat", "messages"] });
@@ -354,6 +355,7 @@ export function useUnblockChatUserMutation() {
   return useMutation({
     mutationFn: unblockChatUser,
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["chat", "contacts"] });
       await queryClient.invalidateQueries({ queryKey: ["chat", "blocked-users"] });
       await queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
       await queryClient.invalidateQueries({ queryKey: ["chat", "messages"] });
