@@ -11,6 +11,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   RefreshControl,
   ScrollView,
@@ -62,7 +63,7 @@ const TaskDetailsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [notes, setNotes] = useState("");
   const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
-  const [hideCompleteButton, setHideCompleteButton] = useState(false);
+  const [isTaskCompleted, setIsTaskCompleted] = useState(false);
 
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
 
@@ -132,7 +133,14 @@ const TaskDetailsScreen = () => {
   const pickImage = async () => {
     try {
       const ImagePicker = await import("expo-image-picker");
-      const result = await ImagePicker.launchImageLibraryAsync({
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (permission.status !== "granted") {
+        alert("Please allow camera access to take the after photo.");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [4, 3],
@@ -148,7 +156,7 @@ const TaskDetailsScreen = () => {
   };
 
   const handleComplete = async () => {
-    if (hideCompleteButton || completeTaskMutation.isPending) {
+    if (isTaskCompleted || completeTaskMutation.isPending) {
       return;
     }
 
@@ -170,9 +178,13 @@ const TaskDetailsScreen = () => {
         notes: notes,
       });
 
-      setHideCompleteButton(true);
-      alert("Task marked as completed successfully!");
-      router.back();
+      setIsTaskCompleted(true);
+      Alert.alert("Success", "Task marked as completed successfully!", [
+        {
+          text: "OK",
+          onPress: () => router.replace("/worker/home"),
+        },
+      ]);
     } catch (error: any) {
       alert(error.message || "Failed to complete task.");
     }
@@ -868,7 +880,21 @@ console.log(JSON.stringify(task,null,2));
             </View>
 
             {/* Action Button */}
-            {task?.status !== "completed" && !hideCompleteButton && (
+            {(task?.status === "completed" || isTaskCompleted) ? (
+              <View
+                style={{
+                  height: 56,
+                  backgroundColor: "#D1F0FF",
+                  borderRadius: 12,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ color: "#0F172A", fontSize: 16, fontWeight: "700" }}>
+                  Completed
+                </Text>
+              </View>
+            ) : (
               <TouchableOpacity
                 onPress={handleComplete}
                 disabled={completeTaskMutation.isPending}

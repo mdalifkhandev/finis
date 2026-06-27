@@ -56,17 +56,17 @@ export default function TaskViewCard({
       return;
     }
 
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
 
     if (status !== "granted") {
       Alert.alert(
         "Permission Denied",
-        "Sorry, we need camera roll permissions to make this work!",
+        "Sorry, we need camera permission to make this work!",
       );
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],

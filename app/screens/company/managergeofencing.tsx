@@ -55,9 +55,9 @@ export default function ManagerGeofencingRoute() {
   const getLocationLogStatus = (eventType?: string) => {
     const normalized = (eventType ?? "").toLowerCase();
     return ["check_in", "enter"].some((type) => normalized.includes(type))
-      ? "Check In"
+      ? "Login"
       : ["check_out", "exit"].some((type) => normalized.includes(type))
-        ? "Check Out"
+        ? "Logout"
         : normalized.includes("in_zone")
           ? "In Zone"
           : normalized.includes("out_of_zone")
