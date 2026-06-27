@@ -15,7 +15,7 @@ export default function SplashScreenRoute() {
   }, [router]);
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-white">
       <View className="flex-1 items-center justify-center px-8">
         <Image
           source={require("../../../assets/images/splash-icon.png")}

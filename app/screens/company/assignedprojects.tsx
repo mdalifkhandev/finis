@@ -49,7 +49,7 @@ export default function AssignedProjectsRoute() {
   const { refreshing, onRefresh } = usePullToRefresh();
 
   return (
-    <SafeAreaView className="flex-1 bg-[#e9edf1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#e9edf1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 48 }}

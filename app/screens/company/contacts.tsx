@@ -45,7 +45,7 @@ export default function ContactsRoute() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#e9edf1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#e9edf1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 48 }}

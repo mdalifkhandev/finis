@@ -121,7 +121,7 @@ const ChangePasswordScreen = () => {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: THEME.colors.white }}
-      edges={["top"]}
+      edges={['top','left',"right"]}
     >
       <StatusBar barStyle="dark-content" />
 

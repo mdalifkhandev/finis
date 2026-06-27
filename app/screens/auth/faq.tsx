@@ -23,7 +23,7 @@ export default function FaqRoute() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#A8A8A8]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#A8A8A8]">
       <View className="flex-1 justify-center px-5">
         <View className="rounded-3xl bg-[#F5F5F5] p-4">
           <View className="mb-5 flex-row items-center justify-between">

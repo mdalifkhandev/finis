@@ -41,7 +41,7 @@ const roles: RoleOption[] = [
 
 export default function RoleSelectScreen() {
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <View className="flex-1 px-5 pt-12">
         <Text className="text-[34px] font-semibold text-[#1F2328]">
           Select Role

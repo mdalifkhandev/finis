@@ -14,7 +14,7 @@ export default function WelcomeRoute() {
   const imageMaxHeight = Math.min(560, Math.max(300, height * 0.6));
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <View>
         <Image
           source={require("../../../assets/images/welcome.svg")}
