@@ -593,11 +593,11 @@ export async function getProjectFloors(projectId: string) {
 
 export async function getFloorRooms(projectId: string, floorId: string) {
   const { data } = await api.get<ProjectRoomsResponse>(
-    `/admin/projects/${projectId}/floors/${floorId}/rooms`
+    `/admin/projects/${projectId}/floors/${floorId}/units`
   );
 
   if (!data.success) {
-    throw new Error(data.message || "Failed to load rooms");
+    throw new Error(data.message || "Failed to load units");
   }
 
   return data.data;

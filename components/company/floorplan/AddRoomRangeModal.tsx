@@ -75,9 +75,7 @@ export default function AddRoomRangeModal({
         <View className="h-1.5 w-11 rounded-full bg-[#D1D5DB]" />
       </View>
 
-      <Text className="text-[16px] font-medium text-[#111827]">
-        Add New Room
-      </Text>
+      <Text className="text-[16px] font-medium text-[#111827]">Add New Unit</Text>
 
       <View className="mt-3 flex-row items-center">
         <TextInput
@@ -110,7 +108,7 @@ export default function AddRoomRangeModal({
         className="mt-4 h-12 items-center justify-center rounded-md bg-[#1E5371]"
       >
         <Text className="text-[16px] font-semibold text-white">
-          Add Room
+          Add Unit
         </Text>
       </TouchableOpacity>
     </>

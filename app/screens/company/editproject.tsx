@@ -181,7 +181,9 @@ export default function EditProjectRoute() {
       setSelectedSections([]);
     }
     setFloors(String(projectProfile.numFloors ?? ""));
-    setRoomsPerFloor(String(projectProfile.roomsPerFloor ?? ""));
+    setRoomsPerFloor(
+      String(projectProfile.unitPerFloor ?? projectProfile.roomsPerFloor ?? ""),
+    );
     setBudget(String(projectProfile.budget ?? ""));
     setLocation(projectProfile.location ?? "");
     setDescription(projectProfile.description ?? "");
@@ -280,7 +282,7 @@ export default function EditProjectRoute() {
         ...(type === "apartment"
           ? {
               numFloors: floorsNumber,
-              roomsPerFloor: roomsNumber,
+              unitPerFloor: roomsNumber,
             }
           : {
               isWholeHouse: houseScope === "whole",

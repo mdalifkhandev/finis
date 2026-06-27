@@ -37,7 +37,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-
 type FloorStats = {
   completed: number;
   inProgress: number;
@@ -73,6 +72,13 @@ function normalizeStatus(value?: string): FloorStatus {
 }
 
 import type { ProjectFloorPlanRoom } from "@/types/company.types";
+
+function getFloorRooms(floor: {
+  rooms?: ProjectFloorPlanRoom[];
+  units?: ProjectFloorPlanRoom[];
+}) {
+  return floor.rooms ?? floor.units ?? [];
+}
 
 function toRoomInfo(
   room: ProjectFloorPlanRoom,
@@ -134,11 +140,11 @@ export default function FloorPlanRoute() {
       floorName: floor.name,
       status: normalizeStatus(floor.status),
       progress: floor.progress,
-      rooms: floor.rooms.map((room, index) =>
+      rooms: getFloorRooms(floor).map((room, index) =>
         toRoomInfo(room, index, floor.id),
       ),
       allowRoomManagement: true,
-      fixedRoomCount: floor.totalRooms,
+      fixedRoomCount: floor.totalRooms ?? floor.totalUnits ?? getFloorRooms(floor).length,
       fixedStats: {
         completed: floor.taskCounts?.completed || 0,
         inProgress: floor.taskCounts?.inProgress || 0,
@@ -248,7 +254,7 @@ export default function FloorPlanRoute() {
         }
       >
         <BackTitleHeader
-          title="Floor & Room Setup"
+          title="Floor & Unit Setup"
           onBack={() => router.back()}
         />
 
@@ -283,12 +289,13 @@ export default function FloorPlanRoute() {
             </View>
           ) : (
             floors.map((floor) => {
+              const floorRooms = floor.rooms ?? [];
               const stats = floor.allowRoomManagement
-                ? buildStatsFromRooms(floor.rooms)
-                : (floor.fixedStats ?? buildStatsFromRooms(floor.rooms));
+                ? buildStatsFromRooms(floorRooms)
+                : (floor.fixedStats ?? buildStatsFromRooms(floorRooms));
               const roomCount = floor.allowRoomManagement
-                ? floor.rooms.length
-                : (floor.fixedRoomCount ?? floor.rooms.length);
+                ? floorRooms.length
+                : (floor.fixedRoomCount ?? floorRooms.length);
 
               return (
                 <FloorSetupCard
@@ -299,7 +306,7 @@ export default function FloorPlanRoute() {
                   completed={stats.completed}
                   inProgress={stats.inProgress}
                   pending={stats.pending}
-                  rooms={floor.allowRoomManagement ? floor.rooms : undefined}
+                  rooms={floor.allowRoomManagement ? floorRooms : undefined}
                   onPressAddRoom={
                     floor.allowRoomManagement
                       ? () => {
@@ -373,7 +380,7 @@ export default function FloorPlanRoute() {
 
       <DeleteConfirmationModal
         visible={!!deletingRoom}
-        title="Delete Room"
+        title="Delete Unit"
         description="Are you sure you want to delete this room? This action cannot be undone."
         onClose={() => setDeletingRoom(null)}
         onConfirm={confirmDeleteRoom}

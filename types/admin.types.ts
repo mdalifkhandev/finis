@@ -112,6 +112,7 @@ export type AdminProjectProfile = {
   location: string;
   description: string;
   numFloors: number;
+  unitPerFloor?: number;
   roomsPerFloor: number;
   budget: number;
   spent: number;

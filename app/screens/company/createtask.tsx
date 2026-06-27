@@ -188,12 +188,12 @@ export default function CreateTaskRoute() {
 
             {selectedFloor && (
               <View className="mt-4">
-                <TaskFormField
-                  label="Room"
-                  placeholder={
-                    selectedRoom
+              <TaskFormField
+                label="Unit"
+                placeholder={
+                  selectedRoom
                       ? selectedRoom.name
-                      : "Select Room"
+                      : "Select Unit"
                   }
                   value={selectedRoom?.name || ""}
                   onPress={() => setShowRoomSheet(true)}
@@ -311,7 +311,7 @@ export default function CreateTaskRoute() {
         </Pressable>
       </Modal>
 
-      {/* Room Selection Modal */}
+      {/* Unit Selection Modal */}
       <Modal
         visible={showRoomSheet}
         transparent
@@ -325,7 +325,7 @@ export default function CreateTaskRoute() {
           <Pressable className="bg-white rounded-t-[24px] p-6 max-h-[80%]">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-[18px] font-semibold text-[#1A212B]">
-                Select Room
+                Select Unit
               </Text>
               <TouchableOpacity onPress={() => setShowRoomSheet(false)}>
                 <Ionicons name="close" size={24} color="#6B7280" />
@@ -358,8 +358,8 @@ export default function CreateTaskRoute() {
                 })
               ) : (
                 <Text className="text-center text-[#6B7280] my-6">
-                  No rooms available for this floor.
-                </Text>
+                No units available for this floor.
+              </Text>
               )}
             </ScrollView>
           </Pressable>

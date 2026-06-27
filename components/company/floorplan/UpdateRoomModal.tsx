@@ -111,7 +111,7 @@ export default function UpdateRoomModal({
 
     onSubmit({
       name: normalizedName,
-      type: roomType.trim() || "Room",
+      type: roomType.trim() || "Unit",
       sizeSqft: sizeNum,
       status: statusValue,
       progress: progressNum,
@@ -134,15 +134,15 @@ export default function UpdateRoomModal({
               <View className="h-1.5 w-11 rounded-full bg-[#D1D5DB]" />
             </View>
 
-            <Text className="text-[18px] font-semibold text-[#111827]">Update Room</Text>
+            <Text className="text-[18px] font-semibold text-[#111827]">Update Unit</Text>
 
             <View className="mt-4 flex-row gap-3">
               <View className="flex-1">
-                <Text className="mb-1.5 text-[14px] font-medium text-[#4B5563]">Room Name</Text>
+                <Text className="mb-1.5 text-[14px] font-medium text-[#4B5563]">Unit Name</Text>
                 <TextInput
                   value={roomName}
                   onChangeText={setRoomName}
-                  placeholder="e.g. Room 1"
+                  placeholder="e.g. Unit 1"
                   placeholderTextColor="#9CA3AF"
                   autoCapitalize="words"
                   autoCorrect={false}
@@ -150,7 +150,7 @@ export default function UpdateRoomModal({
                 />
               </View>
               <View className="flex-1">
-                <Text className="mb-1.5 text-[14px] font-medium text-[#4B5563]">Room Type</Text>
+                <Text className="mb-1.5 text-[14px] font-medium text-[#4B5563]">Unit Type</Text>
                 <TextInput
                   value={roomType}
                   onChangeText={setRoomType}
