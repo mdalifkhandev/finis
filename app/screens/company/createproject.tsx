@@ -34,10 +34,25 @@ function formatDate(value: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function parseOptionalNumber(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
 function mapSectionToApiValue(section: string) {
   const normalized = section.trim().toLowerCase();
   if (normalized === "main floor") return "main_floor";
   return normalized.replace(/\s+/g, "_");
+}
+
+function mapProjectTypeToApiValue(type: ProjectTypeValue) {
+  if (type === "Apartment Building") return "apartment";
+  if (type === "House") return "house";
+  if (type === "Commercial") return "commercial";
+  if (type === "Industrial") return "industrial";
+  return "house";
 }
 
 export default function CreateProjectRoute() {
@@ -53,6 +68,10 @@ export default function CreateProjectRoute() {
     useState<ProjectTypeValue>("Apartment Building");
   const [floors, setFloors] = useState("");
   const [roomsPerFloor, setRoomsPerFloor] = useState("");
+  const [numFloorsMin, setNumFloorsMin] = useState("");
+  const [numFloorsMax, setNumFloorsMax] = useState("");
+  const [unitPerFloorMin, setUnitPerFloorMin] = useState("");
+  const [unitPerFloorMax, setUnitPerFloorMax] = useState("");
   const [budget, setBudget] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
@@ -84,6 +103,15 @@ export default function CreateProjectRoute() {
 
     setFloors("");
     setRoomsPerFloor("");
+    setNumFloorsMin("");
+    setNumFloorsMax("");
+    setUnitPerFloorMin("");
+    setUnitPerFloorMax("");
+
+    if (nextType !== "House") {
+      setHouseScope("whole");
+      setSelectedSections([]);
+    }
   };
 
   const toggleHouseSection = (name: string) => {
@@ -119,9 +147,23 @@ export default function CreateProjectRoute() {
       return;
     }
 
+    const floorsMinNumber = parseOptionalNumber(numFloorsMin);
+    const floorsMaxNumber = parseOptionalNumber(numFloorsMax);
+    const unitMinNumber = parseOptionalNumber(unitPerFloorMin);
+    const unitMaxNumber = parseOptionalNumber(unitPerFloorMax);
     const floorsNumber = isApartment ? Number(floors) : 1;
     const roomsNumber = isApartment ? Number(roomsPerFloor) : 1;
     const mappedHouseSections = selectedSections.map(mapSectionToApiValue);
+
+    if (
+      floorsMinNumber === null ||
+      floorsMaxNumber === null ||
+      unitMinNumber === null ||
+      unitMaxNumber === null
+    ) {
+      toast.error("Please enter valid floor and unit range values.");
+      return;
+    }
 
     if (
       Number.isNaN(floorsNumber) ||
@@ -133,16 +175,12 @@ export default function CreateProjectRoute() {
       return;
     }
 
-    if (
-      !isApartment &&
-      houseScope === "sections" &&
-      !mappedHouseSections.length
-    ) {
+    if (projectType === "House" && houseScope === "sections" && !mappedHouseSections.length) {
       toast.error("Please select at least one house section.");
       return;
     }
 
-    const type = projectType === "Apartment Building" ? "apartment" : "house";
+    const type = mapProjectTypeToApiValue(projectType);
 
     try {
       await createProject({
@@ -157,16 +195,22 @@ export default function CreateProjectRoute() {
         ...(type === "apartment"
           ? {
               numFloors: floorsNumber,
+              ...(floorsMinNumber !== undefined ? { numFloorsMin: floorsMinNumber } : {}),
+              ...(floorsMaxNumber !== undefined ? { numFloorsMax: floorsMaxNumber } : {}),
               unitPerFloor: roomsNumber,
+              ...(unitMinNumber !== undefined ? { unitPerFloorMin: unitMinNumber } : {}),
+              ...(unitMaxNumber !== undefined ? { unitPerFloorMax: unitMaxNumber } : {}),
             }
-          : {
-              isWholeHouse: houseScope === "whole",
-              ...(houseScope === "sections"
-                ? {
-                    houseSections: mappedHouseSections,
-                  }
-                : {}),
-            }),
+          : projectType === "House"
+            ? {
+                isWholeHouse: houseScope === "whole",
+                ...(houseScope === "sections"
+                  ? {
+                      houseSections: mappedHouseSections,
+                    }
+                  : {}),
+              }
+            : {}),
         autoGenerateFloors: type === "apartment",
       });
     } catch {
@@ -284,29 +328,61 @@ export default function CreateProjectRoute() {
                 onChange={handleSelectProjectType}
               />
 
-              {isApartment ? (
+              {projectType !== "House" ? (
                 <>
                   <View className="mt-3">
-                    <ProjectInputField
-                      label="Number of Floors"
-                      placeholder="e.g. 5"
-                      value={floors}
-                      onChangeText={setFloors}
-                      keyboardType="number-pad"
-                    />
+                    <Text className="mb-2 text-[15px] font-medium text-[#1F2937]">
+                      Floor Range
+                    </Text>
+                    <View className="flex-row gap-3">
+                      <View className="flex-1">
+                        <ProjectInputField
+                          label="Min Floors"
+                          placeholder="e.g. 3"
+                          value={numFloorsMin}
+                          onChangeText={setNumFloorsMin}
+                          keyboardType="number-pad"
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <ProjectInputField
+                          label="Max Floors"
+                          placeholder="e.g. 8"
+                          value={numFloorsMax}
+                          onChangeText={setNumFloorsMax}
+                          keyboardType="number-pad"
+                        />
+                      </View>
+                    </View>
                   </View>
 
                   <View className="mt-3">
-                    <ProjectInputField
-                      label="Units per Floor"
-                      placeholder="e.g. 20"
-                      value={roomsPerFloor}
-                      onChangeText={setRoomsPerFloor}
-                      keyboardType="number-pad"
-                    />
+                    <Text className="mb-2 text-[15px] font-medium text-[#1F2937]">
+                      Unit Range
+                    </Text>
+                    <View className="flex-row gap-3">
+                      <View className="flex-1">
+                        <ProjectInputField
+                          label="Min Units"
+                          placeholder="e.g. 12"
+                          value={unitPerFloorMin}
+                          onChangeText={setUnitPerFloorMin}
+                          keyboardType="number-pad"
+                        />
+                      </View>
+                      <View className="flex-1">
+                        <ProjectInputField
+                          label="Max Units"
+                          placeholder="e.g. 20"
+                          value={unitPerFloorMax}
+                          onChangeText={setUnitPerFloorMax}
+                          keyboardType="number-pad"
+                        />
+                      </View>
+                    </View>
                   </View>
                 </>
-              ) : (
+              ) : projectType === "House" ? (
                 <>
                   <View className="mt-3 flex-row items-center">
                     <ProjectCheckboxOption
@@ -340,7 +416,7 @@ export default function CreateProjectRoute() {
                     </View>
                   ) : null}
                 </>
-              )}
+              ) : null}
 
               <View className="mt-3">
                 <View className="mb-2 flex-row items-center justify-between">

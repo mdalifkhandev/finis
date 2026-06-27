@@ -34,7 +34,11 @@ export type CreateProjectPayload = {
   location: string;
   description: string;
   numFloors?: number;
+  numFloorsMin?: number;
+  numFloorsMax?: number;
   unitPerFloor?: number;
+  unitPerFloorMin?: number;
+  unitPerFloorMax?: number;
   roomsPerFloor?: number;
   isWholeHouse?: boolean;
   houseSections?: string[];
@@ -124,7 +128,11 @@ export type ProjectProfile = {
   isWholeHouse?: boolean;
   houseSections?: string[];
   numFloors: number;
+  numFloorsMin?: number;
+  numFloorsMax?: number;
   unitPerFloor?: number;
+  unitPerFloorMin?: number;
+  unitPerFloorMax?: number;
   roomsPerFloor: number;
   budget: number;
   spent: number;
@@ -183,7 +191,11 @@ export type UpdateProjectPayload = {
   location?: string;
   description?: string;
   numFloors?: number;
+  numFloorsMin?: number;
+  numFloorsMax?: number;
   unitPerFloor?: number;
+  unitPerFloorMin?: number;
+  unitPerFloorMax?: number;
   roomsPerFloor?: number;
   isWholeHouse?: boolean;
   houseSections?: string[];

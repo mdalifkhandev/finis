@@ -1,6 +1,10 @@
 import { useSyncExternalStore } from "react";
 
-export type ProjectTypeValue = "Apartment Building" | "House";
+export type ProjectTypeValue =
+  | "Apartment Building"
+  | "House"
+  | "Commercial"
+  | "Industrial";
 export type HouseScopeValue = "whole" | "sections";
 
 export type ProjectData = {
@@ -84,8 +88,16 @@ export function mapApiToProjectData(apiData: {
     company: apiData.client?.companyName ?? "",
     startDate: apiData.startDate,
     endDate: apiData.endDate,
-    projectType:
-      apiData.type === "apartment" ? "Apartment Building" : "House",
+  projectType:
+      apiData.type === "apartment"
+        ? "Apartment Building"
+        : apiData.type === "house"
+          ? "House"
+          : apiData.type === "commercial"
+            ? "Commercial"
+            : apiData.type === "industrial"
+              ? "Industrial"
+              : "House",
     floors: String(apiData.numFloors),
     roomsPerFloor: String(apiData.unitPerFloor ?? apiData.roomsPerFloor ?? 0),
     budgetEnabled: apiData.budget > 0,
