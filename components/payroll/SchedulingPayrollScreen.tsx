@@ -1,9 +1,9 @@
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BackTitleHeader from "../common/BackTitleHeader";
-import PayrollCalendarCard from "./PayrollCalendarCard";
+import PayrollCalendarCard, { type PayrollCalendarMode } from "./PayrollCalendarCard";
 import ScheduledActivityCard from "./ScheduledActivityCard";
 import { useAdminWorkerSummaryQuery } from "@/hooks/admin/payroll";
 import type { ActivityItem } from "./types";
@@ -18,7 +18,10 @@ function formatLocalDate(date: Date) {
 export default function SchedulingPayrollScreen() {
   const [monthDate, setMonthDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const { data } = useAdminWorkerSummaryQuery();
+  const [selectedRangeEnd, setSelectedRangeEnd] = useState<Date | null>(null);
+  const [periodMode, setPeriodMode] = useState<PayrollCalendarMode>("custom");
+  const { data, refetch } = useAdminWorkerSummaryQuery();
+  const [refreshing, setRefreshing] = useState(false);
 
   const activities = useMemo<ActivityItem[]>(() => {
     return (
@@ -35,11 +38,23 @@ export default function SchedulingPayrollScreen() {
     );
   }, [data?.projects]);
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
   return (
     <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-[#E9EDF1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 96 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
       >
         <BackTitleHeader
           title="Scheduling & Payroll"
@@ -50,8 +65,15 @@ export default function SchedulingPayrollScreen() {
           <PayrollCalendarCard
             monthDate={monthDate}
             selectedDate={selectedDate}
+            periodMode={periodMode}
+            selectedRangeEnd={selectedRangeEnd}
             onSelectDate={setSelectedDate}
+            onSelectRangeEnd={setSelectedRangeEnd}
             onMonthDateChange={setMonthDate}
+            onPeriodModeChange={(mode) => {
+              setPeriodMode(mode);
+              setSelectedRangeEnd(null);
+            }}
           />
 
           <TouchableOpacity

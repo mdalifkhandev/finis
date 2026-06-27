@@ -13,11 +13,12 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   Switch,
   Text,
@@ -58,8 +59,9 @@ function mapProjectTypeToApiValue(type: ProjectTypeValue) {
 export default function CreateProjectRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const companyId = typeof id === "string" ? id : undefined;
-  const { data: company } = useCompanyQuery(companyId);
+  const { data: company, refetch: refetchCompany } = useCompanyQuery(companyId);
   const { createProject, isPending } = useCreateProjectMutation(companyId);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [projectName, setProjectName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -122,6 +124,15 @@ export default function CreateProjectRoute() {
       return [...prev, name];
     });
   };
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetchCompany();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetchCompany]);
 
   const handleCreateProject = async () => {
     if (!companyId) {
@@ -264,6 +275,9 @@ export default function CreateProjectRoute() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
         >
           <BackTitleHeader
             title="Create New Project"
