@@ -575,7 +575,7 @@ export default function WorkerHome() {
                 <ActivityIndicator color="#EAF1F5" />
               ) : (
                 <Text className="text-center text-[16px] text-[#EAF1F5]">
-                  Confirm Check In
+                  Confirm Login
                 </Text>
               )}
             </TouchableOpacity>

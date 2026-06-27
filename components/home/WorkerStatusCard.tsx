@@ -34,7 +34,7 @@ export default function WorkerStatusCard({
           {isClockedIn ? "Clocked In" : "Not Clocked In"}
         </Text>
       </View>
-      <Text className="text-sm font-bold text-slate-900">
+        <Text className="text-sm font-bold text-slate-900">
         {isClockedIn ? time : "-- : --"}
       </Text>
       <View className="absolute -bottom-14 left-0 right-0 flex-row gap-3">
@@ -46,7 +46,7 @@ export default function WorkerStatusCard({
           }`}
         >
           <Text className="text-center text-sm font-semibold text-white">
-            {isCheckingIn ? "Checking In..." : "Check In"}
+            {isCheckingIn ? "Logging In..." : "Login"}
           </Text>
         </Pressable>
         <Pressable
@@ -57,7 +57,7 @@ export default function WorkerStatusCard({
           }`}
         >
           <Text className="text-center text-sm font-semibold text-white">
-            {isCheckingOut ? "Checking Out..." : "Check Out"}
+            {isCheckingOut ? "Logging Out..." : "Logout"}
           </Text>
         </Pressable>
       </View>
