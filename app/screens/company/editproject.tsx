@@ -140,7 +140,7 @@ export default function EditProjectRoute() {
   const [startDateValue, setStartDateValue] = useState(new Date());
   const [endDateValue, setEndDateValue] = useState(new Date());
 
-  const isApartment = projectType === "Apartment Building";
+  const useFloorAndUnitFields = projectType !== "House";
   const houseSectionOptions = [
     "Basement",
     "Upstairs",
@@ -151,22 +151,15 @@ export default function EditProjectRoute() {
   const handleSelectProjectType = (nextType: ProjectTypeValue) => {
     setProjectType(nextType);
 
-    if (nextType === "Apartment Building") {
-      setHouseScope("whole");
-      setSelectedSections([]);
-      return;
-    }
-
-    setFloors("");
-    setRoomsPerFloor("");
-    setNumFloorsMin("");
-    setNumFloorsMax("");
-    setUnitPerFloorMin("");
-    setUnitPerFloorMax("");
-
     if (nextType !== "House") {
       setHouseScope("whole");
       setSelectedSections([]);
+      setFloors("");
+      setRoomsPerFloor("");
+      setNumFloorsMin("");
+      setNumFloorsMax("");
+      setUnitPerFloorMin("");
+      setUnitPerFloorMax("");
     }
   };
 
@@ -284,8 +277,8 @@ export default function EditProjectRoute() {
 
     const budgetNumber = Number(budget || "0");
     const progressNumber = Number(progress || "0");
-    const floorsNumber = Number(floors || "0");
-    const roomsNumber = Number(roomsPerFloor || "0");
+    const floorsNumber = useFloorAndUnitFields ? Number(floors || "0") : 1;
+    const roomsNumber = useFloorAndUnitFields ? Number(roomsPerFloor || "0") : 1;
     const floorsMinNumber = parseOptionalNumber(numFloorsMin);
     const floorsMaxNumber = parseOptionalNumber(numFloorsMax);
     const unitMinNumber = parseOptionalNumber(unitPerFloorMin);
@@ -296,18 +289,19 @@ export default function EditProjectRoute() {
     if (
       Number.isNaN(budgetNumber) ||
       Number.isNaN(progressNumber) ||
-      Number.isNaN(floorsNumber) ||
-      Number.isNaN(roomsNumber)
+      (useFloorAndUnitFields &&
+        (Number.isNaN(floorsNumber) || Number.isNaN(roomsNumber)))
     ) {
       toast.error("Please enter valid numeric values.");
       return;
     }
 
     if (
-      floorsMinNumber === null ||
-      floorsMaxNumber === null ||
-      unitMinNumber === null ||
-      unitMaxNumber === null
+      useFloorAndUnitFields &&
+      (floorsMinNumber === null ||
+        floorsMaxNumber === null ||
+        unitMinNumber === null ||
+        unitMaxNumber === null)
     ) {
       toast.error("Please enter valid floor and unit range values.");
       return;
@@ -331,20 +325,20 @@ export default function EditProjectRoute() {
         budget: budgetEnabled ? budgetNumber : 0,
         location: location.trim(),
         description: description.trim(),
-        ...(type === "apartment"
+        ...(useFloorAndUnitFields
           ? {
               numFloors: floorsNumber,
-              ...(floorsMinNumber !== undefined
+              ...(floorsMinNumber !== undefined && floorsMinNumber !== null
                 ? { numFloorsMin: floorsMinNumber }
                 : {}),
-              ...(floorsMaxNumber !== undefined
+              ...(floorsMaxNumber !== undefined && floorsMaxNumber !== null
                 ? { numFloorsMax: floorsMaxNumber }
                 : {}),
               unitPerFloor: roomsNumber,
-              ...(unitMinNumber !== undefined
+              ...(unitMinNumber !== undefined && unitMinNumber !== null
                 ? { unitPerFloorMin: unitMinNumber }
                 : {}),
-              ...(unitMaxNumber !== undefined
+              ...(unitMaxNumber !== undefined && unitMaxNumber !== null
                 ? { unitPerFloorMax: unitMaxNumber }
                 : {}),
             }
@@ -358,7 +352,7 @@ export default function EditProjectRoute() {
                   : {}),
               }
             : {}),
-        autoGenerateFloors: type === "apartment",
+        autoGenerateFloors: useFloorAndUnitFields,
       },
     });
 
@@ -368,8 +362,8 @@ export default function EditProjectRoute() {
       startDate,
       endDate,
       projectType,
-      floors: projectType === "Apartment Building" ? floors : "",
-      roomsPerFloor: projectType === "Apartment Building" ? roomsPerFloor : "",
+      floors: useFloorAndUnitFields ? floors : "",
+      roomsPerFloor: useFloorAndUnitFields ? roomsPerFloor : "",
       budgetEnabled,
       budget: budgetEnabled ? budget : "",
       location,
@@ -444,9 +438,9 @@ export default function EditProjectRoute() {
                 onChange={handleSelectProjectType}
               />
 
-              {isApartment ? (
+              {useFloorAndUnitFields ? (
                 <>
-                  <View className="mt-3">
+                  {/* <View className="mt-3">
                     <ProjectInputField
                       label="Number of Floors"
                       placeholder="e.g. 5"
@@ -454,9 +448,9 @@ export default function EditProjectRoute() {
                       onChangeText={setFloors}
                       keyboardType="number-pad"
                     />
-                  </View>
+                  </View> */}
 
-                  <View className="mt-3">
+                  {/* <View className="mt-3">
                     <ProjectInputField
                       label="Units per Floor"
                       placeholder="e.g. 20"
@@ -464,7 +458,7 @@ export default function EditProjectRoute() {
                       onChangeText={setRoomsPerFloor}
                       keyboardType="number-pad"
                     />
-                  </View>
+                  </View> */}
 
                   <View className="mt-3">
                     <Text className="mb-2 text-[15px] font-medium text-[#1F2937]">
