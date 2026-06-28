@@ -82,9 +82,16 @@ export async function createInventoryItem(payload: CreateInventoryPayload) {
 export type InventoryProject = {
   id: string;
   name: string;
+  location: string | null;
 };
 
-type GetInventoryProjectsResponse = ApiResponse<InventoryProject[]>;
+export type InventoryCreateOptions = {
+  projects: InventoryProject[];
+  category: string[];
+  unit: string[];
+};
+
+type GetInventoryProjectsResponse = ApiResponse<InventoryCreateOptions>;
 
 export async function getInventoryProjects() {
   const { data } = await api.get<GetInventoryProjectsResponse>("/inventory/projects");
@@ -93,7 +100,11 @@ export async function getInventoryProjects() {
     throw new Error(data.message || "Failed to fetch inventory projects");
   }
   
-  return data.data;
+  return {
+    projects: data.data?.projects ?? [],
+    category: data.data?.category ?? [],
+    unit: data.data?.unit ?? [],
+  };
 }
 
 
