@@ -43,6 +43,8 @@ export default function ManagerGeofencingRoute() {
   const [isFullHistoryVisible, setIsFullHistoryVisible] = useState(false);
   const [mapReloadToken, setMapReloadToken] = useState(0);
   const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.user?.role);
+  const isManager = role?.toLowerCase() === "manager";
   const socketRef = useRef<Socket | null>(null);
   const { data: project, isLoading: projectLoading } = useProjectProfileQuery(projectId);
   const geofencesQuery = useProjectGeofencesQuery(projectId);
@@ -94,7 +96,7 @@ export default function ManagerGeofencingRoute() {
     const geofences = geofencesQuery.data ?? [];
     return geofences.find((geofence) => geofence.isActive) ?? geofences[0];
   }, [geofencesQuery.data]);
-  const isZoneEditable = !selectedGeofence || selectedGeofence.isActive;
+  const isZoneEditable = !isManager && (!selectedGeofence || selectedGeofence.isActive);
 
   useEffect(() => {
     if (isZoneEditable) {
@@ -328,16 +330,22 @@ export default function ManagerGeofencingRoute() {
           hideProjectSelector
         />
 
-        <View className="px-5 pt-2">
+        {!isManager ? <View className="px-5 pt-2">
           <Text className="text-[14px] text-[#66707B]">
             Tap on the map to draw your zone. Use Undo/Clear if needed.
           </Text>
-        </View>
+        </View> : null}
 
         <GeofenceMapCard
           projectName={project?.name}
           projectSite={project?.location}
-          initialPolygonCoords={isZoneEditable ? selectedGeofence?.polygonCoords ?? [] : []}
+          initialPolygonCoords={
+            isManager
+              ? selectedGeofence?.polygonCoords ?? []
+              : isZoneEditable
+                ? selectedGeofence?.polygonCoords ?? []
+                : []
+          }
           isEditingEnabled={isZoneEditable}
           liveWorkers={liveWorkers}
           onPolygonChange={setDraftPoints}
@@ -353,7 +361,7 @@ export default function ManagerGeofencingRoute() {
           <MapLegend />
         </View>
 
-        {isZoneEditable ? (
+        {isZoneEditable && !isManager ? (
           <View className="px-5 pt-3">
             <Text className="mb-2 text-[12px] text-[#66707B]">
               {draftPoints.length >= 3
@@ -410,6 +418,7 @@ export default function ManagerGeofencingRoute() {
           perimeterFt={selectedGeofence?.perimeterFt ?? polygonMetrics.perimeterFt}
           centerPoint={polygonMetrics.centerPoint}
           monitoringMode="Polygon"
+          showActions={!isManager}
         />
 
         <LiveTrackerCard
