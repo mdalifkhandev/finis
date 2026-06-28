@@ -10,4 +10,9 @@ export type TaskItem = {
   status: TaskStatus;
   description?: string;
   priority?: string;
+  projectId?: string;
+  floorId?: string;
+  floorName?: string;
+  unitId?: string;
+  unitName?: string;
 };
