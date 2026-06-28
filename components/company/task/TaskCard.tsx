@@ -100,35 +100,29 @@ export default function TaskCard({
           </Text>
         </View>
       </View>
+      
+      {/* Subtask progress */}
+      <View className="mt-2 flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <Ionicons name="list-outline" size={17} color="#536174" />
+          <Text className="ml-1.5 text-[14px] text-[#4C596C]">
+            Subtasks
+          </Text>
+        </View>
+        <View className="flex-row items-center">
+          <Ionicons name="checkmark-done-outline" size={17} color="#168044" />
+          <Text className="ml-1.5 text-[14px] text-[#4C596C]">
+            5 of 10 completed
+          </Text>
+        </View>
+      </View>
 
       {/* Divider */}
       <View className="mt-3 mb-3 h-[0.5px] bg-black/10" />
 
       {/* ── Footer ── */}
       <View className="flex-row items-center justify-between gap-4">
-        {/* Left — status + priority stacked badges */}
-        {/* <View className="gap-y-1.5"> */}
-        {/* <View
-            className="self-start rounded-full px-2.5 py-0.5"
-            style={{ backgroundColor: statusStyle.bg }}
-          >
-            <Text className="text-[11px] font-medium" style={{ color: statusStyle.text }}>
-              {statusStyle.label}
-            </Text>
-          </View> */}
-
-        {/* <View
-            className="self-start rounded-full px-2.5 py-0.5"
-            style={{ backgroundColor: priorityStyle.bg }}
-          >
-            <Text className="text-[11px] font-medium" style={{ color: priorityStyle.text }}>
-              {priorityStyle.label}
-            </Text>
-          </View> */}
-        {/* </View> */}
-
-        {/* Right — action buttons side by side */}
-        {/* <View className="flex-row items-center gap-x-2"> */}
+      
         <TouchableOpacity
           className="rounded-lg border border-black/20 px-3 py-1.5 flex-1"
           activeOpacity={0.7}

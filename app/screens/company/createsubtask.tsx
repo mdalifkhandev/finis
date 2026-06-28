@@ -1,14 +1,13 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import TaskFormField from "@/components/company/task/TaskFormField";
-import TaskFloorUnitMultiSelect, {
-  TaskFloorUnitSelection,
-} from "@/components/company/task/TaskFloorUnitMultiSelect";
 import { setTaskDraft } from "@/components/company/task/taskStore";
 import {
   useCreateTaskMutation,
+  useFloorRoomsQuery,
   useProjectFloorsQuery,
   useProjectProfileQuery
 } from "@/hooks/company/company";
+import type { Floor, Room } from "@/types/company.types";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -36,103 +35,120 @@ function formatDate(value: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export default function CreateTaskRoute() {
-  const { projectId, parentTaskTitle } = useLocalSearchParams<{
-    projectId?: string;
-    parentTaskTitle?: string;
-  }>();
-  const resolvedParentTaskTitle = Array.isArray(parentTaskTitle)
-    ? parentTaskTitle[0]
-    : parentTaskTitle;
-  const isSubtaskMode = Boolean(resolvedParentTaskTitle);
-
-  const { data: projectProfile, isLoading: isProjectLoading } = useProjectProfileQuery(projectId);
-  const { data: floors, isLoading: isFloorsLoading } = useProjectFloorsQuery(projectId);
-
-  const [title, setTitle] = useState(resolvedParentTaskTitle ?? "");
-  const [description, setDescription] = useState("");
-
-  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
-  const [showPrioritySheet, setShowPrioritySheet] = useState(false);
-
-  const [dueDate, setDueDate] = useState("");
-  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-  const [dueDateValue, setDueDateValue] = useState(new Date());
-
-  const [showFloorSheet, setShowFloorSheet] = useState(false);
-  const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>([]);
-
-  const createTaskMutation = useCreateTaskMutation();
-
-  const handleDueDateChange = (
-    event: DateTimePickerEvent,
-    selectedDate?: Date,
-  ) => {
-    if (event.type === "dismissed") {
+export default function CreateSubtaskRoute() {
+    const { projectId, parentTaskTitle } = useLocalSearchParams<{
+      projectId?: string;
+      parentTaskTitle?: string;
+    }>();
+    const resolvedParentTaskTitle = Array.isArray(parentTaskTitle)
+      ? parentTaskTitle[0]
+      : parentTaskTitle;
+    const isSubtaskMode = Boolean(resolvedParentTaskTitle);
+  
+    const { data: projectProfile, isLoading: isProjectLoading } = useProjectProfileQuery(projectId);
+    const { data: floors, isLoading: isFloorsLoading } = useProjectFloorsQuery(projectId);
+  
+    const [title, setTitle] = useState(resolvedParentTaskTitle ?? "");
+    const [description, setDescription] = useState("");
+  
+    const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
+    const [showPrioritySheet, setShowPrioritySheet] = useState(false);
+  
+    const [dueDate, setDueDate] = useState("");
+    const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+    const [dueDateValue, setDueDateValue] = useState(new Date());
+  
+    const [showFloorSheet, setShowFloorSheet] = useState(false);
+    const [showRoomSheet, setShowRoomSheet] = useState(false);
+    const [selectedFloor, setSelectedFloor] = useState<Floor | null>(null);
+    const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  
+    const { data: rooms, isLoading: isRoomsLoading } = useFloorRoomsQuery(
+      projectId,
+      selectedFloor?.id
+    );
+  
+    const createTaskMutation = useCreateTaskMutation();
+  
+    const handleDueDateChange = (
+      event: DateTimePickerEvent,
+      selectedDate?: Date,
+    ) => {
+      if (event.type === "dismissed") {
+        setShowDueDatePicker(false);
+        return;
+      }
+  
+      if (selectedDate) {
+        setDueDateValue(selectedDate);
+        setDueDate(formatDate(selectedDate));
+      }
       setShowDueDatePicker(false);
-      return;
-    }
-
-    if (selectedDate) {
-      setDueDateValue(selectedDate);
-      setDueDate(formatDate(selectedDate));
-    }
-    setShowDueDatePicker(false);
-  };
-
-  const handleNext = async () => {
-    if (!title.trim()) {
-      toast.error("Please enter a task title");
-      return;
-    }
-    if (!projectId) {
-      toast.error("Project ID is missing");
-      return;
-    }
-    if (!floorUnitSelections.length) {
-      toast.error("Please select at least one floor and unit");
-      return;
-    }
-
-    try {
-      const responses = [];
-      for (const selection of floorUnitSelections) {
+    };
+  
+    const handleFloorSelect = (floor: Floor) => {
+      setSelectedFloor(floor);
+      setSelectedRoom(null); // Reset room when floor changes
+      setShowFloorSheet(false);
+    };
+  
+    const handleRoomSelect = (room: Room) => {
+      setSelectedRoom(room);
+      setShowRoomSheet(false);
+    };
+  
+    const handleNext = async () => {
+      if (!title.trim()) {
+        toast.error("Please enter a task title");
+        return;
+      }
+      if (!projectId) {
+        toast.error("Project ID is missing");
+        return;
+      }
+      if (!selectedFloor) {
+        toast.error("Please select a floor");
+        return;
+      }
+  
+      if (!selectedRoom) {
+        toast.error("Please select a room");
+        return;
+      }
+  
+      try {
         const response = await createTaskMutation.mutateAsync({
           projectId,
           title: title.trim(),
           description: description.trim(),
           priority: priority.toLowerCase(),
           dueDate: dueDate.trim() || formatDate(new Date()),
-          floorId: selection.floor.id,
-          roomId: selection.unit.id,
+          floorId: selectedFloor.id,
+          roomId: selectedRoom.id,
         });
-        responses.push(response);
+  
+        toast.success(isSubtaskMode ? "Subtask created successfully!" : "Task created successfully!");
+        // Send task details to draft so AssignTaskScreen can use it or pass taskId directly
+        setTaskDraft({
+          title: title.trim(),
+          location: `${projectProfile?.name || "Project"} - ${selectedFloor.name}`,
+          description: description.trim(),
+          priority: priority,
+          dueDate: dueDate.trim() || formatDate(new Date()),
+        });
+  
+        // You can pass the newly created taskId to the next screen if needed
+        router.push({
+          pathname: "/screens/company/task",
+          params: { taskId: response.id, projectId },
+        });
+      } catch (error: any) {
+        // Error handled by mutation
       }
-
-      toast.success(isSubtaskMode ? "Subtask created successfully!" : "Task created successfully!");
-      // Send task details to draft so AssignTaskScreen can use it or pass taskId directly
-      setTaskDraft({
-        title: title.trim(),
-        location: `${projectProfile?.name || "Project"} - ${floorUnitSelections[0].floor.name}`,
-        description: description.trim(),
-        priority: priority,
-        dueDate: dueDate.trim() || formatDate(new Date()),
-      });
-
-      // You can pass the newly created taskId to the next screen if needed
-      router.push({
-        pathname: "/screens/company/task",
-        params: { taskId: responses[0]?.id, projectId },
-      });
-    } catch (error: any) {
-      // Error handled by mutation
-    }
-  };
-
-  const projectName = projectProfile?.name || "";
-
-  return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]" edges={['top','left',"right"]}>
+    };
+  
+    const projectName = projectProfile?.name || "";
+  return  <SafeAreaView className="flex-1 bg-[#E9EDF1]" edges={['top','left',"right"]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -156,21 +172,33 @@ export default function CreateTaskRoute() {
               onChangeText={setTitle}
             />
 
+   
+
             <View className="mt-4">
               <TaskFormField
-                label="Project"
-                placeholder={isProjectLoading ? "Loading..." : "Project title"}
-                value={projectName}
-                onChangeText={() => { }} // Read-only based on project context
+                label="Floor"
+                placeholder={selectedFloor ? selectedFloor.name : "Select Floor"}
+                value={selectedFloor?.name || ""}
+                onPress={() => setShowFloorSheet(true)}
+                onChangeText={() => { }}
               />
             </View>
 
-            <TaskFloorUnitMultiSelect
-              projectId={projectId}
-              floors={floors}
-              isLoading={isFloorsLoading}
-              onChange={setFloorUnitSelections}
-            />
+            {selectedFloor && (
+              <View className="mt-4">
+              <TaskFormField
+                label="Unit"
+                placeholder={
+                  selectedRoom
+                      ? selectedRoom.name
+                      : "Select Unit"
+                  }
+                  value={selectedRoom?.name || ""}
+                  onPress={() => setShowRoomSheet(true)}
+                  onChangeText={() => { }}
+                />
+              </View>
+            )}
 
             <View className="mt-4">
               <TaskFormField
@@ -374,6 +402,5 @@ export default function CreateTaskRoute() {
         </Pressable>
       </Modal>
 
-    </SafeAreaView>
-  );
+    </SafeAreaView>;
 }

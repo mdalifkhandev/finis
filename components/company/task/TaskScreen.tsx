@@ -70,6 +70,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
         status: mapStatus(task.status),
         description: task.description,
         priority: task.priority,
+        projectId: task.projectId,
       }));
       setTasks(mapped);
     } else if (!isLoading) {
@@ -147,8 +148,12 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                 task={task}
                 onPress={() =>
                   router.push({
-                    pathname: "/screens/company/taskdetails",
-                    params: { taskId: task.id },
+                    pathname: "/screens/company/subtasks",
+                    params: {
+                      parentTaskId: task.id,
+                      projectId: task.projectId || projectId,
+                      title: task.title,
+                    },
                   })
                 }
                 onPressUpdateStatus={() => setSelectedTaskId(task.id)}
