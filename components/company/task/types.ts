@@ -10,4 +10,5 @@ export type TaskItem = {
   status: TaskStatus;
   description?: string;
   priority?: string;
+  projectId?: string;
 };
