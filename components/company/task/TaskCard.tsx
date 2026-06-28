@@ -8,6 +8,8 @@ type TaskCardProps = {
   onPress?: () => void;
   onPressUpdateStatus?: () => void;
   onPressAssignWorker?: () => void;
+  subTaskCount?: number;
+  completedTaskCount?: number;
 };
 
 const PRIORITY_CONFIG: Record<
@@ -33,6 +35,8 @@ export default function TaskCard({
   onPress,
   onPressUpdateStatus,
   onPressAssignWorker,
+  subTaskCount = 1,
+  completedTaskCount = 0,
 }: TaskCardProps) {
   const priorityKey = task.priority?.toLowerCase() || "low";
   const priorityStyle = PRIORITY_CONFIG[priorityKey] || PRIORITY_CONFIG.low;
@@ -101,34 +105,34 @@ export default function TaskCard({
         </View>
       </View>
 
+      {/* Task progress summary */}
+      <View className="mt-3 flex-row gap-2.5">
+        <View className="flex-1 flex-row items-center rounded-[10px] border border-[#DCE4EC] bg-[#F0F4F8] px-3 py-2.5">
+          <View className="h-8 w-8 items-center justify-center rounded-full bg-[#E2EAF3]">
+            <Ionicons name="list-outline" size={18} color="#1E5371" />
+          </View>
+          <View className="ml-2.5">
+            <Text className="text-[11px] text-[#667085]">Subtasks</Text>
+            <Text className="text-[16px] font-semibold text-[#26313E]">{subTaskCount}</Text>
+          </View>
+        </View>
+
+        <View className="flex-1 flex-row items-center rounded-[10px] border border-[#D8E9DF] bg-[#EFF8F2] px-3 py-2.5">
+          <View className="h-8 w-8 items-center justify-center rounded-full bg-[#DDF2E5]">
+            <Ionicons name="checkmark-circle-outline" size={19} color="#168044" />
+          </View>
+          <View className="ml-2.5">
+            <Text className="text-[11px] text-[#667085]">Completed</Text>
+            <Text className="text-[16px] font-semibold text-[#168044]">{completedTaskCount}</Text>
+          </View>
+        </View>
+      </View>
+
       {/* Divider */}
       <View className="mt-3 mb-3 h-[0.5px] bg-black/10" />
 
       {/* ── Footer ── */}
       <View className="flex-row items-center justify-between gap-4">
-        {/* Left — status + priority stacked badges */}
-        {/* <View className="gap-y-1.5"> */}
-        {/* <View
-            className="self-start rounded-full px-2.5 py-0.5"
-            style={{ backgroundColor: statusStyle.bg }}
-          >
-            <Text className="text-[11px] font-medium" style={{ color: statusStyle.text }}>
-              {statusStyle.label}
-            </Text>
-          </View> */}
-
-        {/* <View
-            className="self-start rounded-full px-2.5 py-0.5"
-            style={{ backgroundColor: priorityStyle.bg }}
-          >
-            <Text className="text-[11px] font-medium" style={{ color: priorityStyle.text }}>
-              {priorityStyle.label}
-            </Text>
-          </View> */}
-        {/* </View> */}
-
-        {/* Right — action buttons side by side */}
-        {/* <View className="flex-row items-center gap-x-2"> */}
         <TouchableOpacity
           className="rounded-lg border border-black/20 px-3 py-1.5 flex-1"
           activeOpacity={0.7}

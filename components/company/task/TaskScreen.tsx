@@ -2,7 +2,7 @@ import { useTasksQuery, useUpdateTaskStatusMutation } from "@/hooks/company/comp
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import TaskCard from "./TaskCard";
 import TaskFilterTabs, { TaskFilter } from "./TaskFilterTabs";
 import { setTasks, updateTaskStatus, useTaskItems } from "./taskStore";
@@ -39,6 +39,8 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
   const [filter, setFilter] = useState<TaskFilter>("All");
   const [searchText, setSearchText] = useState("");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [taskGroup, setTaskGroup] = useState<TaskItem[]>([]);
+  const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -70,6 +72,11 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
         status: mapStatus(task.status),
         description: task.description,
         priority: task.priority,
+        projectId: task.projectId,
+        floorId: task.floorId,
+        floorName: task.floor?.name,
+        unitId: task.roomId,
+        unitName: task.room?.name,
       }));
       setTasks(mapped);
     } else if (!isLoading) {
@@ -101,6 +108,34 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
 
 
   const totalPages = data?.meta?.totalPages || 1;
+
+  const openTaskLocationSheet = (task: TaskItem) => {
+    const relatedTasks = tasks.filter(
+      (item) => item.projectId === task.projectId && item.title === task.title,
+    );
+    setTaskGroup(relatedTasks.length ? relatedTasks : [task]);
+    setSelectedFloorId(null);
+  };
+
+  const taskFloors = useMemo(() => {
+    const uniqueFloors = new Map<string, string>();
+    taskGroup.forEach((task) => {
+      if (task.floorId) {
+        uniqueFloors.set(task.floorId, task.floorName || "Floor");
+      }
+    });
+    return Array.from(uniqueFloors, ([id, name]) => ({ id, name }));
+  }, [taskGroup]);
+
+  const floorUnits = useMemo(
+    () => taskGroup.filter((task) => task.floorId === selectedFloorId && task.unitId),
+    [selectedFloorId, taskGroup],
+  );
+
+  const closeTaskLocationSheet = () => {
+    setTaskGroup([]);
+    setSelectedFloorId(null);
+  };
 
   return (
     <View className="mt-6 px-5">
@@ -145,12 +180,16 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
               <TaskCard
                 key={task.id}
                 task={task}
-                onPress={() =>
-                  router.push({
-                    pathname: "/screens/company/taskdetails",
-                    params: { taskId: task.id },
-                  })
-                }
+                subTaskCount={tasks.filter(
+                  (item) => item.projectId === task.projectId && item.title === task.title,
+                ).length}
+                completedTaskCount={tasks.filter(
+                  (item) =>
+                    item.projectId === task.projectId &&
+                    item.title === task.title &&
+                    item.status === "Completed",
+                ).length}
+                onPress={() => openTaskLocationSheet(task)}
                 onPressUpdateStatus={() => setSelectedTaskId(task.id)}
                 onPressAssignWorker={() => {
                   router.push({
@@ -211,6 +250,114 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
         onClose={() => setSelectedTaskId(null)}
         onSelectStatus={handleSelectStatus}
       />
+
+      <Modal
+        visible={taskGroup.length > 0}
+        transparent
+        animationType="slide"
+        onRequestClose={closeTaskLocationSheet}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/40"
+          onPress={closeTaskLocationSheet}
+        >
+          <Pressable
+            className="max-h-[78%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            onPress={(event) => event.stopPropagation()}
+          >
+            <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
+            <View className="mb-4 flex-row items-center justify-between">
+              <View className="flex-1 pr-4">
+                <Text className="text-[18px] font-semibold text-[#1F2937]">
+                  {selectedFloorId ? "Select Unit" : "Select Floor"}
+                </Text>
+                <Text className="mt-1 text-[13px] text-[#667085]" numberOfLines={1}>
+                  {taskGroup[0]?.title}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={closeTaskLocationSheet}>
+                <Ionicons name="close" size={24} color="#667085" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedFloorId ? (
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setSelectedFloorId(null)}
+                className="mb-3 self-start flex-row items-center rounded-full bg-[#EEF3F7] px-3 py-2"
+              >
+                <Ionicons name="arrow-back" size={17} color="#1E5371" />
+                <Text className="ml-1.5 text-[13px] font-medium text-[#1E5371]">
+                  Floors
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {!selectedFloorId ? (
+                taskFloors.length ? (
+                  taskFloors.map((floor) => {
+                    const unitCount = taskGroup.filter((task) => task.floorId === floor.id).length;
+                    return (
+                      <TouchableOpacity
+                        key={floor.id}
+                        activeOpacity={0.82}
+                        onPress={() => setSelectedFloorId(floor.id)}
+                        className="mb-3 flex-row items-center rounded-[14px] border border-[#D8DEE5] bg-[#F8FAFC] px-4 py-4"
+                      >
+                        <View className="h-10 w-10 items-center justify-center rounded-full bg-[#E7EFF5]">
+                          <Ionicons name="layers-outline" size={21} color="#1E5371" />
+                        </View>
+                        <View className="ml-3 flex-1">
+                          <Text className="text-[16px] font-semibold text-[#26313E]">{floor.name}</Text>
+                          <Text className="mt-0.5 text-[12px] text-[#667085]">
+                            {unitCount} {unitCount === 1 ? "unit" : "units"}
+                          </Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={20} color="#98A2B3" />
+                      </TouchableOpacity>
+                    );
+                  })
+                ) : (
+                  <Text className="py-8 text-center text-[14px] text-[#667085]">
+                    No floor found for this task.
+                  </Text>
+                )
+              ) : floorUnits.length ? (
+                floorUnits.map((task) => (
+                  <TouchableOpacity
+                    key={task.id}
+                    activeOpacity={0.82}
+                    onPress={() => {
+                      closeTaskLocationSheet();
+                      router.push({
+                        pathname: "/screens/company/taskdetails",
+                        params: { taskId: task.id },
+                      });
+                    }}
+                    className="mb-3 flex-row items-center rounded-[14px] border border-[#D8DEE5] bg-[#F8FAFC] px-4 py-4"
+                  >
+                    <View className="h-10 w-10 items-center justify-center rounded-full bg-[#EEF0FF]">
+                      <Ionicons name="business-outline" size={20} color="#3F5FE7" />
+                    </View>
+                    <View className="ml-3 flex-1">
+                      <Text className="text-[16px] font-semibold text-[#26313E]">
+                        {task.unitName || "Unit"}
+                      </Text>
+                      <Text className="mt-0.5 text-[12px] text-[#667085]">{task.status}</Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={20} color="#98A2B3" />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text className="py-8 text-center text-[14px] text-[#667085]">
+                  No units found for this floor.
+                </Text>
+              )}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
