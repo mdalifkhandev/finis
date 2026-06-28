@@ -31,6 +31,7 @@ type ZoneConfigurationCardProps = {
   perimeterFt?: number | null;
   centerPoint?: { lat: number; lng: number } | null;
   monitoringMode?: string;
+  showActions?: boolean;
 };
 
 export default function ZoneConfigurationCard({
@@ -43,6 +44,7 @@ export default function ZoneConfigurationCard({
   perimeterFt,
   centerPoint,
   monitoringMode,
+  showActions = true,
 }: ZoneConfigurationCardProps) {
   const updateGeofenceMutation = useUpdateProjectGeofenceMutation(projectId);
   const deleteGeofenceMutation = useDeleteProjectGeofenceMutation(projectId);
@@ -95,7 +97,7 @@ export default function ZoneConfigurationCard({
                 {isActive ? "Active Monitor" : "Inactive"}
               </Text>
             </View>
-            <TouchableOpacity
+            {showActions ? <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleToggleActive}
               disabled={
@@ -114,8 +116,8 @@ export default function ZoneConfigurationCard({
               <Text className="ml-2 text-[16px] text-[#111827]">
                 {isActive ? "Disable" : "Enable"}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </TouchableOpacity> : null}
+            {showActions ? <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleDelete}
               disabled={
@@ -128,7 +130,7 @@ export default function ZoneConfigurationCard({
             >
               <Ionicons name="trash-outline" size={18} color="#DC2626" />
               <Text className="ml-2 text-[16px] text-[#DC2626]">Delete</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> : null}
           </View>
         </View>
 

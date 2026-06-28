@@ -39,7 +39,7 @@ export default function ProjectDetailsRoute() {
   const menuItems = React.useMemo(
     () =>
       role === "manager"
-        ? ["Project details", "Project Analysis", "Team", "Task", "Document", "Geofencing"]
+        ? ["Project details", "Project Analysis", "Task", "Document", "Geofencing"]
         : ["Project details", "Project Analysis", "Team", "Task", "Document"],
     [role],
   );

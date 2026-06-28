@@ -50,7 +50,7 @@ export default function GeofenceMapCard({
         fallbackLng,
         projectName ?? "Selected Project",
         projectSite ?? "",
-        isEditingEnabled ? initialPolygonCoords ?? [] : [],
+        initialPolygonCoords ?? [],
         [],
         googleMapsApiKey,
         isEditingEnabled,
@@ -63,7 +63,7 @@ export default function GeofenceMapCard({
       JSON.stringify({
         projectName: projectName ?? "",
         projectSite: projectSite ?? "",
-        initialPolygonCoords: isEditingEnabled ? initialPolygonCoords ?? [] : [],
+        initialPolygonCoords: initialPolygonCoords ?? [],
         isEditingEnabled,
         googleMapsApiKey,
         reloadToken,
