@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Modal,
   FlatList,
+  Pressable,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -18,9 +20,167 @@ import InventoryHeader from "./InventoryHeader";
 import { useCreateInventoryMutation, useInventoryProjectsQuery } from "@/hooks/inventory/inventory";
 import { toast } from "sonner-native";
 
+type SelectorBottomSheetProps = {
+  visible: boolean;
+  title: string;
+  options: string[];
+  selectedValue: string;
+  placeholder: string;
+  onClose: () => void;
+  onSelect: (value: string) => void;
+};
+
+function SelectorBottomSheet({
+  visible,
+  title,
+  options,
+  selectedValue,
+  placeholder,
+  onClose,
+  onSelect,
+}: SelectorBottomSheetProps) {
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [newValue, setNewValue] = useState("");
+
+  const closeSheet = () => {
+    setIsAddingNew(false);
+    setNewValue("");
+    onClose();
+  };
+
+  const handleAdd = () => {
+    const value = newValue.trim();
+    if (!value) {
+      toast.error(`Please enter a ${title.toLowerCase()}`);
+      return;
+    }
+
+    onSelect(value);
+    closeSheet();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={closeSheet}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={closeSheet}>
+          <Pressable
+            className="max-h-[70%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            onPress={(event) => event.stopPropagation()}
+          >
+            <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-[18px] font-bold text-[#141A22]">Select {title}</Text>
+              <TouchableOpacity onPress={closeSheet}>
+                <Ionicons name="close" size={24} color="#697487" />
+              </TouchableOpacity>
+            </View>
+
+            {isAddingNew ? (
+              <View>
+                <TextInput
+                  autoFocus
+                  value={newValue}
+                  onChangeText={setNewValue}
+                  placeholder={placeholder}
+                  placeholderTextColor="#A0AEC0"
+                  className="h-[52px] rounded-[12px] border border-[#D8DEE5] bg-[#F7F9FB] px-4 text-[16px] text-[#141A22]"
+                  returnKeyType="done"
+                  onSubmitEditing={handleAdd}
+                />
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={handleAdd}
+                  className="mt-3 h-[48px] items-center justify-center rounded-[12px] bg-[#1F506D]"
+                >
+                  <Text className="text-[15px] font-semibold text-white">Add & Select</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <FlatList
+                  data={options}
+                  keyExtractor={(item) => item.toLowerCase()}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      activeOpacity={0.75}
+                      onPress={() => {
+                        onSelect(item);
+                        closeSheet();
+                      }}
+                      className={`mb-3 flex-row items-center justify-between rounded-[12px] border p-4 ${
+                        selectedValue.toLowerCase() === item.toLowerCase()
+                          ? "border-[#2662F4] bg-[#F0F4FF]"
+                          : "border-[#D8DEE5] bg-[#F7F9FB]"
+                      }`}
+                    >
+                      <Text className="text-[16px] text-[#141A22]">{item}</Text>
+                      {selectedValue.toLowerCase() === item.toLowerCase() ? (
+                        <Ionicons name="checkmark-circle" size={20} color="#2662F4" />
+                      ) : null}
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={
+                    <Text className="py-6 text-center text-[14px] text-[#697487]">
+                      No {title.toLowerCase()} found. Add a new one below.
+                    </Text>
+                  }
+                />
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => setIsAddingNew(true)}
+                  className="mt-2 h-[48px] flex-row items-center justify-center rounded-[12px] border border-dashed border-[#1F506D] bg-[#F3F8FB]"
+                >
+                  <Ionicons name="add" size={22} color="#1F506D" />
+                  <Text className="ml-2 text-[15px] font-semibold text-[#1F506D]">
+                    Add New {title}
+                  </Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function DropdownField({
+  label,
+  value,
+  placeholder,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  onPress: () => void;
+}) {
+  return (
+    <View className="mt-4">
+      <Text className="text-[14px] font-medium text-[#4D596A]">{label}</Text>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onPress}
+        className="mt-2 flex-row items-center justify-between rounded-[12px] border border-[#D8DEE5] bg-white px-4 py-3.5"
+      >
+        <Text className={`text-[16px] ${value ? "text-[#141A22]" : "text-[#A0AEC0]"}`}>
+          {value || placeholder}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color="#A0AEC0" />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 export default function AddInventoryScreen() {
   const [projectId, setProjectId] = useState<string | null>(null);
   const [isProjectModalVisible, setProjectModalVisible] = useState(false);
+  const [selector, setSelector] = useState<"category" | "unit" | "location" | null>(null);
 
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
@@ -29,10 +189,40 @@ export default function AddInventoryScreen() {
   const [quantity, setQuantity] = useState("");
   const [minStockQty, setMinStockQty] = useState("");
 
-  const { data: projects = [], isLoading: isLoadingProjects } = useInventoryProjectsQuery();
+  const { data: inventoryOptions, isLoading: isLoadingProjects } = useInventoryProjectsQuery();
+  const projects = inventoryOptions?.projects ?? [];
   const { mutate: createItem, isPending } = useCreateInventoryMutation();
 
   const selectedProject = projects.find((p) => p.id === projectId);
+  const locationOptions = useMemo(
+    () => Array.from(new Set(projects.map((project) => project.location?.trim()).filter((value): value is string => Boolean(value)))),
+    [projects],
+  );
+  const selectorConfig = selector
+    ? {
+        category: {
+          title: "Category",
+          options: inventoryOptions?.category ?? [],
+          value: category,
+          placeholder: "Enter new category",
+          onSelect: setCategory,
+        },
+        unit: {
+          title: "Unit",
+          options: inventoryOptions?.unit ?? [],
+          value: unit,
+          placeholder: "Enter new unit",
+          onSelect: setUnit,
+        },
+        location: {
+          title: "Location",
+          options: locationOptions,
+          value: location,
+          placeholder: "Enter new location",
+          onSelect: setLocation,
+        },
+      }[selector]
+    : null;
 
   const handleSave = () => {
     if (!projectId) {
@@ -40,15 +230,20 @@ export default function AddInventoryScreen() {
       return;
     }
 
+    if (!category.trim() || !unit.trim() || !location.trim()) {
+      toast.error("Please select category, unit, and location");
+      return;
+    }
+
     createItem(
       {
         projectId,
         name: name.trim() || "Unnamed Item",
-        category: category.trim() || "General",
-        unit: unit.trim() || "pcs",
+        category: category.trim(),
+        unit: unit.trim(),
         currentQty: Number(quantity) || 0,
         minStockQty: Number(minStockQty) || 0,
-        location: location.trim() || "Warehouse",
+        location: location.trim(),
       },
       {
         onSuccess: () => {
@@ -99,25 +294,25 @@ export default function AddInventoryScreen() {
                 placeholder="e.g. Electrical Wire"
               />
 
-              <InventoryFormField
+              <DropdownField
                 label="Category"
                 value={category}
-                onChangeText={setCategory}
-                placeholder="e.g. Electrical"
+                placeholder="Select a category"
+                onPress={() => setSelector("category")}
               />
 
-              <InventoryFormField
+              <DropdownField
                 label="Unit"
                 value={unit}
-                onChangeText={setUnit}
-                placeholder="e.g. meter"
+                placeholder="Select a unit"
+                onPress={() => setSelector("unit")}
               />
 
-              <InventoryFormField
+              <DropdownField
                 label="Location"
                 value={location}
-                onChangeText={setLocation}
-                placeholder="e.g. house"
+                placeholder="Select a location"
+                onPress={() => setSelector("location")}
               />
 
               <InventoryFormField
@@ -233,6 +428,18 @@ export default function AddInventoryScreen() {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      {selectorConfig ? (
+        <SelectorBottomSheet
+          visible
+          title={selectorConfig.title}
+          options={selectorConfig.options}
+          selectedValue={selectorConfig.value}
+          placeholder={selectorConfig.placeholder}
+          onClose={() => setSelector(null)}
+          onSelect={selectorConfig.onSelect}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
