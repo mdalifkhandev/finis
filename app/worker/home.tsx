@@ -1,6 +1,8 @@
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import { getWorkerProjects } from "@/api/worker/attendance.api";
-import { WorkerDashboardTask } from "@/api/worker/dashboard.api";
+import WorkerGroupedTaskList, {
+  WORKER_TASK_MOCK_DATA,
+} from "@/components/worker/WorkerGroupedTaskList";
 import {
   useCheckInWorkerMutation,
   useCheckOutWorkerMutation,
@@ -33,7 +35,6 @@ import SectionHeader from "../../components/home/SectionHeader";
 import StatCard from "../../components/home/StatCard";
 import WeeklyActivityItem from "../../components/home/WeeklyActivityItem";
 import WorkerStatusCard from "../../components/home/WorkerStatusCard";
-import WorkerTaskCard from "../../components/home/WorkerTaskCard";
 
 function resolveAvatarUrl(avatarUrl?: string | null) {
   if (!avatarUrl) {
@@ -425,26 +426,20 @@ export default function WorkerHome() {
               <SectionHeader
                 title="Today`s Tasks "
                 actionLabel="View All"
-                onPressAction={() => {}}
+                onPressAction={() => router.push("/worker/tasks")}
               />
-              <View className="mt-2">
-                {dashboard?.todayTasks?.length ? (
-                  dashboard.todayTasks.map((task: WorkerDashboardTask) => (
-                    <WorkerTaskCard
-                      key={task.id}
-                      priority={task.priority?.toUpperCase() as any}
-                      title={task.title}
-                      location={`${task.project?.name || "Project"}${task.floor?.name ? " - " + task.floor.name : ""}`}
-                      assignedAvatars={[]}
-                      commentsCount={task._count?.reports || 0}
-                      onPress={() =>
-                        router.push({
-                          pathname: "/screens/worker/viewtask",
-                          params: { id: task.id },
-                        })
-                      }
-                    />
-                  ))
+              <View className="mt-2 px-4">
+                {(dashboard?.todayTasks?.length ?? 0) > 0 || WORKER_TASK_MOCK_DATA.length ? (
+                  <WorkerGroupedTaskList
+                    tasks={dashboard?.todayTasks?.length ? dashboard.todayTasks : WORKER_TASK_MOCK_DATA}
+                    onPressTask={(task) => {
+                      if (task.id.startsWith("mock-")) return;
+                      router.push({
+                        pathname: "/screens/worker/viewtask",
+                        params: { id: task.id },
+                      });
+                    }}
+                  />
                 ) : (
                   <View className="items-center py-4">
                     <Text className="text-slate-500 text-sm">
