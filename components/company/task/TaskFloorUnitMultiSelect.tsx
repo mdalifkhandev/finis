@@ -22,15 +22,46 @@ type FloorUnitsProps = {
   floor: Floor;
   selectedUnitIds: string[];
   onToggle: (floor: Floor, unit: Room) => void;
+  onToggleAll: (floor: Floor, units: Room[]) => void;
 };
 
-function FloorUnits({ projectId, floor, selectedUnitIds, onToggle }: FloorUnitsProps) {
+function FloorUnits({
+  projectId,
+  floor,
+  selectedUnitIds,
+  onToggle,
+  onToggleAll,
+}: FloorUnitsProps) {
   const { data: units, isLoading } = useFloorRoomsQuery(projectId, floor.id);
+  const allSelected = Boolean(units?.length) && selectedUnitIds.length === units?.length;
+  const someSelected = Boolean(units?.length) && selectedUnitIds.length > 0 && !allSelected;
 
   return (
     <View className="border-b border-[#DCE3EA] px-4 py-4 last:border-b-0">
-      <View className="self-start rounded-[6px] bg-[#EAF3F7] px-2.5 py-1">
-        <Text className="text-[14px] font-semibold text-[#1E5371]">{floor.name}</Text>
+      <View className="flex-row items-center justify-between">
+        <View className="self-start rounded-[6px] bg-[#EAF3F7] px-2.5 py-1">
+          <Text className="text-[14px] font-semibold text-[#1E5371]">{floor.name}</Text>
+        </View>
+
+        {units?.length ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => onToggleAll(floor, units)}
+            className={`h-6 w-6 items-center justify-center border ${
+              allSelected
+                ? "border-[#1E5371] bg-[#1E5371]"
+                : someSelected
+                  ? "border-[#1E5371] bg-[#EDF5F8]"
+                  : "border-[#CDD4DE] bg-white"
+            }`}
+          >
+            <Ionicons
+              name={allSelected ? "checkmark" : someSelected ? "remove" : "checkmark"}
+              size={18}
+              color={allSelected ? "#FFFFFF" : "#1E5371"}
+            />
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       {isLoading ? (
@@ -117,6 +148,18 @@ export default function TaskFloorUnitMultiSelect({
     });
   };
 
+  const toggleAllUnits = (floor: Floor, units: Room[]) => {
+    setSelectedUnits((current) => {
+      const currentUnits = current[floor.id] ?? [];
+      const allSelected = units.length > 0 && currentUnits.length === units.length;
+
+      return {
+        ...current,
+        [floor.id]: allSelected ? [] : [...units],
+      };
+    });
+  };
+
   return (
     <>
       <View className="mt-4">
@@ -154,6 +197,7 @@ export default function TaskFloorUnitMultiSelect({
                 floor={floor}
                 selectedUnitIds={(selectedUnits[floor.id] ?? []).map((unit) => unit.id)}
                 onToggle={toggleUnit}
+                onToggleAll={toggleAllUnits}
               />
             ))}
           </View>
