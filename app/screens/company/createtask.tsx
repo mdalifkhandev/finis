@@ -1,14 +1,14 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import TaskFormField from "@/components/company/task/TaskFormField";
+import TaskFloorUnitMultiSelect, {
+  TaskFloorUnitSelection,
+} from "@/components/company/task/TaskFloorUnitMultiSelect";
 import { setTaskDraft } from "@/components/company/task/taskStore";
 import {
   useCreateTaskMutation,
-  useFloorRoomsQuery,
   useProjectFloorsQuery,
   useProjectProfileQuery
 } from "@/hooks/company/company";
-import type { Floor, Room } from "@/types/company.types";
-import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
@@ -36,12 +36,19 @@ function formatDate(value: Date) {
 }
 
 export default function CreateTaskRoute() {
-  const { projectId } = useLocalSearchParams<{ projectId?: string }>();
+  const { projectId, parentTaskTitle } = useLocalSearchParams<{
+    projectId?: string;
+    parentTaskTitle?: string;
+  }>();
+  const resolvedParentTaskTitle = Array.isArray(parentTaskTitle)
+    ? parentTaskTitle[0]
+    : parentTaskTitle;
+  const isSubtaskMode = Boolean(resolvedParentTaskTitle);
 
   const { data: projectProfile, isLoading: isProjectLoading } = useProjectProfileQuery(projectId);
   const { data: floors, isLoading: isFloorsLoading } = useProjectFloorsQuery(projectId);
 
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(resolvedParentTaskTitle ?? "");
   const [description, setDescription] = useState("");
 
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
@@ -51,15 +58,7 @@ export default function CreateTaskRoute() {
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [dueDateValue, setDueDateValue] = useState(new Date());
 
-  const [showFloorSheet, setShowFloorSheet] = useState(false);
-  const [showRoomSheet, setShowRoomSheet] = useState(false);
-  const [selectedFloor, setSelectedFloor] = useState<Floor | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
-
-  const { data: rooms, isLoading: isRoomsLoading } = useFloorRoomsQuery(
-    projectId,
-    selectedFloor?.id
-  );
+  const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>([]);
 
   const createTaskMutation = useCreateTaskMutation();
 
@@ -79,17 +78,6 @@ export default function CreateTaskRoute() {
     setShowDueDatePicker(false);
   };
 
-  const handleFloorSelect = (floor: Floor) => {
-    setSelectedFloor(floor);
-    setSelectedRoom(null); // Reset room when floor changes
-    setShowFloorSheet(false);
-  };
-
-  const handleRoomSelect = (room: Room) => {
-    setSelectedRoom(room);
-    setShowRoomSheet(false);
-  };
-
   const handleNext = async () => {
     if (!title.trim()) {
       toast.error("Please enter a task title");
@@ -99,32 +87,31 @@ export default function CreateTaskRoute() {
       toast.error("Project ID is missing");
       return;
     }
-    if (!selectedFloor) {
-      toast.error("Please select a floor");
-      return;
-    }
-
-    if (!selectedRoom) {
-      toast.error("Please select a room");
+    if (!floorUnitSelections.length) {
+      toast.error("Please select at least one floor and unit");
       return;
     }
 
     try {
-      const response = await createTaskMutation.mutateAsync({
-        projectId,
-        title: title.trim(),
-        description: description.trim(),
-        priority: priority.toLowerCase(),
-        dueDate: dueDate.trim() || formatDate(new Date()),
-        floorId: selectedFloor.id,
-        roomId: selectedRoom.id,
-      });
+      const responses = [];
+      for (const selection of floorUnitSelections) {
+        const response = await createTaskMutation.mutateAsync({
+          projectId,
+          title: title.trim(),
+          description: description.trim(),
+          priority: priority.toLowerCase(),
+          dueDate: dueDate.trim() || formatDate(new Date()),
+          floorId: selection.floor.id,
+          roomId: selection.unit.id,
+        });
+        responses.push(response);
+      }
 
-      toast.success("Task created successfully!");
+      toast.success(isSubtaskMode ? "Subtask created successfully!" : "Task created successfully!");
       // Send task details to draft so AssignTaskScreen can use it or pass taskId directly
       setTaskDraft({
         title: title.trim(),
-        location: `${projectProfile?.name || "Project"} - ${selectedFloor.name}`,
+        location: `${projectProfile?.name || "Project"} - ${floorUnitSelections[0].floor.name}`,
         description: description.trim(),
         priority: priority,
         dueDate: dueDate.trim() || formatDate(new Date()),
@@ -133,7 +120,7 @@ export default function CreateTaskRoute() {
       // You can pass the newly created taskId to the next screen if needed
       router.push({
         pathname: "/screens/company/task",
-        params: { taskId: response.id, projectId },
+        params: { taskId: responses[0]?.id, projectId },
       });
     } catch (error: any) {
       // Error handled by mutation
@@ -155,7 +142,7 @@ export default function CreateTaskRoute() {
           contentContainerStyle={{ paddingBottom: 36 }}
         >
           <BackTitleHeader
-            title="Create New Task"
+            title={isSubtaskMode ? "Create New Subtask" : "Create New Task"}
             onBack={() => router.back()}
           />
 
@@ -176,31 +163,12 @@ export default function CreateTaskRoute() {
               />
             </View>
 
-            <View className="mt-4">
-              <TaskFormField
-                label="Floor"
-                placeholder={selectedFloor ? selectedFloor.name : "Select Floor"}
-                value={selectedFloor?.name || ""}
-                onPress={() => setShowFloorSheet(true)}
-                onChangeText={() => { }}
-              />
-            </View>
-
-            {selectedFloor && (
-              <View className="mt-4">
-              <TaskFormField
-                label="Unit"
-                placeholder={
-                  selectedRoom
-                      ? selectedRoom.name
-                      : "Select Unit"
-                  }
-                  value={selectedRoom?.name || ""}
-                  onPress={() => setShowRoomSheet(true)}
-                  onChangeText={() => { }}
-                />
-              </View>
-            )}
+            <TaskFloorUnitMultiSelect
+              projectId={projectId}
+              floors={floors}
+              isLoading={isFloorsLoading}
+              onChange={setFloorUnitSelections}
+            />
 
             <View className="mt-4">
               <TaskFormField
@@ -243,7 +211,7 @@ export default function CreateTaskRoute() {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text className="text-[16px] font-medium text-[#F4F8FA]">
-                  Create Task 
+                  {isSubtaskMode ? "Create Subtask" : "Create Task"}
                 </Text>
               )}
             </TouchableOpacity>
@@ -258,113 +226,6 @@ export default function CreateTaskRoute() {
           />
         ) : null}
       </KeyboardAvoidingView>
-
-      {/* Floor Selection Modal */}
-      <Modal
-        visible={showFloorSheet}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFloorSheet(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/40 justify-end"
-          onPress={() => setShowFloorSheet(false)}
-        >
-          <Pressable className="bg-white rounded-t-[24px] p-6 max-h-[80%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-[18px] font-semibold text-[#1A212B]">
-                Select Floor
-              </Text>
-              <TouchableOpacity onPress={() => setShowFloorSheet(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {isFloorsLoading ? (
-                <ActivityIndicator size="large" color="#1E5371" className="my-6" />
-              ) : floors?.length ? (
-                floors.map((floor) => (
-                  <TouchableOpacity
-                    key={floor.id}
-                    onPress={() => handleFloorSelect(floor)}
-                    className={`p-4 rounded-xl mb-3 flex-row items-center justify-between border ${selectedFloor?.id === floor.id
-                      ? "border-[#1E5371] bg-[#1E5371]/5"
-                      : "border-[#E5E7EB]"
-                      }`}
-                  >
-                    <Text className="text-[16px] font-medium text-[#374151]">
-                      {floor.name}
-                    </Text>
-                    {selectedFloor?.id === floor.id && (
-                      <Ionicons name="checkmark-circle" size={24} color="#1E5371" />
-                    )}
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <Text className="text-center text-[#6B7280] my-6">
-                  No floors available for this project.
-                </Text>
-              )}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Unit Selection Modal */}
-      <Modal
-        visible={showRoomSheet}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowRoomSheet(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/40 justify-end"
-          onPress={() => setShowRoomSheet(false)}
-        >
-          <Pressable className="bg-white rounded-t-[24px] p-6 max-h-[80%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-[18px] font-semibold text-[#1A212B]">
-                Select Unit
-              </Text>
-              <TouchableOpacity onPress={() => setShowRoomSheet(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {isRoomsLoading ? (
-                <ActivityIndicator size="large" color="#1E5371" className="my-6" />
-              ) : rooms?.length ? (
-                rooms.map((room) => {
-                  const isSelected = selectedRoom?.id === room.id;
-                  return (
-                    <TouchableOpacity
-                      key={room.id}
-                      onPress={() => handleRoomSelect(room)}
-                      className={`p-4 rounded-xl mb-3 flex-row items-center justify-between border ${isSelected
-                        ? "border-[#1E5371] bg-[#1E5371]/5"
-                        : "border-[#E5E7EB]"
-                        }`}
-                    >
-                      <Text className="text-[16px] font-medium text-[#374151]">
-                        {room.name} {room.type ? `(${room.type})` : ""}
-                      </Text>
-                      {isSelected && (
-                        <Ionicons name="checkmark-circle" size={24} color="#1E5371" />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })
-              ) : (
-                <Text className="text-center text-[#6B7280] my-6">
-                No units available for this floor.
-              </Text>
-              )}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
 
       {/* Priority Selection Modal */}
       <Modal
