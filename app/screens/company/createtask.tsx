@@ -9,7 +9,6 @@ import {
   useProjectFloorsQuery,
   useProjectProfileQuery
 } from "@/hooks/company/company";
-import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
@@ -59,7 +58,6 @@ export default function CreateTaskRoute() {
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [dueDateValue, setDueDateValue] = useState(new Date());
 
-  const [showFloorSheet, setShowFloorSheet] = useState(false);
   const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>([]);
 
   const createTaskMutation = useCreateTaskMutation();
@@ -228,113 +226,6 @@ export default function CreateTaskRoute() {
           />
         ) : null}
       </KeyboardAvoidingView>
-
-      {/* Floor Selection Modal */}
-      <Modal
-        visible={showFloorSheet}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFloorSheet(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/40 justify-end"
-          onPress={() => setShowFloorSheet(false)}
-        >
-          <Pressable className="bg-white rounded-t-[24px] p-6 max-h-[80%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-[18px] font-semibold text-[#1A212B]">
-                Select Floor
-              </Text>
-              <TouchableOpacity onPress={() => setShowFloorSheet(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {isFloorsLoading ? (
-                <ActivityIndicator size="large" color="#1E5371" className="my-6" />
-              ) : floors?.length ? (
-                floors.map((floor) => (
-                  <TouchableOpacity
-                    key={floor.id}
-                    onPress={() => handleFloorSelect(floor)}
-                    className={`p-4 rounded-xl mb-3 flex-row items-center justify-between border ${selectedFloor?.id === floor.id
-                      ? "border-[#1E5371] bg-[#1E5371]/5"
-                      : "border-[#E5E7EB]"
-                      }`}
-                  >
-                    <Text className="text-[16px] font-medium text-[#374151]">
-                      {floor.name}
-                    </Text>
-                    {selectedFloor?.id === floor.id && (
-                      <Ionicons name="checkmark-circle" size={24} color="#1E5371" />
-                    )}
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <Text className="text-center text-[#6B7280] my-6">
-                  No floors available for this project.
-                </Text>
-              )}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Unit Selection Modal */}
-      <Modal
-        visible={showRoomSheet}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowRoomSheet(false)}
-      >
-        <Pressable
-          className="flex-1 bg-black/40 justify-end"
-          onPress={() => setShowRoomSheet(false)}
-        >
-          <Pressable className="bg-white rounded-t-[24px] p-6 max-h-[80%]">
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-[18px] font-semibold text-[#1A212B]">
-                Select Unit
-              </Text>
-              <TouchableOpacity onPress={() => setShowRoomSheet(false)}>
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {isRoomsLoading ? (
-                <ActivityIndicator size="large" color="#1E5371" className="my-6" />
-              ) : rooms?.length ? (
-                rooms.map((room) => {
-                  const isSelected = selectedRoom?.id === room.id;
-                  return (
-                    <TouchableOpacity
-                      key={room.id}
-                      onPress={() => handleRoomSelect(room)}
-                      className={`p-4 rounded-xl mb-3 flex-row items-center justify-between border ${isSelected
-                        ? "border-[#1E5371] bg-[#1E5371]/5"
-                        : "border-[#E5E7EB]"
-                        }`}
-                    >
-                      <Text className="text-[16px] font-medium text-[#374151]">
-                        {room.name} {room.type ? `(${room.type})` : ""}
-                      </Text>
-                      {isSelected && (
-                        <Ionicons name="checkmark-circle" size={24} color="#1E5371" />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })
-              ) : (
-                <Text className="text-center text-[#6B7280] my-6">
-                No units available for this floor.
-              </Text>
-              )}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
 
       {/* Priority Selection Modal */}
       <Modal
