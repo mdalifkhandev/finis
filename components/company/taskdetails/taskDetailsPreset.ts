@@ -60,6 +60,22 @@ const PRESETS: Record<TaskStatus, TaskDetailsPreset> = {
       { label: "Filter Cartridge", quantity: "4 pcs" },
     ],
   },
+  Review: {
+    screenTitle: "Task Review in Progress",
+    description:
+      "All assigned work has been submitted and the task is now waiting for final review and approval.",
+    project: "Project Review",
+    assignedTo: "Assigned Team",
+    dueDate: "Awaiting approval",
+    estimatedTime: "Final review",
+    reportSummary:
+      "Subtasks are complete and pending final approval before the task moves to completed state.",
+    inventory: [
+      { label: "Submitted Reports", quantity: "Ready" },
+      { label: "Expense Review", quantity: "Pending" },
+      { label: "Final Approval", quantity: "Required" },
+    ],
+  },
 };
 
 export function getTaskDetailsPreset(

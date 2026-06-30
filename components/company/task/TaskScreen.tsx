@@ -1,4 +1,9 @@
-import { useTasksQuery, useUpdateTaskStatusMutation } from "@/hooks/company/company";
+import {
+  useReviewTaskApprovalMutation,
+  useReviewTaskCompletionMutation,
+  useTasksQuery,
+  useUpdateTaskStatusMutation,
+} from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
@@ -20,6 +25,7 @@ function mapStatus(status: string): TaskStatus {
   const s = status.toLowerCase();
   if (s === "in_progress") return "In Progress";
   if (s === "completed") return "Completed";
+  if (s === "review") return "Review";
   return "Pending";
 }
 
@@ -57,8 +63,12 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
       const mapped = data.data.map((task) => ({
         id: task.id,
         title: task.title,
-        location: `${task.project?.name || ""} - ${task.floor?.name || ""}`,
-        assignee: task.assignee?.fullName || "Unassigned",
+        location:
+          task.location ||
+          [task.project?.name, task.floor?.name, task.room?.name]
+            .filter(Boolean)
+            .join(" - "),
+        assignee: `Assigned Worker ${task.assignedWorkerCount ?? 0}`,
         startDate: new Date(task.createdAt).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -71,6 +81,17 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
         description: task.description,
         priority: task.priority,
         projectId: task.projectId,
+        floorId: task.floorId,
+        floorName: task.floor?.name,
+        unitId: task.roomId,
+        unitName: task.room?.name,
+        reportCount: task._count?.reports ?? 0,
+        subTaskCount: task.subTaskCount ?? task._count?.subTasks ?? 0,
+        completedSubTaskCount: task.completedSubTaskCount ?? 0,
+        assignedWorkerCount: task.assignedWorkerCount ?? 0,
+        approvalDecision: task.approvalDecision,
+        completionDecision: task.completionDecision,
+        rawStatus: task.status,
       }));
       setTasks(mapped);
     } else if (!isLoading) {
@@ -89,6 +110,8 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
   );
 
   const updateStatusMutation = useUpdateTaskStatusMutation();
+  const reviewTaskApprovalMutation = useReviewTaskApprovalMutation();
+  const reviewTaskCompletionMutation = useReviewTaskCompletionMutation();
 
   const handleSelectStatus = (status: TaskStatus) => {
     if (!selectedTaskId) return;
@@ -146,6 +169,12 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
               <TaskCard
                 key={task.id}
                 task={task}
+                subTaskCount={task.subTaskCount ?? 0}
+                completedTaskCount={task.completedSubTaskCount ?? 0}
+                isActionLoading={
+                  reviewTaskApprovalMutation.isPending ||
+                  reviewTaskCompletionMutation.isPending
+                }
                 onPress={() =>
                   router.push({
                     pathname: "/screens/company/subtasks",
@@ -156,7 +185,33 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                     },
                   })
                 }
-                onPressUpdateStatus={() => setSelectedTaskId(task.id)}
+                onPressUpdateStatus={() => {
+                  if (task.completionDecision === "approved" || task.status === "Completed") {
+                    return;
+                  }
+
+                  if (task.approvalDecision !== "approved") {
+                    reviewTaskApprovalMutation.mutate({
+                      taskId: task.id,
+                      reviewDecision: "approved",
+                    });
+                    return;
+                  }
+
+                  const allSubtasksCompleted =
+                    (task.subTaskCount ?? 0) > 0 &&
+                    (task.completedSubTaskCount ?? 0) === (task.subTaskCount ?? 0);
+
+                  if (allSubtasksCompleted && task.rawStatus?.toLowerCase() === "review") {
+                    reviewTaskCompletionMutation.mutate({
+                      taskId: task.id,
+                      reviewDecision: "approved",
+                    });
+                    return;
+                  }
+
+                  setSelectedTaskId(task.id);
+                }}
                 onPressAssignWorker={() => {
                   router.push({
                     pathname: "/screens/company/assigntask",

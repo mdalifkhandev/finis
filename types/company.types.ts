@@ -278,12 +278,19 @@ export type TaskListItem = {
   actualHours: number | null;
   createdAt: string;
   updatedAt: string;
+  location?: string;
+  subTaskCount?: number;
+  completedSubTaskCount?: number;
+  assignedWorkerCount?: number;
+  approvalDecision?: string | null;
+  completionDecision?: string | null;
   project: TaskProject;
   floor: TaskFloor;
   room: TaskRoom;
   assignee: TaskAssignee;
   _count: {
     reports: number;
+    subTasks?: number;
   };
 };
 
@@ -335,12 +342,86 @@ export type CreateTaskPayload = {
   description: string;
   priority: string;
   dueDate: string;
-  floorId: string;
-  roomId: string;
+  floorId?: string;
+  unitId?: string;
+  floorIds?: string[];
+  unitIds?: string[];
+  floors?: {
+    floorId: string;
+    unitIds?: string[];
+  }[];
   estimatedHours?: number;
 };
 
 export type CreateTaskResponse = ApiResponse<{ id: string }>;
+
+export type CreateSubTaskPayload = {
+  title: string;
+  description?: string;
+  unitId?: string;
+  unitIds?: string[];
+  taskAssigneeId?: string;
+  dueDate?: string;
+};
+
+export type CreateSubTaskResponse = ApiResponse<{
+  message: string;
+  subtasks: Array<{
+    id: string;
+  }>;
+}>;
+
+export type TaskSubTaskListItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  priority?: string | null;
+  dueDate?: string | null;
+  status: string;
+  approvalDecision: string;
+  createdAt: string;
+  submittedAt?: string | null;
+  completedAt?: string | null;
+  unit: {
+    id: string;
+    name: string;
+  } | null;
+  subTaskUnits?: Array<{
+    unit: {
+      id: string;
+      name: string;
+    };
+  }>;
+  units?: Array<{
+    id: string;
+    name: string;
+  }>;
+  taskAssignee: {
+    id: string;
+    user: {
+      id: string;
+      fullName: string;
+      avatarUrl: string | null;
+      role: string;
+    } | null;
+    unit: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
+  creator: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    role: string;
+  } | null;
+  _count: {
+    reports: number;
+    inventories: number;
+  };
+};
+
+export type TaskSubTasksResponse = ApiResponse<TaskSubTaskListItem[]>;
 
 export type TaskDetailsReport = {
   id: string;
@@ -366,6 +447,48 @@ export type TaskDetailsInventory = {
   }
 };
 
+export type TaskDetailsSubTask = {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  approvalDecision: string;
+  createdAt: string;
+  submittedAt: string | null;
+  unit: {
+    id: string;
+    name: string;
+  };
+  taskAssignee: {
+    id: string;
+    user: {
+      id: string;
+      fullName: string;
+      avatarUrl: string | null;
+      role: string;
+    } | null;
+    unit: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
+  reports: Array<{
+    id: string;
+    notes: string | null;
+    reviewDecision: string;
+    submittedAt: string;
+  }>;
+  inventories: Array<{
+    id: string;
+    qtyUsed: number;
+    inventory: {
+      id: string;
+      name: string;
+      unit: string;
+    };
+  }>;
+};
+
 export type TaskDetailsExpense = {
   id: string;
   description: string;
@@ -374,6 +497,16 @@ export type TaskDetailsExpense = {
   status: string;
   date: string;
   receiptUrl: string | null;
+};
+
+export type TaskDetailsLocationFloor = {
+  id: string;
+  name: string;
+  floorNumber: number;
+  units: Array<{
+    id: string;
+    name: string;
+  }>;
 };
 
 export type TaskDetailsData = {
@@ -385,8 +518,14 @@ export type TaskDetailsData = {
   project: { name: string };
   floor: { name: string };
   room: { name: string };
+  floors: TaskDetailsLocationFloor[];
+  location?: string;
+  subTaskCount?: number;
+  completedSubTaskCount?: number;
+  assignedWorkerCount?: number;
   assignee: { fullName: string } | null;
   taskAssignees: any[];
+  subTasks: TaskDetailsSubTask[];
   reports: TaskDetailsReport[];
   taskInventories: TaskDetailsInventory[];
   expenses: TaskDetailsExpense[];

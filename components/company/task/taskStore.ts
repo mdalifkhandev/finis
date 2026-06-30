@@ -9,37 +9,7 @@ export type TaskDraft = {
   dueDate: string;
 };
 
-const initialTasks: TaskItem[] = [
-  {
-    id: "task-1",
-    title: "Electrical Rough-in - Floor 2",
-    location: "Riverside Tower",
-    assignee: "Mike Johnson",
-    startDate: "Jan 15",
-    dueDate: "Jan 18",
-    status: "In Progress",
-  },
-  {
-    id: "task-2",
-    title: "Site Cleanup - Zone A",
-    location: "Downtown Plaza",
-    assignee: "Michael Torres",
-    startDate: "Jan 14",
-    dueDate: "Jan 15",
-    status: "Pending",
-  },
-  {
-    id: "task-3",
-    title: "HVAC Duct Final Check",
-    location: "Northline Business Park",
-    assignee: "Robert Brown",
-    startDate: "Jan 10",
-    dueDate: "Jan 12",
-    status: "Completed",
-  },
-];
-
-let tasks = initialTasks;
+let tasks: TaskItem[] = [];
 let taskDraft: TaskDraft | null = null;
 const listeners = new Set<() => void>();
 

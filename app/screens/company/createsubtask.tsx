@@ -5,7 +5,10 @@ import TaskFloorUnitMultiSelect, {
 } from "@/components/company/task/TaskFloorUnitMultiSelect";
 import { setTaskDraft } from "@/components/company/task/taskStore";
 import {
+  useCreateSubTaskMutation,
   useCreateTaskMutation,
+  useTaskDetailsQuery,
+  useTaskLocationsQuery,
   useProjectFloorsQuery,
   useProjectProfileQuery
 } from "@/hooks/company/company";
@@ -36,19 +39,27 @@ function formatDate(value: Date) {
 }
 
 export default function CreateSubtaskRoute() {
-    const { projectId, parentTaskTitle } = useLocalSearchParams<{
+    const { projectId, parentTaskId, parentTaskTitle } = useLocalSearchParams<{
       projectId?: string;
+      parentTaskId?: string;
       parentTaskTitle?: string;
     }>();
     const resolvedParentTaskTitle = Array.isArray(parentTaskTitle)
       ? parentTaskTitle[0]
       : parentTaskTitle;
     const isSubtaskMode = Boolean(resolvedParentTaskTitle);
+    const resolvedParentTaskId = Array.isArray(parentTaskId)
+      ? parentTaskId[0]
+      : parentTaskId;
   
     const { data: projectProfile, isLoading: isProjectLoading } = useProjectProfileQuery(projectId);
     const { data: floors, isLoading: isFloorsLoading } = useProjectFloorsQuery(projectId);
+    const { data: parentTaskLocations, isLoading: isParentTaskLoading } =
+      useTaskLocationsQuery(isSubtaskMode ? resolvedParentTaskId : undefined);
+    const { data: parentTaskDetails } =
+      useTaskDetailsQuery(isSubtaskMode ? resolvedParentTaskId : undefined);
   
-    const [title, setTitle] = useState(resolvedParentTaskTitle ?? "");
+  const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
   
     const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
@@ -61,6 +72,60 @@ export default function CreateSubtaskRoute() {
     const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>([]);
   
     const createTaskMutation = useCreateTaskMutation();
+    const createSubTaskMutation = useCreateSubTaskMutation(resolvedParentTaskId, projectId);
+
+    const subtaskFloorsSource = (() => {
+      const locationFloors = parentTaskLocations?.floors ?? [];
+      const detailFloors = parentTaskDetails?.floors ?? [];
+
+      if (!locationFloors.length) {
+        return detailFloors;
+      }
+
+      return locationFloors.map((locationFloor) => {
+        const matchedDetailFloor = detailFloors.find(
+          (detailFloor) => detailFloor.id === locationFloor.id,
+        );
+
+        return {
+          ...locationFloor,
+          units:
+            locationFloor.units?.length
+              ? locationFloor.units
+              : (matchedDetailFloor?.units ?? []),
+        };
+      });
+    })();
+
+    const availableFloors = isSubtaskMode
+      ? subtaskFloorsSource.map((floor) => ({
+          id: floor.id,
+          floorNumber: Number(("floorNumber" in floor ? floor.floorNumber : 0) ?? 0),
+          name: floor.name,
+          status: "",
+          progress: 0,
+        }))
+      : floors;
+
+    const unitsByFloor = isSubtaskMode
+      ? Object.fromEntries(
+          subtaskFloorsSource.map((floor) => [
+            floor.id,
+            (floor.units ?? []).map((unit) => ({
+              id: unit.id,
+              roomNumber: 0,
+              name: unit.name,
+              status: "",
+              progress: 0,
+              type: null,
+            })),
+          ]),
+        )
+      : undefined;
+
+    const isSelectorLoading = isSubtaskMode ? isParentTaskLoading : isFloorsLoading;
+    const isSubmitting =
+      isSubtaskMode ? createSubTaskMutation.isPending : createTaskMutation.isPending;
   
     const handleDueDateChange = (
       event: DateTimePickerEvent,
@@ -93,22 +158,57 @@ export default function CreateSubtaskRoute() {
       }
   
       try {
-        const responses = [];
-        for (const selection of floorUnitSelections) {
-          const response = await createTaskMutation.mutateAsync({
-            projectId,
+        if (isSubtaskMode) {
+          await createSubTaskMutation.mutateAsync({
             title: title.trim(),
             description: description.trim(),
-            priority: priority.toLowerCase(),
+            unitIds: floorUnitSelections.map((selection) => selection.unit.id),
             dueDate: dueDate.trim() || formatDate(new Date()),
-            floorId: selection.floor.id,
-            roomId: selection.unit.id,
           });
-          responses.push(response);
+
+          router.push({
+            pathname: "/screens/company/subtasks",
+            params: {
+              projectId,
+              parentTaskId: resolvedParentTaskId,
+              title: resolvedParentTaskTitle,
+            },
+          });
+          return;
         }
-  
-        toast.success(isSubtaskMode ? "Subtask created successfully!" : "Task created successfully!");
-        // Send task details to draft so AssignTaskScreen can use it or pass taskId directly
+
+        const responses = [];
+        const floorsPayload = floorUnitSelections.reduce<
+          Array<{ floorId: string; unitIds: string[] }>
+        >((accumulator, selection) => {
+          const existing = accumulator.find(
+            (item) => item.floorId === selection.floor.id,
+          );
+
+          if (existing) {
+            if (!existing.unitIds.includes(selection.unit.id)) {
+              existing.unitIds.push(selection.unit.id);
+            }
+            return accumulator;
+          }
+
+          accumulator.push({
+            floorId: selection.floor.id,
+            unitIds: [selection.unit.id],
+          });
+          return accumulator;
+        }, []);
+
+        const response = await createTaskMutation.mutateAsync({
+          projectId,
+          title: title.trim(),
+          description: description.trim(),
+          priority: priority.toLowerCase(),
+          dueDate: dueDate.trim() || formatDate(new Date()),
+          floors: floorsPayload,
+        });
+
+        toast.success("Task created successfully!");
         setTaskDraft({
           title: title.trim(),
           location: `${projectProfile?.name || "Project"} - ${floorUnitSelections[0].floor.name}`,
@@ -116,11 +216,10 @@ export default function CreateSubtaskRoute() {
           priority: priority,
           dueDate: dueDate.trim() || formatDate(new Date()),
         });
-  
-        // You can pass the newly created taskId to the next screen if needed
+
         router.push({
           pathname: "/screens/company/task",
-          params: { taskId: responses[0]?.id, projectId },
+          params: { taskId: response.id, projectId },
         });
       } catch (error: any) {
         // Error handled by mutation
@@ -146,8 +245,8 @@ export default function CreateSubtaskRoute() {
 
           <View className="mt-8 px-5">
             <TaskFormField
-              label="Task Title"
-              placeholder="Enter task title"
+              label={isSubtaskMode ? "Sub Task Title" : "Task Title"}
+              placeholder={isSubtaskMode ? "Enter sub task title" : "Enter task title"}
               value={title}
               onChangeText={setTitle}
             />
@@ -163,8 +262,9 @@ export default function CreateSubtaskRoute() {
 
             <TaskFloorUnitMultiSelect
               projectId={projectId}
-              floors={floors}
-              isLoading={isFloorsLoading}
+              floors={availableFloors}
+              unitsByFloor={unitsByFloor}
+              isLoading={isSelectorLoading}
               onChange={setFloorUnitSelections}
             />
 
@@ -201,11 +301,11 @@ export default function CreateSubtaskRoute() {
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleNext}
-              disabled={createTaskMutation.isPending}
-              className={`mt-5 h-[56px] items-center justify-center rounded-[10px] ${createTaskMutation.isPending ? "bg-[#1E5371]/70" : "bg-[#1E5371]"
+              disabled={isSubmitting}
+              className={`mt-5 h-[56px] items-center justify-center rounded-[10px] ${isSubmitting ? "bg-[#1E5371]/70" : "bg-[#1E5371]"
                 }`}
             >
-              {createTaskMutation.isPending ? (
+              {isSubmitting ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text className="text-[16px] font-medium text-[#F4F8FA]">

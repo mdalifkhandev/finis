@@ -12,6 +12,9 @@ import {
   getProjectAnalysis,
   getTasks,
   updateTaskStatusApi,
+  reviewTaskApprovalApi,
+  reviewTaskCompletionApi,
+  reviewSubTaskApprovalApi,
   createProjectFloor,
   createProjectFloorRooms,
   updateProjectFloor,
@@ -26,6 +29,9 @@ import {
   getProjectFloors,
   getFloorRooms,
   createTask,
+  createSubTask,
+  getTaskLocations,
+  getTaskSubTasks,
   getAvailableWorkers,
   addProjectWorker,
   getAssignedWorkers,
@@ -40,7 +46,7 @@ import {
   updateProjectGeofence,
   deleteProjectGeofence,
 } from "@/api/company/company.api";
-import type { CreateTaskPayload } from "@/types/company.types";
+import type { CreateTaskPayload, CreateSubTaskPayload } from "@/types/company.types";
 import { useAuthStore } from "@/store/auth.store";
 import type {
   CompanyContact,
@@ -418,6 +424,28 @@ export function useTasksQuery(params: {
   return query;
 }
 
+export function useTaskSubTasksQuery(taskId?: string) {
+  return useQuery({
+    queryKey: ["task", "subtasks", taskId],
+    queryFn: () => {
+      if (!taskId) throw new Error("Task ID is required");
+      return getTaskSubTasks(taskId);
+    },
+    enabled: !!taskId,
+  });
+}
+
+export function useTaskLocationsQuery(taskId?: string) {
+  return useQuery({
+    queryKey: ["task", "locations", taskId],
+    queryFn: () => {
+      if (!taskId) throw new Error("Task ID is required");
+      return getTaskLocations(taskId);
+    },
+    enabled: !!taskId,
+  });
+}
+
 export function useUpdateTaskStatusMutation() {
   const queryClient = useQueryClient();
 
@@ -695,8 +723,13 @@ export function useCreateTaskMutation() {
     mutationFn: (payload: CreateTaskPayload) => createTask(payload),
     onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: ["tasks", variables.projectId],
+        queryKey: ["project", "tasks"],
       });
+      if (variables.projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "tasks", { projectId: variables.projectId }],
+        });
+      }
     },
     onError: (error: any) => {
       toast.error(
@@ -832,9 +865,9 @@ export function useAssignTaskWorkerMutation(taskId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (userIds: string[]) => {
+    mutationFn: (payload: { userIds: string[]; unitIds: string[] }) => {
       if (!taskId) throw new Error("Task ID is required");
-      return assignTaskWorker(taskId, userIds);
+      return assignTaskWorker(taskId, payload);
     },
     onSuccess: () => {
       if (taskId) {
@@ -917,6 +950,114 @@ export function useProjectGeofencesQuery(projectId?: string) {
       return getProjectGeofences(projectId);
     },
     enabled: !!projectId,
+  });
+}
+
+export function useReviewTaskApprovalMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      reviewDecision,
+      reviewDescription,
+    }: {
+      taskId: string;
+      reviewDecision: "approved" | "rejected";
+      reviewDescription?: string;
+    }) => reviewTaskApprovalApi(taskId, reviewDecision, reviewDescription),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+      toast.success("Task activated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to activate task",
+      );
+    },
+  });
+}
+
+export function useReviewTaskCompletionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      reviewDecision,
+      reviewDescription,
+    }: {
+      taskId: string;
+      reviewDecision: "approved" | "rejected";
+      reviewDescription?: string;
+    }) => reviewTaskCompletionApi(taskId, reviewDecision, reviewDescription),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+      toast.success("Task completed successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to complete task",
+      );
+    },
+  });
+}
+
+export function useReviewSubTaskApprovalMutation(taskId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      subTaskId,
+      reviewDecision,
+      reviewDescription,
+    }: {
+      subTaskId: string;
+      reviewDecision: "approved" | "rejected";
+      reviewDescription?: string;
+    }) => {
+      if (!taskId) throw new Error("Task ID is required");
+      return reviewSubTaskApprovalApi(taskId, subTaskId, reviewDecision, reviewDescription);
+    },
+    onSuccess: async () => {
+      if (taskId) {
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks", taskId] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
+        await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+      }
+      toast.success("Sub task approved successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to approve sub task",
+      );
+    },
+  });
+}
+
+export function useCreateSubTaskMutation(taskId?: string, projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateSubTaskPayload) => {
+      if (!taskId) throw new Error("Task ID is required");
+      return createSubTask(taskId, payload);
+    },
+    onSuccess: async () => {
+      if (taskId) {
+        await queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
+        await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+        if (projectId) {
+          await queryClient.invalidateQueries({ queryKey: ["project", "tasks", { projectId }] });
+        }
+      }
+      toast.success("Subtask created successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to create subtask",
+      );
+    },
   });
 }
 
