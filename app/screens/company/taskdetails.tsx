@@ -1,17 +1,27 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
-import { useTaskDetailsQuery, useUpdateTaskMutation } from "@/hooks/company/company";
-import { getTaskDetailsPreset } from "@/components/company/taskdetails/taskDetailsPreset";
+import {
+  useAdminSubTaskDetailsQuery,
+  useTaskDetailsQuery,
+  useUpdateTaskMutation,
+} from "@/hooks/company/company";
 import TaskDetailsScreen from "@/components/company/taskdetails/TaskDetailsScreen";
-import { TaskStatus } from "@/components/company/task/types";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, ActivityIndicator } from "react-native";
+import { ScrollView, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TaskDetailsRoute() {
-  const { taskId } = useLocalSearchParams<{ taskId?: string }>();
-  const { data: task, isLoading } = useTaskDetailsQuery(taskId);
-  const updateTaskMutation = useUpdateTaskMutation(task?.id || "");
+  const { taskId, subTaskId } = useLocalSearchParams<{ taskId?: string; subTaskId?: string }>();
+  const resolvedTaskId = Array.isArray(taskId) ? taskId[0] : taskId;
+  const resolvedSubTaskId = Array.isArray(subTaskId) ? subTaskId[0] : subTaskId;
+  const isSubTaskMode = Boolean(resolvedSubTaskId);
+
+  const taskQuery = useTaskDetailsQuery(isSubTaskMode ? undefined : resolvedTaskId);
+  const subTaskQuery = useAdminSubTaskDetailsQuery(resolvedSubTaskId);
+  const task = isSubTaskMode ? subTaskQuery.data : taskQuery.data;
+  const isLoading = isSubTaskMode ? subTaskQuery.isLoading : taskQuery.isLoading;
+  const isRefreshing = isSubTaskMode ? subTaskQuery.isRefetching : taskQuery.isRefetching;
+  const updateTaskMutation = useUpdateTaskMutation(isSubTaskMode ? "" : task?.id || "");
 
   if (isLoading) {
     return (
@@ -20,19 +30,32 @@ export default function TaskDetailsRoute() {
       </SafeAreaView>
     );
   }
-  const preset = getTaskDetailsPreset(task?.status as TaskStatus);
 
   return (
     <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 36 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() =>
+              void (isSubTaskMode ? subTaskQuery.refetch() : taskQuery.refetch())
+            }
+            tintColor="#1F506D"
+            colors={["#1F506D"]}
+          />
+        }
       >
         <BackTitleHeader
-          title={task?.title || preset.screenTitle}
+          title={task?.title || "Task Details"}
           onBack={() => router.back()}
         />
-        <TaskDetailsScreen task={task} updateTaskMutation={updateTaskMutation} />
+        <TaskDetailsScreen
+          task={task}
+          updateTaskMutation={isSubTaskMode ? undefined : updateTaskMutation}
+          isSubTaskMode={isSubTaskMode}
+        />
       </ScrollView>
     </SafeAreaView>
   );

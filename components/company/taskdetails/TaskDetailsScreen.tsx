@@ -9,10 +9,10 @@ import TaskDetailMetaItem from "./TaskDetailMetaItem";
 import TaskExpensesCard, { TaskExpenseDocument } from "./TaskExpensesCard";
 import TaskInventoryRow from "./TaskInventoryRow";
 import TaskPhotoCard from "./TaskPhotoCard";
-import { getTaskDetailsPreset } from "./taskDetailsPreset";
 
 type TaskDetailsScreenProps = {
   task?: TaskDetailsData;
+  isSubTaskMode?: boolean;
   updateTaskMutation?: {
     isPending: boolean;
     mutateAsync: (params: {
@@ -36,6 +36,13 @@ function formatMoney(value: number) {
   return `$${value.toFixed(2)}`;
 }
 
+function formatDate(value?: string | null, fallback = "—") {
+  if (!value) return fallback;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return fallback;
+  return parsed.toLocaleDateString();
+}
+
 function formatSubTaskStatus(status: string) {
   const normalized = status.toLowerCase();
   if (normalized === "in_progress") return "IN PROGRESS";
@@ -54,9 +61,12 @@ function getSubTaskStatusStyle(status: string) {
   return { bg: "#FFF4E8", text: "#E58B18" };
 }
 
-export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDetailsScreenProps) {
-  const preset = getTaskDetailsPreset(task?.status as TaskStatus);
-  const description = task?.description?.trim() || preset.description;
+export default function TaskDetailsScreen({
+  task,
+  updateTaskMutation,
+  isSubTaskMode = false,
+}: TaskDetailsScreenProps) {
+  const description = task?.description?.trim() || "—";
   const [reviewDescription, setReviewDescription] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<TaskExpenseDocument[]>([]);
@@ -104,11 +114,11 @@ export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDeta
 
   const beforePhoto = task?.reports?.[0]?.beforePhotoUrl;
   const afterPhoto = task?.reports?.[0]?.afterPhotoUrl;
-  const reportNotes = task?.reports?.[0]?.notes || preset.reportSummary;
+  const reportNotes = task?.reports?.[0]?.notes || "No report summary available.";
   const subTasks = task?.subTasks ?? [];
   const inventories = task?.taskInventories?.length
     ? task.taskInventories.map(inv => ({ label: inv.inventory?.name || "Unknown", quantity: `${inv.qtyUsed} ${inv.inventory?.unit || ''}` }))
-    : preset.inventory;
+    : [];
 
   const handleUploadFile = async () => {
     try {
@@ -160,23 +170,31 @@ export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDeta
         <TaskDetailMetaItem
           icon="location-outline"
           label="Project"
-          value={task ? (task.project?.name + ' • ' + task.floor?.name + ' • ' + task.room?.name) : preset.project}
+          value={
+            [task?.project?.name, task?.floor?.name, task?.room?.name]
+              .filter(Boolean)
+              .join(" • ") || "—"
+          }
           statusBadgeText={toStatusBadge(task?.status as TaskStatus)}
         />
         <TaskDetailMetaItem
           icon="person-outline"
           label="Assigned To"
-          value={task?.assignee?.fullName || task?.taskAssignees?.[0]?.user?.fullName || preset.assignedTo}
+          value={task?.assignee?.fullName || task?.taskAssignees?.[0]?.user?.fullName || "—"}
         />
         <TaskDetailMetaItem
           icon="calendar-outline"
           label="Due Date"
-          value={task?.dueDate ? new Date(task.dueDate).toLocaleDateString() : preset.dueDate}
+          value={formatDate(task?.dueDate)}
         />
         <TaskDetailMetaItem
           icon="time-outline"
           label="Estimated Time"
-          value={preset.estimatedTime}
+          value={
+            typeof task?.estimatedHours === "number"
+              ? `${task.estimatedHours} hours`
+              : "—"
+          }
         />
       </View>
 
@@ -260,15 +278,21 @@ export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDeta
           Inventory Used 
         </Text>
 
-        <View className="mt-3 gap-3">
-          {inventories.map((item, i) => (
-            <TaskInventoryRow
-              key={item.label + i}
-              label={item.label}
-              quantity={item.quantity}
-            />
-          ))}
-        </View>
+        {inventories.length ? (
+          <View className="mt-3 gap-3">
+            {inventories.map((item, i) => (
+              <TaskInventoryRow
+                key={item.label + i}
+                label={item.label}
+                quantity={item.quantity}
+              />
+            ))}
+          </View>
+        ) : (
+          <Text className="mt-3 text-[13px] text-[#737B88]">
+            No inventory used for this task.
+          </Text>
+        )}
       </View>
 
       <View className="mt-6">
@@ -337,70 +361,74 @@ export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDeta
 
       </View>
 
-      <View className="mt-6">
-        <Text className="text-[15px] font-semibold text-[#1F2937]">
-          Review & Decision
-        </Text>
+      {!isSubTaskMode ? (
+        <>
+          <View className="mt-6">
+            <Text className="text-[15px] font-semibold text-[#1F2937]">
+              Review & Decision
+            </Text>
 
-        <View className="mt-3">
-          <Text className="text-[13px] text-[#374151]">Description</Text>
-          <TextInput
-            value={reviewDescription}
-            onChangeText={setReviewDescription}
-            placeholder="Review description"
-            placeholderTextColor="#A0A8B5"
-            multiline
-            textAlignVertical="top"
-            className="mt-2 h-[112px] rounded-[12px] border border-[#D7DEE7] bg-white px-4 py-3 text-[15px] text-[#111827]"
-          />
-        </View>
+            <View className="mt-3">
+              <Text className="text-[13px] text-[#374151]">Description</Text>
+              <TextInput
+                value={reviewDescription}
+                onChangeText={setReviewDescription}
+                placeholder="Review description"
+                placeholderTextColor="#A0A8B5"
+                multiline
+                textAlignVertical="top"
+                className="mt-2 h-[112px] rounded-[12px] border border-[#D7DEE7] bg-white px-4 py-3 text-[15px] text-[#111827]"
+              />
+            </View>
 
-        <TouchableOpacity
-          activeOpacity={0.88}
-          onPress={handleUploadFile}
-          className="mt-4 h-[52px] flex-row items-center justify-center rounded-[12px] bg-[#1E5371]"
-        >
-          <Ionicons name="cloud-upload-outline" size={20} color="#F3F7FA" />
-          <Text className="ml-2 text-[16px] font-medium text-[#F3F7FA]">
-            Upload File
-          </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={handleUploadFile}
+              className="mt-4 h-[52px] flex-row items-center justify-center rounded-[12px] bg-[#1E5371]"
+            >
+              <Ionicons name="cloud-upload-outline" size={20} color="#F3F7FA" />
+              <Text className="ml-2 text-[16px] font-medium text-[#F3F7FA]">
+                Upload File
+              </Text>
+            </TouchableOpacity>
 
-        {uploadedFiles.length ? (
-          <Text className="mt-2 text-[12px] text-[#6B7280]">
-            {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""}{" "}
-            selected
-          </Text>
-        ) : null}
-      </View>
+            {uploadedFiles.length ? (
+              <Text className="mt-2 text-[12px] text-[#6B7280]">
+                {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""}{" "}
+                selected
+              </Text>
+            ) : null}
+          </View>
 
-      <View className="mt-6 flex-row items-center justify-between">
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => handleReview("rejected")}
-          disabled={reviewMutation.isPending}
-          className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] border border-[#D6DDE5] bg-white opacity-90 disabled:opacity-50"
-        >
-          {reviewMutation.isPending && reviewMutation.variables === "rejected" ? (
-            <ActivityIndicator color="#1E1E1E" />
-          ) : (
-            <Text className="text-[16px] font-medium text-[#1E1E1E]">Reject Task</Text>
-          )}
-        </TouchableOpacity>
+          <View className="mt-6 flex-row items-center justify-between">
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => handleReview("rejected")}
+              disabled={reviewMutation.isPending}
+              className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] border border-[#D6DDE5] bg-white opacity-90 disabled:opacity-50"
+            >
+              {reviewMutation.isPending && reviewMutation.variables === "rejected" ? (
+                <ActivityIndicator color="#1E1E1E" />
+              ) : (
+                <Text className="text-[16px] font-medium text-[#1E1E1E]">Reject Task</Text>
+              )}
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => handleReview("approved")}
-          disabled={reviewMutation.isPending}
-          className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] bg-[#1E5371] opacity-90 disabled:opacity-50"
-        >
-          {reviewMutation.isPending && reviewMutation.variables === "approved" ? (
-            <ActivityIndicator color="#F3F7FA" />
-          ) : (
-            <Text className="text-[16px] font-medium text-[#F3F7FA]">Approve Work</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() => handleReview("approved")}
+              disabled={reviewMutation.isPending}
+              className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] bg-[#1E5371] opacity-90 disabled:opacity-50"
+            >
+              {reviewMutation.isPending && reviewMutation.variables === "approved" ? (
+                <ActivityIndicator color="#F3F7FA" />
+              ) : (
+                <Text className="text-[16px] font-medium text-[#F3F7FA]">Approve Work</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }

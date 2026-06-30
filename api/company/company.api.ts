@@ -998,7 +998,7 @@ export async function getTaskAvailableWorkers(taskId: string, search?: string) {
 
 export async function assignTaskWorker(
   taskId: string,
-  payload: { userIds: string[]; unitIds: string[] },
+  payload: { workerIds: string[] },
 ) {
   const { data } = await api.post<{
     success: boolean;
@@ -1172,14 +1172,226 @@ export async function getProjectGeofenceTimeSummary(projectId: string) {
 
 import type { TaskDetailsData, TaskDetailsApiResponse } from "../../types/company.types";
 
+type BackendTaskDetailsResponse = {
+  project: { id: string; name: string } | null;
+  task: {
+    id: string;
+    title: string;
+    description: string | null;
+    priority: string | null;
+    status: string;
+    approvalDecision: string | null;
+    approvalNotes: string | null;
+    completionDecision: string | null;
+    completionNotes: string | null;
+    dueDate: string | null;
+    estimatedHours?: number | null;
+  };
+  floors?: Array<{
+    id: string;
+    name: string;
+    floorNumber?: number;
+    units?: Array<{ id: string; name: string }>;
+  }>;
+  location?: string | null;
+  subTaskCount?: number;
+  completedSubTaskCount?: number;
+  assignedWorkerCount?: number;
+  expenses?: Array<{
+    id: string;
+    description: string;
+    category: string;
+    amount: number;
+    status: string;
+    date: string;
+    receiptUrl: string | null;
+  }>;
+};
+
 export async function getTaskDetails(taskId: string): Promise<TaskDetailsData> {
-  const { data } = await api.get<TaskDetailsApiResponse>(`/admin/tasks/${taskId}`);
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: BackendTaskDetailsResponse;
+  }>(`/admin/tasks/${taskId}`);
   
   if (!data.success) {
     throw new Error(data.message || "Failed to load task details");
   }
 
-  return data.data;
+  const taskData = data.data;
+  const firstFloor = taskData.floors?.[0];
+  const firstUnit = firstFloor?.units?.[0];
+
+  return {
+    id: taskData.task.id,
+    title: taskData.task.title,
+    description: taskData.task.description ?? "",
+    priority: taskData.task.priority ?? null,
+    status: taskData.task.status,
+    dueDate: taskData.task.dueDate ?? null,
+    estimatedHours: taskData.task.estimatedHours ?? null,
+    project: { name: taskData.project?.name ?? "" },
+    floor: { name: firstFloor?.name ?? "" },
+    room: { name: firstUnit?.name ?? "" },
+    floors:
+      taskData.floors?.map((floor) => ({
+        id: floor.id,
+        name: floor.name,
+        floorNumber: floor.floorNumber ?? 0,
+        units: floor.units ?? [],
+      })) ?? [],
+    location: taskData.location ?? "",
+    subTaskCount: taskData.subTaskCount ?? 0,
+    completedSubTaskCount: taskData.completedSubTaskCount ?? 0,
+    assignedWorkerCount: taskData.assignedWorkerCount ?? 0,
+    assignee: null,
+    taskAssignees: [],
+    subTasks: [],
+    reports: [],
+    taskInventories: [],
+    expenses: taskData.expenses ?? [],
+  };
+}
+
+type AdminSubTaskDetailResponse = {
+  id: string;
+  title: string;
+  description: string;
+  priority: string | null;
+  status: string;
+  approvalDecision: string | null;
+  approvalNotes: string | null;
+  dueDate: string | null;
+  estimatedHours: number | null;
+  task?: {
+    id: string;
+    title: string;
+    description?: string | null;
+    priority?: string | null;
+    dueDate?: string | null;
+    status?: string;
+    approvalDecision?: string | null;
+    completionDecision?: string | null;
+  } | null;
+  project?: { id: string; name: string; location?: string | null } | null;
+  assignment?: {
+    id: string;
+    worker?: { id: string; fullName: string; avatarUrl?: string | null; role?: string | null } | null;
+    unit?: { id: string; name: string } | null;
+    assignedAt?: string | null;
+  } | null;
+  photos?: {
+    beforePhotoUrl?: string | null;
+    afterPhotoUrl?: string | null;
+    receiptUrl?: string | null;
+  } | null;
+  reportSummary?: string | null;
+  report?: {
+    id: string;
+    notes?: string | null;
+    reviewDecision?: string | null;
+    reviewDescription?: string | null;
+    reviewAttachmentUrl?: string | null;
+    reviewedBy?: string | null;
+    reviewedAt?: string | null;
+    submittedAt?: string | null;
+  } | null;
+  inventoryUsed?: Array<{
+    id: string;
+    qtyUsed: number;
+    inventory?: { id: string; name: string; unit?: string | null; category?: string | null } | null;
+  }>;
+  expenses?: Array<{
+    id: string;
+    description: string;
+    category: string;
+    amount: number;
+    status: string;
+    date: string;
+    receiptUrl: string | null;
+  }>;
+  units?: Array<{ id: string; name: string }>;
+  taskAssignee?: {
+    id: string;
+    user?: { id: string; fullName: string; avatarUrl?: string | null; role?: string | null } | null;
+    unit?: { id: string; name: string } | null;
+    assignedAt?: string | null;
+  } | null;
+};
+
+export async function getAdminSubTaskDetails(subTaskId: string): Promise<TaskDetailsData> {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: AdminSubTaskDetailResponse;
+  }>(`/admin/subtasks/${subTaskId}`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load subtask details");
+  }
+
+  const subTask = data.data;
+  const firstUnit = subTask.units?.[0] ?? subTask.assignment?.unit ?? subTask.taskAssignee?.unit ?? null;
+
+  return {
+    id: subTask.id,
+    title: subTask.title,
+    description: subTask.description ?? "",
+    priority: subTask.priority ?? null,
+    status: subTask.status,
+    dueDate: subTask.dueDate ?? null,
+    estimatedHours: subTask.estimatedHours ?? null,
+    project: { name: subTask.project?.name ?? subTask.task?.title ?? "" },
+    floor: { name: "" },
+    room: { name: firstUnit?.name ?? "" },
+    floors: [],
+    location: [subTask.project?.location, firstUnit?.name].filter(Boolean).join(" • "),
+    subTaskCount: 0,
+    completedSubTaskCount: 0,
+    assignedWorkerCount: subTask.assignment?.worker ? 1 : 0,
+    assignee: subTask.assignment?.worker ? { fullName: subTask.assignment.worker.fullName } : null,
+    taskAssignees: subTask.taskAssignee
+      ? [
+          {
+            id: subTask.taskAssignee.id,
+            user: subTask.taskAssignee.user,
+            unit: subTask.taskAssignee.unit,
+            assignedAt: subTask.taskAssignee.assignedAt,
+          },
+        ]
+      : [],
+    subTasks: [],
+    reports: subTask.report
+      ? [
+          {
+            id: subTask.report.id,
+            notes: subTask.report.notes ?? subTask.reportSummary ?? "",
+            beforePhotoUrl: subTask.photos?.beforePhotoUrl ?? null,
+            afterPhotoUrl: subTask.photos?.afterPhotoUrl ?? null,
+            receiptUrl: subTask.photos?.receiptUrl ?? null,
+            reviewDecision: subTask.report.reviewDecision ?? "",
+            worker: {
+              id: subTask.assignment?.worker?.id ?? "",
+              fullName: subTask.assignment?.worker?.fullName ?? "",
+              avatarUrl: subTask.assignment?.worker?.avatarUrl ?? null,
+            },
+          },
+        ]
+      : [],
+    taskInventories: (subTask.inventoryUsed ?? [])
+      .filter((item) => item.inventory)
+      .map((item) => ({
+        id: item.id,
+        qtyUsed: item.qtyUsed,
+        inventory: {
+          id: item.inventory!.id,
+          name: item.inventory!.name,
+          unit: item.inventory!.unit ?? "",
+        },
+      })),
+    expenses: subTask.expenses ?? [],
+  };
 }
 
 

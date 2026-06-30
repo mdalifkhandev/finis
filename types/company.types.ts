@@ -513,8 +513,10 @@ export type TaskDetailsData = {
   id: string;
   title: string;
   description: string;
+  priority?: string | null;
   status: string;
-  dueDate: string;
+  dueDate: string | null;
+  estimatedHours?: number | null;
   project: { name: string };
   floor: { name: string };
   room: { name: string };
