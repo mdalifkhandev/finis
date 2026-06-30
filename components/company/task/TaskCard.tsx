@@ -8,6 +8,12 @@ type TaskCardProps = {
   onPress?: () => void;
   onPressUpdateStatus?: () => void;
   onPressAssignWorker?: () => void;
+  onPressSubtaskAction?: () => void;
+  subTaskCount?: number;
+  completedTaskCount?: number;
+  isActionLoading?: boolean;
+  subtaskActionLabel?: string;
+  subtaskActionDisabled?: boolean;
 };
 
 const PRIORITY_CONFIG: Record<
@@ -26,6 +32,7 @@ const STATUS_CONFIG: Record<
   pending: { label: "Pending", bg: "#FAEEDA", text: "#854F0B" },
   completed: { label: "Completed", bg: "#EAF3DE", text: "#3B6D11" },
   "in progress": { label: "In Progress", bg: "#E6F1FB", text: "#185FA5" },
+  review: { label: "Review", bg: "#F1EDFF", text: "#6941C6" },
 };
 
 export default function TaskCard({
@@ -33,12 +40,40 @@ export default function TaskCard({
   onPress,
   onPressUpdateStatus,
   onPressAssignWorker,
+  onPressSubtaskAction,
+  subTaskCount = 0,
+  completedTaskCount = 0,
+  isActionLoading = false,
+  subtaskActionLabel,
+  subtaskActionDisabled = true,
 }: TaskCardProps) {
   const priorityKey = task.priority?.toLowerCase() || "low";
   const priorityStyle = PRIORITY_CONFIG[priorityKey] || PRIORITY_CONFIG.low;
 
   const statusKey = task.status?.toLowerCase() || "pending";
   const statusStyle = STATUS_CONFIG[statusKey] || STATUS_CONFIG.pending;
+  const isMainTaskCard = Boolean(onPressAssignWorker || onPressUpdateStatus);
+  const isSubtaskCard = Boolean(subtaskActionLabel);
+  const hasApprovedSubtasks =
+    subTaskCount > 0 && completedTaskCount > 0 && completedTaskCount === subTaskCount;
+
+  let actionLabel = "Update Status";
+  let actionDisabled = isActionLoading;
+  let actionVariant = "primary";
+
+  if (task.completionDecision === "approved" || task.status === "Completed") {
+    actionLabel = "Complete Task";
+    actionDisabled = true;
+    actionVariant = "muted";
+  } else if (task.approvalDecision !== "approved") {
+    actionLabel = "Activate Task";
+  } else if (hasApprovedSubtasks && task.rawStatus?.toLowerCase() === "review") {
+    actionLabel = "Approve All";
+  } else if (task.approvalDecision === "approved") {
+    actionLabel = "Activated";
+    actionDisabled = true;
+    actionVariant = "muted";
+  }
 
   return (
     <TouchableOpacity
@@ -73,7 +108,7 @@ export default function TaskCard({
       <View className="mt-2 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Ionicons name="location-outline" size={16} color="#536174" />
-          <Text className="ml-1.5 text-[14px] text-[#4C596C] max-w-[210px]">
+          <Text className="ml-1.5 text-[14px] text-[#4C596C] max-w-[210px]" numberOfLines={2}>
             {task.location}
           </Text>
         </View>
@@ -90,7 +125,7 @@ export default function TaskCard({
         <View className="flex-row items-center">
           <Ionicons name="person-outline" size={16} color="#536174" />
           <Text className="ml-1.5 text-[14px] text-[#4C596C]">
-            {task.assignee ?? "Unassigned"}
+            {task.assignee ?? "Assigned Worker 0"}
           </Text>
         </View>
         <View className="flex-row items-center">
@@ -102,7 +137,7 @@ export default function TaskCard({
       </View>
       
       {/* Subtask progress */}
-      <View className="mt-2 flex-row items-center justify-between">
+      {isMainTaskCard&&<View className="mt-2 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Ionicons name="list-outline" size={17} color="#536174" />
           <Text className="ml-1.5 text-[14px] text-[#4C596C]">
@@ -112,43 +147,64 @@ export default function TaskCard({
         <View className="flex-row items-center">
           <Ionicons name="checkmark-done-outline" size={17} color="#168044" />
           <Text className="ml-1.5 text-[14px] text-[#4C596C]">
-            5 of 10 completed
+            {completedTaskCount} of {subTaskCount} completed
           </Text>
         </View>
-      </View>
+      </View>}
 
       {/* Divider */}
-      <View className="mt-3 mb-3 h-[0.5px] bg-black/10" />
+      {isMainTaskCard || isSubtaskCard ? <View className="mt-3 mb-3 h-[0.5px] bg-black/10" /> : null}
 
-      {/* ── Footer ── */}
-      <View className="flex-row items-center justify-between gap-4">
-      
+      {isMainTaskCard ? (
+        <View className="flex-row items-center justify-between gap-4">
+          <TouchableOpacity
+            className="rounded-lg border border-black/20 px-3 py-1.5 flex-1"
+            activeOpacity={0.7}
+            onPress={(e) => {
+              e.stopPropagation();
+              onPressAssignWorker?.();
+            }}
+          >
+            <Text className="text-[13px] font-medium text-[#2A313B] text-center">
+              Assign Worker
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            disabled={actionDisabled}
+            className={`rounded-lg px-3 py-1.5 flex-1 ${
+              actionVariant === "muted" ? "bg-[#B7C4CE]" : "bg-[#1E5371]"
+            } ${actionDisabled && actionVariant !== "muted" ? "opacity-70" : ""}`}
+            activeOpacity={0.8}
+            onPress={(e) => {
+              e.stopPropagation();
+              onPressUpdateStatus?.();
+            }}
+          >
+            <Text className="text-[13px] font-medium text-white text-center">
+              {actionLabel}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
+      {isSubtaskCard ? (
         <TouchableOpacity
-          className="rounded-lg border border-black/20 px-3 py-1.5 flex-1"
-          activeOpacity={0.7}
+          disabled={subtaskActionDisabled || isActionLoading}
+          className={`h-[40px] items-center justify-center rounded-lg ${
+            subtaskActionDisabled || isActionLoading ? "bg-[#B7C4CE]" : "bg-[#1E5371]"
+          }`}
+          activeOpacity={0.85}
           onPress={(e) => {
             e.stopPropagation();
-            onPressAssignWorker?.();
-          }}
-        >
-          <Text className="text-[13px] font-medium text-[#2A313B] text-center">
-            Assign Worker
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="rounded-lg bg-[#1E5371] px-3 py-1.5 flex-1"
-          activeOpacity={0.8}
-          onPress={(e) => {
-            e.stopPropagation();
-            onPressUpdateStatus?.();
+            onPressSubtaskAction?.();
           }}
         >
           <Text className="text-[13px] font-medium text-white text-center">
-            Update Status
+            {subtaskActionLabel}
           </Text>
         </TouchableOpacity>
-      </View>
+      ) : null}
 
       {/* </View> */}
     </TouchableOpacity>

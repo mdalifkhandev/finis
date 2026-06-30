@@ -4,7 +4,11 @@ import React, { useMemo, useState, useEffect } from "react";
 import { Alert, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import AssignWorkerCard, { WorkerItem } from "./AssignWorkerCard";
 import { addTask, clearTaskDraft, getTaskDraft } from "./taskStore";
-import { useTaskAvailableWorkersQuery, useAssignTaskWorkerMutation } from "@/hooks/company/company";
+import {
+  useTaskAvailableWorkersQuery,
+  useAssignTaskWorkerMutation,
+  useTaskDetailsQuery,
+} from "@/hooks/company/company";
 import { toast } from "sonner-native";
 
 export default function AssignTaskScreen({ projectId, taskId }: { projectId?: string; taskId?: string }) {
@@ -20,6 +24,7 @@ export default function AssignTaskScreen({ projectId, taskId }: { projectId?: st
   }, [searchText]);
 
   const { data: workersData, isLoading } = useTaskAvailableWorkersQuery(taskId, debouncedSearch);
+  const { data: taskDetails } = useTaskDetailsQuery(taskId);
 
   const filteredWorkers: WorkerItem[] = useMemo(() => {
     if (!workersData?.data) return [];
@@ -50,8 +55,19 @@ export default function AssignTaskScreen({ projectId, taskId }: { projectId?: st
     }
 
     if (taskId) {
+      const unitIds =
+        taskDetails?.floors?.flatMap((floor) => floor.units.map((unit) => unit.id)) ?? [];
+
+      if (unitIds.length === 0) {
+        Alert.alert("Assign worker", "No units found in this task.");
+        return;
+      }
+
       try {
-        await assignMutation.mutateAsync(assignedIds);
+        await assignMutation.mutateAsync({
+          userIds: assignedIds,
+          unitIds,
+        });
         setAssignedIds([]); // clear selection
         // Automatically refetched by query invalidation, so UI will update
         toast.success("Workers assigned successfully");

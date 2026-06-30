@@ -15,13 +15,18 @@ import type {
   UpdateProjectPayload,
   UpdateCompanyPayload,
   ProjectAnalysisResponse,
-  TasksListResponse,
+  TasksListMeta,
   AvailableManagersResponse,
   CompanyProjectTeamMember,
   ProjectFloorsResponse,
   ProjectRoomsResponse,
   CreateTaskPayload,
-  CreateTaskResponse,
+  CreateSubTaskPayload,
+  CreateSubTaskResponse,
+  TaskListItem,
+  TaskAssignee,
+  TaskSubTaskListItem,
+  TaskSubTasksResponse,
 } from "@/types/company.types";
 function resolveMediaUrl(path: string | null) {
   return path;
@@ -371,8 +376,162 @@ type GetTasksParams = {
   projectId?: string;
 };
 
-export async function getTasks(params: GetTasksParams = {}) {
-  const { data } = await api.get<TasksListResponse>("/admin/tasks", {
+type TaskResponseFloorUnit = {
+  id: string;
+  name: string;
+};
+
+type TaskResponseFloor = {
+  id: string;
+  name: string;
+  floorNumber: number;
+  units: TaskResponseFloorUnit[];
+};
+
+type BackendTaskResponseItem = {
+  project: {
+    id: string;
+    name: string;
+  } | null;
+  task: {
+    id: string;
+    title: string;
+    description: string | null;
+    priority: string;
+    status: string;
+    approvalDecision: string | null;
+    approvalNotes: string | null;
+    completionDecision: string | null;
+    completionNotes: string | null;
+    dueDate: string | null;
+  };
+  floors: TaskResponseFloor[];
+  location?: string;
+  subTaskCount?: number;
+  completedSubTaskCount?: number;
+  assignedWorkerCount?: number;
+};
+
+type BackendSubTaskResponseItem = {
+  id: string;
+  title: string;
+  description: string | null;
+  priority?: string | null;
+  dueDate?: string | null;
+  status: string;
+  approvalDecision: string;
+  createdAt: string;
+  submittedAt?: string | null;
+  completedAt?: string | null;
+  unit: {
+    id: string;
+    name: string;
+  } | null;
+  subTaskUnits?: Array<{
+    unit: {
+      id: string;
+      name: string;
+    };
+  }>;
+  units?: Array<{
+    id: string;
+    name: string;
+  }>;
+  taskAssignee: {
+    id: string;
+    user: {
+      id: string;
+      fullName: string;
+      avatarUrl: string | null;
+      role: string;
+    } | null;
+    unit: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
+  creator: {
+    id: string;
+    fullName: string;
+    avatarUrl: string | null;
+    role: string;
+  } | null;
+  _count: {
+    reports: number;
+    inventories: number;
+  };
+};
+
+function mapBackendTaskResponse(task: BackendTaskResponseItem): TaskListItem {
+  const firstFloor = task.floors?.[0] ?? null;
+  const firstUnit = firstFloor?.units?.[0] ?? null;
+
+  return {
+    id: task.task.id,
+    projectId: task.project?.id ?? "",
+    floorId: firstFloor?.id ?? "",
+    roomId: firstUnit?.id ?? "",
+    assignedTo: "",
+    createdBy: "",
+    title: task.task.title,
+    description: task.task.description ?? "",
+    priority: task.task.priority,
+    status: task.task.status,
+    dueDate: task.task.dueDate ?? "",
+    estimatedHours: null,
+    actualHours: null,
+    createdAt: task.task.dueDate ?? new Date().toISOString(),
+    updatedAt: task.task.dueDate ?? new Date().toISOString(),
+    project: task.project ? { id: task.project.id, name: task.project.name } : { id: "", name: "" },
+    floor: firstFloor ? { id: firstFloor.id, name: firstFloor.name } : { id: "", name: "" },
+    room: firstUnit ? { id: firstUnit.id, name: firstUnit.name } : { id: "", name: "" },
+    assignee: {
+      id: "",
+      fullName: "",
+      avatarUrl: null,
+      role: "",
+    } as TaskAssignee,
+    _count: { reports: 0, subTasks: task.subTaskCount ?? 0 },
+    location: task.location ?? "",
+    subTaskCount: task.subTaskCount ?? 0,
+    completedSubTaskCount: task.completedSubTaskCount ?? 0,
+    assignedWorkerCount: task.assignedWorkerCount ?? 0,
+    approvalDecision: task.task.approvalDecision,
+    completionDecision: task.task.completionDecision,
+  } as TaskListItem;
+}
+
+function mapBackendSubTaskResponse(task: BackendSubTaskResponseItem): TaskSubTaskListItem {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    priority: task.priority,
+    dueDate: task.dueDate,
+    status: task.status,
+    approvalDecision: task.approvalDecision,
+    createdAt: task.createdAt,
+    submittedAt: task.submittedAt,
+    completedAt: task.completedAt,
+    unit: task.unit,
+    subTaskUnits: task.subTaskUnits,
+    units: task.units,
+    taskAssignee: task.taskAssignee,
+    creator: task.creator,
+    _count: task._count,
+  };
+}
+
+export async function getTasks(params: GetTasksParams = {}): Promise<{
+  data: TaskListItem[];
+  meta: TasksListMeta;
+}> {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: BackendTaskResponseItem[];
+    meta: TasksListMeta;
+  }>("/admin/tasks", {
     params,
   });
 
@@ -381,15 +540,53 @@ export async function getTasks(params: GetTasksParams = {}) {
   }
 
   return {
-    data: data.data.map((task) => ({
-      ...task,
-      assignee: task.assignee ? {
-        ...task.assignee,
-        avatarUrl: resolveMediaUrl(task.assignee.avatarUrl),
-      } : null,
-    })),
+    data: data.data.map((task) => mapBackendTaskResponse(task)),
     meta: data.meta,
   };
+}
+
+export async function getTaskSubTasks(taskId: string): Promise<{
+  data: TaskSubTaskListItem[];
+}> {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: BackendSubTaskResponseItem[];
+  }>(`/admin/tasks/${taskId}/subtasks`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load subtasks");
+  }
+
+  return {
+    data: data.data.map((subTask) => mapBackendSubTaskResponse(subTask)),
+  };
+}
+
+export async function getTaskLocations(taskId: string): Promise<{
+  floors: Array<{
+    id: string;
+    name: string;
+    units: Array<{ id: string; name: string }>;
+  }>;
+}> {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: {
+      floors: Array<{
+        id: string;
+        name: string;
+        units: Array<{ id: string; name: string }>;
+      }>;
+    };
+  }>(`/admin/tasks/${taskId}/locations`);
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load task locations");
+  }
+
+  return data.data;
 }
 
 export async function updateTaskStatusApi(id: string, status: string) {
@@ -595,8 +792,76 @@ export async function getFloorRooms(projectId: string, floorId: string) {
   return data.data;
 }
 
-export async function createTask(payload: CreateTaskPayload) {
-  const { data } = await api.post<CreateTaskResponse>(
+export async function reviewTaskApprovalApi(
+  taskId: string,
+  reviewDecision: "approved" | "rejected",
+  reviewDescription?: string,
+) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/tasks/${taskId}/approval`, {
+    reviewDecision,
+    reviewDescription,
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to review task approval");
+  }
+
+  return data.data;
+}
+
+export async function reviewTaskCompletionApi(
+  taskId: string,
+  reviewDecision: "approved" | "rejected",
+  reviewDescription?: string,
+) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/tasks/${taskId}/completion-review`, {
+    reviewDecision,
+    reviewDescription,
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to review task completion");
+  }
+
+  return data.data;
+}
+
+export async function reviewSubTaskApprovalApi(
+  taskId: string,
+  subTaskId: string,
+  reviewDecision: "approved" | "rejected",
+  reviewDescription?: string,
+) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/tasks/${taskId}/subtasks/${subTaskId}/approval`, {
+    reviewDecision,
+    reviewDescription,
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to review sub task");
+  }
+
+  return data.data;
+}
+
+export async function createTask(payload: CreateTaskPayload): Promise<TaskListItem> {
+  const { data } = await api.post<{
+    success: boolean;
+    message: string;
+    data: BackendTaskResponseItem;
+  }>(
     `/admin/tasks`,
     payload
   );
@@ -605,7 +870,7 @@ export async function createTask(payload: CreateTaskPayload) {
     throw new Error(data.message || "Failed to create task");
   }
 
-  return data.data;
+  return mapBackendTaskResponse(data.data);
 }
 
 export async function removeProjectManager(projectId: string, userId: string) {
@@ -731,15 +996,31 @@ export async function getTaskAvailableWorkers(taskId: string, search?: string) {
   };
 }
 
-export async function assignTaskWorker(taskId: string, userIds: string[]) {
+export async function assignTaskWorker(
+  taskId: string,
+  payload: { userIds: string[]; unitIds: string[] },
+) {
   const { data } = await api.post<{
     success: boolean;
     message: string;
     data: any;
-  }>(`/admin/tasks/${taskId}/assign`, { userIds });
+  }>(`/admin/tasks/${taskId}/assign`, payload);
 
   if (!data.success) {
     throw new Error(data.message || "Failed to assign worker");
+  }
+
+  return data.data;
+}
+
+export async function createSubTask(taskId: string, payload: CreateSubTaskPayload) {
+  const { data } = await api.post<CreateSubTaskResponse>(
+    `/admin/tasks/${taskId}/subtasks`,
+    payload,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to create subtask");
   }
 
   return data.data;

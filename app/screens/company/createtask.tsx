@@ -93,19 +93,35 @@ export default function CreateTaskRoute() {
     }
 
     try {
-      const responses = [];
-      for (const selection of floorUnitSelections) {
-        const response = await createTaskMutation.mutateAsync({
-          projectId,
-          title: title.trim(),
-          description: description.trim(),
-          priority: priority.toLowerCase(),
-          dueDate: dueDate.trim() || formatDate(new Date()),
+      const floorsPayload = floorUnitSelections.reduce<
+        Array<{ floorId: string; unitIds: string[] }>
+      >((accumulator, selection) => {
+        const existing = accumulator.find(
+          (item) => item.floorId === selection.floor.id,
+        );
+
+        if (existing) {
+          if (!existing.unitIds.includes(selection.unit.id)) {
+            existing.unitIds.push(selection.unit.id);
+          }
+          return accumulator;
+        }
+
+        accumulator.push({
           floorId: selection.floor.id,
-          roomId: selection.unit.id,
+          unitIds: [selection.unit.id],
         });
-        responses.push(response);
-      }
+        return accumulator;
+      }, []);
+
+      const response = await createTaskMutation.mutateAsync({
+        projectId,
+        title: title.trim(),
+        description: description.trim(),
+        priority: priority.toLowerCase(),
+        dueDate: dueDate.trim() || formatDate(new Date()),
+        floors: floorsPayload,
+      });
 
       toast.success(isSubtaskMode ? "Subtask created successfully!" : "Task created successfully!");
       // Send task details to draft so AssignTaskScreen can use it or pass taskId directly
@@ -120,7 +136,7 @@ export default function CreateTaskRoute() {
       // You can pass the newly created taskId to the next screen if needed
       router.push({
         pathname: "/screens/company/task",
-        params: { taskId: responses[0]?.id, projectId },
+        params: { taskId: response.id, projectId },
       });
     } catch (error: any) {
       // Error handled by mutation

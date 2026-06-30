@@ -36,6 +36,24 @@ function formatMoney(value: number) {
   return `$${value.toFixed(2)}`;
 }
 
+function formatSubTaskStatus(status: string) {
+  const normalized = status.toLowerCase();
+  if (normalized === "in_progress") return "IN PROGRESS";
+  if (normalized === "completed") return "COMPLETED";
+  return "PENDING";
+}
+
+function getSubTaskStatusStyle(status: string) {
+  const normalized = status.toLowerCase();
+  if (normalized === "completed") {
+    return { bg: "#DDF2E8", text: "#0C8F41" };
+  }
+  if (normalized === "in_progress") {
+    return { bg: "#DDE8FF", text: "#2051F8" };
+  }
+  return { bg: "#FFF4E8", text: "#E58B18" };
+}
+
 export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDetailsScreenProps) {
   const preset = getTaskDetailsPreset(task?.status as TaskStatus);
   const description = task?.description?.trim() || preset.description;
@@ -87,6 +105,7 @@ export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDeta
   const beforePhoto = task?.reports?.[0]?.beforePhotoUrl;
   const afterPhoto = task?.reports?.[0]?.afterPhotoUrl;
   const reportNotes = task?.reports?.[0]?.notes || preset.reportSummary;
+  const subTasks = task?.subTasks ?? [];
   const inventories = task?.taskInventories?.length
     ? task.taskInventories.map(inv => ({ label: inv.inventory?.name || "Unknown", quantity: `${inv.qtyUsed} ${inv.inventory?.unit || ''}` }))
     : preset.inventory;
@@ -163,6 +182,69 @@ export default function TaskDetailsScreen({ task, updateTaskMutation }: TaskDeta
 
       <TaskPhotoCard title="Before Photo" imageUrl={beforePhoto} />
       <TaskPhotoCard title="After Photo" imageUrl={afterPhoto} />
+
+      <View className="mt-5 rounded-[16px] border border-[#DADFE5] bg-white p-4">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-[15px] font-semibold text-[#1F2937]">
+            Subtasks
+          </Text>
+          <Text className="text-[12px] text-[#667085]">
+            {subTasks.length} total
+          </Text>
+        </View>
+
+        {subTasks.length ? (
+          <View className="mt-4 gap-3">
+            {subTasks.map((subTask) => {
+              const badgeStyle = getSubTaskStatusStyle(subTask.status);
+              return (
+                <View
+                  key={subTask.id}
+                  className="rounded-[14px] border border-[#E5EAF0] bg-[#FAFBFC] px-3 py-3"
+                >
+                  <View className="flex-row items-start justify-between">
+                    <View className="flex-1 pr-3">
+                      <Text className="text-[14px] font-semibold text-[#111827]">
+                        {subTask.title}
+                      </Text>
+                      <Text className="mt-1 text-[12px] text-[#6B7280]">
+                        Unit: {subTask.unit?.name || "Unknown"}
+                      </Text>
+                      {subTask.taskAssignee?.user?.fullName ? (
+                        <Text className="mt-0.5 text-[12px] text-[#6B7280]">
+                          Assigned to: {subTask.taskAssignee.user.fullName}
+                        </Text>
+                      ) : null}
+                    </View>
+
+                    <View
+                      className="rounded-full px-2.5 py-1"
+                      style={{ backgroundColor: badgeStyle.bg }}
+                    >
+                      <Text
+                        className="text-[10px] font-semibold"
+                        style={{ color: badgeStyle.text }}
+                      >
+                        {formatSubTaskStatus(subTask.status)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {subTask.description ? (
+                    <Text className="mt-2 text-[12px] leading-[18px] text-[#4B5563]">
+                      {subTask.description}
+                    </Text>
+                  ) : null}
+                </View>
+              );
+            })}
+          </View>
+        ) : (
+          <Text className="mt-3 text-[13px] text-[#737B88]">
+            No subtasks found for this task.
+          </Text>
+        )}
+      </View>
 
       <View className="mt-5 rounded-[16px] border border-[#DADFE5] bg-white p-4">
         <Text className="text-[15px] font-semibold text-[#1F2937]">

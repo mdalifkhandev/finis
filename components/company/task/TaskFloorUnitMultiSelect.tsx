@@ -20,6 +20,7 @@ export type TaskFloorUnitSelection = {
 type FloorUnitsProps = {
   projectId?: string;
   floor: Floor;
+  unitsOverride?: Room[];
   selectedUnitIds: string[];
   onToggle: (floor: Floor, unit: Room) => void;
   onToggleAll: (floor: Floor, units: Room[]) => void;
@@ -28,13 +29,19 @@ type FloorUnitsProps = {
 function FloorUnits({
   projectId,
   floor,
+  unitsOverride,
   selectedUnitIds,
   onToggle,
   onToggleAll,
 }: FloorUnitsProps) {
-  const { data: units, isLoading } = useFloorRoomsQuery(projectId, floor.id);
-  const allSelected = Boolean(units?.length) && selectedUnitIds.length === units?.length;
-  const someSelected = Boolean(units?.length) && selectedUnitIds.length > 0 && !allSelected;
+  const shouldFetchUnits = !unitsOverride;
+  const { data: fetchedUnits, isLoading } = useFloorRoomsQuery(
+    shouldFetchUnits ? projectId : undefined,
+    shouldFetchUnits ? floor.id : undefined,
+  );
+  const units = unitsOverride ?? fetchedUnits ?? [];
+  const allSelected = Boolean(units.length) && selectedUnitIds.length === units.length;
+  const someSelected = Boolean(units.length) && selectedUnitIds.length > 0 && !allSelected;
 
   return (
     <View className="border-b border-[#DCE3EA] px-4 py-4 last:border-b-0">
@@ -43,7 +50,7 @@ function FloorUnits({
           <Text className="text-[14px] font-semibold text-[#1E5371]">{floor.name}</Text>
         </View>
 
-        {units?.length ? (
+        {units.length ? (
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => onToggleAll(floor, units)}
@@ -66,7 +73,7 @@ function FloorUnits({
 
       {isLoading ? (
         <ActivityIndicator size="small" color="#1E5371" className="mt-4" />
-      ) : units?.length ? (
+      ) : units.length ? (
         <View className="mt-3 flex-row flex-wrap gap-2">
           {units.map((unit) => {
             const selected = selectedUnitIds.includes(unit.id);
@@ -101,11 +108,13 @@ function FloorUnits({
 export default function TaskFloorUnitMultiSelect({
   projectId,
   floors,
+  unitsByFloor,
   isLoading,
   onChange,
 }: {
   projectId?: string;
   floors?: Floor[];
+  unitsByFloor?: Record<string, Room[]>;
   isLoading?: boolean;
   onChange: (selections: TaskFloorUnitSelection[]) => void;
 }) {
@@ -195,6 +204,7 @@ export default function TaskFloorUnitMultiSelect({
                 key={floor.id}
                 projectId={projectId}
                 floor={floor}
+                unitsOverride={unitsByFloor?.[floor.id]}
                 selectedUnitIds={(selectedUnits[floor.id] ?? []).map((unit) => unit.id)}
                 onToggle={toggleUnit}
                 onToggleAll={toggleAllUnits}

@@ -1,9 +1,12 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import TaskCard from "@/components/company/task/TaskCard";
 import TaskFilterTabs, { TaskFilter } from "@/components/company/task/TaskFilterTabs";
-import UpdateTaskStatusModal from "@/components/company/task/UpdateTaskStatusModal";
 import type { TaskItem, TaskStatus } from "@/components/company/task/types";
-import { useTasksQuery, useUpdateTaskStatusMutation } from "@/hooks/company/company";
+import {
+  useReviewSubTaskApprovalMutation,
+  useTaskDetailsQuery,
+  useTaskSubTasksQuery,
+} from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -19,15 +22,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 function mapStatus(status: string): TaskStatus {
   const normalized = status.toLowerCase();
+  if (normalized === "review") return "Review";
   if (normalized === "in_progress") return "In Progress";
   if (normalized === "completed") return "Completed";
   return "Pending";
 }
 
-function mapStatusToApi(status: TaskStatus) {
-  if (status === "In Progress") return "in_progress";
-  if (status === "Completed") return "completed";
-  return "pending";
+function formatDateLabel(dateValue: string) {
+  const parsedDate = new Date(dateValue);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "—";
+  }
+
+  return parsedDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export default function SubtasksRoute() {
@@ -41,39 +51,59 @@ export default function SubtasksRoute() {
     ? params.parentTaskId[0]
     : params.parentTaskId;
   const taskTitle = Array.isArray(params.title) ? params.title[0] : params.title;
-  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
   const [filter, setFilter] = useState<TaskFilter>("All");
 
-  const tasksQuery = useTasksQuery({
-    page: 1,
-    limit: 100,
-    projectId,
-    search: taskTitle,
-  });
-  const updateStatusMutation = useUpdateTaskStatusMutation();
+  const tasksQuery = useTaskSubTasksQuery(parentTaskId);
+  const taskDetailsQuery = useTaskDetailsQuery(parentTaskId);
+  const reviewSubTaskMutation = useReviewSubTaskApprovalMutation(parentTaskId);
 
   const subtasks = useMemo<TaskItem[]>(() => {
-    return (tasksQuery.data?.data ?? [])
-      .filter((task) => !taskTitle || task.title === taskTitle)
-      .map((task) => ({
+    const unitToFloorMap = new Map<string, string>();
+    (taskDetailsQuery.data?.floors ?? []).forEach((floor) => {
+      floor.units.forEach((unit) => {
+        unitToFloorMap.set(unit.id, floor.name);
+      });
+    });
+
+    return (tasksQuery.data?.data ?? []).map((task) => {
+      const units = (
+        task.units?.filter(Boolean) ??
+        task.subTaskUnits?.map((item) => item.unit).filter(Boolean) ??
+        (task.unit ? [task.unit] : task.taskAssignee?.unit ? [task.taskAssignee.unit] : [])
+      ).filter((unit, index, array) => array.findIndex((item) => item.id === unit.id) === index);
+
+      const locationLabel = units.length
+        ? units
+            .map((unit) => {
+              const floorName = unitToFloorMap.get(unit.id);
+              return floorName ? `${floorName} - ${unit.name}` : unit.name;
+            })
+            .join(", ")
+        : "Unit";
+
+      const displayStatus =
+        task.approvalDecision === "pending" && task.status.toLowerCase() === "completed"
+          ? "Review"
+          : mapStatus(task.status);
+
+      const displayDate = task.dueDate || task.completedAt || task.submittedAt || task.createdAt;
+
+      return {
         id: task.id,
-        projectId: task.projectId,
+        projectId: projectId,
         title: task.title,
-        location: `${task.floor?.name || "Floor"} - ${task.room?.name || "Unit"}`,
-        assignee: task.assignee?.fullName || "Unassigned",
-        startDate: new Date(task.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        dueDate: new Date(task.dueDate).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        }),
-        status: mapStatus(task.status),
-        description: task.description,
-        priority: task.priority,
-      }));
-  }, [taskTitle, tasksQuery.data]);
+        location: locationLabel,
+        assignee: `Assigned Worker ${task.taskAssignee?.user ? 1 : 0}`,
+        startDate: formatDateLabel(displayDate ?? ""),
+        dueDate: formatDateLabel(displayDate ?? ""),
+        status: displayStatus,
+        description: task.description || undefined,
+        priority: task.priority || task.approvalDecision || "medium",
+        approvalDecision: task.approvalDecision,
+        rawStatus: task.status,
+      };
+    });
+  }, [projectId, taskDetailsQuery.data, tasksQuery.data]);
 
   const filteredSubtasks = useMemo(() => {
     if (filter === "All") return subtasks;
@@ -93,19 +123,6 @@ export default function SubtasksRoute() {
         parentTaskTitle: taskTitle,
       },
     });
-  };
-
-  const handleUpdateStatus = (status: TaskStatus) => {
-    if (!selectedTask) return;
-    updateStatusMutation.mutate(
-      { id: selectedTask.id, status: mapStatusToApi(status) },
-      {
-        onSuccess: () => {
-          setSelectedTask(null);
-          void tasksQuery.refetch();
-        },
-      },
-    );
   };
 
   return (
@@ -141,7 +158,7 @@ export default function SubtasksRoute() {
             }`}
           >
             <Ionicons name="add" size={22} color="#FFFFFF" />
-            <Text className="ml-2 text-[16px] font-medium text-white">Create Subtask</Text>
+            <Text className="ml-2 text-[16px] font-medium text-white">Create New Subtask</Text>
           </TouchableOpacity>
 
           <TaskFilterTabs value={filter} onChange={setFilter} />
@@ -156,19 +173,23 @@ export default function SubtasksRoute() {
                 <TaskCard
                   key={task.id}
                   task={task}
+                  isActionLoading={reviewSubTaskMutation.isPending}
+                  subtaskActionLabel="Approve Sub Task"
+                  subtaskActionDisabled={task.status !== "Review"}
+                  onPressSubtaskAction={() =>
+                    reviewSubTaskMutation.mutate({
+                      subTaskId: task.id,
+                      reviewDecision: "approved",
+                    })
+                  }
                   onPress={() =>
-                    router.push({
-                      pathname: "/screens/company/taskdetails",
-                      params: { taskId: task.id },
-                    })
+                    parentTaskId
+                      ? router.push({
+                          pathname: "/screens/company/taskdetails",
+                          params: { taskId: parentTaskId },
+                        })
+                      : undefined
                   }
-                  onPressAssignWorker={() =>
-                    router.push({
-                      pathname: "/screens/company/assigntask",
-                      params: { taskId: task.id, projectId },
-                    })
-                  }
-                  onPressUpdateStatus={() => setSelectedTask(task)}
                 />
               ))}
             </View>
@@ -183,12 +204,6 @@ export default function SubtasksRoute() {
         </View>
       </ScrollView>
 
-      <UpdateTaskStatusModal
-        visible={Boolean(selectedTask)}
-        task={selectedTask}
-        onClose={() => setSelectedTask(null)}
-        onSelectStatus={handleUpdateStatus}
-      />
     </SafeAreaView>
   );
 }
