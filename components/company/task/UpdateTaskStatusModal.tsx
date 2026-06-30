@@ -13,6 +13,7 @@ const statusOptions: TaskStatus[] = ["Pending", "In Progress", "Completed"];
 const tones: Record<TaskStatus, { bg: string; text: string; border: string }> = {
   Pending: { bg: "#FFF4E8", text: "#E58B18", border: "#F4D1A7" },
   "In Progress": { bg: "#E8F0FF", text: "#225CFF", border: "#C8D7FF" },
+  Inactive: { bg: "#F2F4F7", text: "#667085", border: "#D0D5DD" },
   Completed: { bg: "#E8F5EE", text: "#0F8A61", border: "#BEE3D2" },
   Review: { bg: "#F1EDFF", text: "#6941C6", border: "#D9CCFF" },
 };

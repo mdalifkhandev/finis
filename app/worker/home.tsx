@@ -1,8 +1,6 @@
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import { getWorkerProjects } from "@/api/worker/attendance.api";
-import WorkerGroupedTaskList, {
-  WORKER_TASK_MOCK_DATA,
-} from "@/components/worker/WorkerGroupedTaskList";
+import WorkerGroupedTaskList from "@/components/worker/WorkerGroupedTaskList";
 import {
   useCheckInWorkerMutation,
   useCheckOutWorkerMutation,
@@ -429,11 +427,10 @@ export default function WorkerHome() {
                 onPressAction={() => router.push("/worker/tasks")}
               />
               <View className="mt-2 px-4">
-                {(dashboard?.todayTasks?.length ?? 0) > 0 || WORKER_TASK_MOCK_DATA.length ? (
+                {(dashboard?.todayTasks?.length ?? 0) > 0 ? (
                   <WorkerGroupedTaskList
-                    tasks={dashboard?.todayTasks?.length ? dashboard.todayTasks : WORKER_TASK_MOCK_DATA}
+                    tasks={dashboard?.todayTasks ?? []}
                     onPressTask={(task) => {
-                      if (task.id.startsWith("mock-")) return;
                       router.push({
                         pathname: "/screens/worker/viewtask",
                         params: { id: task.id },

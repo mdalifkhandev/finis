@@ -21,11 +21,12 @@ function mapFilterToStatus(filter: TaskFilter): string | undefined {
   return undefined;
 }
 
-function mapStatus(status: string): TaskStatus {
+function mapStatus(status: string, approvalDecision?: string | null): TaskStatus {
   const s = status.toLowerCase();
   if (s === "in_progress") return "In Progress";
   if (s === "completed") return "Completed";
   if (s === "review") return "Review";
+  if (approvalDecision !== "approved") return "Inactive";
   return "Pending";
 }
 
@@ -77,7 +78,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
           month: "short",
           day: "numeric",
         }),
-        status: mapStatus(task.status),
+        status: mapStatus(task.status, task.approvalDecision),
         description: task.description,
         priority: task.priority,
         projectId: task.projectId,
