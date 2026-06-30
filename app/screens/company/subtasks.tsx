@@ -183,10 +183,10 @@ export default function SubtasksRoute() {
                     })
                   }
                   onPress={() =>
-                    parentTaskId
+                    task.id
                       ? router.push({
                           pathname: "/screens/company/taskdetails",
-                          params: { taskId: parentTaskId },
+                          params: { subTaskId: task.id },
                         })
                       : undefined
                   }

@@ -7,7 +7,7 @@ import { addTask, clearTaskDraft, getTaskDraft } from "./taskStore";
 import {
   useTaskAvailableWorkersQuery,
   useAssignTaskWorkerMutation,
-  useTaskDetailsQuery,
+  useTaskLocationsQuery,
 } from "@/hooks/company/company";
 import { toast } from "sonner-native";
 
@@ -24,7 +24,7 @@ export default function AssignTaskScreen({ projectId, taskId }: { projectId?: st
   }, [searchText]);
 
   const { data: workersData, isLoading } = useTaskAvailableWorkersQuery(taskId, debouncedSearch);
-  const { data: taskDetails } = useTaskDetailsQuery(taskId);
+  const { data: taskLocations } = useTaskLocationsQuery(taskId);
 
   const filteredWorkers: WorkerItem[] = useMemo(() => {
     if (!workersData?.data) return [];
@@ -55,18 +55,17 @@ export default function AssignTaskScreen({ projectId, taskId }: { projectId?: st
     }
 
     if (taskId) {
-      const unitIds =
-        taskDetails?.floors?.flatMap((floor) => floor.units.map((unit) => unit.id)) ?? [];
+      const hasTaskUnits =
+        (taskLocations?.floors?.flatMap((floor) => floor.units ?? [])?.length ?? 0) > 0;
 
-      if (unitIds.length === 0) {
+      if (!hasTaskUnits) {
         Alert.alert("Assign worker", "No units found in this task.");
         return;
       }
 
       try {
         await assignMutation.mutateAsync({
-          userIds: assignedIds,
-          unitIds,
+          workerIds: assignedIds,
         });
         setAssignedIds([]); // clear selection
         // Automatically refetched by query invalidation, so UI will update

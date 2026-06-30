@@ -38,6 +38,7 @@ import {
   removeProjectWorker,
   getTaskAvailableWorkers,
   assignTaskWorker,
+  getAdminSubTaskDetails,
   getProjectGeofences,
   getProjectGeofenceLocationLogs,
   getProjectGeofenceViolations,
@@ -865,7 +866,7 @@ export function useAssignTaskWorkerMutation(taskId?: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: { userIds: string[]; unitIds: string[] }) => {
+    mutationFn: (payload: { workerIds: string[] }) => {
       if (!taskId) throw new Error("Task ID is required");
       return assignTaskWorker(taskId, payload);
     },
@@ -940,6 +941,17 @@ export function useProjectDocumentsQuery(projectId?: string) {
   }, [query.error, query.isError]);
 
   return query;
+}
+
+export function useAdminSubTaskDetailsQuery(subTaskId?: string) {
+  return useQuery({
+    queryKey: ["subtask", "details", subTaskId],
+    queryFn: () => {
+      if (!subTaskId) throw new Error("Sub task ID is required");
+      return getAdminSubTaskDetails(subTaskId);
+    },
+    enabled: !!subTaskId,
+  });
 }
 
 export function useProjectGeofencesQuery(projectId?: string) {
