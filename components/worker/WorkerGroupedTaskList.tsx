@@ -4,7 +4,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 export type WorkerGroupedTaskItem = {
   id: string;
-  title: string;
+  title?: string;
   description?: string | null;
   priority?: string;
   status?: string;
@@ -74,6 +74,10 @@ function normalizeStatus(status?: string) {
   return (status ?? "pending").toLowerCase().replace(/\s+/g, "_");
 }
 
+function normalizeTaskTitle(task: WorkerGroupedTaskItem) {
+  return task.title?.trim() || task.description?.trim() || "Task";
+}
+
 function WorkerTaskGroupCard({
   group,
   onPressTask,
@@ -138,7 +142,7 @@ function WorkerTaskGroupCard({
             });
 
             return (
-              <View key={floor.id} className={floorIndex ? "mt-4" : ""}>
+              <View key={`${floor.id}-${floorIndex}`} className={floorIndex ? "mt-4" : ""}>
                 <View className="mb-2 flex-row items-center">
                   <MaterialCommunityIcons name="layers-outline" size={14} color="#1E5371" />
                   <Text className="ml-1.5 text-[11px] font-semibold uppercase tracking-[0.5px] text-[#374151]">
@@ -158,7 +162,7 @@ function WorkerTaskGroupCard({
 
                   return (
                     <View
-                      key={unit.id}
+                      key={`${floor.id}-${unit.id}-${unitIndex}`}
                       className={`overflow-hidden rounded-[11px] border border-[#D8DEE5] bg-[#F8FAFC] ${unitIndex ? "mt-2.5" : ""}`}
                     >
                       <View className="flex-row items-center border-b border-[#E2E7EC] px-3 py-2.5">
@@ -187,11 +191,11 @@ function WorkerTaskGroupCard({
                         const actionLabel = status === "completed" ? "View" : status === "in_progress" ? "Continue" : "Start";
                         return (
                           <View
-                            key={task.id}
+                            key={`${unit.id}-${task.id}-${taskIndex}`}
                             className={`flex-row items-center px-3 py-2.5 ${taskIndex ? "border-t border-[#E7EBEF]" : ""}`}
                           >
                             <Text className={`flex-1 pr-3 text-[12px] ${status === "completed" ? "text-[#7C8794]" : "text-[#374151]"}`}>
-                              {task.description?.trim() || task.title}
+                              {task.description?.trim() || normalizeTaskTitle(task)}
                             </Text>
                             <TouchableOpacity
                               activeOpacity={0.8}
@@ -235,10 +239,11 @@ export default function WorkerGroupedTaskList({
   const groups = useMemo<TaskGroup[]>(() => {
     const groupMap = new Map<string, TaskGroup>();
     tasks.forEach((task) => {
-      const key = `${task.project?.id ?? "project"}:${task.title.trim().toLowerCase()}`;
+      const normalizedTitle = normalizeTaskTitle(task);
+      const key = `${task.project?.id ?? "project"}:${normalizedTitle.toLowerCase()}`;
       const group = groupMap.get(key) ?? {
         key,
-        title: task.title,
+        title: normalizedTitle,
         projectName: task.project?.name ?? "Project",
         tasks: [],
       };
@@ -250,9 +255,9 @@ export default function WorkerGroupedTaskList({
 
   return (
     <View>
-      {groups.map((group) => (
+      {groups.map((group, groupIndex) => (
         <WorkerTaskGroupCard
-          key={group.key}
+          key={`${group.key}-${groupIndex}`}
           group={group}
           onPressTask={onPressTask}
           onPressCreateSubtask={onPressCreateSubtask}
