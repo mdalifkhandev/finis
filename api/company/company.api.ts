@@ -858,16 +858,45 @@ export async function reviewSubTaskApprovalApi(
 
 export async function reviewSubTaskReportApi(
   subTaskId: string,
-  reviewDecision: "approved" | "rejected",
-  reviewDescription?: string,
+  payload: {
+    reviewDecision: "approved" | "rejected";
+    reviewDescription?: string;
+    reviewAttachmentUrl?: string;
+    expenseAmount?: number;
+  },
+  file?: { uri: string; name?: string | null; type?: string | null },
 ) {
+  const formData = new FormData();
+  formData.append("reviewDecision", payload.reviewDecision);
+
+  if (payload.reviewDescription) {
+    formData.append("reviewDescription", payload.reviewDescription);
+  }
+
+  if (payload.reviewAttachmentUrl) {
+    formData.append("reviewAttachmentUrl", payload.reviewAttachmentUrl);
+  }
+
+  if (typeof payload.expenseAmount === "number" && Number.isFinite(payload.expenseAmount)) {
+    formData.append("expenseAmount", String(payload.expenseAmount));
+  }
+
+  if (file?.uri) {
+    formData.append("file", {
+      uri: file.uri,
+      name: file.name || "review-attachment",
+      type: file.type || "application/octet-stream",
+    } as any);
+  }
+
   const { data } = await api.put<{
     success: boolean;
     message: string;
     data: any;
-  }>(`/admin/subtasks/${subTaskId}/report-review`, {
-    reviewDecision,
-    reviewDescription,
+  }>(`/admin/subtasks/${subTaskId}/report-review`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
   });
 
   if (!data.success) {

@@ -1,6 +1,7 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import {
   useAdminSubTaskDetailsQuery,
+  useReviewSubTaskReportMutation,
   useTaskDetailsQuery,
   useUpdateTaskMutation,
 } from "@/hooks/company/company";
@@ -22,6 +23,7 @@ export default function TaskDetailsRoute() {
   const isLoading = isSubTaskMode ? subTaskQuery.isLoading : taskQuery.isLoading;
   const isRefreshing = isSubTaskMode ? subTaskQuery.isRefetching : taskQuery.isRefetching;
   const updateTaskMutation = useUpdateTaskMutation(isSubTaskMode ? "" : task?.id || "");
+  const subTaskReviewMutation = useReviewSubTaskReportMutation();
 
   if (isLoading) {
     return (
@@ -55,6 +57,7 @@ export default function TaskDetailsRoute() {
           task={task}
           updateTaskMutation={isSubTaskMode ? undefined : updateTaskMutation}
           isSubTaskMode={isSubTaskMode}
+          subTaskReviewMutation={isSubTaskMode ? subTaskReviewMutation : undefined}
         />
       </ScrollView>
     </SafeAreaView>
