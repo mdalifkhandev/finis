@@ -58,7 +58,15 @@ export default function WorkerTasks() {
             onPressTask={(task) => {
               router.push({
                 pathname: "/screens/worker/taskdetails",
-                params: { id: task.id },
+                params: {
+                  id: task.id,
+                  taskTitle: task.title || "",
+                  taskDescription: task.description || "",
+                  projectName: task.project?.name || "",
+                  floorName: task.floor?.name || "",
+                  roomName: task.room?.name || "",
+                  dueDate: task.dueDate || "",
+                },
               });
             }}
             onPressCreateSubtask={(task, context) => {

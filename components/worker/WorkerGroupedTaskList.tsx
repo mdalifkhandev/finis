@@ -35,49 +35,6 @@ export type WorkerGroupedTaskItem = {
   }>;
 };
 
-export const WORKER_TASK_MOCK_DATA: WorkerGroupedTaskItem[] = [
-  {
-    id: "mock-clean-mirrors",
-    title: "Bathroom Cleaning",
-    description: "Clean mirrors",
-    priority: "medium",
-    status: "pending",
-    project: { id: "mock-project", name: "Morning Shift" },
-    floor: { id: "mock-floor-1", name: "Floor 1", floorNumber: 1 },
-    room: { id: "mock-unit-101", name: "Unit 101", roomNumber: 101 },
-  },
-  {
-    id: "mock-sanitize-floor",
-    title: "Bathroom Cleaning",
-    description: "Sanitize floor",
-    priority: "medium",
-    status: "pending",
-    project: { id: "mock-project", name: "Morning Shift" },
-    floor: { id: "mock-floor-1", name: "Floor 1", floorNumber: 1 },
-    room: { id: "mock-unit-101", name: "Unit 101", roomNumber: 101 },
-  },
-  {
-    id: "mock-refill-dispensers",
-    title: "Bathroom Cleaning",
-    description: "Refill soap dispensers",
-    priority: "medium",
-    status: "in_progress",
-    project: { id: "mock-project", name: "Morning Shift" },
-    floor: { id: "mock-floor-1", name: "Floor 1", floorNumber: 1 },
-    room: { id: "mock-unit-102", name: "Unit 102", roomNumber: 102 },
-  },
-  {
-    id: "mock-deep-clean",
-    title: "Bathroom Cleaning",
-    description: "Full deep clean",
-    priority: "medium",
-    status: "completed",
-    project: { id: "mock-project", name: "Morning Shift" },
-    floor: { id: "mock-floor-3", name: "Floor 3", floorNumber: 3 },
-    room: { id: "mock-unit-103", name: "Unit 103", roomNumber: 103 },
-  },
-];
-
 type TaskGroup = {
   key: string;
   title: string;

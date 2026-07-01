@@ -3,7 +3,7 @@ import TaskViewCard from "@/components/company/taskdetails/TaskViewCard";
 import {
   useReportWorkerTaskBeforePhotoMutation,
   useStartWorkerTaskMutation,
-  useWorkerTaskQuery,
+  useWorkerSubTaskQuery,
 } from "@/hooks/worker/tasks";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
@@ -27,11 +27,30 @@ function formatDateRange(start?: string | Date, end?: string | Date) {
 }
 
 export default function WorkerViewTaskRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: task, isLoading, isError } = useWorkerTaskQuery(id as string);
-  const { mutate: startTask } = useStartWorkerTaskMutation();
-  const { mutate: reportBeforePhoto } =
-    useReportWorkerTaskBeforePhotoMutation();
+  const { id, taskTitle, taskDescription, projectName, floorName, roomName, dueDate } =
+    useLocalSearchParams<{
+      id: string;
+      taskTitle?: string;
+      taskDescription?: string;
+      projectName?: string;
+      floorName?: string;
+      roomName?: string;
+      dueDate?: string;
+  }>();
+  const { data: task, isLoading, isError } = useWorkerSubTaskQuery(id as string);
+  const startTaskMutation = useStartWorkerTaskMutation();
+  const reportBeforePhotoMutation = useReportWorkerTaskBeforePhotoMutation();
+
+  const resolvedTaskTitle = task?.title || taskTitle || "Company";
+  const resolvedProjectName = task?.project?.name || projectName || "N/A";
+  const resolvedDescription =
+    task?.description || taskDescription || "No description provided.";
+  const resolvedRoomNo = task?.roomNo || (task?.floor?.name
+    ? `${task.floor.name} - ${task.room?.name || ""}`
+    : floorName
+      ? `${floorName}${roomName ? ` - ${roomName}` : ""}`
+      : task?.room?.name || roomName || "N/A");
+  const resolvedDueDate = task?.dueDate || dueDate || "";
 
   return (
     <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
@@ -52,30 +71,24 @@ export default function WorkerViewTaskRoute() {
           </View>
         ) : (
           <TaskViewCard
-            workerName={task.title || "Company"}
-            role={task.project?.name || "Project"}
-            dateRange={formatDateRange(task.createdAt, task.dueDate)}
-            title={task.title}
-            location={task.project?.name || "N/A"}
+            workerName={resolvedTaskTitle}
+            role={resolvedProjectName === "N/A" ? "Project" : resolvedProjectName}
+            dateRange={formatDateRange(task.createdAt, resolvedDueDate)}
+            title={resolvedTaskTitle}
+            location={resolvedProjectName}
             city={task.project?.location || ""}
-            roomNo={
-              task.floor?.name
-                ? `${task.floor.name} - ${task.room?.name || ""}`
-                : task.room?.name || "N/A"
-            }
-            startTime="N/A"
-            endTime="N/A"
-            date={
-              task.dueDate ? new Date(task.dueDate).toLocaleDateString() : ""
-            }
-            description={task.description || "No description provided."}
+            roomNo={resolvedRoomNo}
+            startTime={task?.startTime ? new Date(task.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "N/A"}
+            endTime={task?.endTime ? new Date(task.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "N/A"}
+            date={resolvedDueDate ? new Date(resolvedDueDate).toLocaleDateString() : "N/A"}
+            description={resolvedDescription}
+            isStarting={reportBeforePhotoMutation.isPending || startTaskMutation.isPending}
             onStartTask={(imageUri: string) => {
-              reportBeforePhoto(
+              reportBeforePhotoMutation.mutate(
                 { id: task.id, imageUri },
                 {
                   onSuccess: () => {
-                    // Call start task after photo is uploaded successfully
-                    startTask(task.id, {
+                    startTaskMutation.mutate(task.id, {
                       onSuccess: () => {
                         router.push({
                           pathname: "/screens/worker/taskdetails",
