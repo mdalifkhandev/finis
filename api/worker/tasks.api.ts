@@ -58,6 +58,7 @@ export type WorkerTaskDetail = {
   reviewDecision?: string | null;
   reviewDescription?: string | null;
   availableInventory?: any[];
+  inventoryUsed?: any[];
   latestReport?: any | null;
   reports: any[];
   taskInventories: any[];
@@ -156,6 +157,11 @@ function mapWorkerSubTaskDetail(raw: WorkerTaskDetailResponse) {
   const taskDetails = raw.taskDetails;
   const project = taskDetails?.project ?? raw.task?.project ?? null;
   const dueDate = taskDetails?.dueDate ?? taskDetails?.date ?? raw.dueDate ?? raw.task?.dueDate ?? "";
+  const reports = raw.reports ?? [];
+  const latestReport = raw.latestReport ?? reports[0] ?? null;
+  const reportWithBeforePhoto = reports.find((report: any) => report?.beforePhotoUrl) ?? latestReport;
+  const reportWithAfterPhoto = reports.find((report: any) => report?.afterPhotoUrl) ?? latestReport;
+  const reportWithNotes = reports.find((report: any) => report?.notes) ?? latestReport;
 
   return {
     id: raw.id,
@@ -205,15 +211,15 @@ function mapWorkerSubTaskDetail(raw: WorkerTaskDetailResponse) {
       fullName: raw.creator?.fullName ?? "",
       avatarUrl: raw.creator?.avatarUrl ?? null,
     },
-    beforePhotoUrl: raw.beforePhotoUrl ?? raw.latestReport?.beforePhotoUrl ?? null,
-    afterPhotoUrl: raw.afterPhotoUrl ?? raw.latestReport?.afterPhotoUrl ?? null,
+    beforePhotoUrl: raw.beforePhotoUrl ?? latestReport?.beforePhotoUrl ?? reportWithBeforePhoto?.beforePhotoUrl ?? null,
+    afterPhotoUrl: raw.afterPhotoUrl ?? latestReport?.afterPhotoUrl ?? reportWithAfterPhoto?.afterPhotoUrl ?? null,
     receiptUrl: raw.receiptUrl ?? raw.latestReport?.receiptUrl ?? null,
-    note: raw.note ?? raw.latestReport?.notes ?? null,
+    note: raw.note ?? latestReport?.notes ?? reportWithNotes?.notes ?? null,
     reviewDecision: raw.reviewDecision ?? raw.latestReport?.reviewDecision ?? null,
     reviewDescription: raw.reviewDescription ?? raw.latestReport?.reviewDescription ?? null,
     availableInventory: raw.availableInventory ?? [],
-    latestReport: raw.latestReport ?? null,
-    reports: raw.reports ?? [],
+    latestReport,
+    reports,
     taskInventories: ((raw.inventoryUsed ?? raw.inventories) ?? []).map((item: any) => ({
       ...item,
       inventoryId: item.inventoryId ?? item.inventory?.id ?? "",
