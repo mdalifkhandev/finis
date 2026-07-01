@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getWorkerTaskById, startWorkerTask, reportWorkerTaskBeforePhoto, getWorkerTaskInventory, updateWorkerTaskInventory, completeWorkerTaskReport, getWorkerTasks } from "@/api/worker/tasks.api";
+import { createWorkerSubTask, getWorkerTaskById, startWorkerTask, reportWorkerTaskBeforePhoto, getWorkerTaskInventory, updateWorkerTaskInventory, completeWorkerTaskReport, getWorkerTasks } from "@/api/worker/tasks.api";
 
 export function useWorkerTaskQuery(id: string) {
   return useQuery({
@@ -68,5 +68,27 @@ export function useWorkerTasksQuery(page = 1, limit = 10) {
   return useQuery({
     queryKey: ["worker", "tasks", page, limit],
     queryFn: () => getWorkerTasks(page, limit),
+  });
+}
+
+export function useCreateWorkerSubTaskMutation(taskId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: {
+      unitId: string;
+      title: string;
+      description?: string;
+      priority?: string;
+      dueDate?: string;
+      estimatedHours?: number;
+    }) => {
+      if (!taskId) throw new Error("Task ID is required");
+      return createWorkerSubTask(taskId, payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["worker", "dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["worker", "tasks"] });
+    },
   });
 }

@@ -1,6 +1,4 @@
-import WorkerGroupedTaskList, {
-  WORKER_TASK_MOCK_DATA,
-} from "@/components/worker/WorkerGroupedTaskList";
+import WorkerGroupedTaskList from "@/components/worker/WorkerGroupedTaskList";
 import { useWorkerTasksQuery } from "@/hooks/worker/tasks";
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -19,7 +17,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function WorkerTasks() {
   const { data, isLoading, refetch, isRefetching } = useWorkerTasksQuery(1, 100);
   const tasks = data?.data ?? [];
-  const displayedTasks = tasks.length ? tasks : WORKER_TASK_MOCK_DATA;
 
   return (
     <SafeAreaView
@@ -55,14 +52,25 @@ export default function WorkerTasks() {
           <View className="mt-24 items-center">
             <ActivityIndicator size="large" color="#1E5371" />
           </View>
-        ) : displayedTasks.length ? (
+        ) : tasks.length ? (
           <WorkerGroupedTaskList
-            tasks={displayedTasks}
+            tasks={tasks}
             onPressTask={(task) => {
-              if (task.id.startsWith("mock-")) return;
               router.push({
                 pathname: "/screens/worker/taskdetails",
                 params: { id: task.id },
+              });
+            }}
+            onPressCreateSubtask={(task, context) => {
+              router.push({
+                pathname: "/screens/worker/createsubtask",
+                params: {
+                  taskId: task.id,
+                  taskTitle: task.title || "Task",
+                  floorsJson: JSON.stringify(task.floors ?? []),
+                  selectedFloorId: context.floorId,
+                  selectedUnitId: context.unitId,
+                },
               });
             }}
           />

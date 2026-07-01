@@ -143,3 +143,20 @@ export async function getWorkerTasks(page = 1, limit = 10) {
   }
   return data;
 }
+
+export type CreateWorkerSubTaskPayload = {
+  unitId: string;
+  title: string;
+  description?: string;
+  priority?: string;
+  dueDate?: string;
+  estimatedHours?: number;
+};
+
+export async function createWorkerSubTask(taskId: string, payload: CreateWorkerSubTaskPayload) {
+  const { data } = await api.post<ApiResponse<any>>(`/worker/tasks/${taskId}/subtasks`, payload);
+  if (!data.success) {
+    throw new Error(data.message || "Failed to create subtask");
+  }
+  return data.data;
+}
