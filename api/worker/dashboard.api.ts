@@ -7,27 +7,33 @@ type WorkerDashboardTaskResponse = {
   title: string;
   priority: string | null;
   status: string;
-  approvalDecision?: string | null;
-  createdBy?: string | null;
-  unitId?: string | null;
-  unit?: {
+  dueDate: string | null;
+  project: {
     id: string;
     name: string;
   } | null;
-  taskAssignee?: {
-    userId?: string;
-    user?: {
-      id: string;
-      fullName: string;
-      avatarUrl: string | null;
-      role: string;
-    } | null;
-    unit?: {
+  scheduledLabel?: string | null;
+  floors: Array<{
+    id: string;
+    name: string;
+    floorNumber?: number;
+    units: Array<{
       id: string;
       name: string;
-    } | null;
-  } | null;
-  task: {
+      status: string;
+      approvalDecision?: string | null;
+      canCreateSubTask?: boolean;
+      subTasks: Array<{
+        id: string;
+        title: string;
+        status: string;
+        approvalDecision?: string | null;
+        action?: string | null;
+        reportCount?: number;
+      }>;
+    }>;
+  }>;
+  task?: {
     id: string;
     title: string;
     priority: string | null;
@@ -45,9 +51,6 @@ type WorkerDashboardTaskResponse = {
       id: string;
       name: string;
     } | null;
-  };
-  _count: {
-    reports: number;
   };
 };
 
@@ -78,17 +81,35 @@ export async function getWorkerDashboard() {
   return {
     ...data.data,
     todayTasks: (data.data.todayTasks ?? []).map((task) => {
-      const resolvedUnit = task.unit ?? task.taskAssignee?.unit ?? task.task?.unit ?? null;
       return {
         id: task.id,
-        title: task.task?.title?.trim() || task.title,
+        title: task.title?.trim() || "Task",
         description: task.title,
-        priority: task.priority ?? task.task?.priority ?? undefined,
+        priority: task.priority ?? undefined,
         status: task.status,
-        dueDate: task.task?.dueDate ?? undefined,
-        project: task.task?.project ?? undefined,
-        floor: task.task?.floor ?? undefined,
-        room: resolvedUnit ?? undefined,
+        dueDate: task.dueDate ?? undefined,
+        scheduledLabel: task.scheduledLabel ?? null,
+        project: task.project ?? undefined,
+        floors: (task.floors ?? []).map((floor) => ({
+          id: floor.id,
+          name: floor.name,
+          floorNumber: floor.floorNumber,
+          units: (floor.units ?? []).map((unit) => ({
+            id: unit.id,
+            name: unit.name,
+            status: unit.status,
+            approvalDecision: unit.approvalDecision ?? null,
+            canCreateSubTask: unit.canCreateSubTask ?? false,
+            subTasks: (unit.subTasks ?? []).map((subTask) => ({
+              id: subTask.id,
+              title: subTask.title,
+              status: subTask.status,
+              approvalDecision: subTask.approvalDecision ?? null,
+              action: subTask.action ?? null,
+              reportCount: subTask.reportCount ?? 0,
+            })),
+          })),
+        })),
       };
     }),
   };

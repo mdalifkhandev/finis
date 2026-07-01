@@ -9,9 +9,30 @@ export type WorkerGroupedTaskItem = {
   priority?: string;
   status?: string;
   dueDate?: string;
+  scheduledLabel?: string | null;
   project?: { id?: string; name?: string } | null;
   floor?: { id?: string; name?: string; floorNumber?: number } | null;
   room?: { id?: string; name?: string; roomNumber?: number } | null;
+  floors?: Array<{
+    id: string;
+    name: string;
+    floorNumber?: number;
+    units: Array<{
+      id: string;
+      name: string;
+      status?: string;
+      approvalDecision?: string | null;
+      canCreateSubTask?: boolean;
+      subTasks: Array<{
+        id: string;
+        title?: string;
+        status?: string;
+        approvalDecision?: string | null;
+        action?: string | null;
+        reportCount?: number;
+      }>;
+    }>;
+  }>;
 };
 
 export const WORKER_TASK_MOCK_DATA: WorkerGroupedTaskItem[] = [
@@ -60,8 +81,24 @@ export const WORKER_TASK_MOCK_DATA: WorkerGroupedTaskItem[] = [
 type TaskGroup = {
   key: string;
   title: string;
-  projectName: string;
-  tasks: WorkerGroupedTaskItem[];
+  subtitle: string;
+  floors: Array<{
+    id: string;
+    name: string;
+    units: Array<{
+      id: string;
+      name: string;
+      status?: string;
+      canCreateSubTask?: boolean;
+      subTasks: Array<{
+        id: string;
+        title: string;
+        status?: string;
+        action?: string | null;
+      }>;
+      sourceTask?: WorkerGroupedTaskItem;
+    }>;
+  }>;
 };
 
 const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -78,6 +115,18 @@ function normalizeTaskTitle(task: WorkerGroupedTaskItem) {
   return task.title?.trim() || task.description?.trim() || "Task";
 }
 
+function normalizeActionLabel(action?: string | null, status?: string) {
+  const normalizedAction = (action ?? "").toLowerCase();
+  if (normalizedAction === "continue") return "Continue";
+  if (normalizedAction === "view") return "View";
+  if (normalizedAction === "start") return "Start";
+
+  const normalizedStatus = normalizeStatus(status);
+  if (normalizedStatus === "completed") return "View";
+  if (normalizedStatus === "in_progress") return "Continue";
+  return "Start";
+}
+
 function WorkerTaskGroupCard({
   group,
   onPressTask,
@@ -88,20 +137,6 @@ function WorkerTaskGroupCard({
   onPressCreateSubtask?: (task: WorkerGroupedTaskItem) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
-  const floors = useMemo(() => {
-    const floorMap = new Map<string, { id: string; name: string; tasks: WorkerGroupedTaskItem[] }>();
-    group.tasks.forEach((task) => {
-      const id = task.floor?.id ?? "no-floor";
-      const current = floorMap.get(id) ?? {
-        id,
-        name: task.floor?.name ?? "Floor",
-        tasks: [],
-      };
-      current.tasks.push(task);
-      floorMap.set(id, current);
-    });
-    return Array.from(floorMap.values());
-  }, [group.tasks]);
 
   return (
     <View className="mb-4 overflow-hidden rounded-[14px] border border-[#CBD4DE] bg-white">
@@ -116,7 +151,7 @@ function WorkerTaskGroupCard({
         <View className="ml-3 flex-1">
           <Text className="text-[15px] font-semibold text-[#192532]">{group.title}</Text>
           <Text className="mt-0.5 text-[11px] text-[#667085]" numberOfLines={1}>
-            {group.projectName} · {group.tasks.length} {group.tasks.length === 1 ? "subtask" : "subtasks"}
+            {group.subtitle}
           </Text>
         </View>
         <Ionicons
@@ -128,19 +163,7 @@ function WorkerTaskGroupCard({
 
       {expanded ? (
         <View className="px-3 pb-3 pt-2">
-          {floors.map((floor, floorIndex) => {
-            const units = new Map<string, { id: string; name: string; tasks: WorkerGroupedTaskItem[] }>();
-            floor.tasks.forEach((task) => {
-              const id = task.room?.id ?? "no-unit";
-              const unit = units.get(id) ?? {
-                id,
-                name: task.room?.name ?? "Unit",
-                tasks: [],
-              };
-              unit.tasks.push(task);
-              units.set(id, unit);
-            });
-
+          {group.floors.map((floor, floorIndex) => {
             return (
               <View key={`${floor.id}-${floorIndex}`} className={floorIndex ? "mt-4" : ""}>
                 <View className="mb-2 flex-row items-center">
@@ -150,15 +173,9 @@ function WorkerTaskGroupCard({
                   </Text>
                 </View>
 
-                {Array.from(units.values()).map((unit, unitIndex) => {
-                  const unitStatus = unit.tasks.every(
-                    (task) => normalizeStatus(task.status) === "completed",
-                  )
-                    ? "completed"
-                    : unit.tasks.some((task) => normalizeStatus(task.status) === "in_progress")
-                      ? "in_progress"
-                      : "pending";
-                  const style = STATUS_STYLE[unitStatus];
+                {floor.units.map((unit, unitIndex) => {
+                  const unitStatus = normalizeStatus(unit.status);
+                  const style = STATUS_STYLE[unitStatus] ?? STATUS_STYLE.pending;
 
                   return (
                     <View
@@ -175,40 +192,51 @@ function WorkerTaskGroupCard({
                         </View>
                       </View>
 
-                      <TouchableOpacity
-                        activeOpacity={0.75}
-                        onPress={() => onPressCreateSubtask?.(unit.tasks[0])}
-                        className="flex-row items-center border-b border-[#E2E7EC] px-3 py-2"
-                      >
-                        <Ionicons name="add-circle-outline" size={16} color="#1E5371" />
-                        <Text className="ml-1.5 text-[11px] font-medium text-[#1E5371]">
-                          Create Sub-Task
-                        </Text>
-                      </TouchableOpacity>
+                      {unit.canCreateSubTask ? (
+                        <TouchableOpacity
+                          activeOpacity={0.75}
+                          onPress={() => unit.sourceTask && onPressCreateSubtask?.(unit.sourceTask)}
+                          className="flex-row items-center border-b border-[#E2E7EC] px-3 py-2"
+                        >
+                          <Ionicons name="add-circle-outline" size={16} color="#1E5371" />
+                          <Text className="ml-1.5 text-[11px] font-medium text-[#1E5371]">
+                            Create Sub-Task
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
 
-                      {unit.tasks.map((task, taskIndex) => {
+                      {unit.subTasks.map((task, taskIndex) => {
                         const status = normalizeStatus(task.status);
-                        const actionLabel = status === "completed" ? "View" : status === "in_progress" ? "Continue" : "Start";
+                        const actionLabel = normalizeActionLabel(task.action, task.status);
                         return (
                           <View
                             key={`${unit.id}-${task.id}-${taskIndex}`}
                             className={`flex-row items-center px-3 py-2.5 ${taskIndex ? "border-t border-[#E7EBEF]" : ""}`}
                           >
                             <Text className={`flex-1 pr-3 text-[12px] ${status === "completed" ? "text-[#7C8794]" : "text-[#374151]"}`}>
-                              {task.description?.trim() || normalizeTaskTitle(task)}
+                              {task.title}
                             </Text>
                             <TouchableOpacity
                               activeOpacity={0.8}
-                              onPress={() => onPressTask(task)}
+                              onPress={() =>
+                                onPressTask({
+                                  id: task.id,
+                                  title: task.title,
+                                  status: task.status,
+                                  floor: { id: floor.id, name: floor.name },
+                                  room: { id: unit.id, name: unit.name },
+                                  project: group.floors[0]?.units[0]?.sourceTask?.project ?? null,
+                                })
+                              }
                               className={`min-w-[54px] items-center rounded-[5px] px-2.5 py-1.5 ${
-                                status === "in_progress"
+                                actionLabel === "Continue"
                                   ? "bg-[#8A5205]"
-                                  : status === "completed"
+                                  : actionLabel === "View"
                                     ? "bg-[#E3EBEF]"
                                     : "bg-[#EEF1F4]"
                               }`}
                             >
-                              <Text className={`text-[10px] font-semibold ${status === "in_progress" ? "text-white" : "text-[#40505F]"}`}>
+                              <Text className={`text-[10px] font-semibold ${actionLabel === "Continue" ? "text-white" : "text-[#40505F]"}`}>
                                 {actionLabel}
                               </Text>
                             </TouchableOpacity>
@@ -241,14 +269,72 @@ export default function WorkerGroupedTaskList({
     tasks.forEach((task) => {
       const normalizedTitle = normalizeTaskTitle(task);
       const key = `${task.project?.id ?? "project"}:${normalizedTitle.toLowerCase()}`;
-      const group = groupMap.get(key) ?? {
+      if (task.floors?.length) {
+        groupMap.set(key, {
+          key,
+          title: normalizedTitle,
+          subtitle: `Scheduled: ${task.scheduledLabel || task.project?.name || "Project"}`,
+          floors: task.floors.map((floor) => ({
+            id: floor.id,
+            name: floor.name,
+            units: floor.units.map((unit) => ({
+              id: unit.id,
+              name: `Unit ${unit.name}`,
+              status: unit.status,
+              canCreateSubTask: unit.canCreateSubTask,
+              subTasks: (unit.subTasks ?? []).map((subTask) => ({
+                id: subTask.id,
+                title: subTask.title?.trim() || "Sub Task",
+                status: subTask.status,
+                action: subTask.action,
+              })),
+              sourceTask: task,
+            })),
+          })),
+        });
+        return;
+      }
+
+      const currentGroup = groupMap.get(key) ?? {
         key,
         title: normalizedTitle,
-        projectName: task.project?.name ?? "Project",
-        tasks: [],
+        subtitle: `Scheduled: ${task.scheduledLabel || task.project?.name || "Project"}`,
+        floors: [],
       };
-      group.tasks.push(task);
-      groupMap.set(key, group);
+
+      const floorId = task.floor?.id ?? "no-floor";
+      let floor = currentGroup.floors.find((item) => item.id === floorId);
+      if (!floor) {
+        floor = {
+          id: floorId,
+          name: task.floor?.name ?? "Floor",
+          units: [],
+        };
+        currentGroup.floors.push(floor);
+      }
+
+      const unitId = task.room?.id ?? "no-unit";
+      let unit = floor.units.find((item) => item.id === unitId);
+      if (!unit) {
+        unit = {
+          id: unitId,
+          name: task.room?.name ? `Unit ${task.room.name}` : "Unit",
+          status: task.status,
+          canCreateSubTask: true,
+          subTasks: [],
+          sourceTask: task,
+        };
+        floor.units.push(unit);
+      }
+
+      unit.subTasks.push({
+        id: task.id,
+        title: task.description?.trim() || normalizedTitle,
+        status: task.status,
+        action: undefined,
+      });
+
+      groupMap.set(key, currentGroup);
     });
     return Array.from(groupMap.values());
   }, [tasks]);
