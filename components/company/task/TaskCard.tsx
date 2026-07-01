@@ -74,7 +74,7 @@ export default function TaskCard({
   } else if (task.approvalDecision !== "approved") {
     actionLabel = "Activate Task";
   } else if (hasApprovedSubtasks && task.rawStatus?.toLowerCase() === "review") {
-    actionLabel = "Approve All";
+    actionLabel = "Approve ";
   } else if (task.approvalDecision === "approved") {
     actionLabel = "Activated";
     actionDisabled = true;
