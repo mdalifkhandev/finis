@@ -110,17 +110,40 @@ export default function TaskFloorUnitMultiSelect({
   floors,
   unitsByFloor,
   isLoading,
+  initialSelections,
   onChange,
 }: {
   projectId?: string;
   floors?: Floor[];
   unitsByFloor?: Record<string, Room[]>;
   isLoading?: boolean;
+  initialSelections?: TaskFloorUnitSelection[];
   onChange: (selections: TaskFloorUnitSelection[]) => void;
 }) {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedFloors, setSelectedFloors] = useState<Floor[]>([]);
   const [selectedUnits, setSelectedUnits] = useState<Record<string, Room[]>>({});
+
+  useEffect(() => {
+    if (!initialSelections?.length) return;
+
+    const nextFloors: Floor[] = [];
+    const nextUnits: Record<string, Room[]> = {};
+
+    initialSelections.forEach(({ floor, unit }) => {
+      if (!nextFloors.some((item) => item.id === floor.id)) {
+        nextFloors.push(floor);
+      }
+
+      const floorUnits = nextUnits[floor.id] ?? [];
+      if (!floorUnits.some((item) => item.id === unit.id)) {
+        nextUnits[floor.id] = [...floorUnits, unit];
+      }
+    });
+
+    setSelectedFloors(nextFloors);
+    setSelectedUnits(nextUnits);
+  }, [initialSelections]);
 
   useEffect(() => {
     onChange(

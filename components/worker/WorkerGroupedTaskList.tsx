@@ -134,7 +134,10 @@ function WorkerTaskGroupCard({
 }: {
   group: TaskGroup;
   onPressTask: (task: WorkerGroupedTaskItem) => void;
-  onPressCreateSubtask?: (task: WorkerGroupedTaskItem) => void;
+  onPressCreateSubtask?: (
+    task: WorkerGroupedTaskItem,
+    context: { floorId: string; unitId: string },
+  ) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
 
@@ -195,7 +198,13 @@ function WorkerTaskGroupCard({
                       {unit.canCreateSubTask ? (
                         <TouchableOpacity
                           activeOpacity={0.75}
-                          onPress={() => unit.sourceTask && onPressCreateSubtask?.(unit.sourceTask)}
+                          onPress={() =>
+                            unit.sourceTask &&
+                            onPressCreateSubtask?.(unit.sourceTask, {
+                              floorId: floor.id,
+                              unitId: unit.id,
+                            })
+                          }
                           className="flex-row items-center border-b border-[#E2E7EC] px-3 py-2"
                         >
                           <Ionicons name="add-circle-outline" size={16} color="#1E5371" />
@@ -262,7 +271,10 @@ export default function WorkerGroupedTaskList({
 }: {
   tasks: WorkerGroupedTaskItem[];
   onPressTask: (task: WorkerGroupedTaskItem) => void;
-  onPressCreateSubtask?: (task: WorkerGroupedTaskItem) => void;
+  onPressCreateSubtask?: (
+    task: WorkerGroupedTaskItem,
+    context: { floorId: string; unitId: string },
+  ) => void;
 }) {
   const groups = useMemo<TaskGroup[]>(() => {
     const groupMap = new Map<string, TaskGroup>();

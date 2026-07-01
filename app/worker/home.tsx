@@ -436,6 +436,18 @@ export default function WorkerHome() {
                         params: { id: task.id },
                       });
                     }}
+                    onPressCreateSubtask={(task, context) => {
+                      router.push({
+                        pathname: "/screens/worker/createsubtask",
+                        params: {
+                          taskId: task.id,
+                          taskTitle: task.title || "Task",
+                          floorsJson: JSON.stringify(task.floors ?? []),
+                          selectedFloorId: context.floorId,
+                          selectedUnitId: context.unitId,
+                        },
+                      });
+                    }}
                   />
                 ) : (
                   <View className="items-center py-4">
