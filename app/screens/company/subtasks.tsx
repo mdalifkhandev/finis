@@ -4,6 +4,7 @@ import TaskFilterTabs, { TaskFilter } from "@/components/company/task/TaskFilter
 import type { TaskItem, TaskStatus } from "@/components/company/task/types";
 import {
   useReviewSubTaskApprovalMutation,
+  useReviewSubTaskReportMutation,
   useTaskDetailsQuery,
   useTaskSubTasksQuery,
 } from "@/hooks/company/company";
@@ -20,11 +21,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-function mapStatus(status: string): TaskStatus {
-  const normalized = status.toLowerCase();
-  if (normalized === "review") return "Review";
+function mapStatus(status: string, approvalDecision?: string | null): TaskStatus {
+  const normalized = (status ?? "").toLowerCase().trim();
+  const normalizedApproval = (approvalDecision ?? "").toLowerCase().trim();
+
+  if (normalized === "in_active" || normalized === "inactive") return "Inactive";
   if (normalized === "in_progress") return "In Progress";
-  if (normalized === "completed") return "Completed";
+  if (normalized === "review") return "Review";
+  if (normalized === "completed") {
+    return normalizedApproval === "approved" ? "Completed" : "Review";
+  }
   return "Pending";
 }
 
@@ -56,6 +62,7 @@ export default function SubtasksRoute() {
   const tasksQuery = useTaskSubTasksQuery(parentTaskId);
   const taskDetailsQuery = useTaskDetailsQuery(parentTaskId);
   const reviewSubTaskMutation = useReviewSubTaskApprovalMutation(parentTaskId);
+  const reviewSubTaskReportMutation = useReviewSubTaskReportMutation(parentTaskId);
 
   const subtasks = useMemo<TaskItem[]>(() => {
     const unitToFloorMap = new Map<string, string>();
@@ -81,10 +88,7 @@ export default function SubtasksRoute() {
             .join(", ")
         : "Unit";
 
-      const displayStatus =
-        task.approvalDecision === "pending" && task.status.toLowerCase() === "completed"
-          ? "Review"
-          : mapStatus(task.status);
+      const displayStatus = mapStatus(task.status, task.approvalDecision);
 
       const displayDate = task.dueDate || task.completedAt || task.submittedAt || task.createdAt;
 
@@ -173,14 +177,19 @@ export default function SubtasksRoute() {
                 <TaskCard
                   key={task.id}
                   task={task}
-                  isActionLoading={reviewSubTaskMutation.isPending}
-                  subtaskActionLabel="Approve Sub Task"
-                  subtaskActionDisabled={task.status !== "Review"}
+                  isActionLoading={reviewSubTaskMutation.isPending || reviewSubTaskReportMutation.isPending}
+                  subtaskActionLabel={["Inactive", "Review"].includes(task.status) ? "Approve Sub Task" : "Approved Sub Task"}
+                  subtaskActionDisabled={!["Inactive", "Review"].includes(task.status)}
                   onPressSubtaskAction={() =>
-                    reviewSubTaskMutation.mutate({
-                      subTaskId: task.id,
-                      reviewDecision: "approved",
-                    })
+                    task.status === "Review"
+                      ? reviewSubTaskReportMutation.mutate({
+                          subTaskId: task.id,
+                          reviewDecision: "approved",
+                        })
+                      : reviewSubTaskMutation.mutate({
+                          subTaskId: task.id,
+                          reviewDecision: "approved",
+                        })
                   }
                   onPress={() =>
                     task.id

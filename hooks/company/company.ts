@@ -15,6 +15,7 @@ import {
   reviewTaskApprovalApi,
   reviewTaskCompletionApi,
   reviewSubTaskApprovalApi,
+  reviewSubTaskReportApi,
   createProjectFloor,
   createProjectFloorRooms,
   updateProjectFloor,
@@ -1031,6 +1032,35 @@ export function useReviewSubTaskApprovalMutation(taskId?: string) {
       if (!taskId) throw new Error("Task ID is required");
       return reviewSubTaskApprovalApi(taskId, subTaskId, reviewDecision, reviewDescription);
     },
+    onSuccess: async () => {
+      if (taskId) {
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks", taskId] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
+        await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+      }
+      toast.success("Sub task approved successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to approve sub task",
+      );
+    },
+  });
+}
+
+export function useReviewSubTaskReportMutation(taskId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      subTaskId,
+      reviewDecision,
+      reviewDescription,
+    }: {
+      subTaskId: string;
+      reviewDecision: "approved" | "rejected";
+      reviewDescription?: string;
+    }) => reviewSubTaskReportApi(subTaskId, reviewDecision, reviewDescription),
     onSuccess: async () => {
       if (taskId) {
         await queryClient.invalidateQueries({ queryKey: ["task", "subtasks", taskId] });

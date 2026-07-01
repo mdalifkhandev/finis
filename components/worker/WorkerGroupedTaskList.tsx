@@ -51,6 +51,7 @@ type TaskGroup = {
         id: string;
         title: string;
         status?: string;
+        approvalDecision?: string | null;
         action?: string | null;
       }>;
       sourceTask?: WorkerGroupedTaskItem;
@@ -72,13 +73,24 @@ function normalizeTaskTitle(task: WorkerGroupedTaskItem) {
   return task.title?.trim() || task.description?.trim() || "Task";
 }
 
-function normalizeActionLabel(action?: string | null, status?: string) {
+function normalizeActionLabel(
+  action?: string | null,
+  status?: string,
+  approvalDecision?: string | null,
+) {
+  const normalizedStatus = normalizeStatus(status);
+  const normalizedApproval = (approvalDecision ?? "").toLowerCase().trim();
+  if (normalizedStatus === "review") return "Review Task";
+  if (normalizedStatus === "completed" && normalizedApproval === "pending") {
+    return "Review Task";
+  }
+
   const normalizedAction = (action ?? "").toLowerCase();
   if (normalizedAction === "continue") return "Continue";
+  if (normalizedAction === "review") return "Review Task";
   if (normalizedAction === "view") return "View";
   if (normalizedAction === "start") return "Start";
 
-  const normalizedStatus = normalizeStatus(status);
   if (normalizedStatus === "completed") return "View";
   if (normalizedStatus === "in_progress") return "Continue";
   return "Start";
@@ -173,7 +185,11 @@ function WorkerTaskGroupCard({
 
                       {unit.subTasks.map((task, taskIndex) => {
                         const status = normalizeStatus(task.status);
-                        const actionLabel = normalizeActionLabel(task.action, task.status);
+                        const actionLabel = normalizeActionLabel(
+                          task.action,
+                          task.status,
+                          task.approvalDecision,
+                        );
                         return (
                           <View
                             key={`${unit.id}-${task.id}-${taskIndex}`}
@@ -194,15 +210,27 @@ function WorkerTaskGroupCard({
                                   project: group.floors[0]?.units[0]?.sourceTask?.project ?? null,
                                 })
                               }
-                              className={`min-w-[54px] items-center rounded-[5px] px-2.5 py-1.5 ${
+                              className={`items-center rounded-[5px] px-2.5 py-1.5 ${
+                                actionLabel === "Review Task"
+                                  ? "min-w-[88px]"
+                                  : actionLabel === "Continue"
+                                    ? "min-w-[72px]"
+                                    : "min-w-[54px]"
+                              } ${
                                 actionLabel === "Continue"
                                   ? "bg-[#8A5205]"
+                                  : actionLabel === "Review Task"
+                                    ? "bg-[#6D28D9]"
                                   : actionLabel === "View"
                                     ? "bg-[#E3EBEF]"
                                     : "bg-[#EEF1F4]"
                               }`}
                             >
-                              <Text className={`text-[10px] font-semibold ${actionLabel === "Continue" ? "text-white" : "text-[#40505F]"}`}>
+                              <Text className={`text-[10px] font-semibold ${
+                                actionLabel === "Continue" || actionLabel === "Review Task"
+                                  ? "text-white"
+                                  : "text-[#40505F]"
+                              }`}>
                                 {actionLabel}
                               </Text>
                             </TouchableOpacity>
@@ -251,12 +279,13 @@ export default function WorkerGroupedTaskList({
               name: `Unit ${unit.name}`,
               status: unit.status,
               canCreateSubTask: unit.canCreateSubTask,
-              subTasks: (unit.subTasks ?? []).map((subTask) => ({
-                id: subTask.id,
-                title: subTask.title?.trim() || "Sub Task",
-                status: subTask.status,
-                action: subTask.action,
-              })),
+            subTasks: (unit.subTasks ?? []).map((subTask) => ({
+              id: subTask.id,
+              title: subTask.title?.trim() || "Sub Task",
+              status: subTask.status,
+              approvalDecision: subTask.approvalDecision ?? null,
+              action: subTask.action,
+            })),
               sourceTask: task,
             })),
           })),
@@ -300,6 +329,7 @@ export default function WorkerGroupedTaskList({
         id: task.id,
         title: task.description?.trim() || normalizedTitle,
         status: task.status,
+        approvalDecision: null,
         action: undefined,
       });
 

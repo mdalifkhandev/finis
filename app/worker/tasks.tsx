@@ -56,8 +56,28 @@ export default function WorkerTasks() {
           <WorkerGroupedTaskList
             tasks={tasks}
             onPressTask={(task) => {
+              const normalizedStatus = (task.status ?? "").toLowerCase().trim();
+              const normalizedApproval = (task.approvalDecision ?? "")
+                .toLowerCase()
+                .trim();
+              const shouldOpenDetails =
+                normalizedStatus === "in_progress" ||
+                normalizedStatus === "review" ||
+                normalizedStatus === "completed" ||
+                (normalizedStatus === "completed" && normalizedApproval === "pending");
+
+              if (shouldOpenDetails) {
+                router.push({
+                  pathname: "/screens/worker/taskdetails",
+                  params: {
+                    id: task.id,
+                  },
+                });
+                return;
+              }
+
               router.push({
-                pathname: "/screens/worker/taskdetails",
+                pathname: "/screens/worker/viewtask",
                 params: {
                   id: task.id,
                   taskTitle: task.title || "",
