@@ -184,7 +184,9 @@ export default function SubtasksRoute() {
                     task.status === "Review"
                       ? reviewSubTaskReportMutation.mutate({
                           subTaskId: task.id,
-                          reviewDecision: "approved",
+                          payload: {
+                            reviewDecision: "approved",
+                          },
                         })
                       : reviewSubTaskMutation.mutate({
                           subTaskId: task.id,

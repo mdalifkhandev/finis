@@ -1054,13 +1054,18 @@ export function useReviewSubTaskReportMutation(taskId?: string) {
   return useMutation({
     mutationFn: ({
       subTaskId,
-      reviewDecision,
-      reviewDescription,
+      payload,
+      file,
     }: {
       subTaskId: string;
-      reviewDecision: "approved" | "rejected";
-      reviewDescription?: string;
-    }) => reviewSubTaskReportApi(subTaskId, reviewDecision, reviewDescription),
+      payload: {
+        reviewDecision: "approved" | "rejected";
+        reviewDescription?: string;
+        reviewAttachmentUrl?: string;
+        expenseAmount?: number;
+      };
+      file?: { uri: string; name?: string | null; type?: string | null };
+    }) => reviewSubTaskReportApi(subTaskId, payload, file),
     onSuccess: async () => {
       if (taskId) {
         await queryClient.invalidateQueries({ queryKey: ["task", "subtasks", taskId] });

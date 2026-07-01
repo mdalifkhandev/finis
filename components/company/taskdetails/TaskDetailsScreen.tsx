@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { ActivityIndicator, Alert, Image, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useReviewTaskReportMutation } from "@/hooks/company/company";
+import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner-native";
 import type { TaskDetailsData } from "@/types/company.types";
 import { TaskStatus } from "../task/types";
@@ -13,6 +14,29 @@ import TaskPhotoCard from "./TaskPhotoCard";
 type TaskDetailsScreenProps = {
   task?: TaskDetailsData;
   isSubTaskMode?: boolean;
+  subTaskReviewMutation?: {
+    isPending: boolean;
+    variables?: {
+      subTaskId: string;
+      payload: {
+        reviewDecision: "approved" | "rejected";
+        reviewDescription?: string;
+        reviewAttachmentUrl?: string;
+        expenseAmount?: number;
+      };
+      file?: { uri: string; name?: string | null; type?: string | null };
+    };
+    mutateAsync: (params: {
+      subTaskId: string;
+      payload: {
+        reviewDecision: "approved" | "rejected";
+        reviewDescription?: string;
+        reviewAttachmentUrl?: string;
+        expenseAmount?: number;
+      };
+      file?: { uri: string; name?: string | null; type?: string | null };
+    }) => Promise<unknown>;
+  };
   updateTaskMutation?: {
     isPending: boolean;
     mutateAsync: (params: {
@@ -65,18 +89,28 @@ export default function TaskDetailsScreen({
   task,
   updateTaskMutation,
   isSubTaskMode = false,
+  subTaskReviewMutation,
 }: TaskDetailsScreenProps) {
   const description = task?.description?.trim() || "—";
+  const currentUserRole = useAuthStore((state) => state.user?.role);
   const [reviewDescription, setReviewDescription] = useState("");
   const [expenseAmount, setExpenseAmount] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<TaskExpenseDocument[]>([]);
+  const normalizedStatus = (task?.status ?? "").toLowerCase().trim();
+  const canReviewTask =
+    (currentUserRole === "admin" || currentUserRole === "manager") &&
+    normalizedStatus === "review";
 
   const reportId = task?.reports?.[0]?.id;
   const taskId = task?.id;
   const reviewMutation = useReviewTaskReportMutation(taskId || "", reportId || "");
+  const isDecisionPending = isSubTaskMode ? Boolean(subTaskReviewMutation?.isPending) : reviewMutation.isPending;
+  const pendingDecision = isSubTaskMode
+    ? subTaskReviewMutation?.variables?.payload?.reviewDecision
+    : reviewMutation.variables;
 
   const handleReview = async (decision: "approved" | "rejected") => {
-    if (!taskId || !reportId) {
+    if (!taskId) {
       toast.error("No report available to review");
       return;
     }
@@ -85,7 +119,7 @@ export default function TaskDetailsScreen({
       const selectedFile = uploadedFiles[0];
       const parsedAmount = Number.parseFloat(expenseAmount);
 
-      if (task?.id && updateTaskMutation && !updateTaskMutation.isPending) {
+      if (!isSubTaskMode && task?.id && updateTaskMutation && !updateTaskMutation.isPending) {
         await updateTaskMutation.mutateAsync({
           taskId: task.id,
           payload: {
@@ -102,7 +136,37 @@ export default function TaskDetailsScreen({
         });
       }
 
-      await reviewMutation.mutateAsync(decision);
+      if (isSubTaskMode) {
+        if (!subTaskReviewMutation) {
+          toast.error("Sub task review is unavailable");
+          return;
+        }
+
+        const selectedFile = uploadedFiles[0];
+        const parsedAmount = Number.parseFloat(expenseAmount);
+        await subTaskReviewMutation.mutateAsync({
+          subTaskId: taskId,
+          payload: {
+            reviewDecision: decision,
+            reviewDescription: reviewDescription.trim() || undefined,
+            reviewAttachmentUrl: selectedFile?.uri,
+            expenseAmount: Number.isFinite(parsedAmount) ? parsedAmount : 0,
+          },
+          file: selectedFile
+            ? {
+                uri: selectedFile.uri,
+                name: selectedFile.name,
+                type: selectedFile.mimeType,
+              }
+            : undefined,
+        });
+      } else {
+        if (!reportId) {
+          toast.error("No report available to review");
+          return;
+        }
+        await reviewMutation.mutateAsync(decision);
+      }
       setReviewDescription(decision === "approved" ? "Approved" : "Rejected");
       setExpenseAmount("");
       setUploadedFiles([]);
@@ -343,25 +407,47 @@ export default function TaskDetailsScreen({
               </View>
             </View>
           ) : null}
-        <View className="mt-3">
-          <Text className="text-[13px] text-[#374151]">Total Expenses Amount</Text>
-          <TextInput
-            value={expenseAmount}
-            onChangeText={setExpenseAmount}
-            placeholder="Enter total expenses amount"
-            placeholderTextColor="#A0A8B5"
-            keyboardType="decimal-pad"
-            className="mt-2 h-[48px] rounded-[12px] border border-[#D7DEE7] bg-white px-4 text-[15px] text-[#111827]"
-          />
-        </View>
-        <TaskExpensesCard
-          documents={uploadedFiles}
-          onRemoveDocument={handleRemoveDocument}
-        />
+        {canReviewTask ? (
+          <>
+            <View className="mt-3">
+              <Text className="text-[13px] text-[#374151]">Total Expenses Amount</Text>
+              <TextInput
+                value={expenseAmount}
+                onChangeText={setExpenseAmount}
+                placeholder="Enter total expenses amount"
+                placeholderTextColor="#A0A8B5"
+                keyboardType="decimal-pad"
+                className="mt-2 h-[48px] rounded-[12px] border border-[#D7DEE7] bg-white px-4 text-[15px] text-[#111827]"
+              />
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.88}
+              onPress={handleUploadFile}
+              className="mt-4 h-[52px] flex-row items-center justify-center rounded-[12px] bg-[#1E5371]"
+            >
+              <Ionicons name="cloud-upload-outline" size={20} color="#F3F7FA" />
+              <Text className="ml-2 text-[16px] font-medium text-[#F3F7FA]">
+                Upload Expense Document
+              </Text>
+            </TouchableOpacity>
+
+            {uploadedFiles.length ? (
+              <Text className="mt-2 text-[12px] text-[#6B7280]">
+                {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""} selected
+              </Text>
+            ) : null}
+
+            <TaskExpensesCard
+              documents={uploadedFiles}
+              onRemoveDocument={handleRemoveDocument}
+            />
+          </>
+        ) : null}
 
       </View>
 
-      {!isSubTaskMode ? (
+      {canReviewTask ? (
         <>
           <View className="mt-6">
             <Text className="text-[15px] font-semibold text-[#1F2937]">
@@ -381,33 +467,16 @@ export default function TaskDetailsScreen({
               />
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.88}
-              onPress={handleUploadFile}
-              className="mt-4 h-[52px] flex-row items-center justify-center rounded-[12px] bg-[#1E5371]"
-            >
-              <Ionicons name="cloud-upload-outline" size={20} color="#F3F7FA" />
-              <Text className="ml-2 text-[16px] font-medium text-[#F3F7FA]">
-                Upload File
-              </Text>
-            </TouchableOpacity>
-
-            {uploadedFiles.length ? (
-              <Text className="mt-2 text-[12px] text-[#6B7280]">
-                {uploadedFiles.length} file{uploadedFiles.length > 1 ? "s" : ""}{" "}
-                selected
-              </Text>
-            ) : null}
           </View>
 
           <View className="mt-6 flex-row items-center justify-between">
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => handleReview("rejected")}
-              disabled={reviewMutation.isPending}
+              disabled={isDecisionPending}
               className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] border border-[#D6DDE5] bg-white opacity-90 disabled:opacity-50"
             >
-              {reviewMutation.isPending && reviewMutation.variables === "rejected" ? (
+              {isDecisionPending && pendingDecision === "rejected" ? (
                 <ActivityIndicator color="#1E1E1E" />
               ) : (
                 <Text className="text-[16px] font-medium text-[#1E1E1E]">Reject Task</Text>
@@ -417,10 +486,10 @@ export default function TaskDetailsScreen({
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() => handleReview("approved")}
-              disabled={reviewMutation.isPending}
+              disabled={isDecisionPending}
               className="h-[52px] w-[47.5%] items-center justify-center rounded-[12px] bg-[#1E5371] opacity-90 disabled:opacity-50"
             >
-              {reviewMutation.isPending && reviewMutation.variables === "approved" ? (
+              {isDecisionPending && pendingDecision === "approved" ? (
                 <ActivityIndicator color="#F3F7FA" />
               ) : (
                 <Text className="text-[16px] font-medium text-[#F3F7FA]">Approve Work</Text>
