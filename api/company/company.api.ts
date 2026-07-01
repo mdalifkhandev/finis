@@ -856,6 +856,27 @@ export async function reviewSubTaskApprovalApi(
   return data.data;
 }
 
+export async function reviewSubTaskReportApi(
+  subTaskId: string,
+  reviewDecision: "approved" | "rejected",
+  reviewDescription?: string,
+) {
+  const { data } = await api.put<{
+    success: boolean;
+    message: string;
+    data: any;
+  }>(`/admin/subtasks/${subTaskId}/report-review`, {
+    reviewDecision,
+    reviewDescription,
+  });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to review sub task report");
+  }
+
+  return data.data;
+}
+
 export async function createTask(payload: CreateTaskPayload): Promise<TaskListItem> {
   const { data } = await api.post<{
     success: boolean;

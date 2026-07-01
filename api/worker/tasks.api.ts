@@ -348,39 +348,25 @@ export async function completeWorkerTaskReport(
     } as any);
   }
 
-  formData.append("inventoryUsed", JSON.stringify(inventoryUsed));
+  inventoryUsed.forEach((item, index) => {
+    formData.append(`inventoryUsed[${index}][inventoryId]`, item.inventoryId);
+    formData.append(`inventoryUsed[${index}][qtyUsed]`, String(item.qtyUsed));
+  });
   
   if (notes) {
     formData.append("notes", notes);
   }
 
-  try {
-    const { data } = await api.put<ApiResponse<any>>(`/worker/subtasks/${taskId}/report`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+  const { data } = await api.post<ApiResponse<any>>(`/worker/subtasks/${taskId}/report`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 
-    if (!data.success) {
-      throw new Error(data.message || "Failed to submit task report");
-    }
-    return data.data;
-  } catch (error) {
-    if (!axios.isAxiosError(error) || error.response?.status !== 404) {
-      throw error;
-    }
-
-    const { data } = await api.put<ApiResponse<any>>(`/worker/tasks/${taskId}/report`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    if (!data.success) {
-      throw new Error(data.message || "Failed to submit task report");
-    }
-    return data.data;
+  if (!data.success) {
+    throw new Error(data.message || "Failed to submit task report");
   }
+  return data.data;
 }
 
 export async function getWorkerTasks(page = 1, limit = 10) {
