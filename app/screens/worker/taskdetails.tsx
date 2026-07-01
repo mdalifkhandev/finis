@@ -1,7 +1,7 @@
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import {
   useWorkerTaskInventoryQuery,
-  useWorkerTaskQuery,
+  useWorkerSubTaskQuery,
   useUpdateWorkerTaskInventoryMutation,
   useCompleteWorkerTaskReportMutation,
 } from "@/hooks/worker/tasks";
@@ -22,7 +22,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import car from "../../../assets/images/car.jpg";
+import placeholderImage from "../../../assets/images/placeholder-image.png";
 
 const THEME = {
   colors: {
@@ -41,7 +41,7 @@ const THEME = {
 
 const TaskDetailsScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: task, isLoading, refetch: refetchTask } = useWorkerTaskQuery(id as string);
+  const { data: task, isLoading, refetch: refetchTask } = useWorkerSubTaskQuery(id as string);
   const { data: profile } = useWorkerProfileQuery();
   const { data: inventoryData, isLoading: inventoryLoading, refetch: refetchInventory } =
     useWorkerTaskInventoryQuery(id as string);
@@ -68,7 +68,14 @@ const TaskDetailsScreen = () => {
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
 
   useEffect(() => {
-    if (inventoryData && inventoryData.length > 0) {
+    const sourceInventory =
+      inventoryData && inventoryData.length > 0
+        ? inventoryData
+        : task?.availableInventory && task.availableInventory.length > 0
+          ? task.availableInventory
+          : [];
+
+    if (sourceInventory.length > 0) {
       // Create a map of used inventory from the task reports (if any)
       const usedInventoryMap: Record<string, number> = {};
       
@@ -85,7 +92,7 @@ const TaskDetailsScreen = () => {
       }
 
       setInventoryItems(
-        inventoryData.map((inv: any) => {
+        sourceInventory.map((inv: any) => {
           const usedQty = usedInventoryMap[inv.id];
           return {
             id: inv.id,
@@ -272,7 +279,7 @@ console.log(JSON.stringify(task,null,2));
                   marginBottom: 8,
                 }}
               >
-                {task.title || "Task Details"}
+                {`${task.title} ` || "Task Details"}
               </Text>
               <Text
                 style={{
@@ -508,14 +515,14 @@ console.log(JSON.stringify(task,null,2));
               <View style={{ borderRadius: 16, overflow: "hidden" }}>
                 <Image
                   source={
-                    task.reports?.[0]?.beforePhotoUrl
+                    (task.beforePhotoUrl || task.reports?.[0]?.beforePhotoUrl)
                       ? {
                           uri:
-                            (task.reports[0].beforePhotoUrl.startsWith("http")
+                            ((task.beforePhotoUrl || task.reports?.[0]?.beforePhotoUrl).startsWith("http")
                               ? ""
-                              : API_BASE_URL) + task.reports[0].beforePhotoUrl,
+                              : API_BASE_URL) + (task.beforePhotoUrl || task.reports?.[0]?.beforePhotoUrl),
                         }
-                      : car
+                      : placeholderImage
                   }
                   style={{ width: "100%", height: 200 }}
                   resizeMode="cover"

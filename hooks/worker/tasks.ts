@@ -1,10 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createWorkerSubTask, getWorkerTaskById, startWorkerTask, reportWorkerTaskBeforePhoto, getWorkerTaskInventory, updateWorkerTaskInventory, completeWorkerTaskReport, getWorkerTasks } from "@/api/worker/tasks.api";
+import { createWorkerSubTask, getWorkerSubTaskById, getWorkerTaskById, startWorkerTask, reportWorkerTaskBeforePhoto, getWorkerTaskInventory, updateWorkerTaskInventory, completeWorkerTaskReport, getWorkerTasks } from "@/api/worker/tasks.api";
 
 export function useWorkerTaskQuery(id: string) {
   return useQuery({
     queryKey: ["worker", "task", id],
     queryFn: () => getWorkerTaskById(id),
+    enabled: !!id,
+  });
+}
+
+export function useWorkerSubTaskQuery(id: string) {
+  return useQuery({
+    queryKey: ["worker", "subtask", id],
+    queryFn: () => getWorkerSubTaskById(id),
     enabled: !!id,
   });
 }
@@ -16,6 +24,7 @@ export function useStartWorkerTaskMutation() {
     mutationFn: (id: string) => startWorkerTask(id),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["worker", "task", variables] });
+      queryClient.invalidateQueries({ queryKey: ["worker", "subtask", variables] });
       queryClient.invalidateQueries({ queryKey: ["worker", "dashboard"] });
     },
   });
@@ -36,6 +45,7 @@ export function useReportWorkerTaskBeforePhotoMutation() {
     mutationFn: ({ id, imageUri }: { id: string; imageUri: string }) => reportWorkerTaskBeforePhoto(id, imageUri),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["worker", "task", variables.id] });
+      queryClient.invalidateQueries({ queryKey: ["worker", "subtask", variables.id] });
     },
   });
 }
@@ -59,6 +69,7 @@ export function useCompleteWorkerTaskReportMutation() {
       completeWorkerTaskReport(taskId, afterPhotoUri, inventoryUsed, notes),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["worker", "task", variables.taskId] });
+      queryClient.invalidateQueries({ queryKey: ["worker", "subtask", variables.taskId] });
       queryClient.invalidateQueries({ queryKey: ["worker", "dashboard"] });
     },
   });

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
     Alert,
+    ActivityIndicator,
     Image,
     Modal,
     Pressable,
@@ -22,6 +23,7 @@ type TaskViewCardProps = {
   endTime: string;
   date: string;
   description: string;
+  isStarting?: boolean;
   onStartTask?: (imageUri: string) => void;
 };
 
@@ -37,6 +39,7 @@ export default function TaskViewCard({
   endTime,
   date,
   description,
+  isStarting = false,
   onStartTask,
 }: TaskViewCardProps) {
   const insets = useSafeAreaInsets();
@@ -44,6 +47,7 @@ export default function TaskViewCard({
   const [takenPhoto, setTakenPhoto] = useState<string | null>(null);
 
   const handleStartTaskClick = () => {
+    if (isStarting) return;
     setIsModalVisible(true);
   };
 
@@ -83,6 +87,7 @@ export default function TaskViewCard({
       Alert.alert("Error", "Please take a photo first");
       return;
     }
+    if (isStarting) return;
     setIsModalVisible(false);
     onStartTask?.(takenPhoto);
     setTakenPhoto(null);
@@ -111,7 +116,7 @@ export default function TaskViewCard({
         </View>
 
         <View className="flex-row justify-between mb-3">
-          <Text className="text-[14px] text-slate-500">Room No:</Text>
+          <Text className="text-[14px] text-slate-500">Unit No:</Text>
           <Text className="text-[14px] font-medium text-[#111827]">
             {roomNo}
           </Text>
@@ -148,10 +153,15 @@ export default function TaskViewCard({
 
       <TouchableOpacity
         activeOpacity={0.9}
+        disabled={isStarting}
         onPress={handleStartTaskClick}
-        className="h-[56px] w-full items-center justify-center rounded-[12px] bg-[#1D4F6D]"
+        className={`h-[56px] w-full items-center justify-center rounded-[12px] bg-[#1D4F6D] ${isStarting ? "opacity-70" : ""}`}
       >
-        <Text className="text-[16px] font-bold text-white">Start Task</Text>
+        {isStarting ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text className="text-[16px] font-bold text-white">Start Task</Text>
+        )}
       </TouchableOpacity>
 
       <Modal
@@ -189,6 +199,7 @@ export default function TaskViewCard({
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={handleTakePhoto}
+                disabled={isStarting}
                 className="h-[56px] w-full items-center justify-center rounded-[14px]"
                 style={{ backgroundColor: "#CCECFF" }}
               >
@@ -211,6 +222,7 @@ export default function TaskViewCard({
                 <View className="flex-row gap-3">
                   <TouchableOpacity
                     activeOpacity={0.8}
+                    disabled={isStarting}
                     onPress={() => setTakenPhoto(null)}
                     className="h-[52px] flex-1 items-center justify-center rounded-[12px] border border-[#E5E7EB] bg-white"
                   >
@@ -220,13 +232,18 @@ export default function TaskViewCard({
                   </TouchableOpacity>
                   <TouchableOpacity
                     activeOpacity={0.8}
+                    disabled={isStarting}
                     onPress={handleConfirm}
                     className="h-[52px] flex-1 items-center justify-center rounded-[12px]"
                     style={{ backgroundColor: "#CCECFF" }}
                   >
-                    <Text className="text-[16px] font-semibold text-[#1F2937]">
-                      Confirm
-                    </Text>
+                    {isStarting ? (
+                      <ActivityIndicator color="#1F2937" />
+                    ) : (
+                      <Text className="text-[16px] font-semibold text-[#1F2937]">
+                        Confirm
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
