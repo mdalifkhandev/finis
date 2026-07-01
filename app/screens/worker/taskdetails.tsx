@@ -39,6 +39,11 @@ const THEME = {
   },
 };
 
+function resolveImageUrl(uri?: string | null) {
+  if (!uri) return null;
+  return uri;
+}
+
 const TaskDetailsScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: task, isLoading, refetch: refetchTask } = useWorkerSubTaskQuery(id as string);
@@ -64,6 +69,32 @@ const TaskDetailsScreen = () => {
   const [notes, setNotes] = useState("");
   const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
+  const normalizedTaskStatus = (task?.status ?? "").toLowerCase().trim();
+  const isTaskReadOnly =
+    normalizedTaskStatus === "review" ||
+    normalizedTaskStatus === "completed" ||
+    isTaskCompleted;
+  const firstReportWithBeforePhoto = task?.reports?.find((report: any) => report?.beforePhotoUrl) ?? null;
+  const firstReportWithAfterPhoto = task?.reports?.find((report: any) => report?.afterPhotoUrl) ?? null;
+  const firstReportWithNotes = task?.reports?.find((report: any) => report?.notes) ?? null;
+  const persistedBeforePhoto =
+    task?.beforePhotoUrl ||
+    task?.latestReport?.beforePhotoUrl ||
+    firstReportWithBeforePhoto?.beforePhotoUrl ||
+    task?.reports?.[0]?.beforePhotoUrl ||
+    null;
+  const persistedAfterPhoto =
+    task?.afterPhotoUrl ||
+    task?.latestReport?.afterPhotoUrl ||
+    firstReportWithAfterPhoto?.afterPhotoUrl ||
+    task?.reports?.[0]?.afterPhotoUrl ||
+    null;
+  const persistedNotes =
+    task?.note ||
+    task?.latestReport?.notes ||
+    firstReportWithNotes?.notes ||
+    task?.reports?.[0]?.notes ||
+    null;
 
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
 
@@ -76,20 +107,31 @@ const TaskDetailsScreen = () => {
           : [];
 
     if (sourceInventory.length > 0) {
-      // Create a map of used inventory from the task reports (if any)
       const usedInventoryMap: Record<string, number> = {};
-      
-      if (task?.reports && task.reports.length > 0) {
-        // Assume reports have taskInventories or inventoryUsed array
-        // We'll iterate through the task's taskInventories or report's inventory to find used quantities
-        if (task.taskInventories) {
-          task.taskInventories.forEach((ti: any) => {
-            if (ti.inventoryId) {
-              usedInventoryMap[ti.inventoryId] = ti.quantity || 1;
-            }
-          });
+
+      task?.taskInventories?.forEach((item: any) => {
+        const inventoryId = item.inventoryId || item.inventory?.id;
+        const quantity = item.quantity || item.qtyUsed;
+        if (inventoryId) {
+          usedInventoryMap[inventoryId] = quantity || 1;
         }
-      }
+      });
+
+      task?.inventoryUsed?.forEach((item: any) => {
+        const inventoryId = item.inventoryId || item.inventory?.id;
+        const quantity = item.qtyUsed || item.quantity;
+        if (inventoryId) {
+          usedInventoryMap[inventoryId] = quantity || 1;
+        }
+      });
+
+      task?.latestReport?.inventoryUsed?.forEach((item: any) => {
+        const inventoryId = item.inventoryId || item.inventory?.id;
+        const quantity = item.qtyUsed || item.quantity;
+        if (inventoryId) {
+          usedInventoryMap[inventoryId] = quantity || 1;
+        }
+      });
 
       setInventoryItems(
         sourceInventory.map((inv: any) => {
@@ -110,6 +152,7 @@ const TaskDetailsScreen = () => {
   }, [inventoryData, task]);
 
   const toggleInventoryItem = (id: string) => {
+    if (isTaskReadOnly) return;
     setInventoryItems((prev) =>
       prev.map((item) =>
         item.id === id ? { ...item, checked: !item.checked } : item,
@@ -118,6 +161,7 @@ const TaskDetailsScreen = () => {
   };
 
   const updateInventoryQuantity = (id: string, delta: number) => {
+    if (isTaskReadOnly) return;
     setInventoryItems((prev) =>
       prev.map((item) =>
         item.id === id
@@ -133,11 +177,16 @@ const TaskDetailsScreen = () => {
     );
   };
 
-  const filteredInventoryItems = inventoryItems.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const filteredInventoryItems = inventoryItems.filter((item) => {
+    if (isTaskReadOnly && !item.checked) {
+      return false;
+    }
+
+    return item.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const pickImage = async () => {
+    if (isTaskReadOnly) return;
     try {
       const ImagePicker = await import("expo-image-picker");
       const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -163,7 +212,7 @@ const TaskDetailsScreen = () => {
   };
 
   const handleComplete = async () => {
-    if (isTaskCompleted || completeTaskMutation.isPending) {
+    if (isTaskReadOnly || completeTaskMutation.isPending) {
       return;
     }
 
@@ -515,13 +564,8 @@ console.log(JSON.stringify(task,null,2));
               <View style={{ borderRadius: 16, overflow: "hidden" }}>
                 <Image
                   source={
-                    (task.beforePhotoUrl || task.reports?.[0]?.beforePhotoUrl)
-                      ? {
-                          uri:
-                            ((task.beforePhotoUrl || task.reports?.[0]?.beforePhotoUrl).startsWith("http")
-                              ? ""
-                              : API_BASE_URL) + (task.beforePhotoUrl || task.reports?.[0]?.beforePhotoUrl),
-                        }
+                    persistedBeforePhoto
+                      ? { uri: resolveImageUrl(persistedBeforePhoto) ?? undefined }
                       : placeholderImage
                   }
                   style={{ width: "100%", height: 200 }}
@@ -568,36 +612,38 @@ console.log(JSON.stringify(task,null,2));
 
               {inventoryExpanded && (
                 <View>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      backgroundColor: "#FFFFFF",
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: "#F1F5F9",
-                      paddingHorizontal: 12,
-                      height: 48,
-                      marginBottom: 16,
-                    }}
-                  >
-                    <Ionicons
-                      name="search"
-                      size={20}
-                      color={THEME.colors.textSecondary}
-                    />
-                    <TextInput
-                      placeholder="Search Item"
+                  {!isTaskReadOnly ? (
+                    <View
                       style={{
-                        flex: 1,
-                        marginLeft: 12,
-                        fontSize: 16,
-                        color: "#64748B",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: "#FFFFFF",
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: "#F1F5F9",
+                        paddingHorizontal: 12,
+                        height: 48,
+                        marginBottom: 16,
                       }}
-                      value={searchQuery}
-                      onChangeText={setSearchQuery}
-                    />
-                  </View>
+                    >
+                      <Ionicons
+                        name="search"
+                        size={20}
+                        color={THEME.colors.textSecondary}
+                      />
+                      <TextInput
+                        placeholder="Search Item"
+                        style={{
+                          flex: 1,
+                          marginLeft: 12,
+                          fontSize: 16,
+                          color: "#64748B",
+                        }}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                      />
+                    </View>
+                  ) : null}
 
                   <View style={{ gap: 16 }}>
                     {filteredInventoryItems.map((item) => (
@@ -617,6 +663,7 @@ console.log(JSON.stringify(task,null,2));
                           }}
                         >
                           <TouchableOpacity
+                            disabled={isTaskReadOnly}
                             onPress={() => toggleInventoryItem(item.id)}
                             style={{
                               width: 20,
@@ -629,6 +676,7 @@ console.log(JSON.stringify(task,null,2));
                                 : "transparent",
                               alignItems: "center",
                               justifyContent: "center",
+                              opacity: isTaskReadOnly ? 0.7 : 1,
                             }}
                           >
                             {item.checked && (
@@ -651,66 +699,78 @@ console.log(JSON.stringify(task,null,2));
                           </Text>
                         </View>
 
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            backgroundColor: "#EBF4F6",
-                            padding: 4,
-                            borderRadius: 12,
-                            height: 40,
-                            width: 110,
-                            justifyContent: "space-between",
-                            paddingHorizontal: 6,
-                          }}
-                        >
-                          <TouchableOpacity
-                            onPress={() => updateInventoryQuantity(item.id, -1)}
-                            style={{
-                              width: 30,
-                              height: 30,
-                              backgroundColor: "white",
-                              borderRadius: 8,
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Ionicons
-                              name="remove-outline"
-                              size={22}
-                              color="#0088CC"
-                            />
-                          </TouchableOpacity>
-
+                        {isTaskReadOnly ? (
                           <Text
                             style={{
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: "600",
                               color: "#1D4F6D",
-                              marginHorizontal: 12,
                             }}
                           >
-                            {item.quantity}
+                            {item.checked ? item.quantity : 0}
                           </Text>
-
-                          <TouchableOpacity
-                            onPress={() => updateInventoryQuantity(item.id, 1)}
+                        ) : (
+                          <View
                             style={{
-                              width: 30,
-                              height: 30,
-                              backgroundColor: "white",
-                              borderRadius: 8,
+                              flexDirection: "row",
                               alignItems: "center",
-                              justifyContent: "center",
+                              backgroundColor: "#EBF4F6",
+                              padding: 4,
+                              borderRadius: 12,
+                              height: 40,
+                              width: 110,
+                              justifyContent: "space-between",
+                              paddingHorizontal: 6,
                             }}
                           >
-                            <Ionicons
-                              name="add-outline"
-                              size={22}
-                              color="#0088CC"
-                            />
-                          </TouchableOpacity>
-                        </View>
+                            <TouchableOpacity
+                              onPress={() => updateInventoryQuantity(item.id, -1)}
+                              style={{
+                                width: 30,
+                                height: 30,
+                                backgroundColor: "white",
+                                borderRadius: 8,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Ionicons
+                                name="remove-outline"
+                                size={22}
+                                color="#0088CC"
+                              />
+                            </TouchableOpacity>
+
+                            <Text
+                              style={{
+                                fontSize: 18,
+                                fontWeight: "600",
+                                color: "#1D4F6D",
+                                marginHorizontal: 12,
+                              }}
+                            >
+                              {item.quantity}
+                            </Text>
+
+                            <TouchableOpacity
+                              onPress={() => updateInventoryQuantity(item.id, 1)}
+                              style={{
+                                width: 30,
+                                height: 30,
+                                backgroundColor: "white",
+                                borderRadius: 8,
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              <Ionicons
+                                name="add-outline"
+                                size={22}
+                                color="#0088CC"
+                              />
+                            </TouchableOpacity>
+                          </View>
+                        )}
                       </View>
                     ))}
                   </View>
@@ -753,7 +813,7 @@ console.log(JSON.stringify(task,null,2));
                 </Text>
               </View>
 
-              {(afterPhoto || task?.reports?.[0]?.afterPhotoUrl) ? (
+              {(afterPhoto || persistedAfterPhoto) ? (
                 <View
                   style={{
                     borderRadius: 16,
@@ -762,11 +822,11 @@ console.log(JSON.stringify(task,null,2));
                   }}
                 >
                   <Image
-                    source={{ uri: afterPhoto || ((task?.reports[0].afterPhotoUrl.startsWith("http") ? "" : API_BASE_URL) + task?.reports[0].afterPhotoUrl) }}
+                    source={{ uri: afterPhoto || resolveImageUrl(persistedAfterPhoto) || undefined }}
                     style={{ width: "100%", height: 200 }}
                     resizeMode="cover"
                   />
-                  {!task?.reports?.[0]?.afterPhotoUrl && (
+                  {!persistedAfterPhoto && (
                     <TouchableOpacity
                       onPress={() => setAfterPhoto(null)}
                       style={{
@@ -827,7 +887,7 @@ console.log(JSON.stringify(task,null,2));
                 </TouchableOpacity>
               )}
 
-              {task?.status !== "completed" && (
+              {!isTaskReadOnly && (
                 <TouchableOpacity
                   onPress={pickImage}
                   style={{
@@ -868,7 +928,7 @@ console.log(JSON.stringify(task,null,2));
               >
                 Notes (Optional)
               </Text>
-      {task?.status !== "completed" ? (        <TextInput
+      {!isTaskReadOnly ? (        <TextInput
                 placeholder="Add any additional notes about this task..."
                 multiline
                 textAlignVertical="top"
@@ -883,11 +943,11 @@ console.log(JSON.stringify(task,null,2));
                 }}
                 value={notes}
                 onChangeText={setNotes}
-              />):<Text>{task.reports?.[0]?.notes}</Text>}
+              />):<Text>{persistedNotes || "No notes available."}</Text>}
             </View>
 
             {/* Action Button */}
-            {(task?.status === "completed" || isTaskCompleted) ? (
+            {isTaskReadOnly ? (
               <View
                 style={{
                   height: 56,
@@ -898,7 +958,7 @@ console.log(JSON.stringify(task,null,2));
                 }}
               >
                 <Text style={{ color: "#0F172A", fontSize: 16, fontWeight: "700" }}>
-                  Completed
+                  {normalizedTaskStatus === "review" ? "In Review" : "Completed"}
                 </Text>
               </View>
             ) : (
