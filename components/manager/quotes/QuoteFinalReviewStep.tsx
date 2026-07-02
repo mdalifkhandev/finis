@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import {
   formatCurrency,
   type QuoteProjectType,
@@ -31,6 +31,7 @@ type QuoteFinalReviewStepProps = {
   onOpenDiscount: () => void;
   onGeneratePdf: () => void;
   onEmailQuote: () => void;
+  isGenerating?: boolean;
 };
 
 function DetailRow({
@@ -86,6 +87,7 @@ export default function QuoteFinalReviewStep({
   onOpenDiscount,
   onGeneratePdf,
   onEmailQuote,
+  isGenerating = false,
 }: QuoteFinalReviewStepProps) {
   const selectedGroups = workGroups
     .map((group) => ({
@@ -237,11 +239,16 @@ export default function QuoteFinalReviewStep({
         <TouchableOpacity
           activeOpacity={0.88}
           onPress={onGeneratePdf}
-          className="mt-4 h-[58px] flex-row items-center justify-center rounded-[16px] bg-[#1F5577]"
+          disabled={isGenerating}
+          className={`mt-4 h-[58px] flex-row items-center justify-center rounded-[16px] bg-[#1F5577] ${isGenerating ? "opacity-70" : ""}`}
         >
-          <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+          {isGenerating ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+          )}
           <Text className="ml-2 text-[16px] font-medium text-white">
-            Generate Quote and Send
+            {isGenerating ? "Generating..." : "Generate Quote and Send"}
           </Text>
         </TouchableOpacity>
       </QuoteReviewCard>

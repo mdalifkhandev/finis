@@ -1,15 +1,19 @@
 import React, { useMemo, useState } from "react";
 import { useEffect } from "react";
-import { Alert, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createManagerQuote,
   deleteManagerQuote,
   getManagerQuotes,
+  sendManagerQuoteMail,
   updateManagerQuote,
 } from "@/api/manager/quotes.api";
+import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
+import { router } from "expo-router";
 import { useAuthStore } from "@/store/auth.store";
+import { toast } from "sonner-native";
 import AddCustomQuoteItemModal from "./quotes/AddCustomQuoteItemModal";
 import ApplyDiscountModal from "./quotes/ApplyDiscountModal";
 import EditQuoteItemModal from "./quotes/EditQuoteItemModal";
@@ -21,7 +25,7 @@ import {
   type QuotePropertyType,
   type QuoteUnitType,
 } from "./quotes/quoteTypes";
-import { emailQuotePdf, generateQuotePdf } from "./quotes/quotePdf";
+import { createQuotePdf } from "./quotes/quotePdf";
 import QuoteStepIndicator from "./quotes/QuoteStepIndicator";
 import type { QuoteSelectedWorkGroup } from "./quotes/QuoteWorkGroupCard";
 import QuoteWorkItemsStep from "./quotes/QuoteWorkItemsStep";
@@ -35,16 +39,6 @@ import {
   updateQuoteWorkItemUnit,
   updateQuoteWorkItemDetails,
 } from "./quotes/quoteWorkState";
-
-function getProjectMeta(unitType: QuoteUnitType) {
-  switch (unitType) {
-    case "House":
-      return "2,500 sq ft • 2 floors";
-    case "Apartment":
-    default:
-      return "1,250 sq ft • 1 unit";
-  }
-}
 
 function getValidUntilLabel() {
   const date = new Date();
@@ -72,6 +66,7 @@ export default function ManagerQuotesScreen() {
   const [unitType, setUnitType] = useState<QuoteUnitType>("Apartment");
   const [workGroups, setWorkGroups] = useState<QuoteSelectedWorkGroup[]>([]);
   const [discountModalVisible, setDiscountModalVisible] = useState(false);
+  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
   const [discountPercentInput, setDiscountPercentInput] = useState("0");
   const [appliedDiscountPercent, setAppliedDiscountPercent] = useState(0);
   const [customItemModalVisible, setCustomItemModalVisible] = useState(false);
@@ -97,7 +92,7 @@ export default function ManagerQuotesScreen() {
       }),
     enabled: step === 1,
   });
-  const defaultClientName = currentUser?.fullName || currentUser?.name || "Walk-in Client";
+  const defaultClientName = currentUser?.fullName || currentUser?.name || "";
   const defaultEmail = currentUser?.email || "";
   const defaultPhone = currentUser?.phone || "";
   const backendQuotes = quoteFilterQuery.data?.quotes ?? [];
@@ -141,7 +136,7 @@ export default function ManagerQuotesScreen() {
   const finalTotal = subtotal - discountAmount;
   const validUntilLabel = getValidUntilLabel();
   const projectDetailsLabel = `${projectType} • ${propertyType}`;
-  const projectMetaLabel = getProjectMeta(unitType);
+  const projectMetaLabel = "";
 
   const quoteParams = {
     clientName,
@@ -171,30 +166,59 @@ export default function ManagerQuotesScreen() {
   };
 
   const handleGeneratePdf = async () => {
-    try {
-      await generateQuotePdf(quoteParams);
-    } catch {
-      Alert.alert("PDF Error", "Unable to generate the quote PDF right now.");
-    }
-  };
+    const resolvedEmail = email || defaultEmail;
 
-  const handleEmailQuote = async () => {
+    if (!resolvedEmail) {
+      toast.error("Client email is required to send the quote.");
+      return;
+    }
+
     try {
-      await emailQuotePdf({ ...quoteParams, recipientEmail: email });
-    } catch {
-      Alert.alert(
-        "Email Error",
-        "Unable to prepare the quote email right now.",
-      );
+      setIsGeneratingQuote(true);
+
+      const pdfFile = await createQuotePdf(quoteParams);
+      const pdfName = `quote-${Date.now()}.pdf`;
+
+      await sendManagerQuoteMail({
+        clientEmail: resolvedEmail,
+        clientName: clientName || defaultClientName || undefined,
+        subject: projectAddress || `${projectType} Project`,
+        body: `Welcome ${clientName || defaultClientName || ""},
+
+Client Name: ${clientName || defaultClientName || ""}
+Client Email: ${resolvedEmail}
+Phone Number: ${phoneNumber || defaultPhone || "N/A"}
+Project Address: ${projectAddress || "N/A"}
+Project Type: ${projectType}
+Property Type: ${propertyType}
+Unit Type: ${unitType}
+Estimated Time: ${estimatedTime || "N/A"}
+
+Please find the attached quote PDF.`,
+      }, {
+        uri: pdfFile.uri,
+        name: pdfName,
+        type: "application/pdf",
+      });
+
+      setCurrentPreviewDocument({
+        id: `quote-preview-${Date.now()}`,
+        name: pdfName,
+        uri: pdfFile.uri,
+        mimeType: "application/pdf",
+      });
+      router.push("/screens/company/documentpreview");
+      toast.success("Quote generated and sent successfully.");
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to generate and send the quote right now.");
+    } finally {
+      setIsGeneratingQuote(false);
     }
   };
 
   const handleAddCustomItem = () => {
     if (!customTitle.trim()) {
-      Alert.alert(
-        "Missing Service Name",
-        "Enter a service name for the custom item.",
-      );
+      toast.error("Enter a service name for the custom item.");
       return;
     }
 
@@ -238,7 +262,7 @@ export default function ManagerQuotesScreen() {
         setCustomItemModalVisible(false);
       })
       .catch(() => {
-        Alert.alert("Create Error", "Unable to add the custom item right now.");
+        toast.error("Unable to add the custom item right now.");
       });
   };
 
@@ -257,38 +281,30 @@ export default function ManagerQuotesScreen() {
   };
 
   const handleDeleteItem = (groupId: string, itemId: string) => {
-    Alert.alert("Delete Item", "Are you sure you want to delete this item?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => {
-          deleteManagerQuote(itemId)
-            .then(() => {
-              setWorkGroups((current) =>
-                deleteQuoteWorkItem(current, groupId, itemId),
-              );
-              void queryClient.fetchQuery({
-                queryKey: ["manager", "quotes", projectType, propertyType, unitType],
-                queryFn: () =>
-                  getManagerQuotes({
-                    projectType,
-                    propertyType,
-                    unitType,
-                  }),
-              });
-            })
-            .catch(() => {
-              Alert.alert("Delete Error", "Unable to delete the quote item.");
-            });
-        },
-      },
-    ]);
+    deleteManagerQuote(itemId)
+      .then(() => {
+        setWorkGroups((current) =>
+          deleteQuoteWorkItem(current, groupId, itemId),
+        );
+        void queryClient.fetchQuery({
+          queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+          queryFn: () =>
+            getManagerQuotes({
+              projectType,
+              propertyType,
+              unitType,
+            }),
+        });
+        toast.success("Quote item deleted.");
+      })
+      .catch(() => {
+        toast.error("Unable to delete the quote item.");
+      });
   };
 
   const handleSaveEditItem = () => {
     if (!editTitle.trim()) {
-      Alert.alert("Missing Service Name", "Enter a service name for the item.");
+      toast.error("Enter a service name for the item.");
       return;
     }
 
@@ -323,7 +339,7 @@ export default function ManagerQuotesScreen() {
         setEditItemModalVisible(false);
       })
       .catch(() => {
-        Alert.alert("Update Error", "Unable to save the quote update right now.");
+        toast.error("Unable to save the quote update right now.");
       });
   };
 
@@ -420,7 +436,7 @@ export default function ManagerQuotesScreen() {
             <QuoteFinalReviewStep
               clientName={clientName || defaultClientName}
               email={email || defaultEmail}
-              projectAddress={projectAddress || "Address pending"}
+              projectAddress={projectAddress}
               projectType={projectType}
               propertyType={propertyType}
               unitType={unitType}
@@ -440,7 +456,8 @@ export default function ManagerQuotesScreen() {
                 setDiscountModalVisible(true);
               }}
               onGeneratePdf={handleGeneratePdf}
-              onEmailQuote={handleEmailQuote}
+              onEmailQuote={handleGeneratePdf}
+              isGenerating={isGeneratingQuote}
             />
           )}
         </View>
