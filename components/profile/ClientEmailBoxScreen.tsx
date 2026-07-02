@@ -1,28 +1,51 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { EMAIL_ITEMS, EmailItem, TabKey } from "./clientEmailData";
+import { getMailbox, type MailboxListItem, toggleMailboxStar } from "@/api/mailbox/mailbox.api";
+import { toast } from "sonner-native";
 import ProfileHeaderBar from "./ProfileHeaderBar";
+
+type TabKey = "Inbox" | "Active Project" | "Close Project";
 
 const TABS: TabKey[] = ["Inbox", "Active Project", "Close Project"];
 
+function formatTime(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
 export default function ClientEmailBoxScreen() {
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabKey>("Inbox");
-  const [emails, setEmails] = useState<EmailItem[]>(EMAIL_ITEMS);
+
+  const statusFilter = useMemo(() => {
+    if (activeTab === "Active Project") return "active" as const;
+    if (activeTab === "Close Project") return "closed" as const;
+    return undefined;
+  }, [activeTab]);
+
+  const mailboxQuery = useQuery({
+    queryKey: ["mailbox", activeTab],
+    queryFn: () => getMailbox({ status: statusFilter, page: 1, limit: 100 }),
+  });
 
   const filteredItems = useMemo(
-    () => emails.filter((item) => item.tab === activeTab),
-    [activeTab, emails],
+    () => mailboxQuery.data?.data ?? [],
+    [mailboxQuery.data],
   );
 
-  const handleToggleStar = (id: string) => {
-    setEmails((previous) =>
-      previous.map((item) =>
-        item.id === id ? { ...item, starred: !item.starred } : item,
-      ),
-    );
+  const handleToggleStar = async (id: string) => {
+    try {
+      await toggleMailboxStar(id);
+      await queryClient.invalidateQueries({ queryKey: ["mailbox"] });
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to update star status.");
+    }
   };
 
   return (
@@ -59,7 +82,7 @@ export default function ClientEmailBoxScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24, paddingBottom: 40 }}
       >
-        {filteredItems.map((item) => (
+        {filteredItems.map((item: MailboxListItem) => (
           <TouchableOpacity
             key={item.id}
             activeOpacity={0.85}
@@ -82,17 +105,21 @@ export default function ClientEmailBoxScreen() {
               className="pr-2"
             >
               <Ionicons
-                name={item.starred ? "star" : "star-outline"}
+                name={item.isStarred ? "star" : "star-outline"}
                 size={28}
-                color={item.starred ? "#FDBA12" : "#3F3F46"}
+                color={item.isStarred ? "#FDBA12" : "#3F3F46"}
               />
             </TouchableOpacity>
-            <Text className="ml-4 flex-1 text-[17px] text-[#30343B] ">{item.name}</Text>
-            <Text className="text-[15px] text-[#30343B]">{item.time}</Text>
+            <Text className="ml-4 flex-1 text-[17px] text-[#30343B] ">
+              {item.clientName || item.clientEmail}
+            </Text>
+            <Text className="text-[15px] text-[#30343B]">
+              {formatTime(item.latestMessage?.createdAt || item.createdAt)}
+            </Text>
           </TouchableOpacity>
         ))}
 
-        {!filteredItems.length ? (
+        {!mailboxQuery.isLoading && !filteredItems.length ? (
           <View className="items-center py-12">
             <Text className="text-[15px] text-[#64748B]">No emails found.</Text>
           </View>
