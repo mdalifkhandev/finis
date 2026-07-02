@@ -53,6 +53,24 @@ export type CreateManagerQuotePayload = {
   isCustom?: boolean;
 };
 
+export type UploadedQuotePdfResponse = {
+  url: string;
+  originalName: string;
+  mimeType: string;
+};
+
+export type SendManagerQuoteMailPayload = {
+  clientEmail: string;
+  clientName?: string;
+  subject: string;
+  body: string;
+  attachments?: {
+    name: string;
+    url: string;
+    size?: string;
+  }[];
+};
+
 export async function getManagerQuotes(params?: {
   projectType?: string;
   propertyType?: string;
@@ -116,6 +134,48 @@ export async function deleteManagerQuote(id: string) {
 
   if (!data.success) {
     throw new Error(data.message || "Failed to delete quote");
+  }
+
+  return data;
+}
+
+export async function sendManagerQuoteMail(
+  payload: SendManagerQuoteMailPayload,
+  file?: {
+    uri: string;
+    name: string;
+    type: string;
+  },
+) {
+  const formData = new FormData();
+  formData.append("clientEmail", payload.clientEmail);
+  formData.append("subject", payload.subject);
+  formData.append("body", payload.body);
+
+  if (payload.clientName) {
+    formData.append("clientName", payload.clientName);
+  }
+
+  if (payload.attachments?.length) {
+    formData.append("attachments", JSON.stringify(payload.attachments));
+  }
+
+  if (file) {
+    formData.append("file", file as any);
+  }
+
+  const { data } = await api.post<{
+    success?: boolean;
+    message?: string;
+    data?: unknown;
+  }>("/mail/send", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  if (data.success === false) {
+    throw new Error(data.message || "Failed to send quote");
   }
 
   return data;

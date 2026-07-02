@@ -60,11 +60,11 @@ function buildQuoteHtml(params: GenerateQuotePdfParams) {
     <body>
       <h1>Construction Quote</h1>
       <div class="card">
-        <div><strong>Client:</strong> ${escapeHtml(params.clientName || "Acme Construction Ltd.")}</div>
+        <div><strong>Client:</strong> ${escapeHtml(params.clientName || "")}</div>
         <div style="margin-top:8px"><strong>Email:</strong> ${escapeHtml(params.email || "N/A")}</div>
-        <div style="margin-top:8px"><strong>Project Address:</strong> ${escapeHtml(params.projectAddress || "1234 Maple Street, Downtown District, CA 90210")}</div>
+        <div style="margin-top:8px"><strong>Project Address:</strong> ${escapeHtml(params.projectAddress || "")}</div>
         <div style="margin-top:8px"><strong>Project Details:</strong> ${escapeHtml(`${params.projectType} • ${params.propertyType} • ${params.unitType}`)}</div>
-        <div style="margin-top:8px"><strong>Project Meta:</strong> ${escapeHtml(params.projectMetaLabel)}</div>
+        ${params.projectMetaLabel ? `<div style="margin-top:8px"><strong>Project Meta:</strong> ${escapeHtml(params.projectMetaLabel)}</div>` : ""}
         <div style="margin-top:8px"><strong>Estimated Timeline:</strong> ${escapeHtml(params.estimatedTime || "")}</div>
         <div style="margin-top:8px"><strong>Quote Valid Until:</strong> ${escapeHtml(params.validUntilLabel)}</div>
       </div>

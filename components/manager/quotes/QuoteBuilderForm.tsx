@@ -60,7 +60,7 @@ export default function QuoteBuilderForm({
         <QuoteField
           label="Client Name *"
           placeholder="Roky Islam"
-          value={clientName || defaultClientName}
+          value={clientName}
           onChangeText={setClientName}
         />
         <QuoteField
@@ -79,7 +79,7 @@ export default function QuoteBuilderForm({
         <QuoteField
           label="Email"
           placeholder="Enter your mail"
-          value={email || defaultEmail}
+          value={email }
           onChangeText={setEmail}
         />
         <QuoteField
@@ -87,7 +87,6 @@ export default function QuoteBuilderForm({
           placeholder="Enter hours"
           value={estimatedTime}
           onChangeText={setEstimatedTime}
-   
         />
       </QuoteSectionCard>
 
