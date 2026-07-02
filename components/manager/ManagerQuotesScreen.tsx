@@ -65,7 +65,6 @@ export default function ManagerQuotesScreen() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
   const [estimatedTime, setEstimatedTime] = useState("");
-  const [selectedAdmin, setSelectedAdmin] = useState("");
   const [projectType, setProjectType] =
     useState<QuoteProjectType>("New Build");
   const [propertyType, setPropertyType] =
@@ -146,6 +145,7 @@ export default function ManagerQuotesScreen() {
 
   const quoteParams = {
     clientName,
+    email,
     projectAddress,
     projectType,
     propertyType,
@@ -364,8 +364,6 @@ export default function ManagerQuotesScreen() {
               defaultEmail={defaultEmail}
               estimatedTime={estimatedTime}
               setEstimatedTime={setEstimatedTime}
-              selectedAdmin={selectedAdmin}
-              setSelectedAdmin={setSelectedAdmin}
               projectType={projectType}
               setProjectType={(value) =>
                 syncCombination(value, propertyType, unitType)
@@ -421,6 +419,7 @@ export default function ManagerQuotesScreen() {
           ) : (
             <QuoteFinalReviewStep
               clientName={clientName || defaultClientName}
+              email={email || defaultEmail}
               projectAddress={projectAddress || "Address pending"}
               projectType={projectType}
               propertyType={propertyType}

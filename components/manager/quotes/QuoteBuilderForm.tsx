@@ -1,6 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
-import { Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import React from "react";
+import { Text, TouchableOpacity, View } from "react-native";
 import QuoteChoiceCard from "./QuoteChoiceCard";
 import QuoteField from "./QuoteField";
 import QuoteSectionCard from "./QuoteSectionCard";
@@ -24,8 +23,6 @@ type QuoteBuilderFormProps = {
   defaultEmail: string;
   estimatedTime: string;
   setEstimatedTime: (value: string) => void;
-  selectedAdmin: string;
-  setSelectedAdmin: (value: string) => void;
   projectType: QuoteProjectType;
   setProjectType: (value: QuoteProjectType) => void;
   propertyType: QuotePropertyType;
@@ -49,8 +46,6 @@ export default function QuoteBuilderForm({
   defaultEmail,
   estimatedTime,
   setEstimatedTime,
-  selectedAdmin,
-  setSelectedAdmin,
   projectType,
   setProjectType,
   propertyType,
@@ -59,9 +54,6 @@ export default function QuoteBuilderForm({
   setUnitType,
   onNext,
 }: QuoteBuilderFormProps) {
-  const [adminSheetVisible, setAdminSheetVisible] = useState(false);
-  const adminOptions = ["Admin 1", "Admin 2", "Admin 3"];
-
   return (
     <>
       <QuoteSectionCard title="Client Information" icon="business-outline">
@@ -95,24 +87,8 @@ export default function QuoteBuilderForm({
           placeholder="Enter hours"
           value={estimatedTime}
           onChangeText={setEstimatedTime}
-          keyboardType="number-pad"
+   
         />
-        <View className="mb-5">
-          <Text className="mb-2 text-[14px] font-medium text-[#2B2B2B]">
-            Select Admin
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => setAdminSheetVisible(true)}
-            className="h-[56px] flex-row items-center rounded-[16px] border border-[#D4DCE5] bg-white px-4"
-          >
-            <Text className={`flex-1 text-[14px] ${selectedAdmin ? "text-[#1F2937]" : "text-[#A0A8B5]"}`}>
-              {selectedAdmin || "Select admin"}
-            </Text>
-            <Ionicons name="chevron-down" size={20} color="#A0A8B5" />
-          </TouchableOpacity>
-        </View>
-
       </QuoteSectionCard>
 
       <QuoteSectionCard title="Project Details" icon="home-outline">
@@ -176,61 +152,6 @@ export default function QuoteBuilderForm({
       >
         <Text className="text-[16px] font-medium text-white">Next</Text>
       </TouchableOpacity>
-
-      <Modal
-        visible={adminSheetVisible}
-        transparent
-        animationType="slide"
-        statusBarTranslucent
-        onRequestClose={() => setAdminSheetVisible(false)}
-      >
-        <Pressable
-          className="flex-1 justify-end bg-black/35"
-          onPress={() => setAdminSheetVisible(false)}
-        >
-          <Pressable
-            className="max-h-[70%] rounded-t-[24px] bg-white px-5 pb-6 pt-4"
-            onPress={() => {}}
-          >
-            <View className="items-center">
-              <View className="h-1.5 w-16 rounded-full bg-[#D7DEE7]" />
-            </View>
-
-            <Text className="mt-5 text-[18px] font-semibold text-[#1F2937]">
-              Select Admin
-            </Text>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingTop: 16, paddingBottom: 8 }}
-            >
-              {adminOptions.map((admin) => {
-                const isSelected = selectedAdmin === admin;
-                return (
-                  <TouchableOpacity
-                    key={admin}
-                    activeOpacity={0.85}
-                    onPress={() => {
-                      setSelectedAdmin(admin);
-                      setAdminSheetVisible(false);
-                    }}
-                    className={`mb-3 flex-row items-center justify-between rounded-[14px] border px-4 py-4 ${
-                      isSelected ? "border-[#1F5577] bg-[#EEF6FA]" : "border-[#D7DEE7] bg-white"
-                    }`}
-                  >
-                    <Text className={`text-[15px] font-medium ${isSelected ? "text-[#1F5577]" : "text-[#1F2937]"}`}>
-                      {admin}
-                    </Text>
-                    {isSelected ? (
-                      <Ionicons name="checkmark-circle" size={20} color="#1F5577" />
-                    ) : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </>
   );
 }
