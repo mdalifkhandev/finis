@@ -86,6 +86,7 @@ function normalizeMessages(messages: ChatMessage[], currentUserId: string): Mess
       id: message.id,
       text: message.content ?? "",
       time: formatChatTime(message.sentAt),
+      rawTime: message.sentAt,
       sender: isMe ? "me" : "other",
       isRead: message.isRead,
       senderId: message.senderId,
@@ -108,7 +109,7 @@ export function useChatThreadsQuery(filter: "chat" | "support", search: string) 
     queryFn: async () => {
       const response = await getChatThreads({
         search: search.trim() || undefined,
-        limit: 100,
+        limit: 20,
       });
 
       if (!currentUserId) {
@@ -253,7 +254,12 @@ export function useChatMessagesQuery(threadId?: string) {
       Object.keys(pagesByNumber)
         .map(Number)
         .sort((left, right) => right - left)
-        .flatMap((pageNumber) => pagesByNumber[pageNumber] ?? []),
+        .flatMap((pageNumber) => pagesByNumber[pageNumber] ?? [])
+        .sort((left, right) => {
+          const leftTime = left.rawTime ? new Date(left.rawTime).getTime() : 0;
+          const rightTime = right.rawTime ? new Date(right.rawTime).getTime() : 0;
+          return leftTime - rightTime;
+        }),
     [pagesByNumber],
   );
 

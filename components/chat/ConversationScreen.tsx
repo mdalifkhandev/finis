@@ -249,6 +249,7 @@ export default function ConversationScreen() {
       id: message.id,
       text: message.text,
       time: formatMessageTime(message.time),
+      rawTime: message.rawTime ?? message.time,
       sender: message.sender === "me" ? "me" : "other",
       isRead: message.isRead,
       kind: message.kind,
@@ -259,9 +260,15 @@ export default function ConversationScreen() {
     }));
 
     const merged = [...serverMessages, ...optimisticMessages];
-    return merged.filter(
-      (message, index, array) => array.findIndex((item) => item.id === message.id) === index,
-    );
+    return merged
+      .filter(
+        (message, index, array) => array.findIndex((item) => item.id === message.id) === index,
+      )
+      .sort((left, right) => {
+        const leftTime = left.rawTime ? new Date(left.rawTime).getTime() : 0;
+        const rightTime = right.rawTime ? new Date(right.rawTime).getTime() : 0;
+        return leftTime - rightTime;
+      });
   }, [messagesQuery.data, optimisticMessages, userId]);
 
   const visibleMessages = useMemo(() => {
@@ -317,6 +324,7 @@ export default function ConversationScreen() {
         payload.content ??
         (payload.locationUrl ? "Shared a location" : payload.mediaType === "document" ? "Shared a file" : ""),
       time: formatMessageTime(sentMessage.sentAt),
+      rawTime: sentMessage.sentAt,
       sender: "me",
       kind,
       senderId: userId,
