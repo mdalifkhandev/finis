@@ -12,6 +12,7 @@ import type { QuoteSelectedWorkGroup } from "./QuoteWorkGroupCard";
 
 type QuoteFinalReviewStepProps = {
   clientName: string;
+  email: string;
   projectAddress: string;
   projectType: QuoteProjectType;
   propertyType: QuotePropertyType;
@@ -66,6 +67,7 @@ function DetailRow({
 
 export default function QuoteFinalReviewStep({
   clientName,
+  email,
   projectAddress,
   projectType,
   propertyType,
@@ -118,6 +120,11 @@ export default function QuoteFinalReviewStep({
             icon="calendar-outline"
             label="Estimated Timeline"
             value={estimatedTime }
+          />
+          <DetailRow
+            icon="mail-outline"
+            label="Client Email"
+            value={email} 
           />
         </View>
       </QuoteReviewCard>
@@ -232,20 +239,9 @@ export default function QuoteFinalReviewStep({
           onPress={onGeneratePdf}
           className="mt-4 h-[58px] flex-row items-center justify-center rounded-[16px] bg-[#1F5577]"
         >
-          <Ionicons name="download-outline" size={22} color="#FFFFFF" />
+          <Ionicons name="share-outline" size={22} color="#FFFFFF" />
           <Text className="ml-2 text-[16px] font-medium text-white">
-            Generate Quote PDF
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          activeOpacity={0.88}
-          onPress={onEmailQuote}
-          className="mt-4 h-[58px] flex-row items-center justify-center rounded-[16px] border border-[#1F5577] bg-white"
-        >
-          <Ionicons name="mail-outline" size={22} color="#1F5577" />
-          <Text className="ml-2 text-[16px] font-medium text-[#1F5577]">
-            Email Quote to Client
+            Generate Quote and Send
           </Text>
         </TouchableOpacity>
       </QuoteReviewCard>
