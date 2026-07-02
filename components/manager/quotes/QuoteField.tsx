@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Text, TextInput, View } from "react-native";
+import { KeyboardTypeOptions, Text, TextInput, View } from "react-native";
 
 type QuoteFieldProps = {
   label: string;
@@ -8,6 +8,7 @@ type QuoteFieldProps = {
   value: string;
   onChangeText: (value: string) => void;
   leftIcon?: keyof typeof Ionicons.glyphMap;
+  keyboardType?: KeyboardTypeOptions;
 };
 
 export default function QuoteField({
@@ -16,6 +17,7 @@ export default function QuoteField({
   value,
   onChangeText,
   leftIcon,
+  keyboardType,
 }: QuoteFieldProps) {
   return (
     <View className="mb-5">
@@ -31,6 +33,7 @@ export default function QuoteField({
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor="#A0A8B5"
+          keyboardType={keyboardType}
           className={`flex-1 text-[14px] text-[#1F2937] ${leftIcon ? "ml-3" : ""}`}
         />
       </View>
