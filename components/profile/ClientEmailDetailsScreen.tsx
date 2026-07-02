@@ -1,30 +1,100 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
-import { EMAIL_ITEMS } from "./clientEmailData";
+import {
+  getMailboxConversation,
+  updateMailboxStatus,
+} from "@/api/mailbox/mailbox.api";
+import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
 import ProfileHeaderBar from "./ProfileHeaderBar";
+
+function formatDate(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString();
+}
+
+function formatTime(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
 
 export default function ClientEmailDetailsScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const resolvedId = Array.isArray(id) ? id[0] : id;
+  const queryClient = useQueryClient();
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
-  const email = useMemo(
-    () => EMAIL_ITEMS.find((item) => item.id === resolvedId) ?? EMAIL_ITEMS[0],
-    [resolvedId],
+  const conversationQuery = useQuery({
+    queryKey: ["mailbox", "conversation", resolvedId],
+    queryFn: () => getMailboxConversation(resolvedId as string),
+    enabled: Boolean(resolvedId),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: (status: "active" | "closed") =>
+      updateMailboxStatus(resolvedId as string, status),
+    onSuccess: async (_data, status) => {
+      setIsMenuVisible(false);
+      await queryClient.invalidateQueries({ queryKey: ["mailbox"] });
+      await queryClient.invalidateQueries({ queryKey: ["mailbox", "conversation", resolvedId] });
+      toast.success(
+        status === "active" ? "Mail accepted successfully." : "Mail closed successfully.",
+      );
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Unable to update mail status.");
+    },
+  });
+
+  const conversation = conversationQuery.data;
+  const latestMessage = useMemo(
+    () => conversation?.messages?.[conversation.messages.length - 1],
+    [conversation],
   );
+  const previewMessage = useMemo(
+    () =>
+      [...(conversation?.messages ?? [])]
+        .reverse()
+        .find((message) => (message.attachments?.length ?? 0) > 0) ?? null,
+    [conversation],
+  );
+  const email = useMemo(() => {
+    const bodyLines = (latestMessage?.bodyText || "")
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const firstAttachment = previewMessage?.attachments?.[0];
+
+    return {
+      id: conversation?.id || resolvedId || "",
+      name: conversation?.clientName || conversation?.clientEmail || "",
+      email: conversation?.clientEmail || "",
+      date: formatDate(latestMessage?.createdAt || conversation?.createdAt),
+      time: formatTime(latestMessage?.createdAt || conversation?.createdAt),
+      subject: latestMessage?.subject || "",
+      body: bodyLines,
+      attachmentName: firstAttachment?.name || "No attachment",
+      attachmentSize: firstAttachment?.size || "",
+      attachmentCount: `${previewMessage?.attachments?.length || 0} Files`,
+      attachmentUrl: firstAttachment?.url || "",
+      starred: conversation?.isStarred || false,
+    };
+  }, [conversation, latestMessage, previewMessage, resolvedId]);
 
   const handleAccept = () => {
-    setIsMenuVisible(false);
-    toast.success(`${email.name} mail accepted successfully.`);
+    statusMutation.mutate("active");
   };
 
   const handleClose = () => {
-    setIsMenuVisible(false);
-    toast.success(`${email.name} mail closed successfully.`);
+    statusMutation.mutate("closed");
   };
 
   return (
@@ -36,25 +106,21 @@ export default function ClientEmailDetailsScreen() {
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
       >
         <View className="rounded-[18px] border border-[#E8EDF2] bg-white p-4 shadow-sm">
-          <View className="flex-row items-start">
-            <View className="h-14 w-14 items-center justify-center rounded-full bg-[#D8F0FF]">
-              <Text className="text-[22px] font-semibold text-[#1D5478]">
-                {email.name.charAt(0)}
-              </Text>
-            </View>
+          <View>
+            <View className="flex-row items-start justify-between">
+              <View className="flex-1 pr-3">
+                <Text className="text-[18px] font-semibold text-[#1F2937]">
+                  {email.name}
+                </Text>
+                <Text className="mt-1 text-[13px] text-[#64748B]">{email.email}</Text>
+              </View>
 
-            <View className="ml-3 flex-1">
-              <Text className="text-[18px] font-semibold text-[#1F2937]">
-                {email.name}
-              </Text>
-              <Text className="text-[13px] text-[#64748B]">{email.email}</Text>
-            </View>
-
-            <View className="items-end">
-              <Text className="text-[13px] text-[#475467]">{email.date}</Text>
-              <Text className="mt-1 text-[13px] font-medium text-[#1F2937]">
-                {email.time}
-              </Text>
+              <View className="items-end">
+                <Text className="text-[13px] text-[#475467]">{email.date}</Text>
+                <Text className="mt-1 text-[13px] font-medium text-[#1F2937]">
+                  {email.time}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -70,17 +136,8 @@ export default function ClientEmailDetailsScreen() {
                 </Text>
               ))}
             </View>
-
-            <View className="mt-5 items-end">
-              <TouchableOpacity
-                activeOpacity={0.85}
-                className="flex-row items-center rounded-[10px] bg-[#1D5478] px-4 py-3"
-              >
-                <Ionicons name="create-outline" size={16} color="#FFFFFF" />
-                <Text className="ml-2 text-[15px] font-medium text-white">Compose</Text>
-              </TouchableOpacity>
-            </View>
           </View>
+
         </View>
 
         <View className="mt-5">
@@ -113,6 +170,17 @@ export default function ClientEmailDetailsScreen() {
 
             <TouchableOpacity
               activeOpacity={0.85}
+              disabled={!email.attachmentUrl}
+              onPress={() => {
+                if (!email.attachmentUrl) return;
+                setCurrentPreviewDocument({
+                  id: email.id,
+                  name: email.attachmentName,
+                  uri: email.attachmentUrl,
+                  mimeType: "application/pdf",
+                });
+                router.push("/screens/company/documentpreview");
+              }}
               className="mt-4 h-[46px] items-center justify-center rounded-[12px] bg-[#1D5478]"
             >
               <Text className="text-[15px] font-medium text-white">View PDF</Text>
