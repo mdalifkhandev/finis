@@ -114,6 +114,7 @@ function ensureChatListeners(
       id: payload.id ?? `${payload.threadId}-${payload.sentAt ?? Date.now()}`,
       text: payload.content ?? "",
       time: payload.sentAt ?? new Date().toISOString(),
+      rawTime: payload.sentAt ?? new Date().toISOString(),
       sender: payload.senderId && payload.senderId === currentUserId ? "me" : "other",
       kind:
         payload.mediaType === "image"
@@ -316,6 +317,7 @@ export function useChatSocket(threadId?: string) {
         id: payload.id ?? `${payload.threadId}-${payload.sentAt ?? Date.now()}`,
         text: payload.content ?? "",
         time: payload.sentAt ?? new Date().toISOString(),
+        rawTime: payload.sentAt ?? new Date().toISOString(),
         sender: payload.senderId && payload.senderId === currentUserId ? "me" : "other",
         kind:
           payload.mediaType === "image"

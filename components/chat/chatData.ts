@@ -18,6 +18,7 @@ export type MessageModel = {
   id: string;
   text: string;
   time: string;
+  rawTime?: string;
   sender: "me" | "other";
   isRead?: boolean;
   kind?: "text" | "image" | "location";
