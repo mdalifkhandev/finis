@@ -6,15 +6,20 @@ import DateTimePicker, {
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Modal,
   Platform,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
+import { useExportAdminReportsMutation } from "@/hooks/admin/reports";
+import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
 
 type ReportType = {
   key: string;
@@ -31,13 +36,13 @@ const REPORT_TYPES: ReportType[] = [
     icon: "cash-outline",
   },
   {
-    key: "invoices",
+    key: "project_invoices",
     title: "Project Invoices",
     subtitle: "Client billing and project budgets",
     icon: "receipt-outline",
   },
   {
-    key: "performance",
+    key: "worker_performance",
     title: "Worker Performance",
     subtitle: "Attendance scores and task completion",
     icon: "trending-up-outline",
@@ -51,12 +56,12 @@ const REPORT_TYPES: ReportType[] = [
 ];
 
 const FREQUENCY_OPTIONS = [
-  "Daily Summary",
-  "Weekly Summary",
-  "Monthly Summary",
-  "Quarterly Summary",
-  "Yearly Summary",
-];
+  { label: "Daily Summary", value: "daily" },
+  { label: "Weekly Summary", value: "weekly" },
+  { label: "Monthly Summary", value: "monthly" },
+  { label: "Quarterly Summary", value: "quarterly" },
+  { label: "Yearly Summary", value: "yearly" },
+] as const;
 
 function formatDate(date: Date) {
   return date
@@ -73,15 +78,44 @@ export default function ReportScreen() {
   const isAdmin = role === "admin";
 
   const [selectedType, setSelectedType] = useState<string>("payroll");
-  const [frequency, setFrequency] = useState<string>("Daily Summary");
+  const [frequency, setFrequency] = useState<string>("daily");
   const [frequencyOpen, setFrequencyOpen] = useState(false);
 
   const now = new Date();
   const [startDate, setStartDate] = useState<Date>(now);
-  const [endDate, setEndDate] = useState<Date>(
-    new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-  );
+  const [endDate, setEndDate] = useState<Date>(now);
   const [pickerTarget, setPickerTarget] = useState<"start" | "end" | null>(null);
+  const { refreshing, onRefresh } = usePullToRefresh();
+
+  const selectedFrequencyLabel =
+    FREQUENCY_OPTIONS.find((option) => option.value === frequency)?.label ??
+    FREQUENCY_OPTIONS[0].label;
+
+  const exportMutation = useExportAdminReportsMutation();
+
+  const handleExportAll = async () => {
+    const document = await exportMutation.mutateAsync({
+      type: selectedType as
+        | "payroll"
+        | "project_invoices"
+        | "worker_performance"
+        | "expense",
+      startDate: startDate.toISOString().slice(0, 10),
+      endDate: endDate.toISOString().slice(0, 10),
+    });
+
+    setCurrentPreviewDocument({
+      id: "admin-reports-export",
+      name: "Reports.pdf",
+      uri: document.uri,
+      mimeType: document.mimeType,
+    });
+
+    router.push({
+      pathname: "/screens/company/documentpreview",
+      params: { download: "1" },
+    });
+  };
 
   const handleDateChange = (
     event: DateTimePickerEvent,
@@ -144,6 +178,14 @@ export default function ReportScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 36 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1D5478"
+            colors={["#1D5478"]}
+          />
+        }
       >
         <Text className="text-[14px] leading-5 text-[#6B7280]">
           Generate comprehensive insights for your organization.
@@ -153,20 +195,18 @@ export default function ReportScreen() {
         <View className="mt-4 flex-row gap-3">
           <TouchableOpacity
             activeOpacity={0.85}
-            className="h-[46px] flex-1 flex-row items-center justify-center rounded-[12px] border border-[#1D5478] bg-white"
-          >
-            <Ionicons name="calendar-outline" size={16} color="#1D5478" />
-            <Text className="ml-2 text-[14px] font-semibold text-[#1D5478]">
-              Schedule
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.85}
+            disabled={exportMutation.isPending}
+            onPress={handleExportAll}
             className="h-[46px] flex-1 flex-row items-center justify-center rounded-[12px] bg-[#1D5478]"
+            style={{ opacity: exportMutation.isPending ? 0.7 : 1 }}
           >
-            <Ionicons name="download-outline" size={16} color="#FFFFFF" />
+            {exportMutation.isPending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Ionicons name="download-outline" size={16} color="#FFFFFF" />
+            )}
             <Text className="ml-2 text-[14px] font-semibold text-white">
-              Export All
+              {exportMutation.isPending ? "Exporting..." : "Export All"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -252,7 +292,9 @@ export default function ReportScreen() {
             onPress={() => setFrequencyOpen(true)}
             className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-4"
           >
-            <Text className="text-[15px] text-[#334155]">{frequency}</Text>
+            <Text className="text-[15px] text-[#334155]">
+              {selectedFrequencyLabel}
+            </Text>
             <Ionicons name="chevron-down" size={18} color="#64748B" />
           </TouchableOpacity>
 
@@ -306,8 +348,8 @@ export default function ReportScreen() {
                 params: {
                   type: selectedType,
                   frequency,
-                  startDate: startDate.toISOString(),
-                  endDate: endDate.toISOString(),
+                  startDate: startDate.toISOString().slice(0, 10),
+                  endDate: endDate.toISOString().slice(0, 10),
                 },
               })
             }
@@ -320,22 +362,7 @@ export default function ReportScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Empty state */}
-        <View
-          className="mt-5 items-center rounded-[16px] border border-dashed border-[#CBD5E1] px-6 py-10"
-          style={{ backgroundColor: "#FCFDFE" }}
-        >
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-[#F1F5F9]">
-            <Ionicons name="document-outline" size={26} color="#94A3B8" />
-          </View>
-          <Text className="mt-4 text-[15px] font-semibold text-[#334155]">
-            No Report Generated
-          </Text>
-          <Text className="mt-1 text-center text-[13px] leading-5 text-[#6B7280]">
-            Select your report parameters above and click &apos;Generate
-            Report&apos; to view analytics.
-          </Text>
-        </View>
+    
       </ScrollView>
 
       {/* Frequency dropdown modal */}
@@ -360,13 +387,13 @@ export default function ReportScreen() {
               Period Frequency
             </Text>
             {FREQUENCY_OPTIONS.map((option) => {
-              const active = option === frequency;
+              const active = option.value === frequency;
               return (
                 <TouchableOpacity
-                  key={option}
+                  key={option.value}
                   activeOpacity={0.85}
                   onPress={() => {
-                    setFrequency(option);
+                    setFrequency(option.value);
                     setFrequencyOpen(false);
                   }}
                   className="flex-row items-center justify-between border-b border-[#F1F5F9] py-4"
@@ -378,7 +405,7 @@ export default function ReportScreen() {
                         : "text-[#334155]"
                     }`}
                   >
-                    {option}
+                    {option.label}
                   </Text>
                   {active ? (
                     <Ionicons name="checkmark" size={18} color="#1D5478" />

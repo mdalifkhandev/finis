@@ -1,14 +1,29 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
+import {
+  type AdminExpenseReport,
+  type AdminGeneratedReport,
+  type AdminPayrollReport,
+  type AdminProjectInvoicesReport,
+  type AdminWorkerPerformanceReport,
+} from "@/api/admin/reports.api";
+import { useAdminGeneratedReportQuery } from "@/hooks/admin/reports";
+import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const TYPE_TITLES: Record<string, string> = {
   payroll: "Payroll Report",
-  invoices: "Project Invoices",
-  performance: "Worker Performance",
+  project_invoices: "Project Invoices",
+  worker_performance: "Worker Performance",
   expense: "Expense Reports",
 };
 
@@ -22,93 +37,16 @@ type Invoice = {
   remaining: string;
 };
 
-const INVOICES: Invoice[] = [
-  {
-    id: "1",
-    name: "Lakeside Towers",
-    company: "Summit Construction Ltd.",
-    status: "PAID",
-    progress: 45,
-    billed: "$6,750,000",
-    remaining: "$8,250,000",
-  },
-  {
-    id: "2",
-    name: "Maple Grove Homes",
-    company: "Horizon Builders Inc.",
-    status: "PAID",
-    progress: 30,
-    billed: "$2,550,000",
-    remaining: "$5,950,000",
-  },
-  {
-    id: "3",
-    name: "Oakwood Residences",
-    company: "Summit Construction Ltd.",
-    status: "PAID",
-    progress: 60,
-    billed: "$7,200,000",
-    remaining: "$4,800,000",
-  },
-  {
-    id: "4",
-    name: "Westside Community Center",
-    company: "Horizon Builders Inc.",
-    status: "PAID",
-    progress: 100,
-    billed: "$5,500,000",
-    remaining: "$0",
-  },
-  {
-    id: "5",
-    name: "Harborfront Condos",
-    company: "Summit Construction Ltd.",
-    status: "PAID",
-    progress: 25,
-    billed: "$6,250,000",
-    remaining: "$18,750,000",
-  },
-];
-
 type Worker = {
   id: string;
+  workerId: string;
   name: string;
   role: string;
+  avatarUrl: string | null;
   attendance: number;
   tasksDone: number;
-  rating: number;
   accent: string;
 };
-
-const WORKERS: Worker[] = [
-  {
-    id: "1",
-    name: "Carlos Martinez",
-    role: "Electrician",
-    attendance: 100,
-    tasksDone: 0,
-    rating: 4.0,
-    accent: "#1D5478",
-  },
-  {
-    id: "2",
-    name: "David Chen",
-    role: "Plumber",
-    attendance: 0,
-    tasksDone: 0,
-    rating: 2.5,
-    accent: "#E11D48",
-  },
-  {
-    id: "3",
-    name: "Maria Rodriguez",
-    role: "Carpenter",
-    attendance: 100,
-    tasksDone: 0,
-    rating: 4.0,
-    accent: "#1D5478",
-  },
-];
 
 type Expense = {
   id: string;
@@ -116,46 +54,75 @@ type Expense = {
   date: string;
   category: string;
   amount: string;
-  status: "PENDING" | "APPROVED";
+  status: "PENDING" | "APPROVED" | "REJECTED";
 };
 
-const EXPENSES: Expense[] = [
-  {
-    id: "1",
-    name: "Carlos Martinez",
-    date: "July 12, 2026",
-    category: "Travel",
-    amount: "$45.00",
-    status: "PENDING",
-  },
-  {
-    id: "2",
-    name: "David Chen",
-    date: "July 10, 2026",
-    category: "Equipment",
-    amount: "$125.50",
-    status: "PENDING",
-  },
-  {
-    id: "3",
-    name: "Maria Rodriguez",
-    date: "July 08, 2026",
-    category: "Meals",
-    amount: "$25.00",
-    status: "APPROVED",
-  },
-  {
-    id: "4",
-    name: "Carlos Martinez",
-    date: "July 05, 2026",
-    category: "Tools",
-    amount: "$53.25",
-    status: "APPROVED",
-  },
-];
+type PayrollWorker = {
+  id: string;
+  name: string;
+  role: string;
+  hours: string;
+  grossPay: string;
+  netPay: string;
+  status: string;
+};
 
-const TOTAL_EXPENSES = "$248.75";
-const PENDING_APPROVAL = "$125.50";
+function formatCurrency(value?: number | null) {
+  const amount = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatCompactCurrency(value?: number | null) {
+  const amount = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  const hasDecimals = amount % 1 !== 0;
+  return amount.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatHours(value?: number | null) {
+  const amount = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return `${amount.toFixed(2)}h`;
+}
+
+function formatDateLabel(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "2-digit",
+    year: "numeric",
+  });
+}
+
+function parsePercent(value?: string | null) {
+  if (!value) return 0;
+  const parsed = Number.parseFloat(value.replace("%", ""));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatStatusLabel(value?: string | null) {
+  return (value ?? "")
+    .replace(/_/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
+function getReportData<T extends AdminGeneratedReport["type"]>(
+  report: AdminGeneratedReport | undefined,
+  type: T,
+) {
+  return report?.type === type ? report : undefined;
+}
 
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
@@ -301,6 +268,16 @@ function WorkerCard({ worker }: { worker: Worker }) {
           </View>
           <TouchableOpacity
             activeOpacity={0.85}
+            onPress={() =>
+              router.push({
+                pathname: "/screens/chat/userprofile",
+                params: {
+                  id: worker.workerId,
+                  name: worker.name,
+                  avatarUrl: worker.avatarUrl ?? undefined,
+                },
+              })
+            }
             className="rounded-[10px] border border-[#CBD5E1] px-3 py-2"
           >
             <Text className="text-[12px] font-semibold text-[#1D5478]">
@@ -312,8 +289,8 @@ function WorkerCard({ worker }: { worker: Worker }) {
         <View className="my-4 h-[1px] bg-[#EDF1F5]" />
 
         {/* Metrics */}
-        <View className="flex-row">
-          <View className="flex-1">
+        <View className="flex-row items-center justify-between">
+          <View>
             <Text className="text-[11px] font-bold tracking-[0.5px] text-[#94A3B8]">
               ATTENDANCE
             </Text>
@@ -335,7 +312,7 @@ function WorkerCard({ worker }: { worker: Worker }) {
             </View>
           </View>
 
-          <View className="flex-1">
+          <View className="items-end">
             <Text className="text-[11px] font-bold tracking-[0.5px] text-[#94A3B8]">
               TASKS DONE
             </Text>
@@ -344,17 +321,6 @@ function WorkerCard({ worker }: { worker: Worker }) {
             </Text>
           </View>
 
-          <View className="flex-1">
-            <Text className="text-[11px] font-bold tracking-[0.5px] text-[#94A3B8]">
-              RATING
-            </Text>
-            <View className="mt-1 flex-row items-center">
-              <Ionicons name="star" size={14} color="#F5B301" />
-              <Text className="ml-1 text-[16px] font-bold text-[#111827]">
-                {worker.rating.toFixed(1)}
-              </Text>
-            </View>
-          </View>
         </View>
       </View>
     </View>
@@ -363,9 +329,10 @@ function WorkerCard({ worker }: { worker: Worker }) {
 
 function ExpenseCard({ expense }: { expense: Expense }) {
   const pending = expense.status === "PENDING";
-  const accent = pending ? "#D4DAE5" : "#C7F4E6";
-  const badgeBg = pending ? "#E9EEFF" : "#DDFBF0";
-  const badgeText = pending ? "#8B5E3C" : "#2E8B57";
+  const rejected = expense.status === "REJECTED";
+  const accent = rejected ? "#F8D7DA" : pending ? "#D4DAE5" : "#C7F4E6";
+  const badgeBg = rejected ? "#FDECEC" : pending ? "#E9EEFF" : "#DDFBF0";
+  const badgeText = rejected ? "#B42318" : pending ? "#8B5E3C" : "#2E8B57";
   return (
     <View
       className="mt-5 flex-row overflow-hidden rounded-[20px] bg-white"
@@ -415,8 +382,66 @@ function ExpenseCard({ expense }: { expense: Expense }) {
   );
 }
 
+function PayrollWorkerCard({ worker }: { worker: PayrollWorker }) {
+  return (
+    <View
+      className="mt-4 rounded-[18px] bg-white px-4 py-4"
+      style={{
+        shadowColor: "#0F172A",
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 2,
+      }}
+    >
+      <View className="flex-row items-start justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="text-[17px] font-bold text-[#111827]">
+            {worker.name}
+          </Text>
+          <Text className="mt-0.5 text-[13px] text-[#6B7280]">
+            {worker.role}
+          </Text>
+        </View>
+        <View className="rounded-full bg-[#EEF2FF] px-3 py-1">
+          <Text className="text-[11px] font-bold tracking-[0.5px] text-[#4F46E5]">
+            {worker.status}
+          </Text>
+        </View>
+      </View>
+
+      <View className="mt-4 flex-row items-center justify-between">
+        <View>
+          <Text className="text-[11px] font-bold tracking-[0.5px] text-[#94A3B8]">
+            HOURS
+          </Text>
+          <Text className="mt-1 text-[16px] font-bold text-[#111827]">
+            {worker.hours}
+          </Text>
+        </View>
+        <View>
+          <Text className="text-[11px] font-bold tracking-[0.5px] text-[#94A3B8]">
+            GROSS PAY
+          </Text>
+          <Text className="mt-1 text-[16px] font-bold text-[#111827]">
+            {worker.grossPay}
+          </Text>
+        </View>
+        <View>
+          <Text className="text-[11px] font-bold tracking-[0.5px] text-[#94A3B8]">
+            NET PAY
+          </Text>
+          <Text className="mt-1 text-[16px] font-bold text-[#15925B]">
+            {worker.netPay}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function ReportResultScreen() {
-  const { type } = useLocalSearchParams<{
+  const { type, frequency, startDate, endDate } = useLocalSearchParams<{
     type?: string;
     frequency?: string;
     startDate?: string;
@@ -424,7 +449,93 @@ export default function ReportResultScreen() {
   }>();
 
   const reportType = typeof type === "string" ? type : "payroll";
+  const resolvedFrequency =
+    typeof frequency === "string" ? frequency : "monthly";
+  const resolvedStartDate =
+    typeof startDate === "string" ? startDate : new Date().toISOString().slice(0, 10);
+  const resolvedEndDate =
+    typeof endDate === "string" ? endDate : new Date().toISOString().slice(0, 10);
   const title = TYPE_TITLES[reportType] ?? "Report";
+  const reportQuery = useAdminGeneratedReportQuery({
+    type: reportType as
+      | "payroll"
+      | "project_invoices"
+      | "worker_performance"
+      | "expense",
+    frequency: resolvedFrequency as
+      | "daily"
+      | "weekly"
+      | "monthly"
+      | "quarterly"
+      | "yearly",
+    startDate: resolvedStartDate,
+    endDate: resolvedEndDate,
+  });
+
+  const report = reportQuery.data;
+  const invoiceReport = getReportData(report, "project_invoices") as
+    | AdminProjectInvoicesReport
+    | undefined;
+  const performanceReport = getReportData(report, "worker_performance") as
+    | AdminWorkerPerformanceReport
+    | undefined;
+  const expenseReport = getReportData(report, "expense") as
+    | AdminExpenseReport
+    | undefined;
+  const payrollReport = getReportData(report, "payroll") as
+    | AdminPayrollReport
+    | undefined;
+
+  const invoiceCards: Invoice[] = (invoiceReport?.projects ?? []).map((project) => ({
+    id: project.id,
+    name: project.name,
+    company: project.company.name,
+    status: formatStatusLabel(project.status),
+    progress: project.progress ?? 0,
+    billed: formatCurrency(project.spent ?? project.approvedExpenses ?? 0),
+    remaining: formatCurrency(
+      project.remaining ?? Math.max((project.budget ?? 0) - (project.spent ?? 0), 0),
+    ),
+  }));
+
+  const workerCards: Worker[] = (performanceReport?.workers ?? []).map((item) => ({
+    id: item.worker.id,
+    workerId: item.worker.id,
+    name: item.worker.fullName,
+    role: item.worker.department ?? "Worker",
+    avatarUrl: item.worker.avatarUrl,
+    attendance: parsePercent(item.attendance.attendanceRate),
+    tasksDone: item.tasks.completed,
+    accent:
+      parsePercent(item.attendance.attendanceRate) < 50 ? "#E11D48" : "#1D5478",
+  }));
+
+  const expenseCards: Expense[] = (expenseReport?.expenses ?? []).map((item) => ({
+    id: item.id,
+    name: item.worker.fullName,
+    date: formatDateLabel(item.date),
+    category: item.category,
+    amount: formatCurrency(item.amount),
+    status: formatStatusLabel(item.status) as Expense["status"],
+  }));
+
+  const payrollWorkers: PayrollWorker[] = (payrollReport?.workers ?? []).map((item) => ({
+    id: item.worker.id,
+    name: item.worker.fullName,
+    role: item.worker.department ?? "Worker",
+    hours: formatHours(item.totalHours),
+    grossPay: formatCompactCurrency(item.totalGrossPay),
+    netPay: formatCompactCurrency(item.totalNetPay),
+    status: formatStatusLabel(item.payrolls[0]?.status ?? "paid"),
+  }));
+
+  const payrollAverageRate =
+    (payrollReport?.summary.totalHours ?? 0) > 0
+      ? (payrollReport!.summary.totalGrossPay ?? 0) / payrollReport!.summary.totalHours
+      : 0;
+  const { refreshing, onRefresh } = usePullToRefresh(async () => {
+    await reportQuery.refetch();
+  });
 
   return (
     <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-[#E9EDF1]">
@@ -433,10 +544,31 @@ export default function ReportResultScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 36 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#1D5478"
+            colors={["#1D5478"]}
+          />
+        }
       >
-        {reportType === "invoices" ? (
+        {reportQuery.isLoading ? (
+          <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+            <Ionicons name="bar-chart-outline" size={26} color="#94A3B8" />
+            <Text className="mt-3 text-[14px] text-[#64748B]">
+              Generating report...
+            </Text>
+          </View>
+        ) : reportQuery.isError ? (
+          <View className="mt-4 items-center rounded-[14px] bg-[#FDECEC] px-6 py-10">
+            <Ionicons name="alert-circle-outline" size={26} color="#B42318" />
+            <Text className="mt-3 text-center text-[14px] text-[#B42318]">
+              Failed to load report data.
+            </Text>
+          </View>
+        ) : reportType === "project_invoices" ? (
           <View>
-            {/* Heading */}
             <Text className="text-[26px] font-extrabold text-[#1D5478]">
               Project Invoicing
             </Text>
@@ -444,24 +576,29 @@ export default function ReportResultScreen() {
               Billing status based on project progress
             </Text>
 
-            {/* Total billed volume */}
             <View className="mt-5 rounded-[18px] border-l-4 border-[#1D5478] bg-white px-4 py-6">
               <Text className="text-center text-[34px] font-extrabold text-[#1D5478]">
-                $28,250,000
+                {formatCurrency(invoiceReport?.summary.totalBudget)}
               </Text>
               <Text className="mt-1 text-center text-[12px] font-bold tracking-[1px] text-[#94A3B8]">
-                TOTAL BILLED VOLUME
+                TOTAL PROJECT BUDGET
               </Text>
             </View>
 
-            {/* Invoice cards */}
-            {INVOICES.map((invoice) => (
+            {invoiceCards.map((invoice) => (
               <InvoiceCard key={invoice.id} invoice={invoice} />
             ))}
+            {invoiceCards.length === 0 ? (
+              <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+                <Ionicons name="search-outline" size={26} color="#94A3B8" />
+                <Text className="mt-3 text-[14px] text-[#64748B]">
+                  No results found.
+                </Text>
+              </View>
+            ) : null}
           </View>
-        ) : reportType === "performance" ? (
+        ) : reportType === "worker_performance" ? (
           <View>
-            {/* Heading */}
             <Text className="text-[26px] font-extrabold text-[#111827]">
               Worker Performance
             </Text>
@@ -469,34 +606,40 @@ export default function ReportResultScreen() {
               Efficiency and reliability metrics
             </Text>
 
-            {/* Worker cards */}
-            {WORKERS.map((worker) => (
+            {workerCards.map((worker) => (
               <WorkerCard key={worker.id} worker={worker} />
             ))}
 
-            {/* Weekly summary */}
             <View className="mt-5 flex-row items-center justify-between rounded-[18px] bg-[#1D5478] px-5 py-5">
               <View>
                 <Text className="text-[18px] font-bold text-white">
                   Weekly Summary
                 </Text>
                 <Text className="mt-1 text-[13px] text-[#C7D8E6]">
-                  92% Average Efficiency
+                  {performanceReport?.summary.avgTaskCompletion ?? "0%"} Average Efficiency
                 </Text>
               </View>
               <Ionicons name="stats-chart" size={26} color="#FFFFFF" />
             </View>
+            {workerCards.length === 0 ? (
+              <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+                <Ionicons name="search-outline" size={26} color="#94A3B8" />
+                <Text className="mt-3 text-[14px] text-[#64748B]">
+                  No results found.
+                </Text>
+              </View>
+            ) : null}
           </View>
         ) : reportType === "expense" ? (
           <View>
             <View className="flex-row gap-4">
               <ExpenseStatCard
                 label="TOTAL EXPENSES (ALL TIME)"
-                value={TOTAL_EXPENSES}
+                value={formatCurrency(expenseReport?.summary.totalAmount)}
               />
               <ExpenseStatCard
                 label="PENDING APPROVAL"
-                value={PENDING_APPROVAL}
+                value={formatCurrency(expenseReport?.summary.pendingAmount)}
                 valueColor="#F59E0B"
               />
             </View>
@@ -508,28 +651,48 @@ export default function ReportResultScreen() {
               Track project and worker expenditures
             </Text>
 
-            {EXPENSES.map((expense) => (
+            {expenseCards.map((expense) => (
               <ExpenseCard key={expense.id} expense={expense} />
             ))}
+            {expenseCards.length === 0 ? (
+              <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+                <Ionicons name="search-outline" size={26} color="#94A3B8" />
+                <Text className="mt-3 text-[14px] text-[#64748B]">
+                  No results found.
+                </Text>
+              </View>
+            ) : null}
           </View>
         ) : (
           <View>
-            {/* Stat cards */}
             <View className="flex-row gap-3">
-              <StatCard value="0h 0m" label="TOTAL HOURS" />
-              <StatCard value="$0" label="GROSS PAY" />
+              <StatCard
+                value={formatHours(payrollReport?.summary.totalHours)}
+                label="TOTAL HOURS"
+              />
+              <StatCard
+                value={formatCompactCurrency(payrollReport?.summary.totalGrossPay)}
+                label="GROSS PAY"
+              />
             </View>
 
             <View className="mt-3 flex-row gap-3">
-              <StatCard value="$0" label="DEDUCTIONS" />
-              <StatCard value="$0.00" label="AVG HOURLY RATE" />
+              <StatCard
+                value={formatCompactCurrency(payrollReport?.summary.totalDeductions)}
+                label="DEDUCTIONS"
+              />
+              <StatCard
+                value={formatCompactCurrency(payrollAverageRate)}
+                label="AVG HOURLY RATE"
+              />
             </View>
 
-            {/* Workers */}
             <Text className="mb-1 mt-6 text-[16px] font-semibold text-[#111827]">
               Workers
             </Text>
-            <Text className="text-[13px] text-[#6B7280]">0 payroll rows</Text>
+            <Text className="text-[13px] text-[#6B7280]">
+              {payrollReport?.summary.totalWorkers ?? 0} payroll rows
+            </Text>
 
             <TouchableOpacity
               activeOpacity={0.85}
@@ -541,12 +704,18 @@ export default function ReportResultScreen() {
               <Ionicons name="arrow-forward" size={18} color="#1D5478" />
             </TouchableOpacity>
 
-            <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
-              <Ionicons name="search-outline" size={26} color="#94A3B8" />
-              <Text className="mt-3 text-[14px] text-[#64748B]">
-                No results found.
-              </Text>
-            </View>
+            {payrollWorkers.length > 0 ? (
+              payrollWorkers.map((worker) => (
+                <PayrollWorkerCard key={worker.id} worker={worker} />
+              ))
+            ) : (
+              <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+                <Ionicons name="search-outline" size={26} color="#94A3B8" />
+                <Text className="mt-3 text-[14px] text-[#64748B]">
+                  No results found.
+                </Text>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
