@@ -17,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { toast } from "sonner-native";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useExportAdminReportsMutation } from "@/hooks/admin/reports";
 import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
@@ -56,11 +57,11 @@ const REPORT_TYPES: ReportType[] = [
 ];
 
 const FREQUENCY_OPTIONS = [
-  { label: "Daily Summary", value: "daily" },
-  { label: "Weekly Summary", value: "weekly" },
-  { label: "Monthly Summary", value: "monthly" },
-  { label: "Quarterly Summary", value: "quarterly" },
-  { label: "Yearly Summary", value: "yearly" },
+  { label: "daily", value: "daily" },
+  { label: "weekly", value: "weekly" },
+  { label: "monthly", value: "monthly" },
+  { label: "quarterly", value: "quarterly" },
+  { label: "yearly", value: "yearly" },
 ] as const;
 
 function formatDate(date: Date) {
@@ -82,7 +83,7 @@ export default function ReportScreen() {
   const [frequencyOpen, setFrequencyOpen] = useState(false);
 
   const now = new Date();
-  const [startDate, setStartDate] = useState<Date>(now);
+  const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date>(now);
   const [pickerTarget, setPickerTarget] = useState<"start" | "end" | null>(null);
   const { refreshing, onRefresh } = usePullToRefresh();
@@ -93,7 +94,20 @@ export default function ReportScreen() {
 
   const exportMutation = useExportAdminReportsMutation();
 
+  const ensureStartDate = () => {
+    if (!startDate) {
+      toast.error("Please select start date");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleExportAll = async () => {
+    if (!ensureStartDate()) {
+      return;
+    }
+
     const document = await exportMutation.mutateAsync({
       type: selectedType as
         | "payroll"
@@ -312,7 +326,7 @@ export default function ReportScreen() {
                 <View className="flex-row items-center">
                   <Ionicons name="calendar-outline" size={16} color="#1D5478" />
                   <Text className="ml-2 text-[13px] text-[#334155]">
-                    {formatDate(startDate)}
+                    {startDate ? formatDate(startDate) : "Select start date"}
                   </Text>
                 </View>
                 <Ionicons name="chevron-down" size={16} color="#64748B" />
@@ -342,7 +356,11 @@ export default function ReportScreen() {
           {/* Generate */}
           <TouchableOpacity
             activeOpacity={0.85}
-            onPress={() =>
+            onPress={() => {
+              if (!ensureStartDate()) {
+                return;
+              }
+
               router.push({
                 pathname: "/screens/profile/reportresult",
                 params: {
@@ -351,8 +369,8 @@ export default function ReportScreen() {
                   startDate: startDate.toISOString().slice(0, 10),
                   endDate: endDate.toISOString().slice(0, 10),
                 },
-              })
-            }
+              });
+            }}
             className="mt-4 h-[48px] flex-row items-center justify-center rounded-[12px] bg-[#1D5478]"
           >
             <Ionicons name="bar-chart-outline" size={18} color="#FFFFFF" />
@@ -396,7 +414,7 @@ export default function ReportScreen() {
                     setFrequency(option.value);
                     setFrequencyOpen(false);
                   }}
-                  className="flex-row items-center justify-between border-b border-[#F1F5F9] py-4"
+                  className="flex-row items-center justify-center border-b border-[#F1F5F9] py-4"
                 >
                   <Text
                     className={`text-[15px] ${
@@ -404,12 +422,10 @@ export default function ReportScreen() {
                         ? "font-semibold text-[#1D5478]"
                         : "text-[#334155]"
                     }`}
+                    style={{ textTransform: "capitalize" }}
                   >
                     {option.label}
                   </Text>
-                  {active ? (
-                    <Ionicons name="checkmark" size={18} color="#1D5478" />
-                  ) : null}
                 </TouchableOpacity>
               );
             })}
@@ -420,7 +436,7 @@ export default function ReportScreen() {
       {/* Date picker */}
       {pickerTarget ? (
         <DateTimePicker
-          value={pickerTarget === "start" ? startDate : endDate}
+          value={pickerTarget === "start" ? (startDate ?? now) : endDate}
           mode="date"
           display={Platform.OS === "ios" ? "spinner" : "default"}
           onChange={handleDateChange}
