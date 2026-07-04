@@ -126,7 +126,7 @@ function getReportData<T extends AdminGeneratedReport["type"]>(
 
 function StatCard({ value, label }: { value: string; label: string }) {
   return (
-    <View className="flex-1 rounded-[14px] border border-[#EDF1F5] bg-white px-4 py-4">
+    <View className="flex-1 rounded-lg border border-[#EDF1F5] bg-white px-4 py-4">
       <Text className="text-[18px] font-bold text-[#111827]">{value}</Text>
       <Text className="mt-1 text-[11px] font-semibold tracking-[0.5px] text-[#94A3B8]">
         {label}
@@ -146,7 +146,7 @@ function ExpenseStatCard({
 }) {
   return (
     <View
-      className="flex-1 rounded-[16px] border border-[#E9EDF3] bg-white px-4 py-4"
+      className="flex-1 rounded-lg border border-[#E9EDF3] bg-white px-4 py-4"
       style={{
         shadowColor: "#0F172A",
         shadowOpacity: 0.05,
@@ -168,7 +168,7 @@ function ExpenseStatCard({
 function InvoiceCard({ invoice }: { invoice: Invoice }) {
   return (
     <View
-      className="mt-4 rounded-[18px] bg-white px-4 py-4"
+      className="mt-4 rounded-lg bg-white px-4 py-4"
       style={{
         shadowColor: "#0F172A",
         shadowOpacity: 0.06,
@@ -243,7 +243,7 @@ function WorkerCard({ worker }: { worker: Worker }) {
   const attendanceLow = worker.attendance === 0;
   return (
     <View
-      className="mt-4 flex-row overflow-hidden rounded-[18px] bg-white"
+      className="mt-4 flex-row overflow-hidden rounded-lg bg-white"
       style={{
         shadowColor: "#0F172A",
         shadowOpacity: 0.06,
@@ -278,7 +278,7 @@ function WorkerCard({ worker }: { worker: Worker }) {
                 },
               })
             }
-            className="rounded-[10px] border border-[#CBD5E1] px-3 py-2"
+            className="rounded-lg border border-[#CBD5E1] px-3 py-2"
           >
             <Text className="text-[12px] font-semibold text-[#1D5478]">
               View Profile
@@ -335,7 +335,7 @@ function ExpenseCard({ expense }: { expense: Expense }) {
   const badgeText = rejected ? "#B42318" : pending ? "#8B5E3C" : "#2E8B57";
   return (
     <View
-      className="mt-5 flex-row overflow-hidden rounded-[20px] bg-white"
+      className="mt-5 flex-row overflow-hidden rounded-lg bg-white"
       style={{
         shadowColor: "#0F172A",
         shadowOpacity: 0.04,
@@ -385,7 +385,7 @@ function ExpenseCard({ expense }: { expense: Expense }) {
 function PayrollWorkerCard({ worker }: { worker: PayrollWorker }) {
   return (
     <View
-      className="mt-4 rounded-[18px] bg-white px-4 py-4"
+      className="mt-4 rounded-lg bg-white px-4 py-4"
       style={{
         shadowColor: "#0F172A",
         shadowOpacity: 0.06,
@@ -554,14 +554,14 @@ export default function ReportResultScreen() {
         }
       >
         {reportQuery.isLoading ? (
-          <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+          <View className="mt-4 items-center rounded-lg bg-[#F1F5F9] px-6 py-10">
             <Ionicons name="bar-chart-outline" size={26} color="#94A3B8" />
             <Text className="mt-3 text-[14px] text-[#64748B]">
               Generating report...
             </Text>
           </View>
         ) : reportQuery.isError ? (
-          <View className="mt-4 items-center rounded-[14px] bg-[#FDECEC] px-6 py-10">
+          <View className="mt-4 items-center rounded-lg bg-[#FDECEC] px-6 py-10">
             <Ionicons name="alert-circle-outline" size={26} color="#B42318" />
             <Text className="mt-3 text-center text-[14px] text-[#B42318]">
               Failed to load report data.
@@ -576,7 +576,7 @@ export default function ReportResultScreen() {
               Billing status based on project progress
             </Text>
 
-            <View className="mt-5 rounded-[18px] border-l-4 border-[#1D5478] bg-white px-4 py-6">
+            <View className="mt-5 rounded-lg border-l-4 border-[#1D5478] bg-white px-4 py-6">
               <Text className="text-center text-[34px] font-extrabold text-[#1D5478]">
                 {formatCurrency(invoiceReport?.summary.totalBudget)}
               </Text>
@@ -589,7 +589,7 @@ export default function ReportResultScreen() {
               <InvoiceCard key={invoice.id} invoice={invoice} />
             ))}
             {invoiceCards.length === 0 ? (
-              <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+              <View className="mt-4 items-center rounded-lg bg-[#F1F5F9] px-6 py-10">
                 <Ionicons name="search-outline" size={26} color="#94A3B8" />
                 <Text className="mt-3 text-[14px] text-[#64748B]">
                   No results found.
@@ -610,7 +610,7 @@ export default function ReportResultScreen() {
               <WorkerCard key={worker.id} worker={worker} />
             ))}
 
-            <View className="mt-5 flex-row items-center justify-between rounded-[18px] bg-[#1D5478] px-5 py-5">
+            <View className="mt-5 flex-row items-center justify-between rounded-lg bg-[#1D5478] px-5 py-5">
               <View>
                 <Text className="text-[18px] font-bold text-white">
                   Weekly Summary
@@ -622,7 +622,7 @@ export default function ReportResultScreen() {
               <Ionicons name="stats-chart" size={26} color="#FFFFFF" />
             </View>
             {workerCards.length === 0 ? (
-              <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+              <View className="mt-4 items-center rounded-lg bg-[#F1F5F9] px-6 py-10">
                 <Ionicons name="search-outline" size={26} color="#94A3B8" />
                 <Text className="mt-3 text-[14px] text-[#64748B]">
                   No results found.
@@ -655,7 +655,7 @@ export default function ReportResultScreen() {
               <ExpenseCard key={expense.id} expense={expense} />
             ))}
             {expenseCards.length === 0 ? (
-              <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+              <View className="mt-4 items-center rounded-lg bg-[#F1F5F9] px-6 py-10">
                 <Ionicons name="search-outline" size={26} color="#94A3B8" />
                 <Text className="mt-3 text-[14px] text-[#64748B]">
                   No results found.
@@ -696,7 +696,7 @@ export default function ReportResultScreen() {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              className="mt-4 h-[52px] flex-row items-center justify-between rounded-[12px] border border-[#1D5478] bg-white px-4"
+              className="mt-4 h-[52px] flex-row items-center justify-between rounded-lg border border-[#1D5478] bg-white px-4"
             >
               <Text className="text-[15px] font-semibold text-[#1D5478]">
                 Process payroll
@@ -709,7 +709,7 @@ export default function ReportResultScreen() {
                 <PayrollWorkerCard key={worker.id} worker={worker} />
               ))
             ) : (
-              <View className="mt-4 items-center rounded-[14px] bg-[#F1F5F9] px-6 py-10">
+              <View className="mt-4 items-center rounded-lg bg-[#F1F5F9] px-6 py-10">
                 <Ionicons name="search-outline" size={26} color="#94A3B8" />
                 <Text className="mt-3 text-[14px] text-[#64748B]">
                   No results found.
