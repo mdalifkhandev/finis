@@ -121,6 +121,23 @@ export default function ProfileScreen() {
               </Text>
               <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
             </TouchableOpacity>
+            {profile?.role === "admin" && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => router.push("/screens/profile/report")}
+                className="mb-3 flex-row items-center justify-between rounded-[14px] border border-[#EDF1F5] bg-[#F8FAFC] px-4 py-4"
+              >
+                <View className="flex-row items-center">
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-[#D8F0FF]">
+                    <Ionicons name="document-text-outline" size={18} color="#1D5478" />
+                  </View>
+                  <Text className="ml-3 text-[16px] font-medium text-[#334155]">
+                    Report
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
