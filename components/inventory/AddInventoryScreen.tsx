@@ -1,7 +1,8 @@
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ScrollView,
   Text,
@@ -41,8 +42,29 @@ function SelectorBottomSheet({
 }: SelectorBottomSheetProps) {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newValue, setNewValue] = useState("");
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+    const showSub = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const closeSheet = () => {
+    Keyboard.dismiss();
     setIsAddingNew(false);
     setNewValue("");
     onClose();
@@ -60,12 +82,18 @@ function SelectorBottomSheet({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={closeSheet}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      statusBarTranslucent
+      onRequestClose={closeSheet}
+    >
+      <Pressable
+        className="flex-1 justify-end bg-black/40"
+        style={{ paddingBottom: keyboardHeight }}
+        onPress={closeSheet}
       >
-        <Pressable className="flex-1 justify-end bg-black/40" onPress={closeSheet}>
           <Pressable
             className="max-h-[70%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
             onPress={(event) => event.stopPropagation()}
@@ -143,8 +171,7 @@ function SelectorBottomSheet({
               </>
             )}
           </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
+      </Pressable>
     </Modal>
   );
 }

@@ -4,6 +4,7 @@ import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useCompanyContactsQuery } from "@/hooks/company/company";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
+import { toast } from "sonner-native";
 import { ActivityIndicator, Linking, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -15,15 +16,25 @@ export default function ContactsRoute() {
 
   const handleCallPress = async (phone: string | null) => {
     if (!phone) {
+      toast.error("Phone number not available");
       return;
     }
 
     const sanitizedPhone = phone.replace(/[^\d+]/g, "");
     if (!sanitizedPhone) {
+      toast.error("Invalid phone number");
       return;
     }
 
-    await Linking.openURL(`tel:${sanitizedPhone}`);
+    const phoneUrl = `tel:${sanitizedPhone}`;
+    const canOpen = await Linking.canOpenURL(phoneUrl);
+
+    if (!canOpen) {
+      toast.error("Unable to open phone dialer");
+      return;
+    }
+
+    await Linking.openURL(phoneUrl);
   };
 
   const handleEmailPress = async (
