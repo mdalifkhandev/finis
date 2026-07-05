@@ -1,5 +1,7 @@
 import React from "react";
-import { Image, Text, View, type ImageSourcePropType } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
+import { Image, Linking, Pressable, Text, View, type ImageSourcePropType } from "react-native";
 import { MessageModel } from "./chatData";
 
 type ChatMessageBubbleProps = {
@@ -17,21 +19,61 @@ export default function ChatMessageBubble({
 }: ChatMessageBubbleProps) {
   const isMe = message.sender === "me";
   const resolvedAvatar = message.senderAvatarUrl || avatarUrl;
+
   const locationCoordinates = React.useMemo(() => {
-    if (message.kind !== "location" || !message.mediaUrl) {
+    if (message.kind !== "location") {
       return null;
     }
 
-    const match = message.mediaUrl.match(/[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
-    if (!match) {
-      return null;
+    // 1) Try to read coordinates from a maps URL (query=lat,lng).
+    if (message.mediaUrl) {
+      try {
+        const parsedUrl = new URL(message.mediaUrl);
+        const query =
+          parsedUrl.searchParams.get("query") || parsedUrl.searchParams.get("q");
+        const match = query?.match(/^(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)$/);
+        if (match) {
+          return { latitude: match[1], longitude: match[2] };
+        }
+      } catch {
+        // ignore and fall back to text parsing
+      }
     }
 
-    return {
-      latitude: match[1],
-      longitude: match[2],
-    };
-  }, [message.kind, message.mediaUrl]);
+    // 2) Fall back to the "Latitude: .. / Longitude: .." lines in the text.
+    const latMatch = message.text?.match(/Latitude:\s*(-?\d+(?:\.\d+)?)/i);
+    const lngMatch = message.text?.match(/Longitude:\s*(-?\d+(?:\.\d+)?)/i);
+    if (latMatch && lngMatch) {
+      return { latitude: latMatch[1], longitude: lngMatch[1] };
+    }
+
+    return null;
+  }, [message.kind, message.mediaUrl, message.text]);
+
+  // The link we actually open: an explicit maps URL, or one built from coords.
+  const mapUrl = React.useMemo(() => {
+    if (message.mediaUrl && /^https?:\/\//i.test(message.mediaUrl)) {
+      return message.mediaUrl;
+    }
+    if (locationCoordinates) {
+      return `https://www.google.com/maps/search/?api=1&query=${locationCoordinates.latitude},${locationCoordinates.longitude}`;
+    }
+    return null;
+  }, [message.mediaUrl, locationCoordinates]);
+
+  // Hide a raw URL if it was embedded in the text, and drop the lat/lng lines
+  // (they are rendered separately below).
+  const locationLabel = React.useMemo(() => {
+    const raw = message.text || "";
+    return (
+      raw
+        .replace(/https?:\/\/\S+/gi, "")
+        .split(/\r?\n/)
+        .filter((line) => !/^\s*(Latitude|Longitude):/i.test(line))
+        .join("\n")
+        .trim() || "Shared a location"
+    );
+  }, [message.text]);
 
   const BubbleBody = () => {
     if (message.kind === "image" && (message.imageUri || message.mediaUrl)) {
@@ -51,14 +93,25 @@ export default function ChatMessageBubble({
     }
 
     if (message.kind === "location") {
+      const handleOpenLocation = async () => {
+        if (!mapUrl) {
+          return;
+        }
+        try {
+          await Linking.openURL(mapUrl);
+        } catch {
+          await WebBrowser.openBrowserAsync(mapUrl);
+        }
+      };
+
       return (
-        <>
+        <Pressable onPress={() => void handleOpenLocation()} className="w-full">
           <Text
             className={`text-[16px] leading-7 ${
               isMe ? "text-[#EAF2F8]" : "text-[#4B4B4B]"
             }`}
           >
-            {message.text || "Shared a location"}
+            {locationLabel}
           </Text>
           {locationCoordinates ? (
             <Text
@@ -74,45 +127,27 @@ export default function ChatMessageBubble({
               {`Longitude: ${locationCoordinates.longitude}`}
             </Text>
           ) : null}
-          {message.mediaUrl ? (
-            <Text
-              className={`mt-1 text-[12px] ${isMe ? "text-[#D4E4EF]" : "text-[#6B7280]"}`}
-              numberOfLines={2}
-            >
-              {message.mediaUrl}
-            </Text>
+          {mapUrl ? (
+            <View className="mt-2 flex-row items-center rounded-[10px] bg-black/5 px-3 py-2">
+              <Feather
+                name="map-pin"
+                size={14}
+                color={isMe ? "#D4E4EF" : "#1D4ED8"}
+              />
+              <Text
+                className={`ml-2 text-[12px] font-semibold ${isMe ? "text-[#D4E4EF]" : "text-[#1D4ED8]"}`}
+                numberOfLines={2}
+              >
+                Tap to open map
+              </Text>
+            </View>
           ) : null}
           <Text
             className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}
           >
             {message.time}
           </Text>
-        </>
-      );
-    }
-
-    if (message.mediaType === "document" && message.mediaUrl) {
-      return (
-        <>
-          <Text
-            className={`text-[16px] leading-7 ${
-              isMe ? "text-[#EAF2F8]" : "text-[#4B4B4B]"
-            }`}
-          >
-            {message.text || "Shared a file"}
-          </Text>
-          <Text
-            className={`mt-1 text-[12px] ${isMe ? "text-[#D4E4EF]" : "text-[#6B7280]"}`}
-            numberOfLines={2}
-          >
-            {message.mediaUrl}
-          </Text>
-          <Text
-            className={`mt-2 text-[14px] ${isMe ? "text-[#D4E4EF]" : "text-[#4F5560]"}`}
-          >
-            {message.time}
-          </Text>
-        </>
+        </Pressable>
       );
     }
 

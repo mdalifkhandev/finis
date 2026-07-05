@@ -2,7 +2,6 @@ import { useChatMessagesQuery } from "@/hooks/chat/chat";
 import { uploadChatFile } from "@/api/chat/chat.api";
 import { useAuthStore } from "@/store/auth.store";
 import { router, useLocalSearchParams } from "expo-router";
-import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import React, { useMemo, useRef, useState } from "react";
@@ -119,7 +118,7 @@ function formatCoordinate(value: number) {
 
 type PendingAttachment =
   | {
-      type: "image" | "video" | "document";
+      type: "image";
       uri: string;
       name: string;
       mimeType: string;
@@ -154,6 +153,7 @@ export default function ConversationScreen() {
   const [optimisticMessages, setOptimisticMessages] = useState<MessageModel[]>([]);
   const [pendingAttachment, setPendingAttachment] = useState<PendingAttachment | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [visibleMessageCount, setVisibleMessageCount] = useState(MESSAGE_BATCH_SIZE);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readSyncedThreadRef = useRef<string | null>(null);
@@ -307,7 +307,7 @@ export default function ConversationScreen() {
   const sendPayload = async (payload: {
     content?: string;
     mediaUrl?: string;
-    mediaType?: "image" | "video" | "document" | "audio";
+    mediaType?: "image" | "location";
     locationUrl?: string;
   }) => {
     if (!resolvedThreadId) {
@@ -328,7 +328,7 @@ export default function ConversationScreen() {
       text:
         sentMessage.content ??
         payload.content ??
-        (payload.locationUrl ? "Shared a location" : payload.mediaType === "document" ? "Shared a file" : ""),
+        (payload.locationUrl ? "Shared a location" : "Shared an image"),
       time: formatMessageTime(sentMessage.sentAt),
       rawTime: sentMessage.sentAt,
       sender: "me",
@@ -357,6 +357,8 @@ export default function ConversationScreen() {
         if (pendingAttachment.type === "location") {
           await sendPayload({
             content: pendingAttachment.previewText,
+            mediaUrl: pendingAttachment.locationUrl,
+            mediaType: "location",
             locationUrl: pendingAttachment.locationUrl,
           });
         } else {
@@ -369,7 +371,7 @@ export default function ConversationScreen() {
           await sendPayload({
             content: pendingAttachment.previewText,
             mediaUrl: upload.url,
-            mediaType: pendingAttachment.type === "document" ? "document" : pendingAttachment.type,
+            mediaType: pendingAttachment.type,
           });
         }
 
@@ -429,7 +431,7 @@ export default function ConversationScreen() {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images", "videos"],
+      mediaTypes: ["images"],
       quality: 0.8,
     });
 
@@ -439,11 +441,11 @@ export default function ConversationScreen() {
 
     const asset = result.assets[0];
     setPendingAttachment({
-      type: asset.type === "video" ? "video" : "image",
+      type: "image",
       uri: asset.uri,
-      name: asset.fileName ?? getUploadFileName(asset.uri, "chat-media"),
-      mimeType: asset.mimeType ?? (asset.type === "video" ? "video/mp4" : "image/jpeg"),
-      previewText: asset.type === "video" ? "Shared a video" : "Shared an image",
+      name: asset.fileName ?? getUploadFileName(asset.uri, "chat-image.jpg"),
+      mimeType: asset.mimeType ?? "image/jpeg",
+      previewText: "Shared an image",
     });
     setAttachmentsOpen(false);
   };
@@ -477,48 +479,25 @@ export default function ConversationScreen() {
     setAttachmentsOpen(false);
   };
 
-  const handlePickFile = async () => {
-    if (!resolvedThreadId) return;
-
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["image/*", "application/pdf", "*/*"],
-      multiple: false,
-      copyToCacheDirectory: true,
-    });
-
-    if (result.canceled || !result.assets[0]) {
-      return;
-    }
-
-    const asset = result.assets[0];
-    const mimeType = asset.mimeType ?? "application/octet-stream";
-    setPendingAttachment({
-      type: mimeType.startsWith("image/") ? "image" : "document",
-      uri: asset.uri,
-      name: asset.name,
-      mimeType,
-      previewText: mimeType.startsWith("image/") ? "Shared an image" : `Shared a file: ${asset.name}`,
-    });
-    setAttachmentsOpen(false);
-  };
-
   const handlePickLocation = async () => {
     if (!resolvedThreadId) return;
 
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (permission.status !== "granted") {
-      Alert.alert("Permission needed", "Please allow location access.");
-      return;
-    }
-
-    const currentLocation = await Location.getCurrentPositionAsync({
-      accuracy: Location.Accuracy.Balanced,
-    });
-
-    const { latitude, longitude } = currentLocation.coords;
-    let locationLabel = `Lat ${formatCoordinate(latitude)}, Lng ${formatCoordinate(longitude)}`;
-
     try {
+      setIsPickingLocation(true);
+
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (permission.status !== "granted") {
+        Alert.alert("Permission needed", "Please allow location access.");
+        return;
+      }
+
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const { latitude, longitude } = currentLocation.coords;
+      let locationLabel = `Lat ${formatCoordinate(latitude)}, Lng ${formatCoordinate(longitude)}`;
+
       const address = await Location.reverseGeocodeAsync({ latitude, longitude });
       const firstAddress = address[0];
       if (firstAddress) {
@@ -534,23 +513,25 @@ export default function ConversationScreen() {
           locationLabel = parts.join(", ");
         }
       }
+
+      const latitudeText = formatCoordinate(latitude);
+      const longitudeText = formatCoordinate(longitude);
+      const locationUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+
+      setPendingAttachment({
+        type: "location",
+        latitude,
+        longitude,
+        locationLabel,
+        locationUrl,
+        previewText: `Shared location: ${locationLabel}\nLatitude: ${latitudeText}\nLongitude: ${longitudeText}`,
+      });
+      setAttachmentsOpen(false);
     } catch (_error) {
       console.log("[Conversation] reverse geocode failed");
+    } finally {
+      setIsPickingLocation(false);
     }
-
-    const latitudeText = formatCoordinate(latitude);
-    const longitudeText = formatCoordinate(longitude);
-    const locationUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
-
-    setPendingAttachment({
-      type: "location",
-      latitude,
-      longitude,
-      locationLabel,
-      locationUrl,
-      previewText: `Shared location: ${locationLabel}\nLatitude: ${latitudeText}\nLongitude: ${longitudeText}`,
-    });
-    setAttachmentsOpen(false);
   };
 
   const scrollToBottom = (animated = false) => {
@@ -756,11 +737,6 @@ export default function ConversationScreen() {
                         </Text>
                       </>
                     ) : null}
-                    {pendingAttachment.type === "document" || pendingAttachment.type === "video" ? (
-                      <Text className="mt-2 text-[14px] text-[#2B2B2B]">
-                        {pendingAttachment.name}
-                      </Text>
-                    ) : null}
                     {pendingAttachment.type !== "location" ? (
                       <Text className="mt-1 text-[12px] text-[#66707B]">
                         {pendingAttachment.previewText}
@@ -797,14 +773,23 @@ export default function ConversationScreen() {
                 />
 
                 {attachmentsOpen ? (
-                  <ChatAttachmentTray
-                    onPressPhoto={handlePickFromGallery}
-                    onPressCamera={handleOpenCamera}
-                    onPressFile={handlePickFile}
-                    onPressLocation={handlePickLocation}
-                  />
-                ) : null}
-              </>
+                <ChatAttachmentTray
+                  onPressPhoto={handlePickFromGallery}
+                  onPressCamera={handleOpenCamera}
+                  onPressLocation={handlePickLocation}
+                  disabled={isPickingLocation || isSending}
+                />
+              ) : null}
+              {isPickingLocation ? (
+                <View className="absolute inset-x-0 bottom-0 items-center pb-28">
+                  <View className="rounded-full bg-black/70 px-4 py-2">
+                    <Text className="text-[13px] font-medium text-white">
+                      Getting your location...
+                    </Text>
+                  </View>
+                </View>
+              ) : null}
+            </>
             ) : (
               <View className="px-5 pb-4 pt-2 mb-8">
                 <View className="rounded-[14px] border border-[#FECACA] bg-[#FFF1F2] px-4 py-3">
