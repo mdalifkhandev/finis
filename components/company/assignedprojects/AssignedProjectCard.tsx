@@ -56,27 +56,14 @@ export default function AssignedProjectCard({
         </Text>
       </View>
 
-      <View className="w-full flex-row items-start justify-between">
-        <View className="flex-1">
-          <View className="w-[102px] flex-row items-center justify-center gap-2 rounded-md bg-[#F7F7F8] px-4 py-1">
-            <Text className="text-[12px] font-normal text-[#101010]">
-              {date}
-            </Text>
-          </View>
-          <View className="mt-4">
-            <AvatarStack avatars={avatars} extraCount={extraMembers} />
-          </View>
+      <View className="w-full">
+        <View className="w-[102px] flex-row items-center justify-center gap-2 rounded-md bg-[#F7F7F8] px-4 py-1">
+          <Text className="text-[12px] font-normal text-[#101010]">
+            {date}
+          </Text>
         </View>
-
-        <View className="ml-4 items-end justify-between self-stretch py-0.5">
-          <View className="flex-row items-center">
-            <Ionicons name="checkbox-outline" size={24} color="#2f6dff" />
-            <Text className="ml-2 text-[12px] text-[#878787]">{checklist}</Text>
-          </View>
-          <View className="flex-row items-center">
-            <Ionicons name="link-outline" size={24} color="#111317" />
-            <Text className="ml-2 text-[12px] text-[#878787]">{links}</Text>
-          </View>
+        <View className="mt-4">
+          <AvatarStack avatars={avatars} extraCount={extraMembers} />
         </View>
       </View>
     </TouchableOpacity>

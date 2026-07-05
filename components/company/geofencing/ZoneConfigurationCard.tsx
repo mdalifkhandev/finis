@@ -78,9 +78,13 @@ export default function ZoneConfigurationCard({
   return (
     <View className="mt-4 px-5">
       <View className="rounded-3xl border border-[#E2E8EE] bg-[#F7F9FB] p-4">
-        <View className="flex-row justify-between">
-          <View>
-            <Text className="text-[17px] font-semibold text-[#111827]">
+        <View className="flex-row items-start justify-between gap-3">
+          <View className="min-w-0 flex-1 pr-3">
+            <Text
+              className="text-[17px] font-semibold text-[#111827]"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {zoneName ?? "Zone"}
             </Text>
             <Text className="-mt-0.5 text-[17px] font-semibold text-[#111827]">
@@ -91,46 +95,54 @@ export default function ZoneConfigurationCard({
             </Text>
           </View>
 
-          <View className="items-end">
-            <View className={`rounded-full px-3 py-2 ${isActive ? "bg-[#D8F2E3]" : "bg-[#E5E7EB]"}`}>
-              <Text className={`text-[15px] ${isActive ? "text-[#16A34A]" : "text-[#6B7280]"}`}>
+          <View className="max-w-[44%] items-end">
+            <View
+              className={`rounded-full px-3 py-2 ${isActive ? "bg-[#D8F2E3]" : "bg-[#E5E7EB]"}`}
+            >
+              <Text
+                className={`text-[15px] ${isActive ? "text-[#16A34A]" : "text-[#6B7280]"}`}
+              >
                 {isActive ? "Active Monitor" : "Inactive"}
               </Text>
             </View>
-            {showActions ? <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleToggleActive}
-              disabled={
-                !projectId ||
-                !geofenceId ||
-                updateGeofenceMutation.isPending ||
-                deleteGeofenceMutation.isPending
-              }
-              className="mt-2 h-10 flex-row items-center rounded-xl border border-[#CFD6DD] bg-[#F8FAFC] px-4"
-            >
-              <Ionicons
-                name={isActive ? "eye-off-outline" : "eye-outline"}
-                size={18}
-                color="#111827"
-              />
-              <Text className="ml-2 text-[16px] text-[#111827]">
-                {isActive ? "Disable" : "Enable"}
-              </Text>
-            </TouchableOpacity> : null}
-            {showActions ? <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleDelete}
-              disabled={
-                !projectId ||
-                !geofenceId ||
-                updateGeofenceMutation.isPending ||
-                deleteGeofenceMutation.isPending
-              }
-              className="mt-2 h-10 flex-row items-center rounded-xl border border-[#F3C6C6] bg-[#FFF7F7] px-4"
-            >
-              <Ionicons name="trash-outline" size={18} color="#DC2626" />
-              <Text className="ml-2 text-[16px] text-[#DC2626]">Delete</Text>
-            </TouchableOpacity> : null}
+            {showActions ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleToggleActive}
+                disabled={
+                  !projectId ||
+                  !geofenceId ||
+                  updateGeofenceMutation.isPending ||
+                  deleteGeofenceMutation.isPending
+                }
+                className="mt-2 h-10 flex-row items-center rounded-xl border border-[#CFD6DD] bg-[#F8FAFC] px-4"
+              >
+                <Ionicons
+                  name={isActive ? "eye-off-outline" : "eye-outline"}
+                  size={18}
+                  color="#111827"
+                />
+                <Text className="ml-2 text-[16px] text-[#111827]">
+                  {isActive ? "Disable" : "Enable"}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+            {showActions ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleDelete}
+                disabled={
+                  !projectId ||
+                  !geofenceId ||
+                  updateGeofenceMutation.isPending ||
+                  deleteGeofenceMutation.isPending
+                }
+                className="mt-2 h-10 flex-row items-center rounded-xl border border-[#F3C6C6] bg-[#FFF7F7] px-4"
+              >
+                <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                <Text className="ml-2 text-[16px] text-[#DC2626]">Delete</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
 
