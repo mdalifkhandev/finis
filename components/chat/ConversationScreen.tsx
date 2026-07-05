@@ -43,6 +43,7 @@ import {
   useChatThreadsQuery,
   useUnblockChatUserMutation,
 } from "@/hooks/chat/chat";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const placeholderAvatar = require("../../assets/images/placeholder-person.png");
 const MESSAGE_BATCH_SIZE = 20;
@@ -156,6 +157,7 @@ export default function ConversationScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isPickingLocation, setIsPickingLocation] = useState(false);
   const [visibleMessageCount, setVisibleMessageCount] = useState(MESSAGE_BATCH_SIZE);
+  const insets = useSafeAreaInsets();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readSyncedThreadRef = useRef<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -729,7 +731,7 @@ export default function ConversationScreen() {
           <View
             style={{
               backgroundColor: "#E9EDF1",
-              paddingBottom: Math.max(keyboardHeight, 0),
+              paddingBottom: Math.max(keyboardHeight, 0) + Math.max(insets.bottom-36, 0),
             }}
           >
             {!hideComposer && pendingAttachment ? (

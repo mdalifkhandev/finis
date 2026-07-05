@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { ActivityIndicator, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type ChatComposerProps = {
   value: string;
@@ -23,13 +24,19 @@ export default function ChatComposer({
   disabled = false,
   isSending = false,
 }: ChatComposerProps) {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom);
+
   return (
-    <View className="border-t border-[#E1E5EA] bg-[#E9EDF1] px-3 py-3">
+    <View
+      className="border-t border-[#E1E5EA] bg-[#E9EDF1] px-3 pt-3"
+      style={{ paddingBottom: bottomPadding }}
+    >
       <View className="flex-row items-center">
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onToggleAttachments}
-          className="h-10 w-8 mb-8 items-center justify-center"
+          className="h-10 w-8 items-center justify-center"
         >
           <Ionicons
             name={attachmentsOpen ? "keypad-outline" : "add"}
@@ -38,7 +45,7 @@ export default function ChatComposer({
           />
         </TouchableOpacity>
 
-        <View className="mx-2 mb-8 h-[46px] flex-1 flex-row items-center rounded-full bg-[#F8FAFC] px-5">
+        <View className="mx-2 h-[46px] flex-1 flex-row items-center rounded-full bg-[#F8FAFC] px-5">
           <TextInput
             value={value}
             onChangeText={(nextValue) => {
@@ -56,7 +63,7 @@ export default function ChatComposer({
           activeOpacity={0.9}
           onPress={onPressSend}
           disabled={disabled || isSending}
-          className={`h-11 w-11 items-center mb-8 justify-center rounded-full bg-[#1D5478] ${disabled ? "opacity-60" : ""}`}
+          className={`h-11 w-11 items-center justify-center rounded-full bg-[#1D5478] ${disabled ? "opacity-60" : ""}`}
         >
           {isSending ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
