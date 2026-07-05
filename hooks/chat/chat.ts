@@ -73,14 +73,22 @@ function normalizeMessages(messages: ChatMessage[], currentUserId: string): Mess
   return messages.map((message) => {
     const isMe = message.senderId === currentUserId;
     const senderProfile = "user" in message.sender ? message.sender.user : message.sender;
+    const content = message.content ?? "";
+    const looksLikeLocation =
+      message.mediaType === "location" ||
+      /^\s*(shared|my) location:/i.test(content) ||
+      /\b(latitude|longitude)\s*:/i.test(content) ||
+      /google\.[a-z.]+\/maps|maps\.google|maps\.app\.goo\.gl|[?&](query|q)=-?\d/i.test(
+        message.mediaUrl ?? "",
+      );
     const kind =
       message.mediaType === "image"
         ? "image"
-        : message.content?.toLowerCase().startsWith("my location:")
+        : looksLikeLocation
           ? "location"
           : message.mediaUrl && !message.content
-          ? "location"
-          : "text";
+            ? "location"
+            : "text";
 
     return {
       id: message.id,

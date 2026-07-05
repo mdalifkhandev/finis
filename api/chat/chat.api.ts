@@ -81,7 +81,7 @@ export type ChatMessage = {
   senderId: string;
   content: string | null;
   mediaUrl: string | null;
-  mediaType: "image" | "video" | "document" | "audio" | null;
+  mediaType: "image" | "location" | null;
   isRead: boolean;
   sentAt: string;
   sender: ChatMessageSender;
@@ -104,7 +104,7 @@ export type SendChatMessagePayload = {
   threadId: string;
   content?: string;
   mediaUrl?: string;
-  mediaType?: "image" | "video" | "document" | "audio";
+  mediaType?: "image" | "location";
   locationUrl?: string;
 };
 
@@ -125,10 +125,6 @@ type MessageQueryParams = {
   page?: number;
   limit?: number;
 };
-
-function resolveMediaUrl(path: string | null | undefined) {
-  return path ?? null;
-}
 
 export function resolveChatAvatar(path: string | null | undefined) {
   return path ?? null;
