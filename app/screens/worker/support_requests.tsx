@@ -1,17 +1,20 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
+import { toast } from "sonner-native";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useWorkerSupportRequestMutation } from "@/hooks/public-content/public-content";
 
 const THEME = {
   colors: {
@@ -21,31 +24,45 @@ const THEME = {
     textSecondary: "#475569",
     inputBg: "#F8FAFC",
     inputBorder: "#F1F5F9",
-    bluePrimary: "#1D4F6D", // Dark blue for the send button
+    bluePrimary: "#1D4F6D",
   },
 };
 
-const SupportRequestsScreen = () => {
+export default function SupportRequestsScreen() {
   const [complain, setComplain] = useState("");
-  const [recipient, setRecipient] = useState<"admin" | "worker" | "user">(
-    "admin",
-  );
+  const [recipient, setRecipient] = useState<"admin" | "manager">("admin");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const supportMutation = useWorkerSupportRequestMutation();
 
   const recipientOptions = [
-    { label: "Send to admin", value: "admin" },
-    { label: "Send to worker", value: "worker" },
-    { label: "Send to user", value: "user" },
+    { label: "Send to admin", value: "admin" as const },
+    { label: "Send to manager", value: "manager" as const },
   ];
+
+  const handleSubmit = async () => {
+    if (!complain.trim()) {
+      toast.error("Please write your support request");
+      return;
+    }
+
+    try {
+      await supportMutation.mutateAsync({
+        sendTo: recipient,
+        message: complain.trim(),
+      });
+      router.back();
+    } catch {
+      // handled in mutation
+    }
+  };
 
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: THEME.colors.background }}
-      edges={['top','left',"right"]}
+      edges={["top", "left", "right"]}
     >
       <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
       <View
         style={{
           flexDirection: "row",
@@ -60,11 +77,7 @@ const SupportRequestsScreen = () => {
           style={{ position: "absolute", left: 20 }}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Feather
-            name="chevron-left"
-            size={32}
-            color={THEME.colors.textMain}
-          />
+          <Feather name="chevron-left" size={32} color={THEME.colors.textMain} />
         </TouchableOpacity>
         <Text
           style={{
@@ -89,7 +102,6 @@ const SupportRequestsScreen = () => {
             paddingBottom: 40,
           }}
         >
-          {/* Dropdown Section */}
           <View style={{ marginBottom: 16, zIndex: 10 }}>
             <TouchableOpacity
               onPress={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -121,7 +133,7 @@ const SupportRequestsScreen = () => {
               />
             </TouchableOpacity>
 
-            {isDropdownOpen && (
+            {isDropdownOpen ? (
               <View
                 style={{
                   position: "absolute",
@@ -144,7 +156,7 @@ const SupportRequestsScreen = () => {
                   <TouchableOpacity
                     key={option.value}
                     onPress={() => {
-                      setRecipient(option.value as any);
+                      setRecipient(option.value);
                       setIsDropdownOpen(false);
                     }}
                     style={{
@@ -152,7 +164,7 @@ const SupportRequestsScreen = () => {
                       paddingHorizontal: 16,
                       backgroundColor:
                         recipient === option.value ? "#F3F9FB" : "white",
-                      borderBottomWidth: option.value === "user" ? 0 : 1,
+                      borderBottomWidth: option.value === "manager" ? 0 : 1,
                       borderBottomColor: "#F1F5F9",
                     }}
                   >
@@ -169,10 +181,9 @@ const SupportRequestsScreen = () => {
                   </TouchableOpacity>
                 ))}
               </View>
-            )}
+            ) : null}
           </View>
 
-          {/* TextArea */}
           <View
             style={{
               height: 200,
@@ -201,7 +212,6 @@ const SupportRequestsScreen = () => {
             />
           </View>
 
-          {/* Send Button */}
           <TouchableOpacity
             style={{
               height: 56,
@@ -209,17 +219,21 @@ const SupportRequestsScreen = () => {
               borderRadius: 14,
               alignItems: "center",
               justifyContent: "center",
+              opacity: supportMutation.isPending ? 0.7 : 1,
             }}
-            onPress={() => router.back()}
+            disabled={supportMutation.isPending}
+            onPress={handleSubmit}
           >
-            <Text style={{ color: "white", fontSize: 18, fontWeight: "700" }}>
-              Send
-            </Text>
+            {supportMutation.isPending ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={{ color: "white", fontSize: 18, fontWeight: "700" }}>
+                Send
+              </Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
-};
-
-export default SupportRequestsScreen;
+}

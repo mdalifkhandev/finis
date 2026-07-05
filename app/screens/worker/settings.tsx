@@ -131,11 +131,6 @@ const SettingsScreen = () => {
           label="Terms of service"
           onPress={() => router.push("/screens/worker/terms_of_service")}
         />
-        <SettingItem
-          label="Logout"
-          isLogout
-          onPress={() => setIsLogoutModalVisible(true)}
-        />
       </ScrollView>
 
       {/* Logout Confirmation Modal */}
