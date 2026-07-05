@@ -1,7 +1,6 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import AssignedProjectCard from "@/components/company/assignedprojects/AssignedProjectCard";
 import { useCompanyProjectsQuery } from "@/hooks/company/company";
-import { API_BASE_URL } from "@/lib/config";
 import type { CompanyProjectTeamMember } from "@/types/company.types";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
@@ -81,6 +80,8 @@ export default function AssignedProjectsRoute() {
                 .map((member: CompanyProjectTeamMember) =>
                   resolveAvatarUrl(member.user.avatarUrl),
                 );
+              const totalMembers = project._count.teamMembers;
+              const extraMembersCount = Math.max(totalMembers - 3, 0);
 
               return (
                 <AssignedProjectCard
@@ -91,7 +92,9 @@ export default function AssignedProjectsRoute() {
                   date={formatDate(project.startDate)}
                   checklist={`0/${project._count.tasks}`}
                   links={String(project._count.tasks)}
-                  extraMembers={`${project._count.teamMembers}+`}
+                  extraMembers={
+                    extraMembersCount > 0 ? `${extraMembersCount}+` : ""
+                  }
                   avatars={avatars}
                   onPress={() =>
                     router.push({

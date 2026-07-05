@@ -18,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const avatars = [null, null, null];
 
 export default function ManagerProjectsScreen() {
-  const { data: dashboard, refetch: refetchDashboard } = useAdminDashboardQuery();
+  const { refetch: refetchDashboard } = useAdminDashboardQuery();
   const { data: adminProjects, isLoading, refetch: refetchProjects } = useAdminProjectsQuery();
   const role = useAuthStore((state) => state.user?.role);
   const canCreateProject = role === "admin";
@@ -56,35 +56,43 @@ export default function ManagerProjectsScreen() {
               <ActivityIndicator size="small" color="#1d4f6d" />
             </View>
           ) : (
-            assignedProjects.map((project) => (
-              <AssignedProjectCard
-                key={project.id}
-                priority={
-                  (project.progress ?? 0) >= 70
-                    ? "HIGH"
-                    : (project.progress ?? 0) >= 35
-                      ? "MEDIUM"
-                      : "LOW"
-                }
-                title={project.name}
-                site={project.company?.name ?? ""}
-                date={project.endDate ? new Date(project.endDate).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                }) : ""}
-                checklist={`0/${project._count?.teamMembers ?? project.teamMembers?.length ?? 0}`}
-                links="0"
-                extraMembers={`${project._count?.teamMembers ?? project.teamMembers?.length ?? 0}+`}
-                avatars={avatars}
-                onPress={() =>
-                  router.push({
-                    pathname: "/screens/company/projectdetails",
-                    params: { id: project.id },
-                  })
-                }
-              />
-            ))
+            assignedProjects.map((project) => {
+              const totalMembers =
+                project._count?.teamMembers ?? project.teamMembers?.length ?? 0;
+              const extraMembersCount = Math.max(totalMembers - 3, 0);
+
+              return (
+                <AssignedProjectCard
+                  key={project.id}
+                  priority={
+                    (project.progress ?? 0) >= 70
+                      ? "HIGH"
+                      : (project.progress ?? 0) >= 35
+                        ? "MEDIUM"
+                        : "LOW"
+                  }
+                  title={project.name}
+                  site={project.company?.name ?? ""}
+                  date={project.endDate ? new Date(project.endDate).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  }) : ""}
+                  checklist={`0/${totalMembers}`}
+                  links="0"
+                  extraMembers={
+                    extraMembersCount > 0 ? `${extraMembersCount}+` : ""
+                  }
+                  avatars={avatars}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/screens/company/projectdetails",
+                      params: { id: project.id },
+                    })
+                  }
+                />
+              );
+            })
           )}
         </View>
 
@@ -95,7 +103,7 @@ export default function ManagerProjectsScreen() {
               onPress={() => {
                 const companyId =
                   adminProjects?.[0]?.company?.id ??
-                  (assignedProjects as Array<{ companyId?: string }>)[0]?.companyId;
+                  (assignedProjects as { companyId?: string }[])[0]?.companyId;
 
                 if (!companyId) {
                   router.push("/screens/company/createproject");
