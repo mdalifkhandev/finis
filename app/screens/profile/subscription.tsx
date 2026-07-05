@@ -1,5 +1,6 @@
 import { getAdminSubscriptionHistory } from "@/api/admin/admin.api";
 import BackTitleHeader from "@/components/common/BackTitleHeader";
+import { API_BASE_URL_PLAN } from "@/lib/config";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
@@ -96,7 +97,7 @@ export default function SubscriptionScreen() {
   );
 
   const handleUpgradePlan = async () => {
-    await Linking.openURL("https://b7ds5k81-5173.inc1.devtunnels.ms/plans");
+    await Linking.openURL(`${API_BASE_URL_PLAN}/plans`);
   };
 
   const handleRefresh = async () => {
