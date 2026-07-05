@@ -457,16 +457,25 @@ export async function sendChatMessageViaSocket(
   return await new Promise((resolve, reject) => {
     const timeoutId = setTimeout(() => reject(new Error("Message send timeout")), 15000);
 
-
-
     client.emit(CHAT_SOCKET_EVENTS.send, payload, (response: { status?: string; message?: any } | undefined) => {
       clearTimeout(timeoutId);
       if (!response || response.status !== "ok") {
         reject(new Error(response?.message || "Failed to send message"));
         return;
       }
+      const normalizedMessage =
+        response.message &&
+        typeof response.message === "object" &&
+        "message" in response.message &&
+        response.message.message
+          ? response.message.message
+          : response.message;
 
-      resolve(response.message);
+      console.log("[ChatSocket] sent via socket", {
+        threadId: payload.threadId,
+        senderPath: "socket",
+      });
+      resolve(normalizedMessage);
     });
   });
 }
@@ -542,6 +551,10 @@ export async function sendChatMessageWithFallback(
   try {
     return await sendChatMessageViaSocket(payload, token);
   } catch (error) {
+    console.log("[ChatSocket] socket send failed, falling back to POST /messages/send", {
+      threadId: payload.threadId,
+      error: error instanceof Error ? error.message : "unknown",
+    });
     return await sendChatMessage({
       threadId: payload.threadId,
       content: payload.content,
