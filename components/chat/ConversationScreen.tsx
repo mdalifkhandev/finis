@@ -196,7 +196,13 @@ export default function ConversationScreen() {
 
     return (chatContactsQuery.data ?? []).some((contact) => contact.id === profileUserId);
   }, [chatContactsQuery.data, profileUserId]);
-  const hideComposer = isBlocked || (!!profileUserId && !isVisibleContact && !chatContactsQuery.isLoading);
+  const canReplyInExistingThread = !!resolvedThreadId;
+  const hideComposer =
+    isBlocked ||
+    (!!profileUserId &&
+      !canReplyInExistingThread &&
+      !isVisibleContact &&
+      !chatContactsQuery.isLoading);
   const canBlockTarget = useMemo(() => {
     if (!profileUserId || profileUserId === userId) {
       return false;
@@ -803,7 +809,9 @@ export default function ConversationScreen() {
               <View className="px-5 pb-4 pt-2 mb-8">
                 <View className="rounded-[14px] border border-[#FECACA] bg-[#FFF1F2] px-4 py-3">
                   <Text className="text-[14px] font-medium text-[#B42318]">
-                    Chat composer hidden because this user is blocked.
+                    {isBlocked
+                      ? "Chat composer hidden because this user is blocked."
+                      : "You cannot start a new chat with this user."}
                   </Text>
                 </View>
               </View>

@@ -3,13 +3,15 @@ import { Image, Text, View } from "react-native";
 const placeholderImage = require("../../../assets/images/placeholder-person.png");
 
 type AvatarStackProps = {
-  avatars: Array<string | null>;
+  avatars: (string | null)[];
   extraCount: string;
 };
 
 export default function AvatarStack({ avatars, extraCount }: AvatarStackProps) {
   const visibleAvatars =
     avatars.length >= 3 ? avatars.slice(0, 3) : [...avatars, null, null].slice(0, 3);
+  const shouldShowExtraCount =
+    Boolean(extraCount) && extraCount !== "0+" && extraCount !== "0";
 
   return (
     <View className="flex-row items-center">
@@ -22,11 +24,13 @@ export default function AvatarStack({ avatars, extraCount }: AvatarStackProps) {
           }`}
         />
       ))}
-      <View className="-ml-2 h-9 w-9 items-center justify-center rounded-full bg-[#06dc56]">
-        <Text className="text-[10px] font-semibold text-black">
-          {extraCount}
-        </Text>
-      </View>
+      {shouldShowExtraCount ? (
+        <View className="-ml-2 h-9 w-9 items-center justify-center rounded-full bg-[#06dc56]">
+          <Text className="text-[10px] font-semibold text-black">
+            {extraCount}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
