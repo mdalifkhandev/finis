@@ -40,6 +40,7 @@ import {
   useBlockedChatUsersQuery,
   useBlockChatUserMutation,
   useChatContactsQuery,
+  useChatThreadsQuery,
   useUnblockChatUserMutation,
 } from "@/hooks/chat/chat";
 
@@ -181,6 +182,7 @@ export default function ConversationScreen() {
   const currentRole = useAuthStore((state) => state.user?.role);
   const [menuVisible, setMenuVisible] = useState(false);
   const chatContactsQuery = useChatContactsQuery("");
+  const chatThreadsQuery = useChatThreadsQuery("chat", "");
   const blockedUsersQuery = useBlockedChatUsersQuery();
   const blockMutation = useBlockChatUserMutation();
   const unblockMutation = useUnblockChatUserMutation();
@@ -188,7 +190,17 @@ export default function ConversationScreen() {
     () => new Set((blockedUsersQuery.data ?? []).map((user: { id: string }) => user.id)),
     [blockedUsersQuery.data],
   );
-  const isBlocked = !!profileUserId && blockedUserIds.has(profileUserId);
+  const matchedThread = useMemo(() => {
+    if (!profileUserId) {
+      return null;
+    }
+
+    return (chatThreadsQuery.data ?? []).find((thread) => thread.profileUserId === profileUserId);
+  }, [chatThreadsQuery.data, profileUserId]);
+  const isBlocked =
+    (!!profileUserId && blockedUserIds.has(profileUserId)) ||
+    !!matchedThread?.blockedByMe ||
+    !!matchedThread?.blockedByOther;
   const isVisibleContact = useMemo(() => {
     if (!profileUserId) {
       return true;
@@ -197,6 +209,13 @@ export default function ConversationScreen() {
     return (chatContactsQuery.data ?? []).some((contact) => contact.id === profileUserId);
   }, [chatContactsQuery.data, profileUserId]);
   const canReplyInExistingThread = !!resolvedThreadId;
+  const blockNotice = matchedThread?.blockedByMe
+    ? "You blocked this user. Composer hidden."
+    : matchedThread?.blockedByOther
+      ? "This user blocked you. Composer hidden."
+      : isBlocked
+        ? "Chat composer hidden because this user is blocked."
+        : "";
   const hideComposer =
     isBlocked ||
     (!!profileUserId &&
@@ -794,9 +813,7 @@ export default function ConversationScreen() {
               <View className="px-5 pb-4 pt-2 mb-8">
                 <View className="rounded-[14px] border border-[#FECACA] bg-[#FFF1F2] px-4 py-3">
                   <Text className="text-[14px] font-medium text-[#B42318]">
-                    {isBlocked
-                      ? "Chat composer hidden because this user is blocked."
-                      : "You cannot start a new chat with this user."}
+                    {blockNotice || "You cannot start a new chat with this user."}
                   </Text>
                 </View>
               </View>

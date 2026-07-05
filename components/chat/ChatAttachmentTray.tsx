@@ -5,11 +5,11 @@ import { Text, TouchableOpacity, View } from "react-native";
 type ChatAttachmentTrayProps = {
   onPressPhoto?: () => void;
   onPressCamera?: () => void;
-  onPressFile?: () => void;
   onPressLocation?: () => void;
+  disabled?: boolean;
 };
 
-type AttachmentKey = "photo" | "camera" | "file" | "location";
+type AttachmentKey = "photo" | "camera" | "location";
 
 const ACTIONS: {
   key: AttachmentKey;
@@ -18,20 +18,18 @@ const ACTIONS: {
 }[] = [
   { key: "photo", label: "Photo", icon: "image-outline" },
   { key: "camera", label: "Camera", icon: "camera-outline" },
-  { key: "file", label: "File", icon: "document-outline" },
   { key: "location", label: "Location", icon: "location-outline" },
 ];
 
 export default function ChatAttachmentTray({
   onPressPhoto,
   onPressCamera,
-  onPressFile,
   onPressLocation,
+  disabled = false,
 }: ChatAttachmentTrayProps) {
   const onPressMap: Record<AttachmentKey, (() => void) | undefined> = {
     photo: onPressPhoto,
     camera: onPressCamera,
-    file: onPressFile,
     location: onPressLocation,
   };
 
@@ -43,6 +41,7 @@ export default function ChatAttachmentTray({
             key={action.key}
             activeOpacity={0.85}
             onPress={onPressMap[action.key]}
+            disabled={disabled}
             className="mr-8 items-center"
           >
             <View className="h-14 w-14 items-center justify-center rounded-full bg-[#DCE7E8]">

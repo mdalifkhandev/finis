@@ -79,8 +79,18 @@ export function useNotificationsSocket() {
       void queryClient.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
     };
 
-    const handleNotification = (_payload: ServerNotification) => {
+    const refreshChat = () => {
+      void queryClient.invalidateQueries({ queryKey: ["chat", "blocked-users"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "contacts"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "threads"] });
+      void queryClient.invalidateQueries({ queryKey: ["chat", "messages"] });
+    };
+
+    const handleNotification = (payload: ServerNotification) => {
       refreshNotifications();
+      if (payload.refType === "message_block") {
+        refreshChat();
+      }
     };
 
     client.on("notification", handleNotification);
