@@ -1,6 +1,7 @@
 import { api } from "@/lib/api/client";
+import { appendImageToFormData } from "@/lib/uploads/image-upload";
 import { ApiResponse } from "@/types/auth.types";
-import axios from "axios";
+import { isAxiosError } from "axios";
 
 export type WorkerTaskDetail = {
   id: string;
@@ -256,11 +257,12 @@ export async function startWorkerTask(id: string) {
 
 export async function reportWorkerTaskBeforePhoto(id: string, imageUri: string) {
   const formData = new FormData();
-  formData.append("beforePhoto", {
+  appendImageToFormData(formData, "beforePhoto", {
     uri: imageUri,
-    name: "before_photo.jpg",
-    type: "image/jpeg",
-  } as any);
+  }, {
+    fileName: "before_photo.jpg",
+    mimeType: "image/jpeg",
+  });
 
   try {
     const { data } = await api.put<ApiResponse<any>>(`/worker/subtasks/${id}/report`, formData, {
@@ -273,19 +275,31 @@ export async function reportWorkerTaskBeforePhoto(id: string, imageUri: string) 
     }
     return data.data;
   } catch (error) {
-    if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+    if (isAxiosError(error) && error.response?.status === 413) {
+      throw new Error("Photo is too large. Please retake with a smaller image.");
+    }
+
+    if (!isAxiosError(error) || error.response?.status !== 404) {
       throw error;
     }
 
-    const { data } = await api.post<ApiResponse<any>>(`/worker/tasks/${id}/report`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    if (!data.success) {
-      throw new Error(data.message || "Failed to upload photo");
+    try {
+      const { data } = await api.post<ApiResponse<any>>(`/worker/tasks/${id}/report`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      if (!data.success) {
+        throw new Error(data.message || "Failed to upload photo");
+      }
+      return data.data;
+    } catch (fallbackError) {
+      if (isAxiosError(fallbackError) && fallbackError.response?.status === 413) {
+        throw new Error("Photo is too large. Please retake with a smaller image.");
+      }
+
+      throw fallbackError;
     }
-    return data.data;
   }
 }
 
@@ -306,7 +320,7 @@ export async function getWorkerTaskInventory(taskId: string) {
     }
     return data.data;
   } catch (error) {
-    if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+    if (!isAxiosError(error) || error.response?.status !== 404) {
       throw error;
     }
 
@@ -326,7 +340,7 @@ export async function updateWorkerTaskInventory(taskId: string, inventoryId: str
     }
     return response.data.data;
   } catch (error) {
-    if (!axios.isAxiosError(error) || error.response?.status !== 404) {
+    if (!isAxiosError(error) || error.response?.status !== 404) {
       throw error;
     }
 
@@ -347,11 +361,12 @@ export async function completeWorkerTaskReport(
   const formData = new FormData();
 
   if (afterPhotoUri && !afterPhotoUri.startsWith('http')) {
-    formData.append("afterPhoto", {
+    appendImageToFormData(formData, "afterPhoto", {
       uri: afterPhotoUri,
-      name: "after_photo.jpg",
-      type: "image/jpeg",
-    } as any);
+    }, {
+      fileName: "after_photo.jpg",
+      mimeType: "image/jpeg",
+    });
   }
 
   inventoryUsed.forEach((item, index) => {
@@ -363,11 +378,21 @@ export async function completeWorkerTaskReport(
     formData.append("notes", notes);
   }
 
-  const { data } = await api.post<ApiResponse<any>>(`/worker/subtasks/${taskId}/report`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  let data;
+  try {
+    const response = await api.post<ApiResponse<any>>(`/worker/subtasks/${taskId}/report`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    data = response.data;
+  } catch (error) {
+    if (isAxiosError(error) && error.response?.status === 413) {
+      throw new Error("Photo is too large. Please retake with a smaller image.");
+    }
+
+    throw error;
+  }
 
   if (!data.success) {
     throw new Error(data.message || "Failed to submit task report");

@@ -2,10 +2,8 @@ import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import {
   useWorkerTaskInventoryQuery,
   useWorkerSubTaskQuery,
-  useUpdateWorkerTaskInventoryMutation,
   useCompleteWorkerTaskReportMutation,
 } from "@/hooks/worker/tasks";
-import { API_BASE_URL } from "@/lib/config";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -22,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { TASK_REPORT_IMAGE_UPLOAD_QUALITY } from "@/lib/uploads/image-upload";
 import placeholderImage from "../../../assets/images/placeholder-image.png";
 
 const THEME = {
@@ -48,9 +47,8 @@ const TaskDetailsScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: task, isLoading, refetch: refetchTask } = useWorkerSubTaskQuery(id as string);
   const { data: profile } = useWorkerProfileQuery();
-  const { data: inventoryData, isLoading: inventoryLoading, refetch: refetchInventory } =
+  const { data: inventoryData, refetch: refetchInventory } =
     useWorkerTaskInventoryQuery(id as string);
-  const updateInventoryMutation = useUpdateWorkerTaskInventoryMutation();
   const completeTaskMutation = useCompleteWorkerTaskReportMutation();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -200,7 +198,7 @@ const TaskDetailsScreen = () => {
         mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 1,
+        quality: TASK_REPORT_IMAGE_UPLOAD_QUALITY,
       });
 
       if (!result.canceled) {
