@@ -264,40 +264,6 @@ export async function updateProject(id: string, payload: UpdateProjectPayload) {
   return data.data;
 }
 
-const projectDocuments: Record<string, DocumentItem[]> = {
-  "riverside-tower": [
-    {
-      id: "project-doc-1",
-      fileName: "Floor Plan v2.pdf",
-      fileType: "PDF",
-      fileSize: "3.1 MB",
-      uploadedBy: "Kristin Watson",
-      uploadedDate: "1/20/2025",
-    },
-    {
-      id: "project-doc-2",
-      fileName: "Electrical Rough-in Spec.docx",
-      fileType: "DOCX",
-      fileSize: "1.1 MB",
-      uploadedBy: "John Smith",
-      uploadedDate: "1/21/2025",
-    },
-    {
-      id: "project-doc-3",
-      fileName: "Inspection Checklist.xlsx",
-      fileType: "XLSX",
-      fileSize: "780 KB",
-      uploadedBy: "Emily Chen",
-      uploadedDate: "1/22/2025",
-    },
-  ],
-};
-
-const simulateNetwork = async <T>(value: T, delayMs = 200): Promise<T> =>
-  new Promise((resolve) => {
-    setTimeout(() => resolve(value), delayMs);
-  });
-
 export async function getCompanyDocuments(id: string): Promise<DocumentItem[]> {
   try {
     const { data } = await api.get<{
