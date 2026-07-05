@@ -1,6 +1,7 @@
 import type { DocumentItem } from "@/components/company/documents/types";
 import { AxiosError } from "axios";
 import { api } from "@/lib/api/client";
+import { appendImageToFormData } from "@/lib/uploads/image-upload";
 import type { AdminCompaniesResponse } from "@/types/admin.types";
 import type { AdminCompanyDetailResponse } from "@/types/admin.types";
 import type { ApiResponse } from "@/types/auth.types";
@@ -82,13 +83,7 @@ function buildCompanyFormData(payload: CreateCompanyPayload | UpdateCompanyPaylo
   formData.append("revenue", payload.revenue);
   formData.append("projectLevel", payload.projectLevel);
 
-  if (payload.logo) {
-    formData.append("logo", {
-      uri: payload.logo.uri,
-      name: payload.logo.name,
-      type: payload.logo.type,
-    } as any);
-  }
+  appendImageToFormData(formData, "logo", payload.logo ?? null);
 
   return formData;
 }

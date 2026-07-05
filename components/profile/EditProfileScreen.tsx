@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
-  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
@@ -18,7 +17,10 @@ import ProfileField from "./ProfileField";
 import ProfileHeaderBar from "./ProfileHeaderBar";
 import ProfileAvatar from "./ProfileAvatar";
 import { useAdminProfileQuery, useUpdateAdminProfileMutation } from "@/hooks/profile/profile";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  appendImageToFormData,
+  DEFAULT_IMAGE_UPLOAD_QUALITY,
+} from "@/lib/uploads/image-upload";
 
 export default function EditProfileScreen() {
   const { data: profile, isLoading } = useAdminProfileQuery();
@@ -56,7 +58,7 @@ export default function EditProfileScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: DEFAULT_IMAGE_UPLOAD_QUALITY,
     });
 
     if (!result.canceled && result.assets[0]?.uri) {
@@ -79,13 +81,7 @@ export default function EditProfileScreen() {
     formData.append("dateOfBirth", dob);
     formData.append("gender", gender);
 
-    if (avatarUri && !avatarUri.startsWith("http") && !avatarUri.startsWith("/")) {
-      formData.append("avatar", {
-        uri: avatarUri,
-        name: "avatar.jpg",
-        type: "image/jpeg",
-      } as any);
-    }
+    appendImageToFormData(formData, "avatar", { uri: avatarUri }, { fileName: "avatar.jpg" });
 
     updateProfile(formData, {
       onSuccess: () => {

@@ -10,6 +10,7 @@ import {
     View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TASK_REPORT_IMAGE_UPLOAD_QUALITY } from "@/lib/uploads/image-upload";
 
 type TaskViewCardProps = {
   workerName: string;
@@ -74,7 +75,7 @@ export default function TaskViewCard({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: TASK_REPORT_IMAGE_UPLOAD_QUALITY,
     });
 
     if (!result.canceled) {

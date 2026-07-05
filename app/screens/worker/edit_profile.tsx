@@ -18,7 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useWorkerProfileQuery, useUpdateWorkerProfileMutation } from "@/hooks/profile/profile";
-import { API_BASE_URL } from "@/lib/config";
+import { appendImageToFormData, DEFAULT_IMAGE_UPLOAD_QUALITY } from "@/lib/uploads/image-upload";
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 
 function resolveAvatarUrl(avatarUrl?: string | null) {
@@ -142,17 +142,13 @@ const EditProfileScreen = () => {
       if (dob) formData.append("dateOfBirth", dob.toISOString());
       formData.append("gender", gender);
 
-      if (avatarUri) {
-        formData.append("avatarUrl", {
-          uri: avatarUri,
-          name: "avatar.jpg",
-          type: "image/jpeg",
-        } as any);
-      }
+      appendImageToFormData(formData, "avatarUrl", avatarUri ? { uri: avatarUri } : null, {
+        fileName: "avatar.jpg",
+      });
 
       await updateProfile(formData as any);
       router.back();
-    } catch (error) {
+    } catch {
       // Error handled in mutation
     }
   };
@@ -164,7 +160,7 @@ const EditProfileScreen = () => {
         mediaTypes: ["images"],
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 1,
+        quality: DEFAULT_IMAGE_UPLOAD_QUALITY,
       });
 
       if (!result.canceled) {
