@@ -64,6 +64,9 @@ function normalizeThreads(
         unreadCount: thread.unreadCount,
         avatarUrl: toAbsoluteAvatar(otherParticipant?.avatarUrl),
         isOnline: otherParticipant?.isOnline ?? false,
+        isBlocked: thread.isBlocked ?? false,
+        blockedByMe: thread.blockedByMe ?? false,
+        blockedByOther: thread.blockedByOther ?? false,
         type: filter,
       };
     });

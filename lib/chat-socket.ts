@@ -28,7 +28,7 @@ type ServerMessage = {
   id?: string;
   content?: string | null;
   mediaUrl?: string | null;
-  mediaType?: "image" | "video" | "document" | "audio" | null;
+  mediaType?: "image" | "location" | null;
   isRead?: boolean;
   sentAt?: string;
   senderId?: string;
@@ -426,7 +426,7 @@ export async function sendChatMessageViaSocket(
     threadId: string;
     content?: string;
     mediaUrl?: string;
-    mediaType?: "image" | "video" | "document" | "audio";
+    mediaType?: "image" | "location";
     locationUrl?: string;
   },
   token?: string | null,
@@ -543,7 +543,7 @@ export async function sendChatMessageWithFallback(
     threadId: string;
     content?: string;
     mediaUrl?: string;
-    mediaType?: "image" | "video" | "document" | "audio";
+    mediaType?: "image" | "location";
     locationUrl?: string;
   },
   token?: string | null,

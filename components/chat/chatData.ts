@@ -12,6 +12,9 @@ export type ChatListItemModel = {
   isOnline?: boolean;
   type: ChatFilter;
   threadId?: string;
+  isBlocked?: boolean;
+  blockedByMe?: boolean;
+  blockedByOther?: boolean;
 };
 
 export type MessageModel = {
@@ -24,10 +27,12 @@ export type MessageModel = {
   kind?: "text" | "image" | "location";
   imageUri?: string;
   mediaUrl?: string;
-  mediaType?: "image" | "video" | "document" | "audio";
+  mediaType?: "image" | "location" | null;
   senderId?: string;
   senderName?: string;
   senderAvatarUrl?: string;
+  blockedByMe?: boolean;
+  blockedByOther?: boolean;
 };
 
 export const chatListMock: ChatListItemModel[] = [
