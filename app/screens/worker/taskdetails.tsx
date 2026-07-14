@@ -1,6 +1,7 @@
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
 import {
   useWorkerTaskInventoryQuery,
+  useWorkerTaskQuery,
   useWorkerSubTaskQuery,
   useCompleteWorkerTaskReportMutation,
 } from "@/hooks/worker/tasks";
@@ -44,11 +45,16 @@ function resolveImageUrl(uri?: string | null) {
 }
 
 const TaskDetailsScreen = () => {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: task, isLoading, refetch: refetchTask } = useWorkerSubTaskQuery(id as string);
+  const { id, taskType } = useLocalSearchParams<{ id: string; taskType?: "main" | "subtask" }>();
+  const resolvedTaskType = taskType === "subtask" ? "subtask" : "main";
+  const mainTaskQuery = useWorkerTaskQuery(id as string, resolvedTaskType === "main");
+  const subTaskQuery = useWorkerSubTaskQuery(id as string, resolvedTaskType === "subtask");
+  const task = resolvedTaskType === "main" ? mainTaskQuery.data : subTaskQuery.data;
+  const isLoading = resolvedTaskType === "main" ? mainTaskQuery.isLoading : subTaskQuery.isLoading;
+  const refetchTask = resolvedTaskType === "main" ? mainTaskQuery.refetch : subTaskQuery.refetch;
   const { data: profile } = useWorkerProfileQuery();
   const { data: inventoryData, refetch: refetchInventory } =
-    useWorkerTaskInventoryQuery(id as string);
+    useWorkerTaskInventoryQuery(id as string, resolvedTaskType);
   const completeTaskMutation = useCompleteWorkerTaskReportMutation();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -230,6 +236,7 @@ const TaskDetailsScreen = () => {
         afterPhotoUri: afterPhoto,
         inventoryUsed: inventoryUsedPayload,
         notes: notes,
+        taskType: resolvedTaskType,
       });
 
       setIsTaskCompleted(true);

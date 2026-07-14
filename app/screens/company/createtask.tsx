@@ -12,6 +12,7 @@ import {
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -59,6 +60,7 @@ export default function CreateTaskRoute() {
   const [dueDateValue, setDueDateValue] = useState(new Date());
 
   const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>([]);
+  const [allowSubTaskCreation, setAllowSubTaskCreation] = useState(true);
 
   const createTaskMutation = useCreateTaskMutation();
 
@@ -120,6 +122,7 @@ export default function CreateTaskRoute() {
         description: description.trim(),
         priority: priority.toLowerCase(),
         dueDate: dueDate.trim() || formatDate(new Date()),
+        allowSubTaskCreation,
         floors: floorsPayload,
       });
 
@@ -134,7 +137,7 @@ export default function CreateTaskRoute() {
       });
 
       // You can pass the newly created taskId to the next screen if needed
-      router.push({
+      router.replace({
         pathname: "/screens/company/task",
         params: { taskId: response.id, projectId },
       });
@@ -215,6 +218,32 @@ export default function CreateTaskRoute() {
                 />
               </View>
             </View>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setAllowSubTaskCreation((value) => !value)}
+              className="mt-4 flex-row items-center rounded-[12px] border border-[#D7DEE7] bg-white px-4 py-4"
+            >
+              <View
+                className={`h-6 w-6 items-center justify-center rounded-[7px] border ${
+                  allowSubTaskCreation
+                    ? "border-[#1E5371] bg-[#1E5371]"
+                    : "border-[#C9D3DF] bg-white"
+                }`}
+              >
+                {allowSubTaskCreation ? (
+                  <Ionicons name="checkmark" size={16} color="#FFFFFF" />
+                ) : null}
+              </View>
+              <View className="ml-3 flex-1">
+                <Text className="text-[15px] font-medium text-[#1A212B]">
+                  Allow Subtask Creation
+                </Text>
+                <Text className="mt-1 text-[12px] text-[#667085]">
+                  Turn off to block creating subtasks under this task.
+                </Text>
+              </View>
+            </TouchableOpacity>
 
             <TouchableOpacity
               activeOpacity={0.85}

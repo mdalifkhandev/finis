@@ -163,7 +163,7 @@ export default function WorkerCreateSubtaskRoute() {
       });
 
       toast.success("Subtask created successfully");
-      router.back();
+      router.replace("/worker/tasks");
     } catch (error) {
       // mutation handles error upstream if needed
     }

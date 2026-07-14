@@ -4,10 +4,12 @@ import { Text, TouchableOpacity, View } from "react-native";
 
 export type WorkerGroupedTaskItem = {
   id: string;
+  taskType?: "main" | "subtask";
   title?: string;
   description?: string | null;
   priority?: string;
   status?: string;
+  approvalDecision?: string | null;
   dueDate?: string;
   scheduledLabel?: string | null;
   project?: { id?: string; name?: string } | null;
@@ -55,6 +57,7 @@ type TaskGroup = {
         action?: string | null;
       }>;
       sourceTask?: WorkerGroupedTaskItem;
+      actionTask?: WorkerGroupedTaskItem;
     }>;
   }>;
 };
@@ -183,7 +186,18 @@ function WorkerTaskGroupCard({
                         </TouchableOpacity>
                       ) : null}
 
-                      {unit.subTasks.map((task, taskIndex) => {
+                      {(unit.subTasks.length
+                        ? unit.subTasks
+                        : unit.sourceTask
+                          ? [{
+                              id: unit.sourceTask.id,
+                              title: unit.sourceTask.description?.trim() || unit.sourceTask.title?.trim() || "Task",
+                              status: unit.sourceTask.status,
+                              approvalDecision: unit.sourceTask.approvalDecision ?? null,
+                              action: null,
+                            }]
+                          : []
+                      ).map((task, taskIndex) => {
                         const status = normalizeStatus(task.status);
                         const actionLabel = normalizeActionLabel(
                           task.action,
@@ -203,6 +217,7 @@ function WorkerTaskGroupCard({
                               onPress={() =>
                                 onPressTask({
                                   id: task.id,
+                                  taskType: unit.subTasks.length === 0 ? "main" : "subtask",
                                   title: task.title,
                                   status: task.status,
                                   floor: { id: floor.id, name: floor.name },
@@ -351,3 +366,10 @@ export default function WorkerGroupedTaskList({
     </View>
   );
 }
+
+
+
+
+
+
+

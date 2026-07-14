@@ -71,6 +71,7 @@ export default function WorkerTasks() {
                   pathname: "/screens/worker/taskdetails",
                   params: {
                     id: task.id,
+                    taskType: task.taskType ?? "subtask",
                   },
                 });
                 return;
@@ -80,6 +81,7 @@ export default function WorkerTasks() {
                 pathname: "/screens/worker/viewtask",
                 params: {
                   id: task.id,
+                  taskType: task.taskType ?? "subtask",
                   taskTitle: task.title || "",
                   taskDescription: task.description || "",
                   projectName: task.project?.name || "",

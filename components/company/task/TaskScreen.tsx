@@ -90,6 +90,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
         subTaskCount: task.subTaskCount ?? task._count?.subTasks ?? 0,
         completedSubTaskCount: task.completedSubTaskCount ?? 0,
         assignedWorkerCount: task.assignedWorkerCount ?? 0,
+        allowSubTaskCreation: task.allowSubTaskCreation ?? true,
         approvalDecision: task.approvalDecision,
         completionDecision: task.completionDecision,
         rawStatus: task.status,
@@ -183,6 +184,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                       parentTaskId: task.id,
                       projectId: task.projectId || projectId,
                       title: task.title,
+                      allowSubTaskCreation: String(task.allowSubTaskCreation ?? true),
                     },
                   })
                 }

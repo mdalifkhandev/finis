@@ -51,12 +51,17 @@ export default function SubtasksRoute() {
     parentTaskId?: string;
     projectId?: string;
     title?: string;
+    allowSubTaskCreation?: string;
   }>();
   const projectId = Array.isArray(params.projectId) ? params.projectId[0] : params.projectId;
   const parentTaskId = Array.isArray(params.parentTaskId)
     ? params.parentTaskId[0]
     : params.parentTaskId;
   const taskTitle = Array.isArray(params.title) ? params.title[0] : params.title;
+  const allowSubTaskCreationParam = Array.isArray(params.allowSubTaskCreation)
+    ? params.allowSubTaskCreation[0]
+    : params.allowSubTaskCreation;
+  const allowSubTaskCreation = allowSubTaskCreationParam !== "false";
   const [filter, setFilter] = useState<TaskFilter>("All");
 
   const tasksQuery = useTaskSubTasksQuery(parentTaskId);
@@ -156,9 +161,9 @@ export default function SubtasksRoute() {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleCreateSubtask}
-            disabled={!projectId}
+            disabled={!projectId || !allowSubTaskCreation}
             className={`h-[52px] flex-row items-center justify-center rounded-[10px] ${
-              projectId ? "bg-[#1E5371]" : "bg-[#AAB7C2]"
+              projectId && allowSubTaskCreation ? "bg-[#1E5371]" : "bg-[#AAB7C2]"
             }`}
           >
             <Ionicons name="add" size={22} color="#FFFFFF" />

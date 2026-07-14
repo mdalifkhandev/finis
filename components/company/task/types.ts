@@ -19,6 +19,7 @@ export type TaskItem = {
   subTaskCount?: number;
   completedSubTaskCount?: number;
   assignedWorkerCount?: number;
+  allowSubTaskCreation?: boolean;
   approvalDecision?: string | null;
   completionDecision?: string | null;
   rawStatus?: string;
