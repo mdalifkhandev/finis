@@ -71,6 +71,62 @@ export type SendManagerQuoteMailPayload = {
   }[];
 };
 
+export type QuoteSelectorOption = {
+  id?: string;
+  name?: string;
+  label?: string;
+  value?: string;
+  unit?: string;
+  isActive?: boolean;
+};
+
+export type QuoteSelectorsResponse = {
+  projectTypes?: QuoteSelectorOption[];
+  propertyTypes?: QuoteSelectorOption[];
+  unitTypes?: QuoteSelectorOption[];
+  categories?: QuoteSelectorOption[];
+  measurementTypes?: QuoteSelectorOption[];
+  workItems?: QuoteSelectorOption[];
+};
+
+export type QuoteWorkItemLookup = {
+  id: string;
+  categoryId?: string;
+  projectType?: string;
+  propertyType?: string;
+  unitType?: string;
+  name: string;
+  unitCost?: number | null;
+  category?: { id: string; name: string } | null;
+  measurementType?: string | null;
+  isActive?: boolean;
+  sortOrder?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type QuoteWorkItemGroup = {
+  category: {
+    id: string;
+    name: string;
+    isActive?: boolean;
+    sortOrder?: number | null;
+  };
+  data: QuoteWorkItemLookup[];
+};
+
+export type QuickAddQuoteWorkItemPayload = {
+  categoryId: string;
+  projectType: string;
+  propertyType: string;
+  unitType: string;
+  name: string;
+  measurementType: string;
+  quantity?: number;
+  unitPrice?: number;
+  notes?: string;
+};
+
 export async function getManagerQuotes(params?: {
   projectType?: string;
   propertyType?: string;
@@ -82,7 +138,6 @@ export async function getManagerQuotes(params?: {
     unitType: params?.unitType?.toLowerCase(),
   };
 
-
   const { data } = await api.get<{ success: boolean; message: string; data: ManagerQuotesResponse }>(
     "/manager/quotes",
     { params: normalizedParams },
@@ -90,6 +145,75 @@ export async function getManagerQuotes(params?: {
 
   if (!data.success) {
     throw new Error(data.message || "Failed to load quotes");
+  }
+
+  return data.data;
+}
+
+export async function getQuoteSelectors() {
+  const { data } = await api.get<{ success: boolean; message: string; data: QuoteSelectorsResponse }>(
+    "/manager/quotes/selectors",
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load quote selectors");
+  }
+
+  return data.data;
+}
+
+export async function getQuoteWorkCategories(search?: string) {
+  const { data } = await api.get<{ success: boolean; message: string; data: QuoteSelectorOption[] }>(
+    "/manager/quotes/work-categories",
+    { params: search ? { search } : undefined },
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load work categories");
+  }
+
+  return data.data;
+}
+
+export async function getQuoteMeasurementTypes(search?: string) {
+  const { data } = await api.get<{ success: boolean; message: string; data: QuoteSelectorOption[] }>(
+    "/manager/quotes/measurement-types",
+    { params: search ? { search } : undefined },
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load measurement types");
+  }
+
+  return data.data;
+}
+
+export async function getQuoteWorkItems(params: {
+  projectType?: string;
+  propertyType?: string;
+  unitType?: string;
+  search?: string;
+}) {
+  const { data } = await api.get<{ success: boolean; message: string; total?: number; data: QuoteWorkItemGroup[] }>(
+    "/manager/quotes/work-items",
+    { params },
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load work items");
+  }
+
+  return data.data;
+}
+
+export async function quickAddQuoteWorkItem(payload: QuickAddQuoteWorkItemPayload) {
+  const { data } = await api.post<{ success: boolean; message: string; data: ManagerQuote }>(
+    "/manager/quotes/work-items/quick-add",
+    payload,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to add work item");
   }
 
   return data.data;
@@ -180,3 +304,4 @@ export async function sendManagerQuoteMail(
 
   return data;
 }
+
