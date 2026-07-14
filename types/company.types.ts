@@ -282,6 +282,7 @@ export type TaskListItem = {
   subTaskCount?: number;
   completedSubTaskCount?: number;
   assignedWorkerCount?: number;
+  allowSubTaskCreation?: boolean;
   approvalDecision?: string | null;
   completionDecision?: string | null;
   project: TaskProject;
@@ -342,6 +343,7 @@ export type CreateTaskPayload = {
   description: string;
   priority: string;
   dueDate: string;
+  allowSubTaskCreation?: boolean;
   floorId?: string;
   unitId?: string;
   floorIds?: string[];

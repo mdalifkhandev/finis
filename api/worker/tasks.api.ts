@@ -3,6 +3,8 @@ import { appendImageToFormData } from "@/lib/uploads/image-upload";
 import { ApiResponse } from "@/types/auth.types";
 import { isAxiosError } from "axios";
 
+export type WorkerTaskKind = "main" | "subtask";
+
 export type WorkerTaskDetail = {
   id: string;
   projectId: string;
@@ -61,6 +63,7 @@ export type WorkerTaskDetail = {
   availableInventory?: any[];
   inventoryUsed?: any[];
   latestReport?: any | null;
+  workflow?: any | null;
   reports: any[];
   taskInventories: any[];
 };
@@ -154,14 +157,25 @@ type WorkerTaskDetailResponse = {
   inventories?: any[];
 };
 
+function normalizeInventoryItems(items?: any[]) {
+  return (items ?? []).map((item: any) => ({
+    ...item,
+    inventoryId: item.inventoryId ?? item.inventory?.id ?? "",
+    quantity: item.quantity ?? item.qtyUsed ?? 0,
+  }));
+}
+
 function mapWorkerSubTaskDetail(raw: WorkerTaskDetailResponse) {
   const taskDetails = raw.taskDetails;
   const project = taskDetails?.project ?? raw.task?.project ?? null;
-  const dueDate = taskDetails?.dueDate ?? taskDetails?.date ?? raw.dueDate ?? raw.task?.dueDate ?? "";
+  const dueDate =
+    taskDetails?.dueDate ?? taskDetails?.date ?? raw.dueDate ?? raw.task?.dueDate ?? "";
   const reports = raw.reports ?? [];
   const latestReport = raw.latestReport ?? reports[0] ?? null;
-  const reportWithBeforePhoto = reports.find((report: any) => report?.beforePhotoUrl) ?? latestReport;
-  const reportWithAfterPhoto = reports.find((report: any) => report?.afterPhotoUrl) ?? latestReport;
+  const reportWithBeforePhoto =
+    reports.find((report: any) => report?.beforePhotoUrl) ?? latestReport;
+  const reportWithAfterPhoto =
+    reports.find((report: any) => report?.afterPhotoUrl) ?? latestReport;
   const reportWithNotes = reports.find((report: any) => report?.notes) ?? latestReport;
 
   return {
@@ -200,32 +214,104 @@ function mapWorkerSubTaskDetail(raw: WorkerTaskDetailResponse) {
           floorNumber: raw.task.floor.floorNumber,
         }
       : null,
-    room: raw.unit ?? raw.task?.unit
-      ? {
-          id: raw.unit?.id ?? raw.task?.unit?.id ?? "",
-          name: raw.unit?.name ?? raw.task?.unit?.name ?? "",
-          type: raw.unit?.type ?? raw.task?.unit?.type ?? null,
-        }
-      : null,
+    room:
+      raw.unit ?? raw.task?.unit
+        ? {
+            id: raw.unit?.id ?? raw.task?.unit?.id ?? "",
+            name: raw.unit?.name ?? raw.task?.unit?.name ?? "",
+            type: raw.unit?.type ?? raw.task?.unit?.type ?? null,
+          }
+        : null,
     creator: {
       id: raw.creator?.id ?? "",
       fullName: raw.creator?.fullName ?? "",
       avatarUrl: raw.creator?.avatarUrl ?? null,
     },
-    beforePhotoUrl: raw.beforePhotoUrl ?? latestReport?.beforePhotoUrl ?? reportWithBeforePhoto?.beforePhotoUrl ?? null,
-    afterPhotoUrl: raw.afterPhotoUrl ?? latestReport?.afterPhotoUrl ?? reportWithAfterPhoto?.afterPhotoUrl ?? null,
+    beforePhotoUrl:
+      raw.beforePhotoUrl ??
+      latestReport?.beforePhotoUrl ??
+      reportWithBeforePhoto?.beforePhotoUrl ??
+      null,
+    afterPhotoUrl:
+      raw.afterPhotoUrl ??
+      latestReport?.afterPhotoUrl ??
+      reportWithAfterPhoto?.afterPhotoUrl ??
+      null,
     receiptUrl: raw.receiptUrl ?? raw.latestReport?.receiptUrl ?? null,
     note: raw.note ?? latestReport?.notes ?? reportWithNotes?.notes ?? null,
     reviewDecision: raw.reviewDecision ?? raw.latestReport?.reviewDecision ?? null,
-    reviewDescription: raw.reviewDescription ?? raw.latestReport?.reviewDescription ?? null,
+    reviewDescription:
+      raw.reviewDescription ?? raw.latestReport?.reviewDescription ?? null,
     availableInventory: raw.availableInventory ?? [],
+    inventoryUsed: normalizeInventoryItems(raw.inventoryUsed),
     latestReport,
     reports,
-    taskInventories: ((raw.inventoryUsed ?? raw.inventories) ?? []).map((item: any) => ({
-      ...item,
-      inventoryId: item.inventoryId ?? item.inventory?.id ?? "",
-      quantity: item.quantity ?? item.qtyUsed ?? 0,
-    })),
+    taskInventories: normalizeInventoryItems(raw.inventoryUsed ?? raw.inventories),
+  } as WorkerTaskDetail;
+}
+
+function mapWorkerMainTaskDetail(raw: any) {
+  const taskDetails = raw.taskDetails ?? null;
+  const mainTask = raw.mainTask ?? null;
+  const latestReport = raw.latestReport ?? null;
+  const reports = raw.reports ?? (latestReport ? [latestReport] : []);
+
+  return {
+    id: raw.id,
+    projectId: taskDetails?.project?.id ?? mainTask?.project?.id ?? "",
+    floorId: null,
+    roomId: null,
+    assignedTo: taskDetails?.assignedTo?.fullName ?? "",
+    assignedUser: taskDetails?.assignedTo ?? null,
+    createdBy: "",
+    title: raw.title?.trim() || mainTask?.title?.trim() || "Task",
+    description: raw.description ?? "",
+    priority: raw.priority ?? taskDetails?.priority ?? "",
+    status: raw.status ?? mainTask?.status ?? "pending",
+    approvalDecision: raw.approvalDecision ?? mainTask?.approvalDecision ?? null,
+    dueDate: taskDetails?.dueDate ?? taskDetails?.date ?? "",
+    estimatedHours: taskDetails?.estimatedHours ?? null,
+    actualHours: raw.actualHours ?? null,
+    startTime: taskDetails?.startTime ?? raw.startedAt ?? null,
+    endTime: taskDetails?.endTime ?? raw.completedAt ?? null,
+    date: taskDetails?.date ?? taskDetails?.dueDate ?? null,
+    roomNo: null,
+    priorityLabel: taskDetails?.priorityLabel ?? null,
+    createdAt: raw.createdAt ?? "",
+    updatedAt: raw.updatedAt ?? "",
+    project: {
+      id: taskDetails?.project?.id ?? mainTask?.project?.id ?? "",
+      name:
+        taskDetails?.projectName ??
+        taskDetails?.project?.name ??
+        mainTask?.project?.name ??
+        "",
+      location:
+        taskDetails?.location ??
+        taskDetails?.project?.location ??
+        mainTask?.project?.location ??
+        null,
+      geofences: taskDetails?.project?.geofences ?? mainTask?.project?.geofences ?? [],
+    },
+    floor: null,
+    room: null,
+    creator: {
+      id: "",
+      fullName: "",
+      avatarUrl: null,
+    },
+    beforePhotoUrl: raw.beforePhotoUrl ?? latestReport?.beforePhotoUrl ?? null,
+    afterPhotoUrl: raw.afterPhotoUrl ?? latestReport?.afterPhotoUrl ?? null,
+    receiptUrl: raw.receiptUrl ?? latestReport?.receiptUrl ?? null,
+    note: raw.note ?? latestReport?.notes ?? null,
+    reviewDecision: raw.reviewDecision ?? latestReport?.reviewDecision ?? null,
+    reviewDescription: raw.reviewDescription ?? latestReport?.reviewDescription ?? null,
+    availableInventory: raw.availableInventory ?? taskDetails?.project?.inventoryItems ?? [],
+    inventoryUsed: normalizeInventoryItems(raw.inventoryUsed),
+    latestReport,
+    workflow: raw.workflow ?? mainTask?.workflow ?? null,
+    reports,
+    taskInventories: normalizeInventoryItems(raw.inventoryUsed),
   } as WorkerTaskDetail;
 }
 
@@ -239,67 +325,50 @@ export async function getWorkerSubTaskById(id: string) {
 }
 
 export async function getWorkerTaskById(id: string) {
-  const { data } = await api.get<ApiResponse<WorkerTaskDetailResponse>>(`/worker/tasks/${id}`);
+  const { data } = await api.get<ApiResponse<any>>(`/worker/main-tasks/${id}`);
   if (!data.success) {
     throw new Error(data.message || "Failed to fetch task details");
   }
 
-  return mapWorkerSubTaskDetail(data.data);
+  return mapWorkerMainTaskDetail(data.data);
 }
 
-export async function startWorkerTask(id: string) {
-  const { data } = await api.post<ApiResponse<any>>(`/worker/subtasks/${id}/start`);
-  if (!data.success) {
-    throw new Error(data.message || "Failed to start task");
-  }
-  return data.data;
-}
-
-export async function reportWorkerTaskBeforePhoto(id: string, imageUri: string) {
+export async function startWorkerTask(
+  id: string,
+  imageUri: string,
+  taskType: WorkerTaskKind = "subtask",
+) {
   const formData = new FormData();
-  appendImageToFormData(formData, "beforePhoto", {
-    uri: imageUri,
-  }, {
-    fileName: "before_photo.jpg",
-    mimeType: "image/jpeg",
-  });
+  appendImageToFormData(
+    formData,
+    "beforePhoto",
+    { uri: imageUri },
+    {
+      fileName: "before_photo.jpg",
+      mimeType: "image/jpeg",
+    },
+  );
+
+  const endpoint =
+    taskType === "main"
+      ? `/worker/main-tasks/${id}/start`
+      : `/worker/subtasks/${id}/start`;
 
   try {
-    const { data } = await api.put<ApiResponse<any>>(`/worker/subtasks/${id}/report`, formData, {
+    const { data } = await api.post<ApiResponse<any>>(endpoint, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
     if (!data.success) {
-      throw new Error(data.message || "Failed to upload photo");
+      throw new Error(data.message || "Failed to start task");
     }
     return data.data;
   } catch (error) {
     if (isAxiosError(error) && error.response?.status === 413) {
       throw new Error("Photo is too large. Please retake with a smaller image.");
     }
-
-    if (!isAxiosError(error) || error.response?.status !== 404) {
-      throw error;
-    }
-
-    try {
-      const { data } = await api.post<ApiResponse<any>>(`/worker/tasks/${id}/report`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      if (!data.success) {
-        throw new Error(data.message || "Failed to upload photo");
-      }
-      return data.data;
-    } catch (fallbackError) {
-      if (isAxiosError(fallbackError) && fallbackError.response?.status === 413) {
-        throw new Error("Photo is too large. Please retake with a smaller image.");
-      }
-
-      throw fallbackError;
-    }
+    throw error;
   }
 }
 
@@ -312,75 +381,86 @@ export type TaskInventoryItem = {
   location: string | null;
 };
 
-export async function getWorkerTaskInventory(taskId: string) {
-  try {
-    const { data } = await api.get<ApiResponse<TaskInventoryItem[]>>(`/worker/subtasks/${taskId}/inventory`);
-    if (!data.success) {
-      throw new Error(data.message || "Failed to fetch task inventory");
-    }
-    return data.data;
-  } catch (error) {
-    if (!isAxiosError(error) || error.response?.status !== 404) {
-      throw error;
-    }
+export async function getWorkerTaskInventory(
+  taskId: string,
+  taskType: WorkerTaskKind = "subtask",
+) {
+  const endpoint =
+    taskType === "main"
+      ? `/worker/main-tasks/${taskId}/inventory`
+      : `/worker/subtasks/${taskId}/inventory`;
 
-    const { data } = await api.get<ApiResponse<TaskInventoryItem[]>>(`/worker/tasks/${taskId}/inventory`);
-    if (!data.success) {
-      throw new Error(data.message || "Failed to fetch task inventory");
-    }
-    return data.data;
+  const { data } = await api.get<ApiResponse<TaskInventoryItem[]>>(endpoint);
+  if (!data.success) {
+    throw new Error(data.message || "Failed to fetch task inventory");
   }
+  return data.data;
 }
 
-export async function updateWorkerTaskInventory(taskId: string, inventoryId: string, data: { name: string; category: string; unit: string; currentQty: number; location: string | null }) {
-  try {
-    const response = await api.patch<ApiResponse<any>>(`/worker/subtasks/${taskId}/inventory/${inventoryId}`, data);
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Failed to update inventory");
-    }
-    return response.data.data;
-  } catch (error) {
-    if (!isAxiosError(error) || error.response?.status !== 404) {
-      throw error;
-    }
+export async function updateWorkerTaskInventory(
+  taskId: string,
+  inventoryId: string,
+  data: {
+    name: string;
+    category: string;
+    unit: string;
+    currentQty: number;
+    location: string | null;
+  },
+  taskType: WorkerTaskKind = "subtask",
+) {
+  const endpoint =
+    taskType === "main"
+      ? `/worker/main-tasks/${taskId}/inventory/${inventoryId}`
+      : `/worker/subtasks/${taskId}/inventory/${inventoryId}`;
 
-    const response = await api.patch<ApiResponse<any>>(`/worker/tasks/${taskId}/inventory/${inventoryId}`, data);
-    if (!response.data.success) {
-      throw new Error(response.data.message || "Failed to update inventory");
-    }
-    return response.data.data;
+  const response = await api.patch<ApiResponse<any>>(endpoint, data);
+  if (!response.data.success) {
+    throw new Error(response.data.message || "Failed to update inventory");
   }
+  return response.data.data;
 }
 
 export async function completeWorkerTaskReport(
   taskId: string,
   afterPhotoUri: string | null,
   inventoryUsed: { inventoryId: string; qtyUsed: number }[],
-  notes: string
+  notes: string,
+  taskType: WorkerTaskKind = "subtask",
 ) {
   const formData = new FormData();
 
-  if (afterPhotoUri && !afterPhotoUri.startsWith('http')) {
-    appendImageToFormData(formData, "afterPhoto", {
-      uri: afterPhotoUri,
-    }, {
-      fileName: "after_photo.jpg",
-      mimeType: "image/jpeg",
-    });
+  if (afterPhotoUri && !afterPhotoUri.startsWith("http")) {
+    appendImageToFormData(
+      formData,
+      "afterPhoto",
+      {
+        uri: afterPhotoUri,
+      },
+      {
+        fileName: "after_photo.jpg",
+        mimeType: "image/jpeg",
+      },
+    );
   }
 
   inventoryUsed.forEach((item, index) => {
     formData.append(`inventoryUsed[${index}][inventoryId]`, item.inventoryId);
     formData.append(`inventoryUsed[${index}][qtyUsed]`, String(item.qtyUsed));
   });
-  
+
   if (notes) {
     formData.append("notes", notes);
   }
 
+  const endpoint =
+    taskType === "main"
+      ? `/worker/main-tasks/${taskId}/report`
+      : `/worker/subtasks/${taskId}/report`;
+
   let data;
   try {
-    const response = await api.post<ApiResponse<any>>(`/worker/subtasks/${taskId}/report`, formData, {
+    const response = await api.post<ApiResponse<any>>(endpoint, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -401,7 +481,9 @@ export async function completeWorkerTaskReport(
 }
 
 export async function getWorkerTasks(page = 1, limit = 10) {
-  const { data } = await api.get<ApiResponse<WorkerTaskDetail[]>>(`/worker/tasks?page=${page}&limit=${limit}`);
+  const { data } = await api.get<ApiResponse<WorkerTaskDetail[]>>(
+    `/worker/tasks?page=${page}&limit=${limit}`,
+  );
   if (!data.success) {
     throw new Error(data.message || "Failed to fetch tasks");
   }

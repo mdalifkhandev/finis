@@ -360,6 +360,7 @@ type BackendTaskResponseItem = {
     description: string | null;
     priority: string;
     status: string;
+    allowSubTaskCreation?: boolean;
     approvalDecision: string | null;
     approvalNotes: string | null;
     completionDecision: string | null;
@@ -457,6 +458,7 @@ function mapBackendTaskResponse(task: BackendTaskResponseItem): TaskListItem {
     subTaskCount: task.subTaskCount ?? 0,
     completedSubTaskCount: task.completedSubTaskCount ?? 0,
     assignedWorkerCount: task.assignedWorkerCount ?? 0,
+    allowSubTaskCreation: task.task.allowSubTaskCreation ?? true,
     approvalDecision: task.task.approvalDecision,
     completionDecision: task.task.completionDecision,
   } as TaskListItem;

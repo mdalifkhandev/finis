@@ -166,7 +166,7 @@ export default function CreateSubtaskRoute() {
             dueDate: dueDate.trim() || formatDate(new Date()),
           });
 
-          router.push({
+          router.replace({
             pathname: "/screens/company/subtasks",
             params: {
               projectId,
@@ -217,7 +217,7 @@ export default function CreateSubtaskRoute() {
           dueDate: dueDate.trim() || formatDate(new Date()),
         });
 
-        router.push({
+        router.replace({
           pathname: "/screens/company/task",
           params: { taskId: response.id, projectId },
         });

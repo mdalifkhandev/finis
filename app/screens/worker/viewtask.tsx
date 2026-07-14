@@ -1,8 +1,8 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import TaskViewCard from "@/components/company/taskdetails/TaskViewCard";
 import {
-  useReportWorkerTaskBeforePhotoMutation,
   useStartWorkerTaskMutation,
+  useWorkerTaskQuery,
   useWorkerSubTaskQuery,
 } from "@/hooks/worker/tasks";
 import { router, useLocalSearchParams } from "expo-router";
@@ -27,9 +27,10 @@ function formatDateRange(start?: string | Date, end?: string | Date) {
 }
 
 export default function WorkerViewTaskRoute() {
-  const { id, taskTitle, taskDescription, projectName, floorName, roomName, dueDate } =
+  const { id, taskType, taskTitle, taskDescription, projectName, floorName, roomName, dueDate } =
     useLocalSearchParams<{
       id: string;
+      taskType?: "main" | "subtask";
       taskTitle?: string;
       taskDescription?: string;
       projectName?: string;
@@ -37,9 +38,13 @@ export default function WorkerViewTaskRoute() {
       roomName?: string;
       dueDate?: string;
   }>();
-  const { data: task, isLoading, isError } = useWorkerSubTaskQuery(id as string);
+  const resolvedTaskType = taskType === "subtask" ? "subtask" : "main";
+  const mainTaskQuery = useWorkerTaskQuery(id as string, resolvedTaskType === "main");
+  const subTaskQuery = useWorkerSubTaskQuery(id as string, resolvedTaskType === "subtask");
+  const task = resolvedTaskType === "main" ? mainTaskQuery.data : subTaskQuery.data;
+  const isLoading = resolvedTaskType === "main" ? mainTaskQuery.isLoading : subTaskQuery.isLoading;
+  const isError = resolvedTaskType === "main" ? mainTaskQuery.isError : subTaskQuery.isError;
   const startTaskMutation = useStartWorkerTaskMutation();
-  const reportBeforePhotoMutation = useReportWorkerTaskBeforePhotoMutation();
 
   const resolvedTaskTitle = task?.title || taskTitle || "Company";
   const resolvedProjectName = task?.project?.name || projectName || "N/A";
@@ -82,31 +87,21 @@ export default function WorkerViewTaskRoute() {
             endTime={task?.endTime ? new Date(task.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "N/A"}
             date={resolvedDueDate ? new Date(resolvedDueDate).toLocaleDateString() : "N/A"}
             description={resolvedDescription}
-            isStarting={reportBeforePhotoMutation.isPending || startTaskMutation.isPending}
+            isStarting={startTaskMutation.isPending}
             onStartTask={(imageUri: string) => {
-              reportBeforePhotoMutation.mutate(
-                { id: task.id, imageUri },
+              startTaskMutation.mutate(
+                { id: task.id, imageUri, taskType: resolvedTaskType },
                 {
                   onSuccess: () => {
-                    startTaskMutation.mutate(task.id, {
-                      onSuccess: () => {
-                        router.push({
-                          pathname: "/screens/worker/taskdetails",
-                          params: { id: task.id },
-                        });
-                      },
-                      onError: (error: any) => {
-                        Alert.alert(
-                          "Error",
-                          error.message || "Failed to start task",
-                        );
-                      },
+                    router.push({
+                      pathname: "/screens/worker/taskdetails",
+                      params: { id: task.id, taskType: resolvedTaskType },
                     });
                   },
                   onError: (error: any) => {
                     Alert.alert(
                       "Error",
-                      error.message || "Failed to upload photo",
+                      error.message || "Failed to start task",
                     );
                   },
                 },
