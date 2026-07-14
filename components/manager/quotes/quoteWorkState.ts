@@ -135,14 +135,13 @@ export function updateQuoteWorkItemDetails(
 ): QuoteSelectedWorkGroup[] {
   const quantityValue = Number(updates.quantity) || 0;
   const unitPriceValue = Number(updates.unitPrice) || 0;
-  const nextTitle = updates.title.trim() || "";
-  const nextUnit = updates.unit.trim() || "pcs";
+  const nextTitle = (updates.title ?? "").trim() || "";
+  const nextUnit = (updates.unit ?? "").trim() || "pcs";
 
   return groups.map((group) =>
     group.id === groupId
       ? {
           ...group,
-          title: nextTitle || group.title,
           items: group.items.map((item) =>
             item.id === itemId
               ? {
@@ -162,17 +161,22 @@ export function updateQuoteWorkItemDetails(
 
 export function addCustomQuoteWorkItem(
   groups: QuoteSelectedWorkGroup[],
+  groupId: string,
+  groupTitle: string,
+  itemId: string,
   customTitle: string,
   customQuantity: string,
   customUnit: string,
   customUnitPrice: string,
 ): QuoteSelectedWorkGroup[] {
+  const safeTitle = customTitle ?? "";
+  const safeUnit = customUnit ?? "";
   const quantityValue = Number(customQuantity) || 1;
   const unitPriceValue = Number(customUnitPrice) || 0;
-  const unitLabel = customUnit.trim() || "pcs";
+  const unitLabel = safeUnit.trim() || "pcs";
   const customItem: QuoteSelectedWorkItem = {
-    id: `custom-${Date.now()}`,
-    title: customTitle.trim(),
+    id: itemId,
+    title: safeTitle.trim(),
     quantity: String(quantityValue),
     unitOptions: [{ unit: unitLabel, price: unitPriceValue }],
     selectedUnit: unitLabel,
@@ -180,11 +184,11 @@ export function addCustomQuoteWorkItem(
     selected: true,
     isCustom: true,
   };
-  const customGroup = groups.find((group) => group.id === "custom-items");
+  const targetGroup = groups.find((group) => group.id === groupId);
 
-  if (customGroup) {
+  if (targetGroup) {
     return groups.map((group) =>
-      group.id === "custom-items"
+      group.id === groupId
         ? { ...group, expanded: true, items: [...group.items, customItem] }
         : group,
     );
@@ -193,8 +197,8 @@ export function addCustomQuoteWorkItem(
   return [
     ...groups,
     {
-      id: "custom-items",
-      title: "Custom Items",
+      id: groupId,
+      title: groupTitle,
       expanded: true,
       items: [customItem],
     },

@@ -4,11 +4,17 @@ import { ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  createManagerQuote,
   deleteManagerQuote,
   getManagerQuotes,
+  getQuoteSelectors,
+  getQuoteWorkCategories,
+  getQuoteWorkItems,
+  quickAddQuoteWorkItem,
   sendManagerQuoteMail,
   updateManagerQuote,
+  type QuoteSelectorOption,
+  type QuoteWorkItemGroup,
+  type QuoteWorkItemLookup,
 } from "@/api/manager/quotes.api";
 import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
 import { router } from "expo-router";
@@ -72,7 +78,8 @@ export default function ManagerQuotesScreen() {
   const [customItemModalVisible, setCustomItemModalVisible] = useState(false);
   const [customTitle, setCustomTitle] = useState("");
   const [customQuantity, setCustomQuantity] = useState("1");
-  const [customUnit, setCustomUnit] = useState("pcs");
+  const [customCategoryId, setCustomCategoryId] = useState("");
+  const [customMeasurementType, setCustomMeasurementType] = useState("");
   const [customUnitPrice, setCustomUnitPrice] = useState("0");
   const [editItemModalVisible, setEditItemModalVisible] = useState(false);
   const [editGroupId, setEditGroupId] = useState("");
@@ -92,35 +99,80 @@ export default function ManagerQuotesScreen() {
       }),
     enabled: step === 1,
   });
+
+  const quoteSelectorsQuery = useQuery({
+    queryKey: ["manager", "quotes", "selectors"],
+    queryFn: () => getQuoteSelectors(),
+  });
+
+  const quoteCategoriesQuery = useQuery({
+    queryKey: ["manager", "quotes", "categories"],
+    queryFn: () => getQuoteWorkCategories(),
+    enabled: customItemModalVisible,
+  });
+
+  const quoteCatalogQuery = useQuery({
+    queryKey: ["manager", "quotes", "catalog", projectType, propertyType, unitType],
+    queryFn: () =>
+      getQuoteWorkItems({
+        projectType: projectType.toLowerCase(),
+        propertyType: propertyType.toLowerCase(),
+        unitType: unitType.toLowerCase(),
+      }),
+    enabled: step === 2,
+  });
+
+  const quoteWorkItemsQuery = useQuery({
+    queryKey: ["manager", "quotes", "work-items", projectType, propertyType, unitType, customTitle],
+    queryFn: () =>
+      getQuoteWorkItems({
+        projectType: projectType.toLowerCase(),
+        propertyType: propertyType.toLowerCase(),
+        unitType: unitType.toLowerCase(),
+        search: customTitle.trim() || undefined,
+      }),
+    enabled: customItemModalVisible,
+  });
+
   const defaultClientName = currentUser?.fullName || currentUser?.name || "";
   const defaultEmail = currentUser?.email || "";
   const defaultPhone = currentUser?.phone || "";
   const backendQuotes = quoteFilterQuery.data?.quotes ?? [];
+  const quoteSelectors = quoteSelectorsQuery.data;
+  const quoteCatalogGroups = quoteCatalogQuery.data ?? [];
+
+  const toSelectorOption = (item: QuoteSelectorOption, fallbackIndex: number) => ({
+    id: item.id ?? item.value ?? item.name ?? String(fallbackIndex),
+    name: item.name ?? item.label ?? item.value ?? "",
+    value: item.value ?? item.name ?? item.label ?? "",
+  });
+
+  const categoryOptions = (quoteCategoriesQuery.data ?? []).map(toSelectorOption);
+  const measurementOptions = (quoteSelectors?.measurementTypes ?? []).map(toSelectorOption);
+  const workItemSuggestions = (quoteWorkItemsQuery.data ?? []).flatMap((group) => group.data);
 
   const backendWorkGroups = useMemo(
     () =>
-      backendQuotes.map((quote, index) => ({
-        id: quote.id,
-        title: quote.title,
+      quoteCatalogGroups.map((group: QuoteWorkItemGroup, index: number) => ({
+        id: group.category.id,
+        title: group.category.name,
         expanded: index === 0,
-        items: [
-          {
-            id: quote.id,
-            title: quote.title,
-            quantity: String(quote.quantity ?? 0),
-            unitOptions: [{ unit: quote.unit ?? "pcs", price: quote.unitPrice ?? 0 }],
-            selectedUnit: quote.unit ?? "pcs",
-            selectedUnitPrice: quote.unitPrice ?? 0,
-            selected: false,
-            isCustom: quote.isCustom,
-          },
-        ],
+        items: group.data.map((item, itemIndex) => ({
+          id: item.id || group.category.id + "-" + itemIndex,
+          title: item.name,
+          quantity: "1",
+          unitOptions: [{ unit: item.measurementType ?? "pcs", price: Number((item as any).unitCost ?? (item as any).unitPrice ?? 0) }],
+          selectedUnit: item.measurementType ?? "pcs",
+          selectedUnitPrice: Number((item as any).unitCost ?? (item as any).unitPrice ?? 0),
+          selected: false,
+          isCustom: false,
+        })),
       })),
-    [backendQuotes],
+    [quoteCatalogGroups],
   );
 
   useEffect(() => {
-    if (step !== 2 || backendWorkGroups.length === 0) return;
+    if (step !== 2) return;
     setWorkGroups(backendWorkGroups);
   }, [backendWorkGroups, step]);
 
@@ -222,27 +274,48 @@ Please find the attached quote PDF.`,
       return;
     }
 
+    if (!customCategoryId) {
+      toast.error("Select a category for the item.");
+      return;
+    }
+
+    if (!customMeasurementType) {
+      toast.error("Select a unit of measurement.");
+      return;
+    }
+
     const nextQuantity = Number(customQuantity) || 1;
     const nextUnitPrice = Number(customUnitPrice) || 0;
 
-    createManagerQuote({
+    quickAddQuoteWorkItem({
+      categoryId: customCategoryId,
       projectType: projectType.toLowerCase(),
       propertyType: propertyType.toLowerCase(),
       unitType: unitType.toLowerCase(),
-      title: customTitle.trim(),
+      name: customTitle.trim(),
+      measurementType: customMeasurementType,
       quantity: nextQuantity,
-      unit: customUnit.trim() || "pcs",
       unitPrice: nextUnitPrice,
       notes: "",
-      isCustom: true,
     })
       .then((createdQuote) => {
+        const measurementLabel = measurementOptions.find(
+          (item) => item.value === customMeasurementType || item.name === customMeasurementType,
+        )?.name ?? customMeasurementType;
+
+        const selectedCategory = categoryOptions.find(
+          (item) => item.id === customCategoryId || item.value === customCategoryId,
+        );
+
         setWorkGroups((current) =>
           addCustomQuoteWorkItem(
             current,
+            customCategoryId,
+            selectedCategory?.name ?? "Custom Items",
+            createdQuote.id,
             createdQuote.title,
             String(createdQuote.quantity),
-            createdQuote.unit ?? "pcs",
+            createdQuote.unit ?? measurementLabel,
             String(createdQuote.unitPrice),
           ),
         );
@@ -257,7 +330,8 @@ Please find the attached quote PDF.`,
         });
         setCustomTitle("");
         setCustomQuantity("1");
-        setCustomUnit("pcs");
+        setCustomCategoryId("");
+        setCustomMeasurementType("");
         setCustomUnitPrice("0");
         setCustomItemModalVisible(false);
       })
@@ -281,25 +355,10 @@ Please find the attached quote PDF.`,
   };
 
   const handleDeleteItem = (groupId: string, itemId: string) => {
-    deleteManagerQuote(itemId)
-      .then(() => {
-        setWorkGroups((current) =>
-          deleteQuoteWorkItem(current, groupId, itemId),
-        );
-        void queryClient.fetchQuery({
-          queryKey: ["manager", "quotes", projectType, propertyType, unitType],
-          queryFn: () =>
-            getManagerQuotes({
-              projectType,
-              propertyType,
-              unitType,
-            }),
-        });
-        toast.success("Quote item deleted.");
-      })
-      .catch(() => {
-        toast.error("Unable to delete the quote item.");
-      });
+    setWorkGroups((current) =>
+      deleteQuoteWorkItem(current, groupId, itemId),
+    );
+    toast.success("Quote item removed.");
   };
 
   const handleSaveEditItem = () => {
@@ -396,11 +455,11 @@ Please find the attached quote PDF.`,
             />
           ) : step === 2 ? (
             <QuoteWorkItemsStep
-              catalogTitle={backendQuotes.length ? "Backend Quote Items" : "No Backend Quote Items"}
+              catalogTitle={quoteCatalogGroups.length ? "Work Item Categories" : "No Work Item Categories"}
               catalogDescription={
-                backendQuotes.length
-                  ? "These items are loaded from the server."
-                  : "No quotes returned from the backend for this combination."
+                quoteCatalogGroups.length
+                  ? "These category groups are loaded from the server."
+                  : "No work items returned from the backend for this combination."
               }
               groups={workGroups}
               subtotal={subtotal}
@@ -481,12 +540,28 @@ Please find the attached quote PDF.`,
         visible={customItemModalVisible}
         title={customTitle}
         quantity={customQuantity}
-        unit={customUnit}
+        categoryId={customCategoryId}
+        measurementType={customMeasurementType}
         unitPrice={customUnitPrice}
+        categories={categoryOptions}
+        measurementTypes={measurementOptions}
+        workItemSuggestions={workItemSuggestions}
         onChangeTitle={setCustomTitle}
         onChangeQuantity={setCustomQuantity}
-        onChangeUnit={setCustomUnit}
+        onChangeCategoryId={setCustomCategoryId}
+        onChangeMeasurementType={setCustomMeasurementType}
         onChangeUnitPrice={setCustomUnitPrice}
+        onSelectWorkItem={(item) => {
+          setCustomTitle(item.name);
+          if (item.category?.id) {
+            setCustomCategoryId(item.category.id);
+          }
+          if (item.measurementType) {
+            setCustomMeasurementType(item.measurementType);
+          }
+          const nextUnitPrice = Number((item as any).unitCost ?? (item as any).unitPrice ?? 0);
+          setCustomUnitPrice(String(nextUnitPrice));
+        }}
         onClose={() => setCustomItemModalVisible(false)}
         onAdd={handleAddCustomItem}
       />
@@ -507,3 +582,24 @@ Please find the attached quote PDF.`,
     </SafeAreaView>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -146,9 +146,9 @@ export default function QuoteFinalReviewStep({
                   className="mb-4 rounded-[16px] border border-[#E2E8F0] bg-white px-4 py-4"
                 >
             
-                  {group.items.map((item) => (
+                  {group.items.map((item, itemIndex) => (
                     <View
-                      key={item.id}
+                      key={`${group.id}-${item.id}-${itemIndex}`}
                       className="flex-row items-start justify-between"
                     >
                       <View className="flex-1 pr-3">
@@ -255,3 +255,4 @@ export default function QuoteFinalReviewStep({
     </>
   );
 }
+

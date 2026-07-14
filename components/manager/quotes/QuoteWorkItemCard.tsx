@@ -61,8 +61,8 @@ export default function QuoteWorkItemCard({
     "selectedUnit" in item ? item.selectedUnit ?? "" : item.unit ?? "";
   const selectedUnitPrice =
     "selectedUnitPrice" in item
-      ? item.selectedUnitPrice ?? 0
-      : item.unitPrice ?? 0;
+      ? item.selectedUnitPrice || item.unitOptions?.find((option) => option.unit === selectedUnit)?.price || item.unitOptions?.[0]?.price || 0
+      : ((item as any).unitCost ?? item.unitPrice ?? 0);
   const quantityValue =
     "quantity" in item ? String(item.quantity ?? 0) : "0";
   const selected = "selected" in item ? item.selected ?? false : true;
@@ -72,7 +72,6 @@ export default function QuoteWorkItemCard({
   const currentUnitIndex = unitOptions.findIndex(
     (option) => option.unit === selectedUnit,
   );
-
 
   const handleUnitPress = () => {
     if (!unitOptions.length) return;
@@ -84,21 +83,23 @@ export default function QuoteWorkItemCard({
   };
 
   return (
-    <View className="mb-3 rounded-[12px] border border-[#E6EBF1] bg-white p-3">
-      <View className="mb-4 flex-row items-center justify-between">
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={onEdit}
-          className="flex-1 rounded-[10px] bg-[#F3F7FA] px-3 py-2"
-        >
-          <Text className="text-[14px] font-medium text-[#1F2937]">
-            Edit Item
-          </Text>
-        </TouchableOpacity>
+    <View className="rounded-[16px] border border-[#E6EBF1] bg-white px-4 py-4 shadow-sm">
+      <View className="mb-4 flex-row items-start justify-between gap-3">
+        <Text className="flex-1 text-[16px] font-semibold text-[#101828]">
+          {item.title}
+        </Text>
 
-        <View className="ml-2 flex-row items-center gap-2">
+        <View className="flex-row items-center gap-2">
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.85}
+            onPress={onEdit}
+            className="h-9 w-9 items-center justify-center rounded-[10px] border border-[#D5DEE8] bg-white"
+          >
+            <Ionicons name="create-outline" size={16} color="#475467" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
             onPress={onDelete}
             className="h-9 w-9 items-center justify-center rounded-[10px] bg-[#FEE2E2]"
           >
@@ -106,15 +107,15 @@ export default function QuoteWorkItemCard({
           </TouchableOpacity>
 
           <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onToggle}
-            className="h-9 w-9 items-center justify-center rounded-[10px] border border-[#C7D1DB] bg-white"
+            activeOpacity={0.85}
+            onPress={onToggle}
+            className={`h-9 w-9 items-center justify-center rounded-[10px] border ${selected ? "border-[#1F5577] bg-[#1F5577]" : "border-[#C7D1DB] bg-white"}`}
           >
-            {selected ? (
-              <Ionicons name="checkmark" size={16} color="#1F5577" />
-            ) : (
-              <Ionicons name="add" size={16} color="#98A2B3" />
-            )}
+            <Ionicons
+              name={selected ? "checkmark" : "add"}
+              size={16}
+              color={selected ? "#FFFFFF" : "#98A2B3"}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -126,16 +127,16 @@ export default function QuoteWorkItemCard({
         value={quantityValue}
         onChangeText={onChangeQuantity}
         keyboardType="decimal-pad"
-        className="mb-4 h-[58px] rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4 text-[18px] text-[#667085]"
+        className="mb-4 h-[54px] rounded-[14px] border border-[#DDE3EA] bg-[#F8FAFC] px-4 text-[17px] text-[#475467]"
       />
 
       <Text className="mb-2 text-[12px] font-medium text-[#344054]">Unit</Text>
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={handleUnitPress}
-        className="mb-4 h-[58px] flex-row items-center justify-between rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4"
+        className="mb-4 h-[54px] flex-row items-center justify-between rounded-[14px] border border-[#DDE3EA] bg-[#F8FAFC] px-4"
       >
-        <Text className="text-[18px] text-[#667085]">{selectedUnit}</Text>
+        <Text className="text-[17px] text-[#475467]">{selectedUnit || "Select unit"}</Text>
         {unitOptions.length > 1 ? (
           <Ionicons name="chevron-down" size={18} color="#98A2B3" />
         ) : null}
@@ -144,8 +145,9 @@ export default function QuoteWorkItemCard({
       <Text className="mb-2 text-[12px] font-medium text-[#344054]">
         Unit Price
       </Text>
-      <View className="mb-4 h-[58px] justify-center rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4">
-        <Text className="text-[18px] text-[#667085]">
+      <View className="mb-4 h-[54px] flex-row items-center rounded-[14px] border border-[#DDE3EA] bg-[#F8FAFC] px-4">
+        <Text className="mr-2 text-[17px] text-[#98A2B3]">$</Text>
+        <Text className="text-[17px] text-[#475467]">
           {formatUnitPrice(selectedUnitPrice)}
         </Text>
       </View>
@@ -153,11 +155,12 @@ export default function QuoteWorkItemCard({
       <Text className="mb-2 text-[12px] font-medium text-[#344054]">
         Subtotal
       </Text>
-      <View className="h-[58px] justify-center rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4">
-        <Text className="text-[18px] font-medium text-[#101828]">
+      <View className="h-[54px] justify-center rounded-[14px] border border-[#DDE3EA] bg-[#F8FAFC] px-4">
+        <Text className="text-[17px] font-semibold text-[#101828]">
           {formatCurrency(subtotal)}
         </Text>
       </View>
     </View>
   );
 }
+

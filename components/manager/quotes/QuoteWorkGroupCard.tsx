@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+﻿import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import QuoteWorkItemCard, {
@@ -10,20 +10,6 @@ export type QuoteSelectedWorkGroup = {
   title: string;
   expanded: boolean;
   items: QuoteSelectedWorkItem[];
-};
-
-export type BackendQuote = {
-  id: string;
-  title: string;
-  projectType: string;
-  propertyType: string;
-  unitType: string;
-  quantity: number;
-  unit: string | null;
-  unitPrice: number;
-  subtotal: number;
-  notes: string | null;
-  isCustom: boolean;
 };
 
 type QuoteWorkGroupCardProps = {
@@ -46,29 +32,32 @@ export default function QuoteWorkGroupCard({
   onSelectItemUnit,
 }: QuoteWorkGroupCardProps) {
   return (
-    <View className="mb-4 rounded-[14px] border border-[#E3E8EE] bg-white p-3">
+    <View className="mb-4 rounded-[18px] border border-[#E3E8EE] bg-[#FCFDFE] px-4 py-4 shadow-sm">
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={onToggleGroup}
-        className="flex-row items-center justify-between"
+        className="flex-row items-start justify-between"
       >
-        <View>
-          <Text className="text-[15px] font-medium text-[#1F2937]">
+        <View className="flex-1 pr-3">
+          <Text className="text-[18px] font-semibold text-[#101828]">
             {group.title}
+          </Text>
+          <Text className="mt-1 text-[13px] text-[#667085]">
+            {group.items.length} {group.items.length === 1 ? "item" : "items"}
           </Text>
         </View>
         <Ionicons
           name={group.expanded ? "chevron-up" : "chevron-down"}
-          size={18}
+          size={20}
           color="#7B8794"
         />
       </TouchableOpacity>
 
       {group.expanded ? (
-        <View className="mt-3">
-          {group.items.slice(0, 1).map((item) => (
+        <View className="mt-4 gap-3">
+          {group.items.map((item, index) => (
             <QuoteWorkItemCard
-              key={item.id}
+              key={`${group.id}-${item.id}-${index}`}
               item={item}
               onToggle={() => onToggleItem(item.id)}
               onEdit={() => onEditItem(item.id)}
