@@ -47,3 +47,4 @@ config.bat
 
 .env
 google-services.json
+GoogleService-Info.plist
