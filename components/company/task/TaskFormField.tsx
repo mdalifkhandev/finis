@@ -13,6 +13,7 @@ type TaskFormFieldProps = {
   onChangeText: (value: string) => void;
   multiline?: boolean;
   editable?: boolean;
+  keyboardType?: "default" | "numeric" | "email-address" | "phone-pad" | "number-pad" | "decimal-pad";
   onPress?: () => void;
 };
 
@@ -23,6 +24,7 @@ export default function TaskFormField({
   onChangeText,
   multiline = false,
   editable = true,
+  keyboardType = "default",
   onPress,
 }: TaskFormFieldProps) {
   const isPressable = Boolean(onPress);
@@ -50,6 +52,7 @@ export default function TaskFormField({
           placeholderTextColor="#9AA3AF"
           multiline={multiline}
           editable={editable}
+          keyboardType={keyboardType as any}
           textAlignVertical={multiline ? "top" : "center"}
           className={`rounded-xl border border-[#CBD3DC] bg-[#F5F7F9] px-4 text-[16px] text-[#1E2938] ${
             multiline ? "min-h-[116px] py-3" : "h-12"

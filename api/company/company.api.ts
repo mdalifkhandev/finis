@@ -1219,6 +1219,11 @@ type BackendTaskDetailsResponse = {
     date: string;
     receiptUrl: string | null;
   }>;
+  assignee?: any;
+  taskAssignees?: any[];
+  subTasks?: any[];
+  reports?: any[];
+  taskInventories?: any[];
 };
 
 export async function getTaskDetails(taskId: string): Promise<TaskDetailsData> {
@@ -1258,11 +1263,11 @@ export async function getTaskDetails(taskId: string): Promise<TaskDetailsData> {
     subTaskCount: taskData.subTaskCount ?? 0,
     completedSubTaskCount: taskData.completedSubTaskCount ?? 0,
     assignedWorkerCount: taskData.assignedWorkerCount ?? 0,
-    assignee: null,
-    taskAssignees: [],
-    subTasks: [],
-    reports: [],
-    taskInventories: [],
+    assignee: taskData.assignee ?? null,
+    taskAssignees: taskData.taskAssignees ?? [],
+    subTasks: taskData.subTasks ?? [],
+    reports: taskData.reports ?? [],
+    taskInventories: taskData.taskInventories ?? [],
     expenses: taskData.expenses ?? [],
   };
 }

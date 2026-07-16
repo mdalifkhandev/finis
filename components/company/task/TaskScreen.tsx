@@ -178,7 +178,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                   reviewTaskCompletionMutation.isPending
                 }
                 onPress={() =>
-                  (task.subTaskCount ?? 0) === 0
+                  (task.subTaskCount ?? 0) === 0 && !task.allowSubTaskCreation
                     ? router.push({
                         pathname: "/screens/company/taskdetails",
                         params: { taskId: task.id },
