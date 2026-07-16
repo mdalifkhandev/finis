@@ -1242,13 +1242,13 @@ export async function getTaskDetails(taskId: string): Promise<TaskDetailsData> {
   const firstUnit = firstFloor?.units?.[0];
 
   return {
-    id: taskData.task.id,
-    title: taskData.task.title,
-    description: taskData.task.description ?? "",
-    priority: taskData.task.priority ?? null,
-    status: taskData.task.status,
-    dueDate: taskData.task.dueDate ?? null,
-    estimatedHours: taskData.task.estimatedHours ?? null,
+    id: taskData.id,
+    title: taskData.title,
+    description: taskData.description ?? "",
+    priority: taskData.priority ?? null,
+    status: taskData.status,
+    dueDate: taskData.dueDate ?? null,
+    estimatedHours: taskData.estimatedHours ?? null,
     project: { name: taskData.project?.name ?? "" },
     floor: { name: firstFloor?.name ?? "" },
     room: { name: firstUnit?.name ?? "" },
