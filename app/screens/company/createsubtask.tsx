@@ -68,6 +68,8 @@ export default function CreateSubtaskRoute() {
     const [dueDate, setDueDate] = useState("");
     const [showDueDatePicker, setShowDueDatePicker] = useState(false);
     const [dueDateValue, setDueDateValue] = useState(new Date());
+
+    const [estimatedHours, setEstimatedHours] = useState('');
   
     const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>([]);
   
@@ -164,6 +166,7 @@ export default function CreateSubtaskRoute() {
             description: description.trim(),
             unitIds: floorUnitSelections.map((selection) => selection.unit.id),
             dueDate: dueDate.trim() || formatDate(new Date()),
+            estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
           });
 
           router.replace({
@@ -215,7 +218,8 @@ export default function CreateSubtaskRoute() {
           description: description.trim(),
           priority: priority,
           dueDate: dueDate.trim() || formatDate(new Date()),
-        });
+            estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
+          });
 
         router.replace({
           pathname: "/screens/company/task",
@@ -296,6 +300,16 @@ export default function CreateSubtaskRoute() {
                   onPress={() => setShowDueDatePicker(true)}
                 />
               </View>
+            </View>
+
+            <View className="mt-4">
+              <TaskFormField
+                label="Estimated Hours"
+                placeholder="e.g. 5"
+                value={estimatedHours}
+                onChangeText={setEstimatedHours}
+                keyboardType="numeric"
+              />
             </View>
 
             <TouchableOpacity

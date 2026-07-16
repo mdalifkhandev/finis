@@ -59,6 +59,8 @@ export default function CreateTaskRoute() {
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
   const [dueDateValue, setDueDateValue] = useState(new Date());
 
+  const [estimatedHours, setEstimatedHours] = useState('');
+
   const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>([]);
   const [allowSubTaskCreation, setAllowSubTaskCreation] = useState(true);
 
@@ -122,6 +124,7 @@ export default function CreateTaskRoute() {
         description: description.trim(),
         priority: priority.toLowerCase(),
         dueDate: dueDate.trim() || formatDate(new Date()),
+        estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
         allowSubTaskCreation,
         floors: floorsPayload,
       });
@@ -217,6 +220,16 @@ export default function CreateTaskRoute() {
                   onPress={() => setShowDueDatePicker(true)}
                 />
               </View>
+            </View>
+
+            <View className="mt-4">
+              <TaskFormField
+                label="Estimated Hours"
+                placeholder="e.g. 5"
+                value={estimatedHours}
+                onChangeText={setEstimatedHours}
+                keyboardType="numeric"
+              />
             </View>
 
             <TouchableOpacity
