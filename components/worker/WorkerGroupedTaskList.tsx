@@ -12,6 +12,8 @@ export type WorkerGroupedTaskItem = {
   approvalDecision?: string | null;
   dueDate?: string;
   scheduledLabel?: string | null;
+  subTaskCount?: number;
+  action?: string | null;
   project?: { id?: string; name?: string } | null;
   floor?: { id?: string; name?: string; floorNumber?: number } | null;
   room?: { id?: string; name?: string; roomNumber?: number } | null;
@@ -41,6 +43,10 @@ type TaskGroup = {
   key: string;
   title: string;
   subtitle: string;
+  isMainTaskOnly?: boolean;
+  status?: string;
+  action?: string | null;
+  sourceTask?: WorkerGroupedTaskItem;
   floors: Array<{
     id: string;
     name: string;
@@ -112,12 +118,21 @@ function WorkerTaskGroupCard({
   ) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
+  const isMainTaskOnly = group.isMainTaskOnly;
+  const statusStr = normalizeStatus(group.status);
+  const actionLabel = normalizeActionLabel(group.action, group.status);
 
   return (
     <View className="mb-4 overflow-hidden rounded-[14px] border border-[#CBD4DE] bg-white">
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => setExpanded((value) => !value)}
+        onPress={() => {
+          if (isMainTaskOnly && group.sourceTask) {
+            onPressTask(group.sourceTask);
+          } else {
+            setExpanded((value) => !value);
+          }
+        }}
         className="flex-row items-center bg-[#F2F5F7] px-3 py-3"
       >
         <View className="h-9 w-9 items-center justify-center rounded-[8px] bg-[#1E5371]">
@@ -129,14 +144,44 @@ function WorkerTaskGroupCard({
             {group.subtitle}
           </Text>
         </View>
-        <Ionicons
-          name={expanded ? "chevron-up" : "chevron-down"}
-          size={18}
-          color="#667085"
-        />
+        
+        {isMainTaskOnly ? (
+          <View className="flex-row items-center">
+            <View className="mr-3 rounded-[4px] px-2 py-1" style={{ backgroundColor: STATUS_STYLE[statusStr]?.bg || STATUS_STYLE.pending.bg }}>
+              <Text className="text-[8px] font-bold uppercase" style={{ color: STATUS_STYLE[statusStr]?.text || STATUS_STYLE.pending.text }}>
+                {STATUS_STYLE[statusStr]?.label || "PENDING"}
+              </Text>
+            </View>
+            <View
+              className={`items-center justify-center rounded-[5px] px-3 py-1.5 ${
+                actionLabel === "Review Task"
+                  ? "bg-[#6D28D9]"
+                  : actionLabel === "Continue"
+                    ? "bg-[#8A5205]"
+                  : actionLabel === "View"
+                    ? "bg-[#E3EBEF]"
+                    : "bg-[#EEF1F4]"
+              }`}
+            >
+              <Text className={`text-[10px] font-semibold ${
+                actionLabel === "Continue" || actionLabel === "Review Task"
+                  ? "text-white"
+                  : "text-[#40505F]"
+              }`}>
+                {actionLabel}
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <Ionicons
+            name={expanded ? "chevron-up" : "chevron-down"}
+            size={18}
+            color="#667085"
+          />
+        )}
       </TouchableOpacity>
 
-      {expanded ? (
+      {expanded && !isMainTaskOnly ? (
         <View className="px-3 pb-3 pt-2">
           {group.floors.map((floor, floorIndex) => {
             return (
@@ -281,12 +326,18 @@ export default function WorkerGroupedTaskList({
     tasks.forEach((task) => {
       const normalizedTitle = normalizeTaskTitle(task);
       const key = `${task.project?.id ?? "project"}:${normalizedTitle.toLowerCase()}`;
+      const isMainTaskOnly = task.subTaskCount === 0;
+
       if (task.floors?.length) {
         groupMap.set(key, {
           key,
           title: normalizedTitle,
           subtitle: `Scheduled: ${task.scheduledLabel || task.project?.name || "Project"}`,
-          floors: task.floors.map((floor) => ({
+          isMainTaskOnly,
+          status: task.status,
+          action: task.action,
+          sourceTask: task,
+          floors: isMainTaskOnly ? [] : task.floors.map((floor) => ({
             id: floor.id,
             name: floor.name,
             units: floor.units.map((unit) => ({
@@ -294,13 +345,13 @@ export default function WorkerGroupedTaskList({
               name: `Unit ${unit.name}`,
               status: unit.status,
               canCreateSubTask: unit.canCreateSubTask,
-            subTasks: (unit.subTasks ?? []).map((subTask) => ({
-              id: subTask.id,
-              title: subTask.title?.trim() || "Sub Task",
-              status: subTask.status,
-              approvalDecision: subTask.approvalDecision ?? null,
-              action: subTask.action,
-            })),
+              subTasks: (unit.subTasks ?? []).map((subTask) => ({
+                id: subTask.id,
+                title: subTask.title?.trim() || "Sub Task",
+                status: subTask.status,
+                approvalDecision: subTask.approvalDecision ?? null,
+                action: subTask.action,
+              })),
               sourceTask: task,
             })),
           })),
