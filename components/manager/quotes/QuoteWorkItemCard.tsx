@@ -82,6 +82,8 @@ export default function QuoteWorkItemCard({
     onSelectUnit(unitOptions[nextIndex].unit);
   };
 
+  console.log(item);
+  
   return (
     <View className="rounded-[16px] border border-[#E6EBF1] bg-white px-4 py-4 shadow-sm">
       <View className="mb-4 flex-row items-start justify-between gap-3">

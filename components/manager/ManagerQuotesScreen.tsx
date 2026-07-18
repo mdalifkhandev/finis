@@ -168,7 +168,12 @@ export default function ManagerQuotesScreen() {
 
   useEffect(() => {
     if (step !== 2) return;
-    setWorkGroups(backendWorkGroups);
+    setWorkGroups((prev) => {
+      if (prev.length === 0 && backendWorkGroups.length > 0) {
+        return backendWorkGroups;
+      }
+      return prev;
+    });
   }, [backendWorkGroups, step]);
 
   const { subtotal, itemsSelected } = useMemo(
@@ -290,7 +295,7 @@ Please find the attached quote PDF.`,
       name: customTitle.trim(),
       measurementType: customMeasurementType,
       quantity: nextQuantity,
-      unitPrice: nextUnitPrice,
+      unitCost: nextUnitPrice,
       notes: "",
     })
       .then((createdQuote) => {
@@ -307,11 +312,11 @@ Please find the attached quote PDF.`,
             current,
             customCategoryId,
             selectedCategory?.name ?? "Custom Items",
-            createdQuote.id,
-            createdQuote.title,
-            String(createdQuote.quantity),
-            createdQuote.unit ?? measurementLabel,
-            String(createdQuote.unitPrice),
+            createdQuote.quote.id,
+            createdQuote.quote.title,
+            String(createdQuote.quote.quantity),
+            createdQuote.quote.unit ?? measurementLabel,
+            String(createdQuote.quote.unitPrice),
           ),
         );
         void queryClient.fetchQuery({
@@ -354,11 +359,10 @@ Please find the attached quote PDF.`,
   const handleDeleteItem = (groupId: string, itemId: string) => {
     console.log("Deleting quote item:", { groupId, itemId });
 
-    // Check if itemId is a real database ID (UUID format) or a generated fake ID
-    // Fake IDs are in format: "category-id-index" (contains hyphen and ends with number)
-    const isRealDatabaseId = !itemId.includes("-") || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(itemId);
+    const currentGroup = workGroups.find((g) => g.id === groupId);
+    const currentItem = currentGroup?.items.find((i) => i.id === itemId);
 
-    if (isRealDatabaseId) {
+    if (currentItem?.isCustom) {
       // Real database ID - call backend API
       deleteManagerQuote(itemId)
         .then(() => {
@@ -401,37 +405,54 @@ Please find the attached quote PDF.`,
     const nextUnitPrice = Number(customUnitPrice) || 0;
 
     if (isEditMode && editItemId) {
-      updateManagerQuote(editItemId, {
-        title: customTitle,
-        quantity: nextQuantity,
-        unit: customMeasurementType,
-        unitPrice: nextUnitPrice,
-        isCustom: true,
-      })
-        .then((updatedQuote) => {
-          setWorkGroups((current) =>
-            updateQuoteWorkItemDetails(current, editGroupId, editItemId, {
-              title: updatedQuote.title,
-              quantity: String(updatedQuote.quantity),
-              unit: updatedQuote.unit ?? "pcs",
-              unitPrice: String(updatedQuote.unitPrice),
-            }),
-          );
-          void queryClient.fetchQuery({
-            queryKey: ["manager", "quotes", projectType, propertyType, unitType],
-            queryFn: () =>
-              getManagerQuotes({
-                projectType,
-                propertyType,
-                unitType,
-              }),
-          });
-          setCustomItemModalVisible(false);
-          setIsEditMode(false);
+      const currentGroup = workGroups.find((g) => g.id === editGroupId);
+      const currentItem = currentGroup?.items.find((i) => i.id === editItemId);
+
+      if (currentItem?.isCustom) {
+        updateManagerQuote(editItemId, {
+          title: customTitle,
+          quantity: nextQuantity,
+          unit: customMeasurementType,
+          unitPrice: nextUnitPrice,
+          isCustom: true,
         })
-        .catch(() => {
-          toast.error("Unable to save the quote update right now.");
-        });
+          .then((updatedQuote) => {
+            setWorkGroups((current) =>
+              updateQuoteWorkItemDetails(current, editGroupId, editItemId, {
+                title: updatedQuote.title,
+                quantity: String(updatedQuote.quantity),
+                unit: updatedQuote.unit ?? "pcs",
+                unitPrice: String(updatedQuote.unitPrice),
+              }),
+            );
+            void queryClient.fetchQuery({
+              queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+              queryFn: () =>
+                getManagerQuotes({
+                  projectType,
+                  propertyType,
+                  unitType,
+                }),
+            });
+            setCustomItemModalVisible(false);
+            setIsEditMode(false);
+          })
+          .catch(() => {
+            toast.error("Unable to save the quote update right now.");
+          });
+      } else {
+        // Catalog item edit - just update local state
+        setWorkGroups((current) =>
+          updateQuoteWorkItemDetails(current, editGroupId, editItemId, {
+            title: customTitle,
+            quantity: String(nextQuantity),
+            unit: customMeasurementType,
+            unitPrice: String(nextUnitPrice),
+          }),
+        );
+        setCustomItemModalVisible(false);
+        setIsEditMode(false);
+      }
     }
   };
 
