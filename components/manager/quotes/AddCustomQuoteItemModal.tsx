@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Pressable,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -102,75 +103,80 @@ function SelectorSheet({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <Pressable className="flex-1 justify-end bg-black/40" onPress={onClose}>
-        <Pressable
-          className="max-h-[72%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
-          onPress={(event) => event.stopPropagation()}
-        >
-          <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
-          <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-[18px] font-bold text-[#141A22]">Select {title}</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color="#697487" />
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        behavior="padding"
+        className="flex-1"
+      >
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={onClose}>
+          <Pressable
+            className="max-h-[72%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            onPress={(event) => event.stopPropagation()}
+          >
+            <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-[18px] font-bold text-[#141A22]">Select {title}</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Ionicons name="close" size={24} color="#697487" />
+              </TouchableOpacity>
+            </View>
 
-          <TextInput
-            value={safeSearchValue}
-            onChangeText={onChangeSearch}
-            placeholder={searchPlaceholder}
-            placeholderTextColor="#A0AEC0"
-            className="mb-4 h-[52px] rounded-[12px] border border-[#D8DEE5] bg-[#F7F9FB] px-4 text-[16px] text-[#141A22]"
-          />
+            <TextInput
+              value={safeSearchValue}
+              onChangeText={onChangeSearch}
+              placeholder={searchPlaceholder}
+              placeholderTextColor="#A0AEC0"
+              className="mb-4 h-[52px] rounded-[12px] border border-[#D8DEE5] bg-[#F7F9FB] px-4 text-[16px] text-[#141A22]"
+            />
 
-          {canUseCustomValue ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() =>
-                onSelect({
-                  id: `custom-${safeSearchValue.trim().toLowerCase()}`,
-                  name: safeSearchValue.trim(),
-                  value: safeSearchValue.trim(),
-                })
+            {canUseCustomValue ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() =>
+                  onSelect({
+                    id: `custom-${safeSearchValue.trim().toLowerCase()}`,
+                    name: safeSearchValue.trim(),
+                    value: safeSearchValue.trim(),
+                  })
+                }
+                className="mb-3 rounded-[12px] border border-[#1F5577] bg-[#EEF6FB] px-4 py-3"
+              >
+                <Text className="text-[14px] font-medium text-[#1F5577]">
+                  {customValueLabel ?? `Use "${safeSearchValue.trim()}"`}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            <FlatList
+              data={filteredOptions}
+              keyExtractor={(item, index) => `${title}-${index}-${item.id}-${item.value ?? item.name}`}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => {
+                const optionValue = item.value ?? item.name;
+                const selected = selectedValue === optionValue || selectedValue === item.id;
+                return (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => onSelect(item)}
+                    className="mb-2 flex-row items-center justify-between rounded-[12px] border border-[#E3E8EE] bg-[#F8FAFC] px-4 py-3"
+                  >
+                    <Text className={`text-[15px] ${selected ? "font-semibold text-[#1F5577]" : "text-[#2B2B2B]"}`}>
+                      {item.name ?? item.value ?? "Unnamed"}
+                    </Text>
+                    {selected ? (
+                      <Ionicons name="checkmark-circle" size={20} color="#1F5577" />
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={
+                <View className="mt-8 items-center">
+                  <Text className="text-[14px] text-[#697487]">No options found</Text>
+                </View>
               }
-              className="mb-3 rounded-[12px] border border-[#1F5577] bg-[#EEF6FB] px-4 py-3"
-            >
-              <Text className="text-[14px] font-medium text-[#1F5577]">
-                {customValueLabel ?? `Use "${safeSearchValue.trim()}"`}
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-
-          <FlatList
-            data={filteredOptions}
-            keyExtractor={(item, index) => `${title}-${index}-${item.id}-${item.value ?? item.name}`}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => {
-              const optionValue = item.value ?? item.name;
-              const selected = selectedValue === optionValue || selectedValue === item.id;
-              return (
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => onSelect(item)}
-                  className="mb-2 flex-row items-center justify-between rounded-[12px] border border-[#E3E8EE] bg-[#F8FAFC] px-4 py-3"
-                >
-                  <Text className={`text-[15px] ${selected ? "font-semibold text-[#1F5577]" : "text-[#2B2B2B]"}`}>
-                    {item.name ?? item.value ?? "Unnamed"}
-                  </Text>
-                  {selected ? (
-                    <Ionicons name="checkmark-circle" size={20} color="#1F5577" />
-                  ) : null}
-                </TouchableOpacity>
-              );
-            }}
-            ListEmptyComponent={
-              <View className="mt-8 items-center">
-                <Text className="text-[14px] text-[#697487]">No options found</Text>
-              </View>
-            }
-          />
+            />
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -263,11 +269,14 @@ export default function AddCustomQuoteItemModal({
   return (
     <>
       <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-        <Pressable
-          className="flex-1 items-center justify-center bg-black/30 px-6"
-          onPress={onClose}
+        <KeyboardAvoidingView
+          behavior="padding"
+          className="flex-1"
         >
-          <KeyboardAvoidingView behavior="padding" className="w-full">
+          <Pressable
+            className="flex-1 items-center justify-center bg-black/30 px-6"
+            onPress={onClose}
+          >
             <Pressable
               onPress={(event) => event.stopPropagation()}
               className="w-full max-w-[340px] max-h-[100%] self-center rounded-[16px] bg-white p-4 shadow-lg"
@@ -365,8 +374,8 @@ export default function AddCustomQuoteItemModal({
                 </View>
               </ScrollView>
             </Pressable>
-          </KeyboardAvoidingView>
-        </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       <SelectorSheet
