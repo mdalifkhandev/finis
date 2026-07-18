@@ -66,12 +66,16 @@ export default function WorkerTasks() {
                 normalizedStatus === "completed" ||
                 (normalizedStatus === "completed" && normalizedApproval === "pending");
 
+              // Determine task type: if taskType is provided, use it; otherwise default to "main"
+              // since getMyTasks returns main tasks
+              const resolvedTaskType = task.taskType ?? "main";
+
               if (shouldOpenDetails) {
                 router.push({
                   pathname: "/screens/worker/taskdetails",
                   params: {
                     id: task.id,
-                    taskType: task.taskType ?? "subtask",
+                    taskType: resolvedTaskType,
                   },
                 });
                 return;
@@ -81,7 +85,7 @@ export default function WorkerTasks() {
                 pathname: "/screens/worker/viewtask",
                 params: {
                   id: task.id,
-                  taskType: task.taskType ?? "subtask",
+                  taskType: resolvedTaskType,
                   taskTitle: task.title || "",
                   taskDescription: task.description || "",
                   projectName: task.project?.name || "",
