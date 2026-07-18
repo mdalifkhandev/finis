@@ -441,11 +441,12 @@ function PayrollWorkerCard({ worker }: { worker: PayrollWorker }) {
 }
 
 export default function ReportResultScreen() {
-  const { type, frequency, startDate, endDate } = useLocalSearchParams<{
+  const { type, frequency, startDate, endDate, projectId } = useLocalSearchParams<{
     type?: string;
     frequency?: string;
     startDate?: string;
     endDate?: string;
+    projectId?: string;
   }>();
 
   const reportType = typeof type === "string" ? type : "payroll";
@@ -455,6 +456,7 @@ export default function ReportResultScreen() {
     typeof startDate === "string" ? startDate : new Date().toISOString().slice(0, 10);
   const resolvedEndDate =
     typeof endDate === "string" ? endDate : new Date().toISOString().slice(0, 10);
+  const resolvedProjectId = typeof projectId === "string" ? projectId : undefined;
   const title = TYPE_TITLES[reportType] ?? "Report";
   const reportQuery = useAdminGeneratedReportQuery({
     type: reportType as
@@ -470,6 +472,7 @@ export default function ReportResultScreen() {
       | "yearly",
     startDate: resolvedStartDate,
     endDate: resolvedEndDate,
+    ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
   });
 
   const report = reportQuery.data;

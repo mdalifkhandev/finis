@@ -32,6 +32,7 @@ export function useAdminGeneratedReportQuery(
       params?.frequency,
       params?.startDate,
       params?.endDate,
+      params?.projectId,
       token,
     ],
     queryFn: () => getAdminGeneratedReport(params as AdminGenerateReportParams),
