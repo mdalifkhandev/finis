@@ -40,13 +40,13 @@ export default function EditQuoteItemModal({
 }: EditQuoteItemModalProps) {
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-      <Pressable
-        className="flex-1 items-center justify-center bg-black/30 px-6"
-        onPress={onClose}
+      <KeyboardAvoidingView
+        behavior="padding"
+        className="flex-1"
       >
-        <KeyboardAvoidingView
-          behavior="padding"
-          className="w-full"
+        <Pressable
+          className="flex-1 items-center justify-center bg-black/30 px-6"
+          onPress={onClose}
         >
           <Pressable
             onPress={(event) => event.stopPropagation()}
@@ -135,8 +135,8 @@ export default function EditQuoteItemModal({
               </View>
             </ScrollView>
           </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
