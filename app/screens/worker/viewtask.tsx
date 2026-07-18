@@ -44,7 +44,15 @@ export default function WorkerViewTaskRoute() {
   const task = resolvedTaskType === "main" ? mainTaskQuery.data : subTaskQuery.data;
   const isLoading = resolvedTaskType === "main" ? mainTaskQuery.isLoading : subTaskQuery.isLoading;
   const isError = resolvedTaskType === "main" ? mainTaskQuery.isError : subTaskQuery.isError;
+  const error = resolvedTaskType === "main" ? mainTaskQuery.error : subTaskQuery.error;
   const startTaskMutation = useStartWorkerTaskMutation();
+
+  // Log error for debugging
+  if (isError && error) {
+    console.log("Task load error:", error);
+    console.log("Task ID:", id);
+    console.log("Task Type:", resolvedTaskType);
+  }
 
   const resolvedTaskTitle = task?.title || taskTitle || "Company";
   const resolvedProjectName = task?.project?.name || projectName || "N/A";
