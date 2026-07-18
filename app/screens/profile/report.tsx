@@ -21,6 +21,8 @@ import { toast } from "sonner-native";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useExportAdminReportsMutation } from "@/hooks/admin/reports";
 import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
+import { useQuery } from "@tanstack/react-query";
+import { getAdminProjectNames } from "@/api/admin/admin.api";
 
 type ReportType = {
   key: string;
@@ -81,6 +83,14 @@ export default function ReportScreen() {
   const [selectedType, setSelectedType] = useState<string>("payroll");
   const [frequency, setFrequency] = useState<string>("daily");
   const [frequencyOpen, setFrequencyOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<string>("all");
+  const [projectOpen, setProjectOpen] = useState(false);
+
+  const { data: projects = [] } = useQuery({
+    queryKey: ["admin", "project-names"],
+    queryFn: getAdminProjectNames,
+    enabled: isAdmin,
+  });
 
   const now = new Date();
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -104,7 +114,8 @@ export default function ReportScreen() {
   };
 
   const handleExportAll = async () => {
-    if (!ensureStartDate()) {
+    if (!startDate) {
+      toast.error("Please select start date");
       return;
     }
 
@@ -116,6 +127,10 @@ export default function ReportScreen() {
         | "expense",
       startDate: startDate.toISOString().slice(0, 10),
       endDate: endDate.toISOString().slice(0, 10),
+      ...(selectedProject !== "all" &&
+      (selectedType === "project_invoices" || selectedType === "expense")
+        ? { projectId: selectedProject }
+        : {}),
     });
 
     setCurrentPreviewDocument({
@@ -297,6 +312,32 @@ export default function ReportScreen() {
             Report Parameters
           </Text>
 
+          {/* Project (only for invoices or expenses) */}
+          {(selectedType === "project_invoices" || selectedType === "expense") && (
+            <View>
+              <Text className="mb-2 mt-4 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
+                PROJECT
+              </Text>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => setProjectOpen(true)}
+                className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-4"
+              >
+                <Text
+                  className="text-[15px] text-[#334155]"
+                  numberOfLines={1}
+                  style={{ flex: 1, marginRight: 8 }}
+                >
+                  {selectedProject === "all"
+                    ? "All Projects"
+                    : projects.find((p) => p.id === selectedProject)?.name ??
+                      "Select Project"}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Period Frequency */}
           <Text className="mb-2 mt-4 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
             PERIOD FREQUENCY
@@ -314,7 +355,7 @@ export default function ReportScreen() {
 
           {/* Dates */}
           <View className="mt-4 flex-row gap-3">
-            <View className="flex-1">
+            <View className="flex-1 overflow-hidden">
               <Text className="mb-2 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
                 START DATE
               </Text>
@@ -323,9 +364,12 @@ export default function ReportScreen() {
                 onPress={() => setPickerTarget("start")}
                 className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-3"
               >
-                <View className="flex-row items-center">
+                <View className="flex-row items-center flex-1 mr-2">
                   <Ionicons name="calendar-outline" size={16} color="#1D5478" />
-                  <Text className="ml-2 text-[13px] text-[#334155]">
+                  <Text 
+                    className="ml-2 text-[13px] text-[#334155] flex-1"
+                    numberOfLines={1}
+                  >
                     {startDate ? formatDate(startDate) : "Select start date"}
                   </Text>
                 </View>
@@ -333,7 +377,7 @@ export default function ReportScreen() {
               </TouchableOpacity>
             </View>
 
-            <View className="flex-1">
+            <View className="flex-1 overflow-hidden">
               <Text className="mb-2 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
                 END DATE
               </Text>
@@ -342,9 +386,12 @@ export default function ReportScreen() {
                 onPress={() => setPickerTarget("end")}
                 className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-3"
               >
-                <View className="flex-row items-center">
+                <View className="flex-row items-center flex-1 mr-2">
                   <Ionicons name="calendar-outline" size={16} color="#1D5478" />
-                  <Text className="ml-2 text-[13px] text-[#334155]">
+                  <Text 
+                    className="ml-2 text-[13px] text-[#334155] flex-1"
+                    numberOfLines={1}
+                  >
                     {formatDate(endDate)}
                   </Text>
                 </View>
@@ -357,18 +404,28 @@ export default function ReportScreen() {
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => {
-              if (!ensureStartDate()) {
+              if (!startDate) {
+                toast.error("Please select start date");
                 return;
+              }
+
+              const paramsToPass: any = {
+                type: selectedType,
+                frequency,
+                startDate: startDate.toISOString().slice(0, 10),
+                endDate: endDate.toISOString().slice(0, 10),
+              };
+
+              if (
+                selectedProject !== "all" &&
+                (selectedType === "project_invoices" || selectedType === "expense")
+              ) {
+                paramsToPass.projectId = selectedProject;
               }
 
               router.push({
                 pathname: "/screens/profile/reportresult",
-                params: {
-                  type: selectedType,
-                  frequency,
-                  startDate: startDate.toISOString().slice(0, 10),
-                  endDate: endDate.toISOString().slice(0, 10),
-                },
+                params: paramsToPass,
               });
             }}
             className="mt-4 h-[48px] flex-row items-center justify-center rounded-[12px] bg-[#1D5478]"
@@ -429,6 +486,83 @@ export default function ReportScreen() {
                 </TouchableOpacity>
               );
             })}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Project dropdown modal */}
+      <Modal
+        visible={projectOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setProjectOpen(false)}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/30"
+          onPress={() => setProjectOpen(false)}
+        >
+          <Pressable
+            className="rounded-t-[24px] bg-white px-5 pb-8 pt-4 max-h-[70%]"
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View className="mb-2 items-center">
+              <View className="h-1 w-10 rounded-full bg-[#E2E8F0]" />
+            </View>
+            <Text className="mb-4 text-[16px] font-semibold text-[#111827]">
+              Select Project
+            </Text>
+            
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => {
+                  setSelectedProject("all");
+                  setProjectOpen(false);
+                }}
+                className="flex-row items-center border-b border-[#F1F5F9] py-4"
+              >
+                <Text
+                  className={`text-[15px] flex-1 ${
+                    selectedProject === "all"
+                      ? "font-semibold text-[#1D5478]"
+                      : "text-[#334155]"
+                  }`}
+                >
+                  All Projects
+                </Text>
+                {selectedProject === "all" && (
+                  <Ionicons name="checkmark" size={20} color="#1D5478" />
+                )}
+              </TouchableOpacity>
+
+              {projects.map((project) => {
+                const active = project.id === selectedProject;
+                return (
+                  <TouchableOpacity
+                    key={project.id}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      setSelectedProject(project.id);
+                      setProjectOpen(false);
+                    }}
+                    className="flex-row items-center border-b border-[#F1F5F9] py-4"
+                  >
+                    <Text
+                      className={`text-[15px] flex-1 ${
+                        active
+                          ? "font-semibold text-[#1D5478]"
+                          : "text-[#334155]"
+                      }`}
+                    >
+                      {project.name}
+                    </Text>
+                    {active && (
+                      <Ionicons name="checkmark" size={20} color="#1D5478" />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>

@@ -21,6 +21,7 @@ export type AdminGenerateReportParams = {
   frequency: AdminReportFrequency;
   startDate: string;
   endDate: string;
+  projectId?: string;
 };
 
 export type AdminPayrollReport = {
@@ -224,6 +225,7 @@ export type AdminExportReportsParams = {
   startDate?: string;
   endDate?: string;
   type?: AdminReportType;
+  projectId?: string;
 };
 
 export type AdminExportedReport = {
@@ -244,6 +246,7 @@ export async function downloadAdminReportsExport(
   if (params?.startDate) query.append("startDate", params.startDate);
   if (params?.endDate) query.append("endDate", params.endDate);
   if (params?.type) query.append("type", params.type);
+  if (params?.projectId) query.append("projectId", params.projectId);
 
   const queryString = query.toString();
   const url = `${API_BASE_URL}/admin/reports/export${
