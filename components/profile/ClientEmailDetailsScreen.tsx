@@ -55,39 +55,17 @@ export default function ClientEmailDetailsScreen() {
   });
 
   const conversation = conversationQuery.data;
-  const latestMessage = useMemo(
-    () => conversation?.messages?.[conversation.messages.length - 1],
-    [conversation],
-  );
-  const previewMessage = useMemo(
-    () =>
-      [...(conversation?.messages ?? [])]
-        .reverse()
-        .find((message) => (message.attachments?.length ?? 0) > 0) ?? null,
-    [conversation],
-  );
-  const email = useMemo(() => {
-    const bodyLines = (latestMessage?.bodyText || "")
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean);
-    const firstAttachment = previewMessage?.attachments?.[0];
-
+  const messages = conversation?.messages ?? [];
+  const firstMessage = messages[0];
+  const emailInfo = useMemo(() => {
     return {
-      id: conversation?.id || resolvedId || "",
       name: conversation?.clientName || conversation?.clientEmail || "",
       email: conversation?.clientEmail || "",
-      date: formatDate(latestMessage?.createdAt || conversation?.createdAt),
-      time: formatTime(latestMessage?.createdAt || conversation?.createdAt),
-      subject: latestMessage?.subject || "",
-      body: bodyLines,
-      attachmentName: firstAttachment?.name || "No attachment",
-      attachmentSize: firstAttachment?.size || "",
-      attachmentCount: `${previewMessage?.attachments?.length || 0} Files`,
-      attachmentUrl: firstAttachment?.url || "",
-      starred: conversation?.isStarred || false,
+      date: formatDate(conversation?.createdAt),
+      time: formatTime(conversation?.createdAt),
+      subject: firstMessage?.subject || "No Subject",
     };
-  }, [conversation, latestMessage, previewMessage, resolvedId]);
+  }, [conversation, firstMessage]);
 
   const handleAccept = () => {
     statusMutation.mutate("active");
@@ -97,6 +75,12 @@ export default function ClientEmailDetailsScreen() {
     statusMutation.mutate("closed");
   };
 
+  const parseBody = (text?: string | null) =>
+    (text || "")
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
   return (
     <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-[#F7F8FA]">
       <ProfileHeaderBar title="Details" onBack={() => router.back()} />
@@ -105,87 +89,128 @@ export default function ClientEmailDetailsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
       >
-        <View className="rounded-[18px] border border-[#E8EDF2] bg-white p-4 shadow-sm">
-          <View>
-            <View className="flex-row items-start justify-between">
-              <View className="flex-1 pr-3">
-                <Text className="text-[18px] font-semibold text-[#1F2937]">
-                  {email.name}
-                </Text>
-                <Text className="mt-1 text-[13px] text-[#64748B]">{email.email}</Text>
-              </View>
+        <View className="mb-4 rounded-[18px] border border-[#E8EDF2] bg-white p-4 shadow-sm">
+          <View className="flex-row items-start justify-between">
+            <View className="flex-1 pr-3">
+              <Text className="text-[18px] font-semibold text-[#1F2937]">
+                {emailInfo.name}
+              </Text>
+              <Text className="mt-1 text-[13px] text-[#64748B]">{emailInfo.email}</Text>
+            </View>
 
-              <View className="items-end">
-                <Text className="text-[13px] text-[#475467]">{email.date}</Text>
-                <Text className="mt-1 text-[13px] font-medium text-[#1F2937]">
-                  {email.time}
-                </Text>
-              </View>
+            <View className="items-end">
+              <Text className="text-[13px] text-[#475467]">{emailInfo.date}</Text>
+              <Text className="mt-1 text-[13px] font-medium text-[#1F2937]">
+                {emailInfo.time}
+              </Text>
             </View>
           </View>
 
-          <View className="mt-5 border-t border-[#EEF2F6] pt-5">
-            <Text className="text-[18px] font-semibold leading-[28px] text-[#1F2937]">
-              {email.subject}
+          <View className="mt-4 flex-row items-center justify-between border-t border-[#EEF2F6] pt-4">
+            <Text className="text-[16px] font-semibold text-[#1F2937]">
+              {emailInfo.subject}
             </Text>
-
-            <View className="mt-4 gap-4">
-              {email.body.map((line, index) => (
-                <Text key={`${email.id}-${index}`} className="text-[15px] leading-[26px] text-[#4B5563]">
-                  {line}
-                </Text>
-              ))}
-            </View>
-          </View>
-
-        </View>
-
-        <View className="mt-5">
-          <View className="mb-3 flex-row items-center justify-between">
-            <Text className="text-[18px] font-semibold text-[#1F2937]">Attachments</Text>
-            <View className="rounded-full bg-[#E8F1FF] px-3 py-1">
-              <Text className="text-[12px] font-medium text-[#2F6FED]">{email.attachmentCount}</Text>
-            </View>
-          </View>
-
-          <View className="rounded-[16px] border border-[#E8EDF2] bg-white p-4">
-            <View className="flex-row items-center">
-              <View className="h-12 w-12 items-center justify-center rounded-[12px] bg-[#FDECEC]">
-                <Ionicons name="document-attach-outline" size={24} color="#D92D20" />
-              </View>
-
-              <View className="ml-3 flex-1">
-                <Text className="text-[15px] font-medium text-[#1F2937]">{email.attachmentName}</Text>
-                <Text className="mt-1 text-[13px] text-[#667085]">{email.attachmentSize}</Text>
-              </View>
-
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => setIsMenuVisible(true)}
-                className="h-9 w-9 items-center justify-center"
-              >
-                <Ionicons name="ellipsis-vertical" size={22} color="#667085" />
-              </TouchableOpacity>
-            </View>
-
             <TouchableOpacity
               activeOpacity={0.85}
-              disabled={!email.attachmentUrl}
-              onPress={() => {
-                if (!email.attachmentUrl) return;
-                setCurrentPreviewDocument({
-                  id: email.id,
-                  name: email.attachmentName,
-                  uri: email.attachmentUrl,
-                  mimeType: "application/pdf",
-                });
-                router.push("/screens/company/documentpreview");
-              }}
-              className="mt-4 h-[46px] items-center justify-center rounded-[12px] bg-[#1D5478]"
+              onPress={() => setIsMenuVisible(true)}
+              className="h-8 w-8 items-center justify-center"
             >
-              <Text className="text-[15px] font-medium text-white">View PDF</Text>
+              <Ionicons name="ellipsis-vertical" size={20} color="#667085" />
             </TouchableOpacity>
           </View>
+        </View>
+
+        <View className="flex-1 gap-4">
+          {messages.map((message) => {
+            const isSent = message.direction === "sent";
+            const bodyLines = parseBody(message.bodyText);
+            const attachments = message.attachments ?? [];
+
+            return (
+              <View
+                key={message.id}
+                className={`flex-row ${isSent ? "justify-end" : "justify-start"}`}
+              >
+                <View
+                  className={`max-w-[85%] rounded-[16px] px-4 py-3 ${
+                    isSent
+                      ? "rounded-tr-sm bg-[#1D5478]"
+                      : "rounded-tl-sm border border-[#E8EDF2] bg-white shadow-sm"
+                  }`}
+                >
+                  <View className="gap-2">
+                    {bodyLines.map((line, idx) => (
+                      <Text
+                        key={idx}
+                        className={`text-[15px] leading-[22px] ${
+                          isSent ? "text-white" : "text-[#4B5563]"
+                        }`}
+                      >
+                        {line}
+                      </Text>
+                    ))}
+                  </View>
+
+                  {attachments.length > 0 && (
+                    <View className="mt-3 gap-2 border-t border-[#ffffff20] pt-3">
+                      {attachments.map((att, attIdx) => (
+                        <TouchableOpacity
+                          key={attIdx}
+                          activeOpacity={0.85}
+                          onPress={() => {
+                            if (!att.url) return;
+                            setCurrentPreviewDocument({
+                              id: `${message.id}-${attIdx}`,
+                              name: att.name || "Attachment",
+                              uri: att.url,
+                              mimeType: "application/pdf",
+                            });
+                            router.push("/screens/company/documentpreview");
+                          }}
+                          className={`flex-row items-center rounded-[10px] p-2.5 ${
+                            isSent ? "bg-[#144261]" : "bg-[#F7F8FA] border border-[#E8EDF2]"
+                          }`}
+                        >
+                          <Ionicons
+                            name="document-attach-outline"
+                            size={18}
+                            color={isSent ? "#93C5FD" : "#64748B"}
+                          />
+                          <View className="ml-2 flex-1">
+                            <Text
+                              className={`text-[13px] font-medium ${
+                                isSent ? "text-white" : "text-[#475467]"
+                              }`}
+                              numberOfLines={1}
+                            >
+                              {att.name || "Attachment"}
+                            </Text>
+                            {att.size && (
+                              <Text
+                                className={`text-[11px] ${
+                                  isSent ? "text-[#93C5FD]" : "text-[#98A2B3]"
+                                }`}
+                              >
+                                {att.size}
+                              </Text>
+                            )}
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+
+                  <Text
+                    className={`mt-2 text-right text-[11px] ${
+                      isSent ? "text-[#93C5FD]" : "text-[#98A2B3]"
+                    }`}
+                  >
+                    {formatTime(message.createdAt)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
 
