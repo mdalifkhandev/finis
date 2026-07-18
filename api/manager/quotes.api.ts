@@ -123,7 +123,7 @@ export type QuickAddQuoteWorkItemPayload = {
   name: string;
   measurementType: string;
   quantity?: number;
-  unitPrice?: number;
+  unitCost?: number;
   notes?: string;
 };
 
@@ -207,7 +207,7 @@ export async function getQuoteWorkItems(params: {
 }
 
 export async function quickAddQuoteWorkItem(payload: QuickAddQuoteWorkItemPayload) {
-  const { data } = await api.post<{ success: boolean; message: string; data: ManagerQuote }>(
+  const { data } = await api.post<{ success: boolean; message: string; data: { workItem: any; quote: ManagerQuote } }>(
     "/manager/quotes/work-items/quick-add",
     payload,
   );
