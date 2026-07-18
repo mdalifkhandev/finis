@@ -46,6 +46,7 @@ type AddCustomQuoteItemModalProps = {
   onSelectWorkItem: (item: WorkItemSuggestion) => void;
   onClose: () => void;
   onAdd: () => void;
+  isEditMode?: boolean;
 };
 
 type SelectorSheetProps = {
@@ -220,6 +221,7 @@ export default function AddCustomQuoteItemModal({
   onSelectWorkItem,
   onClose,
   onAdd,
+  isEditMode = false,
 }: AddCustomQuoteItemModalProps) {
   const [activeSelector, setActiveSelector] = useState<SelectorType | null>(null);
   const [serviceSearch, setServiceSearch] = useState("");
@@ -276,10 +278,12 @@ export default function AddCustomQuoteItemModal({
                 contentContainerStyle={{ paddingBottom: 24 }}
               >
                 <Text className="text-[16px] font-semibold text-[#1F2937]">
-                  Add Custom Item
+                  {isEditMode ? "Edit Item" : "Add Custom Item"}
                 </Text>
                 <Text className="mt-1 text-[13px] leading-5 text-[#66707B]">
-                  Add a manual service if it does not exist in the selected catalog.
+                  {isEditMode
+                    ? "Update the item details using the current values."
+                    : "Add a manual service if it does not exist in the selected catalog."}
                 </Text>
 
                 <SelectorField
@@ -304,15 +308,17 @@ export default function AddCustomQuoteItemModal({
                   />
                 </View>
 
-                <SelectorField
-                  label="Category"
-                  value={selectedCategoryLabel}
-                  placeholder="Select category"
-                  onPress={() => {
-                    setCategorySearch("");
-                    setActiveSelector("category");
-                  }}
-                />
+                {!isEditMode && (
+                  <SelectorField
+                    label="Category"
+                    value={selectedCategoryLabel}
+                    placeholder="Select category"
+                    onPress={() => {
+                      setCategorySearch("");
+                      setActiveSelector("category");
+                    }}
+                  />
+                )}
 
                 <SelectorField
                   label="Unit of Measurement"
@@ -352,7 +358,9 @@ export default function AddCustomQuoteItemModal({
                     onPress={onAdd}
                     className="h-[42px] flex-1 items-center justify-center rounded-[10px] bg-[#1F5577]"
                   >
-                    <Text className="text-[13px] font-medium text-white">Add Item</Text>
+                    <Text className="text-[13px] font-medium text-white">
+                      {isEditMode ? "Save" : "Add Item"}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>

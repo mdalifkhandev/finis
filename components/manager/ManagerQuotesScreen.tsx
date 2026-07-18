@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useEffect } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -22,7 +22,6 @@ import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner-native";
 import AddCustomQuoteItemModal from "./quotes/AddCustomQuoteItemModal";
 import ApplyDiscountModal from "./quotes/ApplyDiscountModal";
-import EditQuoteItemModal from "./quotes/EditQuoteItemModal";
 import QuoteBuilderForm from "./quotes/QuoteBuilderForm";
 import QuoteFinalReviewStep from "./quotes/QuoteFinalReviewStep";
 import {
@@ -81,13 +80,9 @@ export default function ManagerQuotesScreen() {
   const [customCategoryId, setCustomCategoryId] = useState("");
   const [customMeasurementType, setCustomMeasurementType] = useState("");
   const [customUnitPrice, setCustomUnitPrice] = useState("0");
-  const [editItemModalVisible, setEditItemModalVisible] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [editGroupId, setEditGroupId] = useState("");
   const [editItemId, setEditItemId] = useState("");
-  const [editTitle, setEditTitle] = useState("");
-  const [editQuantity, setEditQuantity] = useState("1");
-  const [editUnit, setEditUnit] = useState("pcs");
-  const [editUnitPrice, setEditUnitPrice] = useState("0");
 
   const quoteFilterQuery = useQuery({
     queryKey: ["manager", "quotes", projectType, propertyType, unitType],
@@ -347,59 +342,97 @@ Please find the attached quote PDF.`,
 
     setEditGroupId(groupId);
     setEditItemId(itemId);
-    setEditTitle(currentItem.title);
-    setEditQuantity(currentItem.quantity);
-    setEditUnit(currentItem.selectedUnit);
-    setEditUnitPrice(String(currentItem.selectedUnitPrice));
-    setEditItemModalVisible(true);
+    setCustomTitle(currentItem.title);
+    setCustomQuantity(currentItem.quantity);
+    setCustomMeasurementType(currentItem.selectedUnit);
+    setCustomUnitPrice(String(currentItem.selectedUnitPrice));
+    setCustomCategoryId("");
+    setIsEditMode(true);
+    setCustomItemModalVisible(true);
   };
 
   const handleDeleteItem = (groupId: string, itemId: string) => {
-    setWorkGroups((current) =>
-      deleteQuoteWorkItem(current, groupId, itemId),
-    );
-    toast.success("Quote item removed.");
+    console.log("Deleting quote item:", { groupId, itemId });
+
+    // Check if itemId is a real database ID (UUID format) or a generated fake ID
+    // Fake IDs are in format: "category-id-index" (contains hyphen and ends with number)
+    const isRealDatabaseId = !itemId.includes("-") || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(itemId);
+
+    if (isRealDatabaseId) {
+      // Real database ID - call backend API
+      deleteManagerQuote(itemId)
+        .then(() => {
+          console.log("Quote item deleted successfully from backend:", itemId);
+          setWorkGroups((current) =>
+            deleteQuoteWorkItem(current, groupId, itemId),
+          );
+          void queryClient.fetchQuery({
+            queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+            queryFn: () =>
+              getManagerQuotes({
+                projectType,
+                propertyType,
+                unitType,
+              }),
+          });
+          toast.success("Quote item removed.");
+        })
+        .catch((error) => {
+          console.error("Failed to delete quote item:", error);
+          toast.error("Unable to remove the quote item right now.");
+        });
+    } else {
+      // Fake/generated ID - just remove from local state
+      console.log("Removing catalog item from local state (no backend delete):", itemId);
+      setWorkGroups((current) =>
+        deleteQuoteWorkItem(current, groupId, itemId),
+      );
+      toast.success("Quote item removed.");
+    }
   };
 
   const handleSaveEditItem = () => {
-    if (!editTitle.trim()) {
+    if (!customTitle.trim()) {
       toast.error("Enter a service name for the item.");
       return;
     }
 
-    const nextQuantity = Number(editQuantity) || 0;
-    const nextUnitPrice = Number(editUnitPrice) || 0;
+    const nextQuantity = Number(customQuantity) || 0;
+    const nextUnitPrice = Number(customUnitPrice) || 0;
 
-    updateManagerQuote(editItemId, {
-      title: editTitle,
-      quantity: nextQuantity,
-      unit: editUnit,
-      unitPrice: nextUnitPrice,
-      isCustom: true,
-    })
-      .then((updatedQuote) => {
-        setWorkGroups((current) =>
-          updateQuoteWorkItemDetails(current, editGroupId, editItemId, {
-            title: updatedQuote.title,
-            quantity: String(updatedQuote.quantity),
-            unit: updatedQuote.unit ?? "pcs",
-            unitPrice: String(updatedQuote.unitPrice),
-          }),
-        );
-        void queryClient.fetchQuery({
-          queryKey: ["manager", "quotes", projectType, propertyType, unitType],
-          queryFn: () =>
-            getManagerQuotes({
-              projectType,
-              propertyType,
-              unitType,
-            }),
-        });
-        setEditItemModalVisible(false);
+    if (isEditMode && editItemId) {
+      updateManagerQuote(editItemId, {
+        title: customTitle,
+        quantity: nextQuantity,
+        unit: customMeasurementType,
+        unitPrice: nextUnitPrice,
+        isCustom: true,
       })
-      .catch(() => {
-        toast.error("Unable to save the quote update right now.");
-      });
+        .then((updatedQuote) => {
+          setWorkGroups((current) =>
+            updateQuoteWorkItemDetails(current, editGroupId, editItemId, {
+              title: updatedQuote.title,
+              quantity: String(updatedQuote.quantity),
+              unit: updatedQuote.unit ?? "pcs",
+              unitPrice: String(updatedQuote.unitPrice),
+            }),
+          );
+          void queryClient.fetchQuery({
+            queryKey: ["manager", "quotes", projectType, propertyType, unitType],
+            queryFn: () =>
+              getManagerQuotes({
+                projectType,
+                propertyType,
+                unitType,
+              }),
+          });
+          setCustomItemModalVisible(false);
+          setIsEditMode(false);
+        })
+        .catch(() => {
+          toast.error("Unable to save the quote update right now.");
+        });
+    }
   };
 
   return (
@@ -407,6 +440,14 @@ Please find the attached quote PDF.`,
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={quoteFilterQuery.isRefetching}
+            onRefresh={() => quoteFilterQuery.refetch()}
+            tintColor="#1F5577"
+            colors={["#1F5577"]}
+          />
+        }
       >
         <View className="px-5 pt-5">
           <Text className="text-center text-[18px] font-semibold text-[#2B2B2B]">
@@ -562,22 +603,12 @@ Please find the attached quote PDF.`,
           const nextUnitPrice = Number((item as any).unitCost ?? (item as any).unitPrice ?? 0);
           setCustomUnitPrice(String(nextUnitPrice));
         }}
-        onClose={() => setCustomItemModalVisible(false)}
-        onAdd={handleAddCustomItem}
-      />
-
-      <EditQuoteItemModal
-        visible={editItemModalVisible}
-        title={editTitle}
-        quantity={editQuantity}
-        unit={editUnit}
-        unitPrice={editUnitPrice}
-        onChangeTitle={setEditTitle}
-        onChangeQuantity={setEditQuantity}
-        onChangeUnit={setEditUnit}
-        onChangeUnitPrice={setEditUnitPrice}
-        onClose={() => setEditItemModalVisible(false)}
-        onSave={handleSaveEditItem}
+        onClose={() => {
+          setCustomItemModalVisible(false);
+          setIsEditMode(false);
+        }}
+        onAdd={isEditMode ? handleSaveEditItem : handleAddCustomItem}
+        isEditMode={isEditMode}
       />
     </SafeAreaView>
   );
