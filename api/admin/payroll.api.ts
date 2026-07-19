@@ -279,9 +279,6 @@ export async function getAdminApprovedPayroll(params?: {
   endDate?: string;
   projectId?: string;
 }) {
-  console.log("[AdminApprovedPayrollAPI] request", {
-    input: params,
-  });
 
   const { data } = await api.get<{ success: boolean; message: string; summary: AdminApprovedPayrollResponse["summary"]; records: AdminApprovedPayrollRecord[] }>(
     "/admin/payroll/approved",
@@ -335,10 +332,7 @@ export async function getAdminPayrollOverview(params?: {
     endDate: params?.endDate,
   };
 
-  console.log("[AdminPayrollOverviewAPI] request", {
-    input: params,
-    resolvedParams,
-  });
+
 
   const { data } = await api.get<AdminPayrollOverviewApiResponse>("/admin/payroll/overview", {
     params: resolvedParams,
