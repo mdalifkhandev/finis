@@ -358,9 +358,9 @@ const EditProfileScreen = () => {
               padding: 28,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.1,
-              shadowRadius: 20,
-              elevation: 5,
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+              elevation: 2,
             }}
           >
             <Text

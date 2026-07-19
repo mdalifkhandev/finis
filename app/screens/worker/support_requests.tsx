@@ -146,9 +146,9 @@ export default function SupportRequestsScreen() {
                   borderColor: "#E2E8F0",
                   shadowColor: "#000",
                   shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                  elevation: 5,
+                  shadowOpacity: 0.05,
+                  shadowRadius: 5,
+                  elevation: 2,
                   overflow: "hidden",
                 }}
               >

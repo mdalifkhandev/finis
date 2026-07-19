@@ -55,10 +55,10 @@ export default function RootLayout() {
           borderTopLeftRadius: 22,
           borderTopRightRadius: 22,
           shadowColor: "#0f172a",
-          shadowOpacity: 0.08,
-          shadowRadius: 10,
-          shadowOffset: { width: 0, height: -2 },
-          elevation: 8,
+          shadowOpacity: 0.04,
+          shadowRadius: 6,
+          shadowOffset: { width: 0, height: -1 },
+          elevation: 3,
         },
       }}
     >

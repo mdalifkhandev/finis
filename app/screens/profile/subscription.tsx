@@ -135,10 +135,10 @@ export default function SubscriptionScreen() {
                   className="rounded-[26px] border border-[#1D5478] bg-white px-4 py-4 shadow-sm"
                   style={{
                     shadowColor: "#0F172A",
-                    shadowOpacity: 0.08,
-                    shadowRadius: 18,
+                    shadowOpacity: 0.04,
+                    shadowRadius: 9,
                     shadowOffset: { width: 0, height: 8 },
-                    elevation: 4,
+                    elevation: 2,
                   }}
                 >
                   <View className="flex-row items-center justify-between">
