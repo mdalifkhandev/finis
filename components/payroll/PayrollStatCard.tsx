@@ -13,10 +13,10 @@ export default function PayrollStatCard({ value, label }: PayrollStatCardProps) 
       style={{
         minHeight: 82,
         shadowColor: "#101828",
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
+        shadowOpacity: 0.04,
+        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 1,
       }}
     >
       <Text className="text-[32px] font-semibold text-[#1F5577]" style={{ fontSize: 32 / 2 }}>
