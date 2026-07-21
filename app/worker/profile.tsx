@@ -178,6 +178,42 @@ export default function WorkerProfile() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              onPress={() => router.push("/screens/profile/expenses")}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 36,
+                  height: 36,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name="receipt-outline"
+                  size={24}
+                  color={THEME.colors.textSecondary}
+                />
+              </View>
+              <Text
+                style={{
+                  flex: 1,
+                  marginLeft: 12,
+                  fontSize: 16,
+                  color: "#475569",
+                  fontWeight: "500",
+                }}
+              >
+                Expense
+              </Text>
+              <Feather name="chevron-right" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
               onPress={() => router.push("/screens/worker/payroll")}
               style={{
                 flexDirection: "row",
