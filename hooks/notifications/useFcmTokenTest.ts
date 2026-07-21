@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { useEffect, useRef } from "react";
-import messaging from "@react-native-firebase/messaging";
+import { getMessaging, getToken, onMessage, onTokenRefresh, registerDeviceForRemoteMessages, requestPermission } from "@react-native-firebase/messaging";
 import * as Notifications from "expo-notifications";
 import { saveDeviceToken } from "@/api/notifications/notifications.api";
 import { useAuthStore } from "@/store/auth.store";
@@ -58,15 +58,16 @@ export function useFcmTokenTest() {
 
     async function initFCM() {
       try {
-        await messaging().registerDeviceForRemoteMessages();
+        const messaging = getMessaging();
+        await registerDeviceForRemoteMessages(messaging);
         await requestNotificationPermission();
-        await messaging().requestPermission();
+        await requestPermission(messaging);
 
-        const token = await messaging().getToken();
+        const token = await getToken(messaging);
        
         await persistToken(token);
 
-        unsubscribeTokenRefresh = messaging().onTokenRefresh((nextToken) => {
+        unsubscribeTokenRefresh = onTokenRefresh(messaging, (nextToken) => {
      
           void persistToken(nextToken).then(() => {
             if (authToken) {
@@ -74,7 +75,7 @@ export function useFcmTokenTest() {
           });
         });
 
-        unsubscribeMessage = messaging().onMessage(async (remoteMessage) => {
+        unsubscribeMessage = onMessage(messaging, async (remoteMessage) => {
           const title = remoteMessage.notification?.title ?? "Notification";
           const body = remoteMessage.notification?.body ?? "";
 

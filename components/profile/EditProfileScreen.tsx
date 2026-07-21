@@ -11,7 +11,6 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as ImagePicker from "expo-image-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import ProfileField from "./ProfileField";
 import ProfileHeaderBar from "./ProfileHeaderBar";
@@ -48,6 +47,7 @@ export default function EditProfileScreen() {
   }, [profile]);
 
   const handlePickAvatar = async () => {
+    const ImagePicker = await import("expo-image-picker");
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert("Permission Required", "Allow photo access to change the profile image.");

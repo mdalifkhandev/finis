@@ -2,7 +2,6 @@ import { useChatMessagesQuery } from "@/hooks/chat/chat";
 import { uploadChatFile } from "@/api/chat/chat.api";
 import { useAuthStore } from "@/store/auth.store";
 import { router, useLocalSearchParams } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import React, { useMemo, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -445,6 +444,7 @@ export default function ConversationScreen() {
   const handlePickFromGallery = async () => {
     if (!resolvedThreadId) return;
 
+    const ImagePicker = await import("expo-image-picker");
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (permission.status !== "granted") {
       Alert.alert("Permission needed", "Please allow photo library access.");
@@ -474,6 +474,7 @@ export default function ConversationScreen() {
   const handleOpenCamera = async () => {
     if (!resolvedThreadId) return;
 
+    const ImagePicker = await import("expo-image-picker");
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (permission.status !== "granted") {
       Alert.alert("Permission needed", "Please allow camera access.");

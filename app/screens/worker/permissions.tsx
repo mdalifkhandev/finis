@@ -1,6 +1,5 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
@@ -106,6 +105,7 @@ export default function PermissionsScreen() {
   const loadPermissions = useCallback(async () => {
     setIsLoading(true);
     try {
+      const ImagePicker = await import("expo-image-picker");
       const [locationPermission, notificationPermission, cameraPermission] =
         await Promise.all([
           Location.getForegroundPermissionsAsync(),
@@ -170,6 +170,7 @@ export default function PermissionsScreen() {
       }
 
       if (key === "camera") {
+        const ImagePicker = await import("expo-image-picker");
         const permission = await ImagePicker.requestCameraPermissionsAsync();
         setPermissions((prev) => ({
           ...prev,

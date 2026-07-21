@@ -7,7 +7,6 @@ import {
   useUpdateCompanyMutation,
 } from "@/hooks/company/company";
 import type { CompanyLogoFile } from "@/types/company.types";
-import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -80,6 +79,7 @@ export default function CreateCompanyRoute() {
   }, [companyData]);
 
   const handlePickLogo = async () => {
+    const ImagePicker = await import("expo-image-picker");
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
