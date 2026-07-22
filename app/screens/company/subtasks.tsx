@@ -102,7 +102,7 @@ export default function SubtasksRoute() {
         projectId: projectId,
         title: task.title,
         location: locationLabel,
-        assignee: `Assigned Worker ${task.taskAssignee?.user ? 1 : 0}`,
+        assignee: task.taskAssignee?.user?.fullName || "Unassigned",
         startDate: formatDateLabel(displayDate ?? ""),
         dueDate: formatDateLabel(displayDate ?? ""),
         status: displayStatus,
