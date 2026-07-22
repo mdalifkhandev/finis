@@ -5,11 +5,13 @@ import { Text, TouchableOpacity, View } from "react-native";
 type BackTitleHeaderProps = {
   title: string;
   onBack?: () => void;
+  rightComponent?: React.ReactNode;
 };
 
 export default function BackTitleHeader({
   title,
   onBack,
+  rightComponent,
 }: BackTitleHeaderProps) {
   return (
     <View className="flex-row items-center justify-between px-5 pt-2">
@@ -21,7 +23,13 @@ export default function BackTitleHeader({
         <Ionicons name="chevron-back" size={24} color="#2B2B2B" />
       </TouchableOpacity>
       <Text className="text-[18px] font-semibold text-[#2B2B2B]">{title}</Text>
-      <View className="h-6 w-6" />
+      {rightComponent ? (
+        <View className="items-center justify-center min-w-[24px] min-h-[24px]">
+          {rightComponent}
+        </View>
+      ) : (
+        <View className="h-6 w-6" />
+      )}
     </View>
   );
 }
