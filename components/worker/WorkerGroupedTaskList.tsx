@@ -126,13 +126,7 @@ function WorkerTaskGroupCard({
     <View className="mb-4 overflow-hidden rounded-[14px] border border-[#CBD4DE] bg-white">
       <TouchableOpacity
         activeOpacity={0.85}
-        onPress={() => {
-          if (isMainTaskOnly && group.sourceTask) {
-            onPressTask(group.sourceTask);
-          } else {
-            setExpanded((value) => !value);
-          }
-        }}
+        onPress={() => setExpanded((value) => !value)}
         className="flex-row items-center bg-[#F2F5F7] px-3 py-3"
       >
         <View className="h-9 w-9 items-center justify-center rounded-[8px] bg-[#1E5371]">
@@ -145,43 +139,14 @@ function WorkerTaskGroupCard({
           </Text>
         </View>
         
-        {isMainTaskOnly ? (
-          <View className="flex-row items-center">
-            <View className="mr-3 rounded-[4px] px-2 py-1" style={{ backgroundColor: STATUS_STYLE[statusStr]?.bg || STATUS_STYLE.pending.bg }}>
-              <Text className="text-[8px] font-bold uppercase" style={{ color: STATUS_STYLE[statusStr]?.text || STATUS_STYLE.pending.text }}>
-                {STATUS_STYLE[statusStr]?.label || "PENDING"}
-              </Text>
-            </View>
-            <View
-              className={`items-center justify-center rounded-[5px] px-3 py-1.5 ${
-                actionLabel === "Review Task"
-                  ? "bg-[#6D28D9]"
-                  : actionLabel === "Continue"
-                    ? "bg-[#8A5205]"
-                  : actionLabel === "View"
-                    ? "bg-[#E3EBEF]"
-                    : "bg-[#EEF1F4]"
-              }`}
-            >
-              <Text className={`text-[10px] font-semibold ${
-                actionLabel === "Continue" || actionLabel === "Review Task"
-                  ? "text-white"
-                  : "text-[#40505F]"
-              }`}>
-                {actionLabel}
-              </Text>
-            </View>
-          </View>
-        ) : (
           <Ionicons
             name={expanded ? "chevron-up" : "chevron-down"}
             size={18}
             color="#667085"
           />
-        )}
       </TouchableOpacity>
 
-      {expanded && !isMainTaskOnly ? (
+      {expanded ? (
         <View className="px-3 pb-3 pt-2">
           {group.floors.map((floor, floorIndex) => {
             return (
@@ -337,14 +302,14 @@ export default function WorkerGroupedTaskList({
           status: task.status,
           action: task.action,
           sourceTask: task,
-          floors: isMainTaskOnly ? [] : task.floors.map((floor) => ({
+          floors: task.floors.map((floor) => ({
             id: floor.id,
             name: floor.name,
             units: floor.units.map((unit) => ({
               id: unit.id,
               name: `Unit ${unit.name}`,
               status: unit.status,
-              canCreateSubTask: unit.canCreateSubTask,
+              canCreateSubTask: isMainTaskOnly ? false : unit.canCreateSubTask,
               subTasks: (unit.subTasks ?? []).map((subTask) => ({
                 id: subTask.id,
                 title: subTask.title?.trim() || "Sub Task",
@@ -363,6 +328,10 @@ export default function WorkerGroupedTaskList({
         key,
         title: normalizedTitle,
         subtitle: `Scheduled: ${task.scheduledLabel || task.project?.name || "Project"}`,
+        isMainTaskOnly,
+        status: task.status,
+        action: task.action,
+        sourceTask: task,
         floors: [],
       };
 
@@ -384,7 +353,7 @@ export default function WorkerGroupedTaskList({
           id: unitId,
           name: task.room?.name ? `Unit ${task.room.name}` : "Unit",
           status: task.status,
-          canCreateSubTask: true,
+          canCreateSubTask: isMainTaskOnly ? false : true,
           subTasks: [],
           sourceTask: task,
         };
@@ -417,10 +386,3 @@ export default function WorkerGroupedTaskList({
     </View>
   );
 }
-
-
-
-
-
-
-
