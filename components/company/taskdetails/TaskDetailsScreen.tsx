@@ -50,7 +50,8 @@ type TaskDetailsScreenProps = {
   };
 };
 
-function toStatusBadge(status: TaskStatus | undefined) {
+function toStatusBadge(status: TaskStatus | undefined, approvalDecision?: string | null) {
+  if (approvalDecision === "rejected") return "REVISION";
   if (!status) return "PENDING";
   if (status === "In Progress") return "IN PROGRESS";
   return status.toUpperCase();
@@ -67,14 +68,16 @@ function formatDate(value?: string | null, fallback = "—") {
   return parsed.toLocaleDateString();
 }
 
-function formatSubTaskStatus(status: string) {
+function formatSubTaskStatus(status: string, approvalDecision?: string | null) {
+  if (approvalDecision === "rejected") return "REVISION";
   const normalized = status.toLowerCase();
   if (normalized === "in_progress") return "IN PROGRESS";
   if (normalized === "completed") return "COMPLETED";
   return "PENDING";
 }
 
-function getSubTaskStatusStyle(status: string) {
+function getSubTaskStatusStyle(status: string, approvalDecision?: string | null) {
+  if (approvalDecision === "rejected") return { bg: "#FEE2E2", text: "#991B1B" };
   const normalized = status.toLowerCase();
   if (normalized === "completed") {
     return { bg: "#DDF2E8", text: "#0C8F41" };
@@ -239,7 +242,7 @@ export default function TaskDetailsScreen({
               .filter(Boolean)
               .join(" • ") || "—"
           }
-          statusBadgeText={toStatusBadge(task?.status as TaskStatus)}
+          statusBadgeText={toStatusBadge(task?.status as TaskStatus, task?.approvalDecision)}
         />
         <TaskDetailMetaItem
           icon="person-outline"
@@ -479,7 +482,7 @@ export default function TaskDetailsScreen({
               {isDecisionPending && pendingDecision === "rejected" ? (
                 <ActivityIndicator color="#1E1E1E" />
               ) : (
-                <Text className="text-[16px] font-medium text-[#1E1E1E]">Reject Task</Text>
+                <Text className="text-[16px] font-medium text-[#1E1E1E]">Revision</Text>
               )}
             </TouchableOpacity>
 

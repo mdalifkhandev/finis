@@ -243,7 +243,7 @@ function mapWorkerSubTaskDetail(raw: WorkerTaskDetailResponse) {
     reviewDescription:
       raw.reviewDescription ?? raw.latestReport?.reviewDescription ?? null,
     availableInventory: raw.availableInventory ?? [],
-    inventoryUsed: normalizeInventoryItems(raw.inventoryUsed),
+    inventoryUsed: normalizeInventoryItems(raw.inventoryUsed ?? raw.inventories),
     latestReport,
     reports,
     taskInventories: normalizeInventoryItems(raw.inventoryUsed ?? raw.inventories),

@@ -13,6 +13,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   "IN PROGRESS": { bg: "#DDE8FF", text: "#2051F8" },
   PENDING: { bg: "#EAF1FF", text: "#2051F8" },
   COMPLETED: { bg: "#DDF2E8", text: "#0C8F41" },
+  REVISION: { bg: "#FEE2E2", text: "#991B1B" },
 };
 
 export default function TaskDetailMetaItem({

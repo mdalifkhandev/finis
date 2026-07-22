@@ -74,10 +74,13 @@ const TaskDetailsScreen = () => {
   const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
   const [isTaskCompleted, setIsTaskCompleted] = useState(false);
   const normalizedTaskStatus = (task?.status ?? "").toLowerCase().trim();
+  const isRejected = task?.approvalDecision === "rejected" || task?.reviewDecision === "rejected";
   const isTaskReadOnly =
-    normalizedTaskStatus === "review" ||
-    normalizedTaskStatus === "completed" ||
-    isTaskCompleted;
+    !isRejected && (
+      normalizedTaskStatus === "review" ||
+      normalizedTaskStatus === "completed" ||
+      isTaskCompleted
+    );
   const firstReportWithBeforePhoto = task?.reports?.find((report: any) => report?.beforePhotoUrl) ?? null;
   const firstReportWithAfterPhoto = task?.reports?.find((report: any) => report?.afterPhotoUrl) ?? null;
   const firstReportWithNotes = task?.reports?.find((report: any) => report?.notes) ?? null;
@@ -391,9 +394,11 @@ console.log(JSON.stringify(task,null,2));
                         textTransform: "capitalize",
                       }}
                     >
-                      {task.status
-                        ? task.status.replace("_", " ")
-                        : "In Progress"}
+                      {isRejected
+                        ? "Revision"
+                        : task.status
+                          ? task.status.replace("_", " ")
+                          : "In Progress"}
                     </Text>
                   </View>
                 </View>
@@ -489,6 +494,38 @@ console.log(JSON.stringify(task,null,2));
                   </View>
                 </View>
               </View>
+
+              {isRejected && task?.reviewDescription && (
+                <View
+                  style={{
+                    backgroundColor: "#FEF2F2",
+                    borderRadius: 12,
+                    padding: 16,
+                    borderWidth: 1,
+                    borderColor: "#FEE2E2",
+                    marginBottom: 24,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      fontWeight: "700",
+                      color: THEME.colors.redError,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Reject Cause:
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: THEME.colors.redError,
+                    }}
+                  >
+                    {task.reviewDescription}
+                  </Text>
+                </View>
+              )}
 
               {/* Priority Banner */}
               {task.priority === "high" && (
