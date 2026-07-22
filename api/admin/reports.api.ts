@@ -25,9 +25,6 @@ export type AdminGenerateReportParams = {
 };
 
 export type AdminPayrollReport = {
-  success: boolean;
-  statusCode: number;
-  message: string;
   type: "payroll";
   frequency: AdminReportFrequency;
   period: {
@@ -68,9 +65,6 @@ export type AdminPayrollReport = {
 };
 
 export type AdminProjectInvoicesReport = {
-  success: boolean;
-  statusCode: number;
-  message: string;
   type: "project_invoices";
   frequency: AdminReportFrequency;
   period: {
@@ -111,9 +105,6 @@ export type AdminProjectInvoicesReport = {
 };
 
 export type AdminWorkerPerformanceReport = {
-  success: boolean;
-  statusCode: number;
-  message: string;
   type: "worker_performance";
   frequency: AdminReportFrequency;
   period: {
@@ -161,9 +152,6 @@ export type AdminWorkerPerformanceReport = {
 };
 
 export type AdminExpenseReport = {
-  success: boolean;
-  statusCode: number;
-  message: string;
   type: "expense";
   frequency: AdminReportFrequency;
   period: {
@@ -209,7 +197,9 @@ export type AdminGeneratedReport =
 export async function getAdminGeneratedReport(
   params: AdminGenerateReportParams,
 ) {
-  const { data } = await api.get<AdminGeneratedReport>("/admin/reports/generate", {
+  const { data } = await api.get<
+    AdminGeneratedReport & { success: boolean; message: string }
+  >("/admin/reports/generate", {
     params,
   });
 
@@ -217,7 +207,7 @@ export async function getAdminGeneratedReport(
     throw new Error(data.message || "Failed to generate report");
   }
 
-  return data;
+  return data as AdminGeneratedReport;
 }
 
 export type AdminExportReportsParams = {

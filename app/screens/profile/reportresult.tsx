@@ -6,12 +6,17 @@ import {
   type AdminProjectInvoicesReport,
   type AdminWorkerPerformanceReport,
 } from "@/api/admin/reports.api";
-import { useAdminGeneratedReportQuery } from "@/hooks/admin/reports";
+import { 
+  useAdminGeneratedReportQuery,
+  useExportAdminReportsMutation
+} from "@/hooks/admin/reports";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
+import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
 import {
+  ActivityIndicator,
   RefreshControl,
   ScrollView,
   Text,
@@ -540,9 +545,54 @@ export default function ReportResultScreen() {
     await reportQuery.refetch();
   });
 
+  const exportMutation = useExportAdminReportsMutation();
+
+  const handleExport = async () => {
+    const document = await exportMutation.mutateAsync({
+      type: reportType as any,
+      frequency: resolvedFrequency as any,
+      startDate: resolvedStartDate,
+      endDate: resolvedEndDate,
+      ...(resolvedProjectId ? { projectId: resolvedProjectId } : {}),
+    });
+
+    if (document) {
+      setCurrentPreviewDocument({
+        id: "admin-reports-export",
+        name: `${title}.pdf`,
+        uri: document.uri,
+        mimeType: document.mimeType,
+      });
+
+      router.push({
+        pathname: "/screens/company/documentpreview",
+        params: { download: "1" },
+      });
+    }
+  };
+
   return (
     <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-[#E9EDF1]">
-      <BackTitleHeader title={title} onBack={() => router.back()} />
+      <BackTitleHeader 
+        title={title} 
+        onBack={() => router.back()}
+        rightComponent={
+          <TouchableOpacity 
+            onPress={handleExport} 
+            disabled={exportMutation.isPending}
+            activeOpacity={0.8}
+            className="flex-row items-center rounded-lg bg-[#EAF3FA] px-3 py-1.5"
+          >
+            {exportMutation.isPending ? (
+              <ActivityIndicator size="small" color="#1D5478" />
+            ) : (
+              <Text className="text-[14px] font-semibold text-[#1D5478]">
+                Export
+              </Text>
+            )}
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

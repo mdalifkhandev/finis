@@ -19,8 +19,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
-import { useExportAdminReportsMutation } from "@/hooks/admin/reports";
-import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminProjectNames } from "@/api/admin/admin.api";
 
@@ -102,8 +100,6 @@ export default function ReportScreen() {
     FREQUENCY_OPTIONS.find((option) => option.value === frequency)?.label ??
     FREQUENCY_OPTIONS[0].label;
 
-  const exportMutation = useExportAdminReportsMutation();
-
   const ensureStartDate = () => {
     if (!startDate) {
       toast.error("Please select start date");
@@ -111,39 +107,6 @@ export default function ReportScreen() {
     }
 
     return true;
-  };
-
-  const handleExportAll = async () => {
-    if (!startDate) {
-      toast.error("Please select start date");
-      return;
-    }
-
-    const document = await exportMutation.mutateAsync({
-      type: selectedType as
-        | "payroll"
-        | "project_invoices"
-        | "worker_performance"
-        | "expense",
-      startDate: startDate.toISOString().slice(0, 10),
-      endDate: endDate.toISOString().slice(0, 10),
-      ...(selectedProject !== "all" &&
-        (selectedType === "project_invoices" || selectedType === "expense")
-        ? { projectId: selectedProject }
-        : {}),
-    });
-
-    setCurrentPreviewDocument({
-      id: "admin-reports-export",
-      name: "Reports.pdf",
-      uri: document.uri,
-      mimeType: document.mimeType,
-    });
-
-    router.push({
-      pathname: "/screens/company/documentpreview",
-      params: { download: "1" },
-    });
   };
 
   const handleDateChange = (
@@ -220,25 +183,7 @@ export default function ReportScreen() {
           Generate comprehensive insights for your organization.
         </Text>
 
-        {/* Action buttons */}
-        <View className="mt-4 flex-row gap-3">
-          <TouchableOpacity
-            activeOpacity={0.85}
-            disabled={exportMutation.isPending}
-            onPress={handleExportAll}
-            className="h-[46px] flex-1 flex-row items-center justify-center rounded-[12px] bg-[#1D5478]"
-            style={{ opacity: exportMutation.isPending ? 0.7 : 1 }}
-          >
-            {exportMutation.isPending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-            )}
-            <Text className="ml-2 text-[14px] font-semibold text-white">
-              {exportMutation.isPending ? "Exporting..." : "Export All"}
-            </Text>
-          </TouchableOpacity>
-        </View>
+
 
         {/* Report Type */}
         <Text className="mb-3 mt-6 text-[16px] font-semibold text-[#111827]">
