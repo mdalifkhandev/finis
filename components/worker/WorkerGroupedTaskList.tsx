@@ -13,6 +13,7 @@ export type WorkerGroupedTaskItem = {
   dueDate?: string;
   scheduledLabel?: string | null;
   subTaskCount?: number;
+  allowSubTaskCreation?: boolean;
   action?: string | null;
   project?: { id?: string; name?: string } | null;
   floor?: { id?: string; name?: string; floorNumber?: number } | null;
@@ -353,7 +354,7 @@ export default function WorkerGroupedTaskList({
           id: unitId,
           name: task.room?.name ? `Unit ${task.room.name}` : "Unit",
           status: task.status,
-          canCreateSubTask: isMainTaskOnly ? false : true,
+          canCreateSubTask: isMainTaskOnly ? false : (task.allowSubTaskCreation ?? true),
           subTasks: [],
           sourceTask: task,
         };
