@@ -128,7 +128,7 @@ export default function ReportScreen() {
       startDate: startDate.toISOString().slice(0, 10),
       endDate: endDate.toISOString().slice(0, 10),
       ...(selectedProject !== "all" &&
-      (selectedType === "project_invoices" || selectedType === "expense")
+        (selectedType === "project_invoices" || selectedType === "expense")
         ? { projectId: selectedProject }
         : {}),
     });
@@ -253,22 +253,10 @@ export default function ReportScreen() {
                 key={type.key}
                 activeOpacity={0.85}
                 onPress={() => setSelectedType(type.key)}
-                className={`flex-row items-center rounded-[14px] border px-4 py-4 ${
-                  active
-                    ? "border-l-4 border-[#1D5478] bg-[#EAF3FA]"
-                    : "border-[#EDF1F5] bg-white"
-                }`}
-                style={
-                  active
-                    ? undefined
-                    : {
-                        shadowColor: "#0F172A",
-                        shadowOpacity: 0.05,
-                        shadowRadius: 8,
-                        shadowOffset: { width: 0, height: 3 },
-                        elevation: 2,
-                      }
-                }
+                className={`flex-row items-center rounded-[14px] border px-4 py-4 ${active
+                  ? "border-l-4 border-[#1D5478] bg-[#EAF3FA]"
+                  : "border-l-[1px] border-[#CBD5E1] bg-white"
+                  }`}
               >
                 <View
                   className="h-10 w-10 items-center justify-center rounded-[12px]"
@@ -282,9 +270,8 @@ export default function ReportScreen() {
                 </View>
                 <View className="ml-3 flex-1">
                   <Text
-                    className={`text-[15px] font-semibold ${
-                      active ? "text-[#1D5478]" : "text-[#111827]"
-                    }`}
+                    className={`text-[15px] font-semibold ${active ? "text-[#1D5478]" : "text-[#111827]"
+                      }`}
                   >
                     {type.title}
                   </Text>
@@ -331,7 +318,7 @@ export default function ReportScreen() {
                   {selectedProject === "all"
                     ? "All Projects"
                     : projects.find((p) => p.id === selectedProject)?.name ??
-                      "Select Project"}
+                    "Select Project"}
                 </Text>
                 <Ionicons name="chevron-down" size={18} color="#64748B" />
               </TouchableOpacity>
@@ -366,7 +353,7 @@ export default function ReportScreen() {
               >
                 <View className="flex-row items-center flex-1 mr-2">
                   <Ionicons name="calendar-outline" size={16} color="#1D5478" />
-                  <Text 
+                  <Text
                     className="ml-2 text-[13px] text-[#334155] flex-1"
                     numberOfLines={1}
                   >
@@ -388,7 +375,7 @@ export default function ReportScreen() {
               >
                 <View className="flex-row items-center flex-1 mr-2">
                   <Ionicons name="calendar-outline" size={16} color="#1D5478" />
-                  <Text 
+                  <Text
                     className="ml-2 text-[13px] text-[#334155] flex-1"
                     numberOfLines={1}
                   >
@@ -437,7 +424,7 @@ export default function ReportScreen() {
           </TouchableOpacity>
         </View>
 
-    
+
       </ScrollView>
 
       {/* Frequency dropdown modal */}
@@ -474,11 +461,10 @@ export default function ReportScreen() {
                   className="flex-row items-center justify-center border-b border-[#F1F5F9] py-4"
                 >
                   <Text
-                    className={`text-[15px] ${
-                      active
-                        ? "font-semibold text-[#1D5478]"
-                        : "text-[#334155]"
-                    }`}
+                    className={`text-[15px] ${active
+                      ? "font-semibold text-[#1D5478]"
+                      : "text-[#334155]"
+                      }`}
                     style={{ textTransform: "capitalize" }}
                   >
                     {option.label}
@@ -511,7 +497,7 @@ export default function ReportScreen() {
             <Text className="mb-4 text-[16px] font-semibold text-[#111827]">
               Select Project
             </Text>
-            
+
             <ScrollView showsVerticalScrollIndicator={false}>
               <TouchableOpacity
                 activeOpacity={0.85}
@@ -522,11 +508,10 @@ export default function ReportScreen() {
                 className="flex-row items-center border-b border-[#F1F5F9] py-4"
               >
                 <Text
-                  className={`text-[15px] flex-1 ${
-                    selectedProject === "all"
-                      ? "font-semibold text-[#1D5478]"
-                      : "text-[#334155]"
-                  }`}
+                  className={`text-[15px] flex-1 ${selectedProject === "all"
+                    ? "font-semibold text-[#1D5478]"
+                    : "text-[#334155]"
+                    }`}
                 >
                   All Projects
                 </Text>
@@ -548,11 +533,10 @@ export default function ReportScreen() {
                     className="flex-row items-center border-b border-[#F1F5F9] py-4"
                   >
                     <Text
-                      className={`text-[15px] flex-1 ${
-                        active
-                          ? "font-semibold text-[#1D5478]"
-                          : "text-[#334155]"
-                      }`}
+                      className={`text-[15px] flex-1 ${active
+                        ? "font-semibold text-[#1D5478]"
+                        : "text-[#334155]"
+                        }`}
                     >
                       {project.name}
                     </Text>
