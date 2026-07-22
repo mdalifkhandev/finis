@@ -55,6 +55,7 @@ type TaskGroup = {
       id: string;
       name: string;
       status?: string;
+      approvalDecision?: string | null;
       canCreateSubTask?: boolean;
       subTasks: Array<{
         id: string;
@@ -73,9 +74,11 @@ const STATUS_STYLE: Record<string, { label: string; bg: string; text: string; do
   pending: { label: "PENDING", bg: "#EEF1F4", text: "#536174", dot: "#AAB4C0" },
   in_progress: { label: "IN PROGRESS", bg: "#FFF0D5", text: "#9A5B00", dot: "#D99A2B" },
   completed: { label: "COMPLETED", bg: "#DDF1F7", text: "#17617D", dot: "#1E708E" },
+  revision: { label: "REVISION", bg: "#FEE2E2", text: "#991B1B", dot: "#EF4444" },
 };
 
-function normalizeStatus(status?: string) {
+function normalizeStatus(status?: string, approvalDecision?: string | null) {
+  if (approvalDecision === "rejected") return "revision";
   return (status ?? "pending").toLowerCase().replace(/\s+/g, "_");
 }
 
@@ -120,7 +123,8 @@ function WorkerTaskGroupCard({
 }) {
   const [expanded, setExpanded] = useState(true);
   const isMainTaskOnly = group.isMainTaskOnly;
-  const statusStr = normalizeStatus(group.status);
+  const isGroupRejected = group.sourceTask?.approvalDecision === "rejected" || group.floors?.some(f => f.units?.some(u => u.approvalDecision === "rejected" || u.subTasks?.some(st => st.approvalDecision === "rejected")));
+  const statusStr = isGroupRejected ? "revision" : normalizeStatus(group.status, group.sourceTask?.approvalDecision);
   const actionLabel = normalizeActionLabel(group.action, group.status);
 
   return (
@@ -160,7 +164,8 @@ function WorkerTaskGroupCard({
                 </View>
 
                 {floor.units.map((unit, unitIndex) => {
-                  const unitStatus = normalizeStatus(unit.status);
+                  const isUnitRejected = unit.approvalDecision === "rejected" || unit.subTasks?.some(st => st.approvalDecision === "rejected");
+                  const unitStatus = isUnitRejected ? "revision" : normalizeStatus(unit.status, unit.approvalDecision);
                   const style = STATUS_STYLE[unitStatus] ?? STATUS_STYLE.pending;
 
                   return (
@@ -209,7 +214,8 @@ function WorkerTaskGroupCard({
                             }]
                           : []
                       ).map((task, taskIndex) => {
-                        const status = normalizeStatus(task.status);
+                        const isTaskRejected = task.approvalDecision === "rejected";
+                        const status = isTaskRejected ? "revision" : normalizeStatus(task.status);
                         const actionLabel = normalizeActionLabel(
                           task.action,
                           task.status,
@@ -310,6 +316,7 @@ export default function WorkerGroupedTaskList({
               id: unit.id,
               name: `Unit ${unit.name}`,
               status: unit.status,
+              approvalDecision: unit.approvalDecision ?? null,
               canCreateSubTask: isMainTaskOnly ? false : unit.canCreateSubTask,
               subTasks: (unit.subTasks ?? []).map((subTask) => ({
                 id: subTask.id,
@@ -354,6 +361,7 @@ export default function WorkerGroupedTaskList({
           id: unitId,
           name: task.room?.name ? `Unit ${task.room.name}` : "Unit",
           status: task.status,
+          approvalDecision: task.approvalDecision ?? null,
           canCreateSubTask: isMainTaskOnly ? false : (task.allowSubTaskCreation ?? true),
           subTasks: [],
           sourceTask: task,
@@ -365,8 +373,8 @@ export default function WorkerGroupedTaskList({
         id: task.id,
         title: task.description?.trim() || normalizedTitle,
         status: task.status,
-        approvalDecision: null,
-        action: undefined,
+        approvalDecision: task.approvalDecision ?? null,
+        action: task.action ?? undefined,
       });
 
       groupMap.set(key, currentGroup);
