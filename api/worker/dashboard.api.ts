@@ -13,6 +13,8 @@ type WorkerDashboardTaskResponse = {
     name: string;
   } | null;
   scheduledLabel?: string | null;
+  subTaskCount?: number;
+  allowSubTaskCreation?: boolean;
   floors: Array<{
     id: string;
     name: string;
@@ -89,6 +91,8 @@ export async function getWorkerDashboard() {
         status: task.status,
         dueDate: task.dueDate ?? undefined,
         scheduledLabel: task.scheduledLabel ?? null,
+        subTaskCount: task.subTaskCount ?? 0,
+        allowSubTaskCreation: task.allowSubTaskCreation ?? false,
         project: task.project ?? undefined,
         floors: (task.floors ?? []).map((floor) => ({
           id: floor.id,
