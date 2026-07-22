@@ -117,13 +117,22 @@ export async function stopWorkerLocationTracking() {
 
   await setTrackingFlag(false);
 
-  const alreadyStarted = await Location.hasStartedLocationUpdatesAsync(
-    WORKER_LOCATION_TASK_NAME,
-  );
+  try {
+    const isDefined = TaskManager.isTaskDefined(WORKER_LOCATION_TASK_NAME);
+    if (!isDefined) {
+      return;
+    }
 
-  if (!alreadyStarted) {
-    return;
+    const alreadyStarted = await Location.hasStartedLocationUpdatesAsync(
+      WORKER_LOCATION_TASK_NAME,
+    );
+
+    if (!alreadyStarted) {
+      return;
+    }
+
+    await Location.stopLocationUpdatesAsync(WORKER_LOCATION_TASK_NAME);
+  } catch (error) {
+    console.log("[WorkerLocationTask] stop location updates error", error);
   }
-
-  await Location.stopLocationUpdatesAsync(WORKER_LOCATION_TASK_NAME);
 }
