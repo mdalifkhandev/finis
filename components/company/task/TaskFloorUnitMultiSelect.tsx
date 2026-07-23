@@ -54,13 +54,12 @@ function FloorUnits({
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => onToggleAll(floor, units)}
-            className={`h-6 w-6 items-center justify-center border ${
-              allSelected
+            className={`h-6 w-6 items-center justify-center border ${allSelected
                 ? "border-[#1E5371] bg-[#1E5371]"
                 : someSelected
                   ? "border-[#1E5371] bg-[#EDF5F8]"
                   : "border-[#CDD4DE] bg-white"
-            }`}
+              }`}
           >
             <Ionicons
               name={allSelected ? "checkmark" : someSelected ? "remove" : "checkmark"}
@@ -82,11 +81,10 @@ function FloorUnits({
                 key={unit.id}
                 activeOpacity={0.8}
                 onPress={() => onToggle(floor, unit)}
-                className={`flex-row items-center rounded-[9px] border px-3 py-2.5 ${
-                  selected
+                className={`flex-row items-center rounded-[9px] border px-3 py-2.5 ${selected
                     ? "border-[#1E5371] bg-[#EDF5F8]"
                     : "border-[#CDD4DE] bg-white"
-                }`}
+                  }`}
               >
                 <Ionicons
                   name={selected ? "checkbox" : "square-outline"}
@@ -267,11 +265,10 @@ export default function TaskFloorUnitMultiSelect({
                       key={floor.id}
                       activeOpacity={0.8}
                       onPress={() => toggleFloor(floor)}
-                      className={`mb-3 flex-row items-center justify-between rounded-[12px] border px-4 py-4 ${
-                        selected
+                      className={`mb-3 flex-row items-center justify-between rounded-[12px] border px-4 py-4 ${selected
                           ? "border-[#1E5371] bg-[#EDF5F8]"
                           : "border-[#D8DEE5] bg-[#F8FAFC]"
-                      }`}
+                        }`}
                     >
                       <Text className="text-[16px] font-medium text-[#26313E]">{floor.name}</Text>
                       <Ionicons
