@@ -336,6 +336,11 @@ export default function TaskDetailsScreen({
                       {subTask.description}
                     </Text>
                   ) : null}
+                  {subTask.estimatedHours ? (
+                    <Text className="mt-1 text-[12px] leading-[18px] text-[#4B5563]">
+                      Estimated Hours: {subTask.estimatedHours}
+                    </Text>
+                  ) : null}
                 </View>
               );
             })}

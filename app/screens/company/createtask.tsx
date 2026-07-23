@@ -6,6 +6,7 @@ import TaskFloorUnitMultiSelect, {
 import { setTaskDraft } from "@/components/company/task/taskStore";
 import {
   useCreateTaskMutation,
+  useUpdateTaskMutation,
   useProjectFloorsQuery,
   useProjectProfileQuery
 } from "@/hooks/company/company";
@@ -37,9 +38,14 @@ function formatDate(value: Date) {
 }
 
 export default function CreateTaskRoute() {
-  const { projectId, parentTaskTitle } = useLocalSearchParams<{
+  const { projectId, parentTaskTitle, editTaskTitle, editTaskDescription, editTaskPriority, editTaskDueDate, taskId } = useLocalSearchParams<{
     projectId?: string;
     parentTaskTitle?: string;
+    editTaskTitle?: string;
+    editTaskDescription?: string;
+    editTaskPriority?: "LOW" | "MEDIUM" | "HIGH";
+    editTaskDueDate?: string;
+    taskId?: string;
   }>();
   const resolvedParentTaskTitle = Array.isArray(parentTaskTitle)
     ? parentTaskTitle[0]
@@ -49,15 +55,15 @@ export default function CreateTaskRoute() {
   const { data: projectProfile, isLoading: isProjectLoading } = useProjectProfileQuery(projectId);
   const { data: floors, isLoading: isFloorsLoading } = useProjectFloorsQuery(projectId);
 
-  const [title, setTitle] = useState(resolvedParentTaskTitle ?? "");
-  const [description, setDescription] = useState("");
+  const [title, setTitle] = useState(editTaskTitle ?? resolvedParentTaskTitle ?? "");
+  const [description, setDescription] = useState(editTaskDescription ?? "");
 
-  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
+  const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(editTaskPriority ?? "MEDIUM");
   const [showPrioritySheet, setShowPrioritySheet] = useState(false);
 
-  const [dueDate, setDueDate] = useState("");
+  const [dueDate, setDueDate] = useState(editTaskDueDate ?? "");
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-  const [dueDateValue, setDueDateValue] = useState(new Date());
+  const [dueDateValue, setDueDateValue] = useState(editTaskDueDate ? new Date(editTaskDueDate) : new Date());
 
   const [estimatedHours, setEstimatedHours] = useState('');
 
@@ -65,6 +71,7 @@ export default function CreateTaskRoute() {
   const [allowSubTaskCreation, setAllowSubTaskCreation] = useState(true);
 
   const createTaskMutation = useCreateTaskMutation();
+  const updateTaskMutation = useUpdateTaskMutation(taskId ?? "");
 
   const handleDueDateChange = (
     event: DateTimePickerEvent,
@@ -91,15 +98,13 @@ export default function CreateTaskRoute() {
       toast.error("Project ID is missing");
       return;
     }
-    if (!floorUnitSelections.length) {
+    if (!taskId && !floorUnitSelections.length) {
       toast.error("Please select at least one floor and unit");
       return;
     }
 
     try {
-      const floorsPayload = floorUnitSelections.reduce<
-        Array<{ floorId: string; unitIds: string[] }>
-      >((accumulator, selection) => {
+      const floorsPayload = floorUnitSelections.reduce((accumulator, selection) => {
         const existing = accumulator.find(
           (item) => item.floorId === selection.floor.id,
         );
@@ -116,7 +121,25 @@ export default function CreateTaskRoute() {
           unitIds: [selection.unit.id],
         });
         return accumulator;
-      }, []);
+      }, [] as Array<{ floorId: string; unitIds: string[] }>);
+
+      if (taskId) {
+        await updateTaskMutation.mutateAsync({
+          taskId: taskId as string,
+          payload: {
+            title: title.trim(),
+            description: description.trim(),
+            priority: priority.toLowerCase(),
+            dueDate: dueDate.trim() || formatDate(new Date()),
+            estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
+            allowSubTaskCreation,
+            ...(floorsPayload.length > 0 && { floors: floorsPayload }),
+          },
+        });
+        toast.success("Task updated successfully!");
+        router.back();
+        return;
+      }
 
       const response = await createTaskMutation.mutateAsync({
         projectId,
@@ -164,7 +187,13 @@ export default function CreateTaskRoute() {
           contentContainerStyle={{ paddingBottom: 36 }}
         >
           <BackTitleHeader
-            title={isSubtaskMode ? "Create New Subtask" : "Create New Task"}
+            title={
+              taskId
+                ? "Update Task"
+                : isSubtaskMode
+                  ? "Create New Subtask"
+                  : "Create New Task"
+            }
             onBack={() => router.back()}
           />
 
@@ -261,15 +290,18 @@ export default function CreateTaskRoute() {
             <TouchableOpacity
               activeOpacity={0.85}
               onPress={handleNext}
-              disabled={createTaskMutation.isPending}
-              className={`mt-5 h-[56px] items-center justify-center rounded-[10px] ${createTaskMutation.isPending ? "bg-[#1E5371]/70" : "bg-[#1E5371]"
+              disabled={taskId ? updateTaskMutation.isPending : createTaskMutation.isPending}
+              className={`mt-5 h-[56px] items-center justify-center rounded-[10px] ${
+                (taskId ? updateTaskMutation.isPending : createTaskMutation.isPending)
+                  ? "bg-[#1E5371]/70"
+                  : "bg-[#1E5371]"
                 }`}
             >
-              {createTaskMutation.isPending ? (
+              {(taskId ? updateTaskMutation.isPending : createTaskMutation.isPending) ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text className="text-[16px] font-medium text-[#F4F8FA]">
-                  {isSubtaskMode ? "Create Subtask" : "Create Task"}
+                  {taskId ? "Update" : isSubtaskMode ? "Create Subtask" : "Create Task"}
                 </Text>
               )}
             </TouchableOpacity>

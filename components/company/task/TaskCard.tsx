@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { useAuthStore } from "@/store/auth.store";
@@ -7,6 +7,7 @@ import { TaskItem } from "./types";
 type TaskCardProps = {
   task: TaskItem;
   onPress?: () => void;
+  onPressEdit?: () => void;
   onPressUpdateStatus?: () => void;
   onPressAssignWorker?: () => void;
   onPressSubtaskAction?: () => void;
@@ -41,6 +42,7 @@ const STATUS_CONFIG: Record<
 export default function TaskCard({
   task,
   onPress,
+  onPressEdit,
   onPressUpdateStatus,
   onPressAssignWorker,
   onPressSubtaskAction,
@@ -102,16 +104,23 @@ export default function TaskCard({
           />
           <Text className="ml-2 text-[16px] text-[#2A313B] w-[200px]" numberOfLines={1}>{task.title}</Text>
         </View>
-        <View
-          className="self-start rounded-full px-2.5 py-0.5"
-          style={{ backgroundColor: statusStyle.bg }}
-        >
-          <Text
-            className="text-[11px] font-medium"
-            style={{ color: statusStyle.text }}
+        <View className="flex-row items-center">
+          {onPressEdit ? (
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); onPressEdit(); }} className="mr-2">
+              <Feather name="edit" size={18} color="#667085" />
+            </TouchableOpacity>
+          ) : null}
+          <View
+            className="self-start rounded-full px-2.5 py-0.5"
+            style={{ backgroundColor: statusStyle.bg }}
           >
-            {statusStyle.label}
-          </Text>
+            <Text
+              className="text-[11px] font-medium"
+              style={{ color: statusStyle.text }}
+            >
+              {statusStyle.label}
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -146,9 +155,9 @@ export default function TaskCard({
           </Text>
         </View>
       </View>
-      
+
       {/* Subtask progress */}
-      {isMainTaskCard&&<View className="mt-2 flex-row items-center justify-between">
+      {isMainTaskCard && <View className="mt-2 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Ionicons name="list-outline" size={17} color="#536174" />
           <Text className="ml-1.5 text-[14px] text-[#4C596C]">
@@ -185,11 +194,9 @@ export default function TaskCard({
 
           <TouchableOpacity
             disabled={resolvedActionDisabled}
-            className={`rounded-lg px-3 py-1.5 ${
-              shouldShowAssignWorkerButton ? "flex-1" : "w-full"
-            } ${
-              actionVariant === "muted" ? "bg-[#B7C4CE]" : "bg-[#1E5371]"
-            } ${resolvedActionDisabled && actionVariant !== "muted" ? "opacity-70" : ""}`}
+            className={`rounded-lg px-3 py-1.5 ${shouldShowAssignWorkerButton ? "flex-1" : "w-full"
+              } ${actionVariant === "muted" ? "bg-[#B7C4CE]" : "bg-[#1E5371]"
+              } ${resolvedActionDisabled && actionVariant !== "muted" ? "opacity-70" : ""}`}
             activeOpacity={0.8}
             onPress={(e) => {
               e.stopPropagation();
@@ -206,9 +213,8 @@ export default function TaskCard({
       {isSubtaskCard ? (
         <TouchableOpacity
           disabled={subtaskActionDisabled || isActionLoading}
-          className={`h-[40px] items-center justify-center rounded-lg ${
-            subtaskActionDisabled || isActionLoading ? "bg-[#B7C4CE]" : "bg-[#1E5371]"
-          }`}
+          className={`h-[40px] items-center justify-center rounded-lg ${subtaskActionDisabled || isActionLoading ? "bg-[#B7C4CE]" : "bg-[#1E5371]"
+            }`}
           activeOpacity={0.85}
           onPress={(e) => {
             e.stopPropagation();
