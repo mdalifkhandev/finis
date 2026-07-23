@@ -98,10 +98,6 @@ export default function CreateTaskRoute() {
       toast.error("Project ID is missing");
       return;
     }
-    if (!taskId && !floorUnitSelections.length) {
-      toast.error("Please select at least one floor and unit");
-      return;
-    }
 
     try {
       const floorsPayload = floorUnitSelections.reduce((accumulator, selection) => {

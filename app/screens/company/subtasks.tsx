@@ -116,7 +116,7 @@ export default function SubtasksRoute() {
         dueDate: formatDateLabel(displayDate ?? ""),
         status: displayStatus,
         description: task.description || undefined,
-        priority: task.priority || task.approvalDecision || "medium",
+        priority: task.priority || "medium",
         approvalDecision: task.approvalDecision,
         rawStatus: task.status,
         floorUnitSelections: floorUnitSelections,
