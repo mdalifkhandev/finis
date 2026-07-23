@@ -527,6 +527,8 @@ export type TaskDetailsData = {
   subTaskCount?: number;
   completedSubTaskCount?: number;
   assignedWorkerCount?: number;
+  approvalDecision?: string | null;
+  completionDecision?: string | null;
   assignee: { fullName: string } | null;
   taskAssignees: any[];
   subTasks: TaskDetailsSubTask[];

@@ -35,6 +35,7 @@ const STATUS_CONFIG: Record<
   completed: { label: "Completed", bg: "#EAF3DE", text: "#3B6D11" },
   "in progress": { label: "In Progress", bg: "#E6F1FB", text: "#185FA5" },
   review: { label: "Review", bg: "#F1EDFF", text: "#6941C6" },
+  revision: { label: "Revision", bg: "#FFEDD5", text: "#C2410C" },
 };
 
 export default function TaskCard({

@@ -28,6 +28,7 @@ function mapStatus(status: string, approvalDecision?: string | null): TaskStatus
   if (normalized === "in_active" || normalized === "inactive") return "Inactive";
   if (normalized === "in_progress") return "In Progress";
   if (normalized === "review") return "Review";
+  if (normalized === "revision") return "Revision";
   if (normalized === "completed") {
     return normalizedApproval === "approved" ? "Completed" : "Review";
   }
