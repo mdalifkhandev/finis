@@ -6,6 +6,7 @@ import TaskFloorUnitMultiSelect, {
 import { setTaskDraft } from "@/components/company/task/taskStore";
 import {
   useCreateSubTaskMutation,
+  useUpdateSubTaskMutation,
   useCreateTaskMutation,
   useTaskDetailsQuery,
   useTaskLocationsQuery,
@@ -16,7 +17,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -39,10 +40,17 @@ function formatDate(value: Date) {
 }
 
 export default function CreateSubtaskRoute() {
-    const { projectId, parentTaskId, parentTaskTitle } = useLocalSearchParams<{
+    const { projectId, parentTaskId, parentTaskTitle, editTaskTitle, editTaskDescription, editTaskPriority, editTaskDueDate, editTaskFloorUnits, editTaskEstimatedHours, taskId } = useLocalSearchParams<{
       projectId?: string;
       parentTaskId?: string;
       parentTaskTitle?: string;
+      editTaskTitle?: string;
+      editTaskDescription?: string;
+      editTaskPriority?: "LOW" | "MEDIUM" | "HIGH";
+      editTaskDueDate?: string;
+      editTaskFloorUnits?: string;
+      editTaskEstimatedHours?: string;
+      taskId?: string;
     }>();
     const resolvedParentTaskTitle = Array.isArray(parentTaskTitle)
       ? parentTaskTitle[0]
@@ -59,22 +67,25 @@ export default function CreateSubtaskRoute() {
     const { data: parentTaskDetails } =
       useTaskDetailsQuery(isSubtaskMode ? resolvedParentTaskId : undefined);
   
-  const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
+  const [title, setTitle] = useState(editTaskTitle ?? "");
+    const [description, setDescription] = useState(editTaskDescription ?? "");
   
-    const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">("MEDIUM");
+    const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(editTaskPriority ?? "MEDIUM");
     const [showPrioritySheet, setShowPrioritySheet] = useState(false);
   
-    const [dueDate, setDueDate] = useState("");
+    const [dueDate, setDueDate] = useState(editTaskDueDate ?? "");
     const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-    const [dueDateValue, setDueDateValue] = useState(new Date());
+    const [dueDateValue, setDueDateValue] = useState(editTaskDueDate ? new Date(editTaskDueDate) : new Date());
 
-    const [estimatedHours, setEstimatedHours] = useState('');
+    const [estimatedHours, setEstimatedHours] = useState(editTaskEstimatedHours ?? '');
   
-    const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>([]);
+    const [floorUnitSelections, setFloorUnitSelections] = useState<TaskFloorUnitSelection[]>(
+      editTaskFloorUnits ? JSON.parse(editTaskFloorUnits) : []
+    );
   
     const createTaskMutation = useCreateTaskMutation();
     const createSubTaskMutation = useCreateSubTaskMutation(resolvedParentTaskId, projectId);
+    const updateSubTaskMutation = useUpdateSubTaskMutation(taskId, resolvedParentTaskId, projectId);
 
     const subtaskFloorsSource = (() => {
       const locationFloors = parentTaskLocations?.floors ?? [];
@@ -94,40 +105,51 @@ export default function CreateSubtaskRoute() {
           units:
             locationFloor.units?.length
               ? locationFloor.units
-              : (matchedDetailFloor?.units ?? []),
+              : matchedDetailFloor?.units ?? [],
         };
       });
     })();
 
-    const availableFloors = isSubtaskMode
-      ? subtaskFloorsSource.map((floor) => ({
-          id: floor.id,
-          floorNumber: Number(("floorNumber" in floor ? floor.floorNumber : 0) ?? 0),
-          name: floor.name,
-          status: "",
-          progress: 0,
-        }))
-      : floors;
+    const availableFloors = isSubtaskMode ? subtaskFloorsSource : floors;
 
-    const unitsByFloor = isSubtaskMode
-      ? Object.fromEntries(
-          subtaskFloorsSource.map((floor) => [
-            floor.id,
-            (floor.units ?? []).map((unit) => ({
-              id: unit.id,
-              roomNumber: 0,
-              name: unit.name,
-              status: "",
-              progress: 0,
-              type: null,
-            })),
-          ]),
-        )
-      : undefined;
+    const unitsByFloor = useMemo(() => {
+      const map: Record<string, any[]> = {};
+      if (!availableFloors) return map;
+
+      availableFloors.forEach((floor: any) => {
+        if (floor.units && floor.units.length > 0) {
+          map[floor.id] = floor.units;
+        }
+      });
+      return map;
+    }, [availableFloors]);
+
+    const activeFloors = useMemo(() => {
+      if (!availableFloors) return [];
+      const floorsWithUnits = availableFloors.filter((floor) => {
+        const units = unitsByFloor[floor.id];
+        return units && units.length > 0;
+      });
+      return floorsWithUnits;
+    }, [availableFloors, unitsByFloor]);
+
+    const validateInitialSelections = useCallback(() => {
+      if (!isSubtaskMode || !availableFloors?.length) return undefined;
+      const selections = floorUnitSelections.filter((selection) => {
+        const floorExists = availableFloors.find((f) => f.id === selection.floor.id);
+        if (!floorExists) return false;
+        const units = unitsByFloor[selection.floor.id];
+        return units?.find((u) => u.id === selection.unit.id);
+      });
+      return selections.length > 0 ? selections : undefined;
+    }, [isSubtaskMode, availableFloors, unitsByFloor]);
 
     const isSelectorLoading = isSubtaskMode ? isParentTaskLoading : isFloorsLoading;
-    const isSubmitting =
-      isSubtaskMode ? createSubTaskMutation.isPending : createTaskMutation.isPending;
+    const isSubmitting = taskId
+      ? updateSubTaskMutation.isPending
+      : isSubtaskMode
+        ? createSubTaskMutation.isPending
+        : createTaskMutation.isPending;
   
     const handleDueDateChange = (
       event: DateTimePickerEvent,
@@ -160,10 +182,30 @@ export default function CreateSubtaskRoute() {
       }
   
       try {
-        if (isSubtaskMode) {
+        if (taskId) {
+          await updateSubTaskMutation.mutateAsync({
+            title: title.trim(),
+            description: description.trim(),
+            priority,
+            unitIds: floorUnitSelections.map((selection) => selection.unit.id),
+            dueDate: dueDate.trim() || formatDate(new Date()),
+            estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
+          });
+
+          router.replace({
+            pathname: "/screens/company/subtasks",
+            params: {
+              projectId,
+              parentTaskId: resolvedParentTaskId,
+              title: resolvedParentTaskTitle,
+            },
+          });
+          return;
+        } else if (isSubtaskMode) {
           await createSubTaskMutation.mutateAsync({
             title: title.trim(),
             description: description.trim(),
+            priority,
             unitIds: floorUnitSelections.map((selection) => selection.unit.id),
             dueDate: dueDate.trim() || formatDate(new Date()),
             estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
@@ -181,9 +223,7 @@ export default function CreateSubtaskRoute() {
         }
 
         const responses = [];
-        const floorsPayload = floorUnitSelections.reduce<
-          Array<{ floorId: string; unitIds: string[] }>
-        >((accumulator, selection) => {
+        const floorsPayload = floorUnitSelections.reduce((accumulator, selection) => {
           const existing = accumulator.find(
             (item) => item.floorId === selection.floor.id,
           );
@@ -200,7 +240,7 @@ export default function CreateSubtaskRoute() {
             unitIds: [selection.unit.id],
           });
           return accumulator;
-        }, []);
+        }, [] as Array<{ floorId: string; unitIds: string[] }>);
 
         const response = await createTaskMutation.mutateAsync({
           projectId,
@@ -243,7 +283,15 @@ export default function CreateSubtaskRoute() {
           contentContainerStyle={{ paddingBottom: 36 }}
         >
           <BackTitleHeader
-            title={isSubtaskMode ? "Create New Subtask" : "Create New Task"}
+            title={
+              taskId
+                ? isSubtaskMode
+                  ? "Update Subtask"
+                  : "Update Task"
+                : isSubtaskMode
+                  ? "Create New Subtask"
+                  : "Create New Task"
+            }
             onBack={() => router.back()}
           />
 
@@ -269,6 +317,7 @@ export default function CreateSubtaskRoute() {
               floors={availableFloors}
               unitsByFloor={unitsByFloor}
               isLoading={isSelectorLoading}
+              initialSelections={validateInitialSelections()}
               onChange={setFloorUnitSelections}
             />
 
@@ -323,7 +372,7 @@ export default function CreateSubtaskRoute() {
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Text className="text-[16px] font-medium text-[#F4F8FA]">
-                  {isSubtaskMode ? "Create Subtask" : "Create Task"}
+                  {taskId ? "Update" : isSubtaskMode ? "Create Subtask" : "Create Task"}
                 </Text>
               )}
             </TouchableOpacity>

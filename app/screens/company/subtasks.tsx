@@ -71,10 +71,10 @@ export default function SubtasksRoute() {
   const reviewSubTaskReportMutation = useReviewSubTaskReportMutation(parentTaskId);
 
   const subtasks = useMemo<TaskItem[]>(() => {
-    const unitToFloorMap = new Map<string, string>();
+    const unitToFloorMap = new Map<string, { id: string; name: string }>();
     (taskDetailsQuery.data?.floors ?? []).forEach((floor) => {
       floor.units.forEach((unit) => {
-        unitToFloorMap.set(unit.id, floor.name);
+        unitToFloorMap.set(unit.id, { id: floor.id, name: floor.name });
       });
     });
 
@@ -88,11 +88,19 @@ export default function SubtasksRoute() {
       const locationLabel = units.length
         ? units
             .map((unit) => {
-              const floorName = unitToFloorMap.get(unit.id);
-              return floorName ? `${floorName} - ${unit.name}` : unit.name;
+              const floorObj = unitToFloorMap.get(unit.id);
+              return floorObj ? `${floorObj.name} - ${unit.name}` : unit.name;
             })
             .join(", ")
         : "Unit";
+        
+      const floorUnitSelections = units.flatMap((unit) => {
+        const floorObj = unitToFloorMap.get(unit.id);
+        if (floorObj) {
+          return [{ floor: floorObj, unit }];
+        }
+        return [];
+      });
 
       const displayStatus = mapStatus(task.status, task.approvalDecision);
 
@@ -111,6 +119,8 @@ export default function SubtasksRoute() {
         priority: task.priority || task.approvalDecision || "medium",
         approvalDecision: task.approvalDecision,
         rawStatus: task.status,
+        floorUnitSelections: floorUnitSelections,
+        estimatedHours: task.estimatedHours,
       };
     });
   }, [projectId, taskDetailsQuery.data, tasksQuery.data]);
@@ -184,6 +194,22 @@ export default function SubtasksRoute() {
                   key={task.id}
                   task={task}
                   isActionLoading={reviewSubTaskMutation.isPending || reviewSubTaskReportMutation.isPending}
+                  onPressEdit={() =>
+                    router.push({
+                      pathname: "/screens/company/createsubtask",
+                      params: {
+                        taskId: task.id,
+                        parentTaskId: parentTaskId,
+                        projectId: projectId,
+                        editTaskTitle: task.title,
+                        editTaskDescription: task.description || "",
+                        editTaskPriority: task.priority || "MEDIUM",
+                        editTaskDueDate: task.dueDate || "",
+                        editTaskFloorUnits: task.floorUnitSelections ? JSON.stringify(task.floorUnitSelections) : "",
+                        editTaskEstimatedHours: task.estimatedHours != null ? String(task.estimatedHours) : "",
+                      },
+                    })
+                  }
                   subtaskActionLabel={["Inactive", "Review"].includes(task.status) ? "Approve Sub Task" : "Approved Sub Task"}
                   subtaskActionDisabled={!["Inactive", "Review"].includes(task.status)}
                   onPressSubtaskAction={() =>

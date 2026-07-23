@@ -1039,6 +1039,19 @@ export async function createSubTask(taskId: string, payload: CreateSubTaskPayloa
   return data.data;
 }
 
+export async function updateSubTask(subTaskId: string, payload: Partial<CreateSubTaskPayload>) {
+  const { data } = await api.put<{ success: boolean; data: any; message?: string }>(
+    `/admin/subtasks/${subTaskId}`,
+    payload,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to update subtask");
+  }
+
+  return data.data;
+}
+
 export type GeofencePoint = { lat: number; lng: number };
 export type CompanyGeofence = {
   id: string;
@@ -1242,13 +1255,13 @@ export async function getTaskDetails(taskId: string): Promise<TaskDetailsData> {
   const firstUnit = firstFloor?.units?.[0];
 
   return {
-    id: taskData.id,
-    title: taskData.title,
-    description: taskData.description ?? "",
-    priority: taskData.priority ?? null,
-    status: taskData.status,
-    dueDate: taskData.dueDate ?? null,
-    estimatedHours: taskData.estimatedHours ?? null,
+    id: taskData.task.id,
+    title: taskData.task.title,
+    description: taskData.task.description ?? "",
+    priority: taskData.task.priority ?? null,
+    status: taskData.task.status,
+    dueDate: taskData.task.dueDate ?? null,
+    estimatedHours: taskData.task.estimatedHours ?? null,
     project: { name: taskData.project?.name ?? "" },
     floor: { name: firstFloor?.name ?? "" },
     room: { name: firstUnit?.name ?? "" },
@@ -1436,6 +1449,11 @@ export type UpdateAdminTaskPayload = {
   actualHours?: number;
   expenseDescription?: string;
   expenseAmount?: number;
+  allowSubTaskCreation?: boolean;
+  floors?: {
+    floorId: string;
+    unitIds?: string[];
+  }[];
 };
 
 export async function updateTask(

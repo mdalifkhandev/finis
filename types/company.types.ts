@@ -315,10 +315,11 @@ export enum RoomStatus {
 
 export type ProjectFloor = {
   id: string;
-  floorNumber: number;
+  floorNumber?: number;
   name: string;
-  status: string;
-  progress: number;
+  status?: string;
+  progress?: number;
+  units?: Array<{ id: string; name: string }>;
 };
 
 export type ProjectFloorsResponse = ApiResponse<ProjectFloor[]>;
@@ -360,10 +361,12 @@ export type CreateTaskResponse = ApiResponse<{ id: string }>;
 export type CreateSubTaskPayload = {
   title: string;
   description?: string;
+  priority?: string;
   unitId?: string;
   unitIds?: string[];
   taskAssigneeId?: string;
   dueDate?: string;
+  estimatedHours?: number;
 };
 
 export type CreateSubTaskResponse = ApiResponse<{
@@ -421,6 +424,7 @@ export type TaskSubTaskListItem = {
     reports: number;
     inventories: number;
   };
+  estimatedHours?: number | null;
 };
 
 export type TaskSubTasksResponse = ApiResponse<TaskSubTaskListItem[]>;
@@ -453,6 +457,7 @@ export type TaskDetailsSubTask = {
   id: string;
   title: string;
   description: string | null;
+  estimatedHours?: number;
   status: string;
   approvalDecision: string;
   createdAt: string;

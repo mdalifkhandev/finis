@@ -9,6 +9,7 @@ import {
   getProjectProfile,
   updateCompany,
   updateProject,
+  updateSubTask,
   getProjectAnalysis,
   getTasks,
   updateTaskStatusApi,
@@ -1103,6 +1104,32 @@ export function useCreateSubTaskMutation(taskId?: string, projectId?: string) {
     onError: (error: any) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to create subtask",
+      );
+    },
+  });
+}
+
+export function useUpdateSubTaskMutation(subTaskId?: string, parentTaskId?: string, projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: Partial<CreateSubTaskPayload>) => {
+      if (!subTaskId) throw new Error("Subtask ID is required");
+      return updateSubTask(subTaskId, payload);
+    },
+    onSuccess: async () => {
+      if (parentTaskId) {
+        await queryClient.invalidateQueries({ queryKey: ["task", "details", parentTaskId] });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+      if (projectId) {
+        await queryClient.invalidateQueries({ queryKey: ["project", "tasks", { projectId }] });
+      }
+      toast.success("Subtask updated successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update subtask",
       );
     },
   });

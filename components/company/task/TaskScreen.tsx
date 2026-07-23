@@ -179,6 +179,19 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                   reviewTaskApprovalMutation.isPending ||
                   reviewTaskCompletionMutation.isPending
                 }
+                onPressEdit={() =>
+                  router.push({
+                    pathname: "/screens/company/createtask",
+                    params: {
+                      taskId: task.id,
+                      projectId: task.projectId || projectId,
+                      editTaskTitle: task.title,
+                      editTaskDescription: task.description || "",
+                      editTaskPriority: task.priority || "MEDIUM",
+                      editTaskDueDate: task.dueDate || "",
+                    },
+                  })
+                }
                 onPress={() =>
                   router.push({
                     pathname: "/screens/company/subtasks",

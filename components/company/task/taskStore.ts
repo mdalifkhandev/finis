@@ -7,6 +7,7 @@ export type TaskDraft = {
   description: string;
   priority: string;
   dueDate: string;
+  estimatedHours?: number;
 };
 
 let tasks: TaskItem[] = [];
