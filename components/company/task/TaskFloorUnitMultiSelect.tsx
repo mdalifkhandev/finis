@@ -143,7 +143,13 @@ export default function TaskFloorUnitMultiSelect({
     setSelectedUnits(nextUnits);
   }, [initialSelections]);
 
+  const isFirstRender = React.useRef(true);
+
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     onChange(
       selectedFloors.flatMap((floor) =>
         (selectedUnits[floor.id] ?? []).map((unit) => ({ floor, unit })),

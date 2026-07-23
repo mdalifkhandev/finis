@@ -70,7 +70,11 @@ export default function CreateSubtaskRoute() {
   const [title, setTitle] = useState(editTaskTitle ?? "");
     const [description, setDescription] = useState(editTaskDescription ?? "");
   
-    const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(editTaskPriority ?? "MEDIUM");
+    const validPriorities = ["low", "medium", "high", "critical"];
+    const initialPriority = validPriorities.includes(editTaskPriority?.toLowerCase() ?? "")
+      ? editTaskPriority!.toUpperCase() as "LOW" | "MEDIUM" | "HIGH"
+      : "MEDIUM";
+    const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(initialPriority);
     const [showPrioritySheet, setShowPrioritySheet] = useState(false);
   
     const [dueDate, setDueDate] = useState(editTaskDueDate ?? "");
@@ -176,17 +180,13 @@ export default function CreateSubtaskRoute() {
         toast.error("Project ID is missing");
         return;
       }
-      if (!floorUnitSelections.length) {
-        toast.error("Please select at least one floor and unit");
-        return;
-      }
   
       try {
         if (taskId) {
           await updateSubTaskMutation.mutateAsync({
             title: title.trim(),
             description: description.trim(),
-            priority,
+            priority: priority.toLowerCase(),
             unitIds: floorUnitSelections.map((selection) => selection.unit.id),
             dueDate: dueDate.trim() || formatDate(new Date()),
             estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
@@ -205,7 +205,7 @@ export default function CreateSubtaskRoute() {
           await createSubTaskMutation.mutateAsync({
             title: title.trim(),
             description: description.trim(),
-            priority,
+            priority: priority.toLowerCase(),
             unitIds: floorUnitSelections.map((selection) => selection.unit.id),
             dueDate: dueDate.trim() || formatDate(new Date()),
             estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
