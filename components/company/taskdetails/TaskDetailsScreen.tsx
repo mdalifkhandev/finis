@@ -268,17 +268,17 @@ export default function TaskDetailsScreen({
       <TaskPhotoCard title="Before Photo" imageUrl={beforePhoto} />
       <TaskPhotoCard title="After Photo" imageUrl={afterPhoto} />
 
-      <View className="mt-5 rounded-[16px] border border-[#DADFE5] bg-white p-4">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-[15px] font-semibold text-[#1F2937]">
-            Subtasks
-          </Text>
-          <Text className="text-[12px] text-[#667085]">
-            {subTasks.length} total
-          </Text>
-        </View>
+      {subTasks.length > 0 && (
+        <View className="mt-5 rounded-[16px] border border-[#DADFE5] bg-white p-4">
+          <View className="flex-row items-center justify-between">
+            <Text className="text-[15px] font-semibold text-[#1F2937]">
+              Subtasks
+            </Text>
+            <Text className="text-[12px] text-[#667085]">
+              {subTasks.length} total
+            </Text>
+          </View>
 
-        {subTasks.length ? (
           <View className="mt-4 gap-3">
             {subTasks.map((subTask) => {
               const badgeStyle = getSubTaskStatusStyle(subTask.status);
@@ -324,12 +324,8 @@ export default function TaskDetailsScreen({
               );
             })}
           </View>
-        ) : (
-          <Text className="mt-3 text-[13px] text-[#737B88]">
-            No subtasks found for this task.
-          </Text>
-        )}
-      </View>
+        </View>
+      )}
 
       <View className="mt-5 rounded-[16px] border border-[#DADFE5] bg-white p-4">
         <Text className="text-[15px] font-semibold text-[#1F2937]">

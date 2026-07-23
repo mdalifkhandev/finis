@@ -26,6 +26,7 @@ function mapStatus(status: string, approvalDecision?: string | null): TaskStatus
   if (s === "in_progress") return "In Progress";
   if (s === "completed") return "Completed";
   if (s === "review") return "Review";
+  if (s === "revision") return "Revision";
   if (approvalDecision !== "approved") return "Inactive";
   return "Pending";
 }
@@ -33,6 +34,7 @@ function mapStatus(status: string, approvalDecision?: string | null): TaskStatus
 function mapStatusToApi(status: TaskStatus): string {
   if (status === "In Progress") return "in_progress";
   if (status === "Completed") return "completed";
+  if (status === "Revision") return "revision";
   return "pending";
 }
 
