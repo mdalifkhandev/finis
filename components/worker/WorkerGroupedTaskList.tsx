@@ -143,12 +143,12 @@ function WorkerTaskGroupCard({
             {group.subtitle}
           </Text>
         </View>
-        
-          <Ionicons
-            name={expanded ? "chevron-up" : "chevron-down"}
-            size={18}
-            color="#667085"
-          />
+
+        <Ionicons
+          name={expanded ? "chevron-up" : "chevron-down"}
+          size={18}
+          color="#667085"
+        />
       </TouchableOpacity>
 
       {expanded ? (
@@ -206,12 +206,12 @@ function WorkerTaskGroupCard({
                         ? unit.subTasks
                         : unit.sourceTask
                           ? [{
-                              id: unit.sourceTask.id,
-                              title: unit.sourceTask.description?.trim() || unit.sourceTask.title?.trim() || "Task",
-                              status: unit.sourceTask.status,
-                              approvalDecision: unit.sourceTask.approvalDecision ?? null,
-                              action: null,
-                            }]
+                            id: unit.sourceTask.id,
+                            title: unit.sourceTask.description?.trim() || unit.sourceTask.title?.trim() || "Task",
+                            status: unit.sourceTask.status,
+                            approvalDecision: unit.sourceTask.approvalDecision ?? null,
+                            action: null,
+                          }]
                           : []
                       ).map((task, taskIndex) => {
                         const isTaskRejected = task.approvalDecision === "rejected";
@@ -242,27 +242,24 @@ function WorkerTaskGroupCard({
                                   project: group.floors[0]?.units[0]?.sourceTask?.project ?? null,
                                 })
                               }
-                              className={`items-center rounded-[5px] px-2.5 py-1.5 ${
-                                actionLabel === "Review Task"
+                              className={`items-center rounded-[5px] px-2.5 py-1.5 ${actionLabel === "Review Task"
                                   ? "min-w-[88px]"
                                   : actionLabel === "Continue"
                                     ? "min-w-[72px]"
                                     : "min-w-[54px]"
-                              } ${
-                                actionLabel === "Continue"
+                                } ${actionLabel === "Continue"
                                   ? "bg-[#8A5205]"
                                   : actionLabel === "Review Task"
                                     ? "bg-[#6D28D9]"
-                                  : actionLabel === "View"
-                                    ? "bg-[#E3EBEF]"
-                                    : "bg-[#EEF1F4]"
-                              }`}
+                                    : actionLabel === "View"
+                                      ? "bg-[#E3EBEF]"
+                                      : "bg-[#EEF1F4]"
+                                }`}
                             >
-                              <Text className={`text-[10px] font-semibold ${
-                                actionLabel === "Continue" || actionLabel === "Review Task"
+                              <Text className={`text-[10px] font-semibold ${actionLabel === "Continue" || actionLabel === "Review Task"
                                   ? "text-white"
                                   : "text-[#40505F]"
-                              }`}>
+                                }`}>
                                 {actionLabel}
                               </Text>
                             </TouchableOpacity>

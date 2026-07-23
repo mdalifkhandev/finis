@@ -183,9 +183,25 @@ export default function TaskDetailsScreen({
   const afterPhoto = task?.reports?.[0]?.afterPhotoUrl;
   const reportNotes = task?.reports?.[0]?.notes || "No report summary available.";
   const subTasks = task?.subTasks ?? [];
-  const inventories = task?.taskInventories?.length
-    ? task.taskInventories.map(inv => ({ label: inv.inventory?.name || "Unknown", quantity: `${inv.qtyUsed} ${inv.inventory?.unit || ''}` }))
-    : [];
+  const groupedInventories = (task?.taskInventories ?? []).reduce((acc: Record<string, { label: string; qty: number; unit: string }>, inv) => {
+    const id = inv.inventory?.id;
+    if (id) {
+      if (!acc[id]) {
+        acc[id] = {
+          label: inv.inventory?.name || "Unknown",
+          qty: 0,
+          unit: inv.inventory?.unit || "",
+        };
+      }
+      acc[id].qty += inv.qtyUsed || 0;
+    }
+    return acc;
+  }, {});
+
+  const inventories = Object.values(groupedInventories).map((inv: any) => ({
+    label: inv.label,
+    quantity: `${inv.qty} ${inv.unit}`.trim(),
+  }));
 
   const handleUploadFile = async () => {
     try {
