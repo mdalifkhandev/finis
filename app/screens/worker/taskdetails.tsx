@@ -23,6 +23,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TASK_REPORT_IMAGE_UPLOAD_QUALITY } from "@/lib/uploads/image-upload";
 import placeholderImage from "../../../assets/images/placeholder-image.png";
+import * as ImagePicker from "expo-image-picker";
+
 
 const THEME = {
   colors: {
@@ -104,6 +106,7 @@ const TaskDetailsScreen = () => {
     null;
 
   const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [previouslyUsedInventoryMap, setPreviouslyUsedInventoryMap] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const sourceInventory =
@@ -140,6 +143,8 @@ const TaskDetailsScreen = () => {
         }
       });
 
+      setPreviouslyUsedInventoryMap(usedInventoryMap);
+
       setInventoryItems(
         sourceInventory.map((inv: any) => {
           const usedQty = usedInventoryMap[inv.id];
@@ -150,8 +155,8 @@ const TaskDetailsScreen = () => {
             unit: inv.unit,
             location: inv.location,
             maxQty: inv.currentQty || 1,
-            quantity: usedQty || 1, // Start with used amount if it exists, else 1
-            checked: !!usedQty, // Mark as checked if it was used
+            quantity: isRejected ? 1 : (usedQty || 1), // Start with 1 if rejected
+            checked: isRejected ? false : !!usedQty, // Start unchecked if rejected
           };
         }),
       );
@@ -173,12 +178,12 @@ const TaskDetailsScreen = () => {
       prev.map((item) =>
         item.id === id
           ? {
-              ...item,
-              quantity: Math.max(
-                1,
-                Math.min(item.quantity + delta, item.maxQty),
-              ),
-            }
+            ...item,
+            quantity: Math.max(
+              1,
+              Math.min(item.quantity + delta, item.maxQty),
+            ),
+          }
           : item,
       ),
     );
@@ -195,7 +200,6 @@ const TaskDetailsScreen = () => {
   const pickImage = async () => {
     if (isTaskReadOnly) return;
     try {
-      const ImagePicker = await import("expo-image-picker");
       const permission = await ImagePicker.requestCameraPermissionsAsync();
 
       if (permission.status !== "granted") {
@@ -227,11 +231,16 @@ const TaskDetailsScreen = () => {
       alert("Please take or upload an 'After Photo' to complete the task.");
       return;
     }
-    const usedItems = inventoryItems.filter((item) => item.checked);
-    const inventoryUsedPayload = usedItems.map((item) => ({
-      inventoryId: item.id,
-      qtyUsed: item.quantity,
-    }));
+    const itemsToSubmit = inventoryItems.filter(item => item.checked || (isRejected && previouslyUsedInventoryMap[item.id]));
+
+    const inventoryUsedPayload = itemsToSubmit.map((item) => {
+      const prevQty = isRejected ? (previouslyUsedInventoryMap[item.id] || 0) : 0;
+      const newQty = item.checked ? item.quantity : 0;
+      return {
+        inventoryId: item.id,
+        qtyUsed: prevQty + newQty,
+      };
+    });
 
     try {
       await completeTaskMutation.mutateAsync({
@@ -253,10 +262,10 @@ const TaskDetailsScreen = () => {
       alert(error.message || "Failed to complete task.");
     }
   };
-console.log(JSON.stringify(task,null,2));
+  console.log(JSON.stringify(task, null, 2));
 
   return (
-    <SafeAreaView edges={['top','left',"right"]} style={{ flex: 1, backgroundColor: THEME.colors.background }}>
+    <SafeAreaView edges={['top', 'left', "right"]} style={{ flex: 1, backgroundColor: THEME.colors.background }}>
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
@@ -783,16 +792,18 @@ console.log(JSON.stringify(task,null,2));
                               />
                             </TouchableOpacity>
 
-                            <Text
-                              style={{
-                                fontSize: 18,
-                                fontWeight: "600",
-                                color: "#1D4F6D",
-                                marginHorizontal: 12,
-                              }}
-                            >
-                              {item.quantity}
-                            </Text>
+                            <View style={{ alignItems: "center", marginHorizontal: 12 }}>
+                              <Text
+                                style={{
+                                  fontSize: 18,
+                                  fontWeight: "600",
+                                  color: "#1D4F6D",
+                                }}
+                              >
+                                {item.quantity}
+                              </Text>
+
+                            </View>
 
                             <TouchableOpacity
                               onPress={() => updateInventoryQuantity(item.id, 1)}
@@ -819,6 +830,56 @@ console.log(JSON.stringify(task,null,2));
                 </View>
               )}
             </View>
+
+            {isRejected && Object.keys(previouslyUsedInventoryMap).length > 0 && (
+              <View
+                style={{
+                  backgroundColor: THEME.colors.white,
+                  borderRadius: 24,
+                  padding: 24,
+                  borderWidth: 1,
+                  borderColor: THEME.colors.border,
+                  marginBottom: 16,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: THEME.colors.textMain,
+                    marginBottom: 16,
+                  }}
+                >
+                  Previously Used Inventory
+                </Text>
+                <View style={{ gap: 12 }}>
+                  {Object.entries(previouslyUsedInventoryMap).map(([id, qty]) => {
+                    const itemDetails = (inventoryData || task?.availableInventory || []).find((i: any) => i.id === id);
+                    if (!itemDetails) return null;
+                    return (
+                      <View
+                        key={id}
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          paddingVertical: 8,
+                          borderBottomWidth: 1,
+                          borderBottomColor: "#F1F5F9",
+                        }}
+                      >
+                        <Text style={{ fontSize: 15, color: "#475569", fontWeight: "500" }}>
+                          {itemDetails.name}
+                        </Text>
+                        <Text style={{ fontSize: 15, color: "#1D4F6D", fontWeight: "700" }}>
+                          {qty}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
 
             {/* After Photo Section */}
             <View
@@ -970,7 +1031,7 @@ console.log(JSON.stringify(task,null,2));
               >
                 Notes (Optional)
               </Text>
-      {!isTaskReadOnly ? (        <TextInput
+              {!isTaskReadOnly ? (<TextInput
                 placeholder="Add any additional notes about this task..."
                 multiline
                 textAlignVertical="top"
@@ -985,7 +1046,7 @@ console.log(JSON.stringify(task,null,2));
                 }}
                 value={notes}
                 onChangeText={setNotes}
-              />):<Text>{persistedNotes || "No notes available."}</Text>}
+              />) : <Text>{persistedNotes || "No notes available."}</Text>}
             </View>
 
             {/* Action Button */}
