@@ -238,7 +238,7 @@ export default function CreateTaskRoute() {
               </View>
               <View className="flex-1">
                 <TaskFormField
-                  label="Due Date"
+                  label="Due Date (Optional)"
                   placeholder="YYYY-MM-DD"
                   value={dueDate}
                   onChangeText={setDueDate}
@@ -249,7 +249,7 @@ export default function CreateTaskRoute() {
 
             <View className="mt-4">
               <TaskFormField
-                label="Estimated Hours"
+                label="Estimated Hours (Optional)"
                 placeholder="e.g. 5"
                 value={estimatedHours}
                 onChangeText={setEstimatedHours}
