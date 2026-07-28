@@ -114,12 +114,14 @@ export default function EditProfileScreen() {
             </View>
 
             <ProfileField
+              label="Full Name"
               placeholder="Full name"
               value={fullName}
               onChangeText={setFullName}
             />
 
             <ProfileField
+              label="Email Address"
               placeholder="Email address"
               value={email}
               editable={false}
@@ -127,6 +129,7 @@ export default function EditProfileScreen() {
             />
 
             <ProfileField
+              label="Phone Number"
               placeholder="Phone number"
               value={phone}
               onChangeText={setPhone}
@@ -136,6 +139,7 @@ export default function EditProfileScreen() {
             <TouchableOpacity activeOpacity={0.8} onPress={() => setShowDatePicker(true)}>
               <View pointerEvents="none">
                 <ProfileField
+                  label="Date of Birth"
                   placeholder="YYYY-MM-DD"
                   value={dob}
                   onChangeText={() => {}}
@@ -148,6 +152,7 @@ export default function EditProfileScreen() {
             <TouchableOpacity activeOpacity={0.8} onPress={() => setShowGenderModal(true)}>
               <View pointerEvents="none">
                 <ProfileField
+                  label="Gender"
                   placeholder="Gender"
                   value={gender.charAt(0).toUpperCase() + gender.slice(1)}
                   onChangeText={() => {}}
@@ -220,4 +225,3 @@ export default function EditProfileScreen() {
     </SafeAreaView>
   );
 }
-

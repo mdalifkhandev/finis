@@ -42,6 +42,7 @@ const THEME = {
 };
 
 const CustomInput = ({
+  label,
   placeholder,
   value,
   onChangeText,
@@ -50,6 +51,7 @@ const CustomInput = ({
   isDropdown = false,
   onPress,
 }: {
+  label?: string;
   placeholder?: string;
   value: string;
   onChangeText?: (text: string) => void;
@@ -58,6 +60,12 @@ const CustomInput = ({
   isDropdown?: boolean;
   onPress?: () => void;
 }) => (
+  <View style={{ marginBottom: 16 }}>
+    {label && (
+      <Text style={{ marginBottom: 6, fontSize: 13, fontWeight: "500", color: "#2B2B2B", marginLeft: 4 }}>
+        {label}
+      </Text>
+    )}
   <TouchableOpacity
     activeOpacity={readOnly ? 1 : onPress ? 0.7 : 1}
     onPress={onPress}
@@ -71,7 +79,6 @@ const CustomInput = ({
       paddingHorizontal: 16,
       borderWidth: 1,
       borderColor: THEME.colors.inputBorder,
-      marginBottom: 16,
     }}
   >
     <TextInput
@@ -107,6 +114,7 @@ const CustomInput = ({
       />
     )}
   </TouchableOpacity>
+  </View>
 );
 
 const EditProfileScreen = () => {
@@ -261,24 +269,28 @@ const EditProfileScreen = () => {
           </View>
 
           <CustomInput
+            label="Full Name"
             placeholder="Full name"
             value={name}
             onChangeText={setName}
           />
 
           <CustomInput
+            label="Email Address"
             value={profile?.email || ""}
             readOnly={true}
             icon="lock-outline"
           />
 
           <CustomInput
+            label="Phone Number"
             placeholder="Phone number"
             value={phone}
             onChangeText={setPhone}
           />
 
           <CustomInput
+            label="Date of Birth"
             placeholder="mm/dd/yyyy"
             value={
               dob
@@ -307,6 +319,7 @@ const EditProfileScreen = () => {
           )}
 
           <CustomInput
+            label="Gender"
             placeholder="Gender"
             value={gender}
             isDropdown={true}
