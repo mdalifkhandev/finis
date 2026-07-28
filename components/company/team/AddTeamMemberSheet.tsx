@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type TeamMemberOption = {
   id: string;
@@ -36,6 +37,7 @@ export default function AddTeamMemberSheet({
   title = "Add Team Managers",
   isLoading = false,
 }: AddTeamMemberSheetProps) {
+  const insets = useSafeAreaInsets();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const handleClose = () => {
@@ -62,7 +64,8 @@ export default function AddTeamMemberSheet({
       <Pressable className="flex-1 justify-end bg-black/20" onPress={handleClose}>
         <Pressable
           onPress={(event) => event.stopPropagation()}
-          className="rounded-t-[14px] bg-white px-3 pb-6 pt-3"
+          className="rounded-t-[14px] bg-white px-3 pt-3"
+          style={{ paddingBottom: Math.max(insets.bottom, 24) }}
         >
           <Text className="text-[16px] font-medium text-[#222831]">
             {title}

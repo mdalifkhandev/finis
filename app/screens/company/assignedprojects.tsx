@@ -51,7 +51,7 @@ export default function AssignedProjectsRoute() {
   const { deleteProject } = useDeleteProjectMutation();
   const { refreshing, onRefresh } = usePullToRefresh();
   const insets = useSafeAreaInsets();
-  
+
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [selectedProject, setSelectedProject] = useState<{ id: string; name: string } | null>(null);
 
@@ -79,7 +79,7 @@ export default function AssignedProjectsRoute() {
   };
 
   return (
-    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#e9edf1]">
+    <SafeAreaView edges={['top', 'left', "right"]} className="flex-1 bg-[#e9edf1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 48 }}
@@ -150,9 +150,9 @@ export default function AssignedProjectsRoute() {
             onPress={() =>
               companyId
                 ? router.push({
-                    pathname: "/screens/company/createproject",
-                    params: { id: companyId },
-                  })
+                  pathname: "/screens/company/createproject",
+                  params: { id: companyId },
+                })
                 : router.push("/screens/company/createproject")
             }
             className="h-[52px] w-full flex-row items-center justify-center gap-2 rounded-[12px] bg-[#1D4F6D] px-8 py-3"
@@ -170,6 +170,7 @@ export default function AssignedProjectsRoute() {
         transparent
         animationType="fade"
         onRequestClose={() => setBottomSheetVisible(false)}
+        style={{ paddingBottom: Math.max(insets.bottom, 24) }}
       >
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
@@ -178,7 +179,7 @@ export default function AssignedProjectsRoute() {
         >
           <View style={{ flex: 1, justifyContent: "flex-end" }}>
             <TouchableOpacity activeOpacity={1}>
-              <View 
+              <View
                 className="rounded-t-3xl bg-white pt-5 px-5"
                 style={{ paddingBottom: Math.max(insets.bottom, 32) }}
               >

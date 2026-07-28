@@ -14,7 +14,7 @@ import {
   View,
   RefreshControl,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ManagerTasksRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -23,6 +23,7 @@ export default function ManagerTasksRoute() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(
     projectIdFromRoute,
   );
+  const insets = useSafeAreaInsets();
   const { data: projectNames, isLoading } = useAdminProjectNamesQuery();
   const queryClient = useQueryClient();
   const { refreshing, onRefresh } = usePullToRefresh(async () => {
@@ -57,7 +58,7 @@ export default function ManagerTasksRoute() {
   };
 
   return (
-    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top', 'left', "right"]} className="flex-1 bg-[#E9EDF1]">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
@@ -85,6 +86,7 @@ export default function ManagerTasksRoute() {
         transparent
         animationType="slide"
         onRequestClose={() => setIsProjectSheetVisible(false)}
+        style={{ paddingBottom: Math.max(insets.bottom, 24) }}
       >
         <Pressable
           className="flex-1 justify-end bg-black/35"
@@ -124,11 +126,10 @@ export default function ManagerTasksRoute() {
                       key={project.id}
                       activeOpacity={0.85}
                       onPress={() => handleSelectProject(project.id)}
-                      className={`mb-3 rounded-[12px] border px-4 py-4 ${
-                        isSelected
+                      className={`mb-3 rounded-[12px] border px-4 py-4 ${isSelected
                           ? "border-[#1E5371] bg-[#EAF3F7]"
                           : "border-[#D7DDE4] bg-[#F8FAFC]"
-                      }`}
+                        }`}
                     >
                       <Text className="text-[16px] font-medium text-[#1F2328]">
                         {project.name}
@@ -149,9 +150,8 @@ export default function ManagerTasksRoute() {
               activeOpacity={0.85}
               disabled={!selectedProjectId}
               onPress={handleConfirmProject}
-              className={`mt-4 h-[48px] items-center justify-center rounded-[12px] ${
-                selectedProjectId ? "bg-[#1E5371]" : "bg-[#AAB7C2]"
-              }`}
+              className={`mt-4 h-[48px] items-center justify-center rounded-[12px] ${selectedProjectId ? "bg-[#1E5371]" : "bg-[#AAB7C2]"
+                }`}
             >
               <Text className="text-[16px] font-semibold text-white">
                 OK

@@ -32,9 +32,9 @@ export default function Company() {
   const { deleteCompany, isPending: isDeleting } = useDeleteCompanyMutation();
 
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<{id: string, name: string} | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<{ id: string, name: string } | null>(null);
 
-  const handleMenuPress = (company: {id: string, name: string}) => {
+  const handleMenuPress = (company: { id: string, name: string }) => {
     setSelectedCompany(company);
     setBottomSheetVisible(true);
   };
@@ -42,23 +42,23 @@ export default function Company() {
   const handleDeletePress = () => {
     if (!selectedCompany) return;
     setBottomSheetVisible(false);
-    
+
     setTimeout(() => {
       Alert.alert(
         "Delete Company",
         `Are you sure you want to delete ${selectedCompany.name}?`,
         [
           { text: "Cancel", style: "cancel" },
-          { 
-            text: "Delete", 
-            style: "destructive", 
+          {
+            text: "Delete",
+            style: "destructive",
             onPress: async () => {
               try {
                 await deleteCompany(selectedCompany.id);
               } catch (e) {
                 // error handled in mutation
               }
-            } 
+            }
           }
         ]
       );
@@ -85,7 +85,7 @@ export default function Company() {
   const refreshing = isFetching && !isLoading;
 
   return (
-    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-slate-50">
+    <SafeAreaView edges={['top', 'left', "right"]} className="flex-1 bg-slate-50">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -160,15 +160,13 @@ export default function Company() {
             <TouchableOpacity
               disabled={page === 1}
               onPress={() => setPage((current) => Math.max(1, current - 1))}
-              className={`rounded-full px-4 py-2 ${
-                page === 1 ? "bg-slate-200" : "bg-slate-900"
-              }`}
+              className={`rounded-full px-4 py-2 ${page === 1 ? "bg-slate-200" : "bg-slate-900"
+                }`}
               activeOpacity={0.85}
             >
               <Text
-                className={`text-xs font-semibold ${
-                  page === 1 ? "text-slate-400" : "text-white"
-                }`}
+                className={`text-xs font-semibold ${page === 1 ? "text-slate-400" : "text-white"
+                  }`}
               >
                 Previous
               </Text>
@@ -181,19 +179,17 @@ export default function Company() {
             <TouchableOpacity
               disabled={meta ? page >= meta.totalPages : false}
               onPress={() => setPage((current) => current + 1)}
-              className={`rounded-full px-4 py-2 ${
-                meta && page >= meta.totalPages
+              className={`rounded-full px-4 py-2 ${meta && page >= meta.totalPages
                   ? "bg-slate-200"
                   : "bg-slate-900"
-              }`}
+                }`}
               activeOpacity={0.85}
             >
               <Text
-                className={`text-xs font-semibold ${
-                  meta && page >= meta.totalPages
+                className={`text-xs font-semibold ${meta && page >= meta.totalPages
                     ? "text-slate-400"
                     : "text-white"
-                }`}
+                  }`}
               >
                 Next
               </Text>
@@ -219,6 +215,7 @@ export default function Company() {
         transparent
         animationType="fade"
         onRequestClose={() => setBottomSheetVisible(false)}
+        style={{ paddingBottom: Math.max(insets.bottom, 24) }}
       >
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
@@ -227,7 +224,7 @@ export default function Company() {
         >
           <View style={{ flex: 1, justifyContent: "flex-end" }}>
             <TouchableOpacity activeOpacity={1}>
-              <View 
+              <View
                 className="rounded-t-3xl bg-white pt-5 px-5"
                 style={{ paddingBottom: Math.max(insets.bottom, 32) }}
               >
