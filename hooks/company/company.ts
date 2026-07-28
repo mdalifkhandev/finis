@@ -496,12 +496,12 @@ export function useTasksQuery(params: {
   return query;
 }
 
-export function useTaskSubTasksQuery(taskId?: string) {
+export function useTaskSubTasksQuery(taskId?: string, search?: string) {
   return useQuery({
-    queryKey: ["task", "subtasks", taskId],
+    queryKey: ["task", "subtasks", taskId, search],
     queryFn: () => {
       if (!taskId) throw new Error("Task ID is required");
-      return getTaskSubTasks(taskId);
+      return getTaskSubTasks(taskId, search);
     },
     enabled: !!taskId,
   });

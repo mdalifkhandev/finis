@@ -532,14 +532,17 @@ export async function getTasks(params: GetTasksParams = {}): Promise<{
   };
 }
 
-export async function getTaskSubTasks(taskId: string): Promise<{
+export async function getTaskSubTasks(taskId: string, search?: string): Promise<{
   data: TaskSubTaskListItem[];
 }> {
+  const url = search 
+    ? `/admin/tasks/${taskId}/subtasks?search=${encodeURIComponent(search)}`
+    : `/admin/tasks/${taskId}/subtasks`;
   const { data } = await api.get<{
     success: boolean;
     message: string;
     data: BackendSubTaskResponseItem[];
-  }>(`/admin/tasks/${taskId}/subtasks`);
+  }>(url);
 
   if (!data.success) {
     throw new Error(data.message || "Failed to load subtasks");

@@ -17,6 +17,7 @@ import {
   RefreshControl,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   Alert,
@@ -66,8 +67,9 @@ export default function SubtasksRoute() {
     : params.allowSubTaskCreation;
   const allowSubTaskCreation = allowSubTaskCreationParam !== "false";
   const [filter, setFilter] = useState<TaskFilter>("All");
+  const [searchText, setSearchText] = useState("");
 
-  const tasksQuery = useTaskSubTasksQuery(parentTaskId);
+  const tasksQuery = useTaskSubTasksQuery(parentTaskId, searchText.trim() || undefined);
   const taskDetailsQuery = useTaskDetailsQuery(parentTaskId);
   const reviewSubTaskMutation = useReviewSubTaskApprovalMutation(parentTaskId);
   const reviewSubTaskReportMutation = useReviewSubTaskReportMutation(parentTaskId);
@@ -183,6 +185,17 @@ export default function SubtasksRoute() {
             <Ionicons name="add" size={22} color="#FFFFFF" />
             <Text className="ml-2 text-[16px] font-medium text-white">Create New Subtask</Text>
           </TouchableOpacity>
+
+          <View className="mt-3.5 h-[48px] flex-row items-center rounded-[13px] border border-[#CDD4DB] bg-[#F5F7F9] px-3">
+            <Ionicons name="search-outline" size={24} color="#7C8594" />
+            <TextInput
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="Search......"
+              placeholderTextColor="#A0A8B5"
+              className="ml-2 flex-1 text-[15px] text-[#26313E]"
+            />
+          </View>
 
           <TaskFilterTabs value={filter} onChange={setFilter} />
 
