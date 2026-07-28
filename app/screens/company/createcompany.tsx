@@ -274,7 +274,7 @@ export default function CreateCompanyRoute() {
           <View className="mt-3">
             <View className="rounded-xl border border-[#D8DEE6] bg-[#EDF1F4] p-3">
               <ProjectPriorityDropdown
-                label="Project Level"
+                label="Level"
                 value={projectLevel}
                 onChange={setProjectLevel}
               />

@@ -29,7 +29,7 @@ export type CreateProjectPayload = {
   companyId: string;
   type: string;
   startDate: string;
-  endDate: string;
+  endDate?: string;
   budget: number;
   location: string;
   description: string;

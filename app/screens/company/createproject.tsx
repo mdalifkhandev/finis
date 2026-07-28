@@ -7,6 +7,9 @@ import ProjectPriorityDropdown, {
 import ProjectTypeDropdown, {
   ProjectTypeValue,
 } from "@/components/company/project/ProjectTypeDropdown";
+import UnitDigitsDropdown, {
+  UnitDigitsValue,
+} from "@/components/company/project/UnitDigitsDropdown";
 import { saveProject } from "@/components/company/project/projectStore";
 import {
   useCompanyQuery,
@@ -78,6 +81,7 @@ export default function CreateProjectRoute() {
   const [numFloorsMax, setNumFloorsMax] = useState("");
   const [unitPerFloorMin, setUnitPerFloorMin] = useState("");
   const [unitPerFloorMax, setUnitPerFloorMax] = useState("");
+  const [unitDigits, setUnitDigits] = useState<UnitDigitsValue>("3");
   const [budget, setBudget] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
@@ -147,7 +151,6 @@ export default function CreateProjectRoute() {
     if (
       !projectName.trim() ||
       !startDate.trim() ||
-      !endDate.trim() ||
       !location.trim() ||
       !description.trim()
     ) {
@@ -178,6 +181,17 @@ export default function CreateProjectRoute() {
       return;
     }
 
+    if (projectType !== "House") {
+      const requiredLength = Number(unitDigits);
+      if (
+        unitPerFloorMin.trim().length !== requiredLength ||
+        unitPerFloorMax.trim().length !== requiredLength
+      ) {
+        toast.error(`Unit numbers must be exactly ${requiredLength} digits.`);
+        return;
+      }
+    }
+
     if (projectType === "House" && houseScope === "sections" && !mappedHouseSections.length) {
       toast.error("Please select at least one house section.");
       return;
@@ -191,7 +205,7 @@ export default function CreateProjectRoute() {
         companyId,
         type,
         startDate: startDate.trim(),
-        endDate: endDate.trim(),
+        ...(endDate.trim() ? { endDate: endDate.trim() } : {}),
         budget: budgetNumber,
         location: location.trim(),
         description: description.trim(),
@@ -318,7 +332,7 @@ export default function CreateProjectRoute() {
               </View>
               <View className="flex-1">
                 <ProjectInputField
-                  label="End Date"
+                  label="End Date (Optional)"
                   placeholder="YYYY-MM-DD"
                   value={endDate}
                   onPress={() => setPickerTarget("end")}
@@ -330,6 +344,7 @@ export default function CreateProjectRoute() {
             <View className="mt-4 rounded-xl border border-[#D8DEE6] bg-[#EDF1F4] p-3">
               <View className="mb-4">
                 <ProjectPriorityDropdown
+                  label="Level"
                   value={priority}
                   onChange={setPriority}
                 />
@@ -371,23 +386,28 @@ export default function CreateProjectRoute() {
                     <Text className="mb-2 text-[15px] font-medium text-[#1F2937]">
                       Unit Range
                     </Text>
+                    <View className="mb-3">
+                      <UnitDigitsDropdown value={unitDigits} onChange={setUnitDigits} />
+                    </View>
                     <View className="flex-row gap-3">
                       <View className="flex-1">
                         <ProjectInputField
                           label="Min Units"
-                          placeholder="e.g. 12"
+                          placeholder={unitDigits === "3" ? "e.g. 101" : "e.g. 1001"}
                           value={unitPerFloorMin}
-                          onChangeText={setUnitPerFloorMin}
+                          onChangeText={(text) => setUnitPerFloorMin(text.replace(/[^0-9]/g, ""))}
                           keyboardType="number-pad"
+                          maxLength={Number(unitDigits)}
                         />
                       </View>
                       <View className="flex-1">
                         <ProjectInputField
                           label="Max Units"
-                          placeholder="e.g. 20"
+                          placeholder={unitDigits === "3" ? "e.g. 905" : "e.g. 9005"}
                           value={unitPerFloorMax}
-                          onChangeText={setUnitPerFloorMax}
+                          onChangeText={(text) => setUnitPerFloorMax(text.replace(/[^0-9]/g, ""))}
                           keyboardType="number-pad"
+                          maxLength={Number(unitDigits)}
                         />
                       </View>
                     </View>

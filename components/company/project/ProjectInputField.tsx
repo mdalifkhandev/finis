@@ -19,6 +19,7 @@ type ProjectInputFieldProps = {
   multiline?: boolean;
   editable?: boolean;
   keyboardType?: KeyboardTypeOptions;
+  maxLength?: number;
 };
 
 export default function ProjectInputField({
@@ -32,6 +33,7 @@ export default function ProjectInputField({
   multiline = false,
   editable = true,
   keyboardType,
+  maxLength,
 }: ProjectInputFieldProps) {
   const isPressable = Boolean(onPress);
   const showHeader = Boolean(label) || Boolean(labelRight);
@@ -80,6 +82,7 @@ export default function ProjectInputField({
             multiline={multiline}
             editable={editable}
             keyboardType={keyboardType}
+            maxLength={maxLength}
             textAlignVertical={multiline ? "top" : "center"}
             className="text-[16px] text-[#374151]"
           />
