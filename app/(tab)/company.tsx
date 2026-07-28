@@ -1,6 +1,6 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import CompanyCard from "@/components/company/CompanyCard";
-import { useCompaniesQuery } from "@/hooks/company/company";
+import { useCompaniesQuery, useDeleteCompanyMutation } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
@@ -14,6 +14,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Modal,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -26,6 +28,41 @@ export default function Company() {
     page,
     limit,
   );
+  const { deleteCompany, isPending: isDeleting } = useDeleteCompanyMutation();
+
+  const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<{id: string, name: string} | null>(null);
+
+  const handleMenuPress = (company: {id: string, name: string}) => {
+    setSelectedCompany(company);
+    setBottomSheetVisible(true);
+  };
+
+  const handleDeletePress = () => {
+    if (!selectedCompany) return;
+    setBottomSheetVisible(false);
+    
+    setTimeout(() => {
+      Alert.alert(
+        "Delete Company",
+        `Are you sure you want to delete ${selectedCompany.name}?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Delete", 
+            style: "destructive", 
+            onPress: async () => {
+              try {
+                await deleteCompany(selectedCompany.id);
+              } catch (e) {
+                // error handled in mutation
+              }
+            } 
+          }
+        ]
+      );
+    }, 300);
+  };
 
   const companies = data?.data ?? [];
   const meta = data?.meta;
@@ -100,6 +137,7 @@ export default function Company() {
                   address={company.address}
                   website={company.website}
                   logoUrl={company.logoUrl}
+                  onMenuPress={() => handleMenuPress({ id: company.id, name: company.name })}
                   onPress={() =>
                     router.push({
                       pathname: "/screens/company/profile",
@@ -174,6 +212,50 @@ export default function Company() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={bottomSheetVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBottomSheetVisible(false)}
+      >
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
+          activeOpacity={1}
+          onPress={() => setBottomSheetVisible(false)}
+        >
+          <View style={{ flex: 1, justifyContent: "flex-end" }}>
+            <TouchableOpacity activeOpacity={1}>
+              <View className="rounded-t-3xl bg-white pb-8 pt-5 px-5">
+                <View className="mb-5 items-center">
+                  <View className="h-1 w-12 rounded-full bg-slate-300" />
+                </View>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleDeletePress}
+                  className="flex-row items-center rounded-xl p-4 bg-red-50 mb-4"
+                >
+                  <Ionicons name="trash-outline" size={24} color="#ef4444" />
+                  <Text className="ml-3 text-base font-medium text-red-500">
+                    Delete Company
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setBottomSheetVisible(false)}
+                  className="flex-row items-center justify-center rounded-xl p-4 bg-slate-100"
+                >
+                  <Text className="text-base font-medium text-slate-700">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }

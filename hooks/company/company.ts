@@ -8,6 +8,7 @@ import {
   getProjectFloorPlan,
   getProjectProfile,
   updateCompany,
+  deleteCompany,
   updateProject,
   updateSubTask,
   getProjectAnalysis,
@@ -156,6 +157,37 @@ export function useUpdateCompanyMutation(companyId?: string) {
 
   return {
     updateCompany: mutation.mutateAsync,
+    mutate: mutation.mutate,
+    isPending: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+export function useDeleteCompanyMutation() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (id: string) => deleteCompany(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["company", "companies"],
+      });
+      toast.success("Company deleted successfully");
+    },
+  });
+
+  useEffect(() => {
+    if (mutation.isError) {
+      toast.error(
+        mutation.error instanceof Error
+          ? mutation.error.message
+          : "Failed to delete company",
+      );
+    }
+  }, [mutation.error, mutation.isError]);
+
+  return {
+    deleteCompany: mutation.mutateAsync,
     mutate: mutation.mutate,
     isPending: mutation.isPending,
     error: mutation.error,

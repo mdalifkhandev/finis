@@ -13,6 +13,7 @@ type CompanyCardProps = {
   website: string;
   logoUrl?: string | null;
   onPress?: () => void;
+  onMenuPress?: () => void;
 };
 
 function resolveLogoUrl(logoUrl?: string | null) {
@@ -36,6 +37,7 @@ export default function CompanyCard({
   website,
   logoUrl,
   onPress,
+  onMenuPress,
 }: CompanyCardProps) {
   const resolvedLogoUrl = resolveLogoUrl(logoUrl);
 
@@ -46,8 +48,9 @@ export default function CompanyCard({
       className="mt-4 rounded-2xl bg-white p-4"
       style={cardShadow}
     >
-      <View className="flex-row items-center">
-        <View className="h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-100">
+      <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center flex-1 pr-2">
+          <View className="h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-100">
           {resolvedLogoUrl ? (
             <Image
               source={{ uri: resolvedLogoUrl }}
@@ -58,10 +61,21 @@ export default function CompanyCard({
             <Ionicons name="business-outline" size={18} color="#0f172a" />
           )}
         </View>
-        <View className="ml-3">
-          <Text className="text-base font-semibold text-slate-900">{name}</Text>
-          <Text className="text-sm text-slate-500">{type}</Text>
+        <View className="ml-3 flex-1">
+          <Text className="text-base font-semibold text-slate-900" numberOfLines={1}>{name}</Text>
+          <Text className="text-sm text-slate-500" numberOfLines={1}>{type}</Text>
         </View>
+        </View>
+        
+        {onMenuPress && (
+          <TouchableOpacity 
+            onPress={onMenuPress}
+            className="p-2 -mr-2"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color="#64748b" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View className="mt-4 flex-row items-center justify-between w-full">

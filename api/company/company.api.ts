@@ -213,6 +213,18 @@ export async function updateCompany(
   }
 }
 
+export async function deleteCompany(id: string) {
+  const { data } = await api.delete<ApiResponse<any>>(
+    `/admin/companies/${id}`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete company");
+  }
+
+  return data;
+}
+
 export async function createProject(payload: CreateProjectPayload) {
   const { data } = await api.post<ProjectProfileResponse>("/admin/projects", payload);
 
