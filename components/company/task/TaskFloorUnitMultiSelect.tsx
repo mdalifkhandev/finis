@@ -1,7 +1,8 @@
 import { useFloorRoomsQuery } from "@/hooks/company/company";
 import type { Floor, Room } from "@/types/company.types";
 import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
   Modal,
@@ -24,6 +25,7 @@ type FloorUnitsProps = {
   selectedUnitIds: string[];
   onToggle: (floor: Floor, unit: Room) => void;
   onToggleAll: (floor: Floor, units: Room[]) => void;
+  onUnitsLoaded?: (floorId: string, units: Room[]) => void;
 };
 
 function FloorUnits({
@@ -33,6 +35,7 @@ function FloorUnits({
   selectedUnitIds,
   onToggle,
   onToggleAll,
+  onUnitsLoaded,
 }: FloorUnitsProps) {
   const shouldFetchUnits = !unitsOverride;
   const { data: fetchedUnits, isLoading } = useFloorRoomsQuery(
@@ -40,6 +43,12 @@ function FloorUnits({
     shouldFetchUnits ? floor.id : undefined,
   );
   const units = unitsOverride ?? fetchedUnits ?? [];
+
+  useEffect(() => {
+    if (units.length > 0 && onUnitsLoaded) {
+      onUnitsLoaded(floor.id, units);
+    }
+  }, [units, floor.id, onUnitsLoaded]);
   const allSelected = Boolean(units.length) && selectedUnitIds.length === units.length;
   const someSelected = Boolean(units.length) && selectedUnitIds.length > 0 && !allSelected;
 
@@ -118,9 +127,18 @@ export default function TaskFloorUnitMultiSelect({
   initialSelections?: TaskFloorUnitSelection[];
   onChange: (selections: TaskFloorUnitSelection[]) => void;
 }) {
+  const insets = useSafeAreaInsets();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedFloors, setSelectedFloors] = useState<Floor[]>([]);
   const [selectedUnits, setSelectedUnits] = useState<Record<string, Room[]>>({});
+  const [loadedUnitsByFloor, setLoadedUnitsByFloor] = useState<Record<string, Room[]>>({});
+
+  const handleUnitsLoaded = useCallback((floorId: string, units: Room[]) => {
+    setLoadedUnitsByFloor((prev) => {
+      if (prev[floorId]?.length === units.length) return prev;
+      return { ...prev, [floorId]: units };
+    });
+  }, []);
 
   useEffect(() => {
     if (!initialSelections?.length) return;
@@ -184,6 +202,17 @@ export default function TaskFloorUnitMultiSelect({
     });
   };
 
+  const toggleAllFloors = () => {
+    if (!floors?.length) return;
+    const allSelected = selectedFloors.length === floors.length;
+    if (allSelected) {
+      setSelectedFloors([]);
+      setSelectedUnits({});
+    } else {
+      setSelectedFloors([...floors]);
+    }
+  };
+
   const toggleAllUnits = (floor: Floor, units: Room[]) => {
     setSelectedUnits((current) => {
       const currentUnits = current[floor.id] ?? [];
@@ -194,6 +223,38 @@ export default function TaskFloorUnitMultiSelect({
         [floor.id]: allSelected ? [] : [...units],
       };
     });
+  };
+
+  const areAllUnitsSelectedGlobally = React.useMemo(() => {
+    if (!selectedFloors.length) return false;
+    let allSelected = true;
+    let hasAnyUnits = false;
+    for (const floor of selectedFloors) {
+      const cached = loadedUnitsByFloor[floor.id] ?? [];
+      const selected = selectedUnits[floor.id] ?? [];
+      if (cached.length > 0) {
+        hasAnyUnits = true;
+        if (selected.length !== cached.length) {
+          allSelected = false;
+          break;
+        }
+      }
+    }
+    return hasAnyUnits && allSelected;
+  }, [selectedFloors, selectedUnits, loadedUnitsByFloor]);
+
+  const toggleAllSelectedFloorsUnits = () => {
+    if (areAllUnitsSelectedGlobally) {
+      setSelectedUnits({});
+    } else {
+      const nextUnits: Record<string, Room[]> = {};
+      for (const floor of selectedFloors) {
+        if (loadedUnitsByFloor[floor.id]) {
+          nextUnits[floor.id] = [...loadedUnitsByFloor[floor.id]];
+        }
+      }
+      setSelectedUnits(nextUnits);
+    }
   };
 
   return (
@@ -224,7 +285,19 @@ export default function TaskFloorUnitMultiSelect({
 
       {selectedFloors.length ? (
         <View className="mt-5">
-          <Text className="mb-2 text-[14px] font-medium text-[#4D596A]">Select Units</Text>
+          <View className="mb-2 flex-row items-center justify-between">
+            <Text className="text-[14px] font-medium text-[#4D596A]">Select Units</Text>
+            <TouchableOpacity onPress={toggleAllSelectedFloorsUnits} className="flex-row items-center gap-1.5">
+              <Text className="text-[14px] font-medium text-[#1E5371]">
+                {areAllUnitsSelectedGlobally ? "Deselect All" : "Select All"}
+              </Text>
+              <Ionicons
+                name={areAllUnitsSelectedGlobally ? "checkbox" : "square-outline"}
+                size={18}
+                color="#1E5371"
+              />
+            </TouchableOpacity>
+          </View>
           <View className="overflow-hidden rounded-[16px] border border-[#CBD4DE] bg-[#F9FAFC]">
             {selectedFloors.map((floor) => (
               <FloorUnits
@@ -235,6 +308,7 @@ export default function TaskFloorUnitMultiSelect({
                 selectedUnitIds={(selectedUnits[floor.id] ?? []).map((unit) => unit.id)}
                 onToggle={toggleUnit}
                 onToggleAll={toggleAllUnits}
+                onUnitsLoaded={handleUnitsLoaded}
               />
             ))}
           </View>
@@ -249,15 +323,28 @@ export default function TaskFloorUnitMultiSelect({
       >
         <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setSheetVisible(false)}>
           <Pressable
-            className="max-h-[75%] rounded-t-[24px] bg-white px-5 pb-6 pt-4"
+            className="max-h-[75%] rounded-t-[24px] bg-white px-5 pt-4"
+            style={{ paddingBottom: Math.max(insets.bottom, 24) }}
             onPress={(event) => event.stopPropagation()}
           >
             <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-[18px] font-semibold text-[#26313E]">Select Floors</Text>
-              <TouchableOpacity onPress={() => setSheetVisible(false)}>
-                <Ionicons name="close" size={24} color="#667085" />
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-4">
+                <TouchableOpacity onPress={toggleAllFloors} className="flex-row items-center gap-1.5">
+                  <Text className="text-[15px] font-medium text-[#1E5371]">
+                    {floors?.length && selectedFloors.length === floors.length ? "Deselect All" : "Select All"}
+                  </Text>
+                  <Ionicons
+                    name={floors?.length && selectedFloors.length === floors.length ? "checkbox" : "square-outline"}
+                    size={20}
+                    color="#1E5371"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSheetVisible(false)}>
+                  <Ionicons name="close" size={24} color="#667085" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
