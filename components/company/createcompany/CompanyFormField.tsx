@@ -35,21 +35,19 @@ export default function CompanyFormField({
     return (
       <View>
         {label ? (
-          <Text className="mb-2 ml-1 text-sm font-medium text-slate-700">
+          <Text className="mb-2 ml-1 text-base font-medium text-slate-700">
             {label}
           </Text>
         ) : null}
         <TouchableOpacity
           activeOpacity={0.86}
           onPress={onPress}
-          className={`w-full flex-row items-center rounded-xl border border-[#D1D5DB] bg-[#F5F6F8] px-4 ${
-            multiline ? "min-h-[102px] py-3" : "h-12"
-          }`}
+          className={`w-full flex-row items-center rounded-xl border border-[#D1D5DB] bg-[#F5F6F8] px-4 ${multiline ? "min-h-[102px] py-3" : "h-12"
+            }`}
         >
           <Text
-            className={`flex-1 text-[16px] ${
-              value ? "text-[#374151]" : "text-[#BDBFC4]"
-            }`}
+            className={`flex-1 text-[16px] ${value ? "text-[#374151]" : "text-[#BDBFC4]"
+              }`}
             numberOfLines={1}
           >
             {value || placeholder}
@@ -70,9 +68,8 @@ export default function CompanyFormField({
         </Text>
       ) : null}
       <View
-        className={`w-full rounded-xl border border-[#D1D5DB] bg-[#F5F6F8] px-4 ${
-          multiline ? "min-h-[102px] py-3" : "h-12 justify-center"
-        }`}
+        className={`w-full rounded-xl border border-[#D1D5DB] bg-[#F5F6F8] px-4 ${multiline ? "min-h-[102px] py-3" : "h-12 justify-center"
+          }`}
       >
         <TextInput
           value={value}

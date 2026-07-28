@@ -14,6 +14,7 @@ import {
   getMyNotifications,
   type AppNotification,
 } from "@/api/notifications/notifications.list.api";
+import BackTitleHeader from "@/components/common/BackTitleHeader";
 
 /**
  * Maps a notification to the screen it should open.
@@ -97,9 +98,11 @@ export default function NotificationsScreen() {
           <RefreshControl refreshing={query.isRefetching} onRefresh={query.refetch} />
         }
       >
-        <View className="px-5 pt-5">
-          <Text className="text-[22px] font-semibold text-slate-900">Notifications</Text>
-          <Text className="mt-1 text-[13px] text-slate-500">Latest updates from your account</Text>
+        <View className="pt-2">
+          <BackTitleHeader title="Notifications" onBack={() => router.back()} />
+          <View className="items-center mb-2">
+            <Text className="mt-1 text-[13px] text-slate-500">Latest updates from your account</Text>
+          </View>
         </View>
 
         {query.isLoading ? (
