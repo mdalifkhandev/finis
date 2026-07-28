@@ -8,6 +8,7 @@ type TaskCardProps = {
   task: TaskItem;
   onPress?: () => void;
   onPressEdit?: () => void;
+  onPressDelete?: () => void;
   onPressUpdateStatus?: () => void;
   onPressAssignWorker?: () => void;
   onPressSubtaskAction?: () => void;
@@ -43,6 +44,7 @@ export default function TaskCard({
   task,
   onPress,
   onPressEdit,
+  onPressDelete,
   onPressUpdateStatus,
   onPressAssignWorker,
   onPressSubtaskAction,
@@ -96,15 +98,20 @@ export default function TaskCard({
     >
       {/* Title row */}
       <View className="flex-row items-center justify-between">
-        <View className="flex-row items-center">
+        <View className="flex-row items-center flex-1 mr-2">
           <Ionicons
             name="information-circle-outline"
             size={18}
             color="#2A66FF"
           />
-          <Text className="ml-2 text-[16px] text-[#2A313B] w-[200px]" numberOfLines={1}>{task.title}</Text>
+          <Text className="ml-2 text-[16px] text-[#2A313B] flex-1" numberOfLines={1}>{task.title}</Text>
         </View>
-        <View className="flex-row items-center">
+        <View className="flex-row items-center shrink-0">
+          {onPressDelete ? (
+            <TouchableOpacity onPress={(e) => { e.stopPropagation(); onPressDelete(); }} className="mr-3">
+              <Feather name="trash-2" size={18} color="#A32D2D" />
+            </TouchableOpacity>
+          ) : null}
           {onPressEdit ? (
             <TouchableOpacity onPress={(e) => { e.stopPropagation(); onPressEdit(); }} className="mr-2">
               <Feather name="edit" size={18} color="#667085" />

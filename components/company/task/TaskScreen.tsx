@@ -3,11 +3,12 @@ import {
   useReviewTaskCompletionMutation,
   useTasksQuery,
   useUpdateTaskStatusMutation,
+  useDeleteTaskMutation,
 } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View, Alert } from "react-native";
 import TaskCard from "./TaskCard";
 import TaskFilterTabs, { TaskFilter } from "./TaskFilterTabs";
 import { setTasks, updateTaskStatus, useTaskItems } from "./taskStore";
@@ -50,6 +51,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const limit = 10;
+  const deleteTaskMutation = useDeleteTaskMutation();
 
   const { data, isLoading } = useTasksQuery({
     page,
@@ -192,6 +194,20 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                     },
                   })
                 }
+                onPressDelete={() => {
+                  Alert.alert(
+                    "Delete Task",
+                    "Are you sure you want to delete this task?",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () => deleteTaskMutation.mutate(task.id),
+                      },
+                    ]
+                  );
+                }}
                 onPress={() =>
                   router.push({
                     pathname: "/screens/company/subtasks",

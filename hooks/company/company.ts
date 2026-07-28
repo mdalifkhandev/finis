@@ -10,6 +10,8 @@ import {
   updateCompany,
   deleteCompany,
   deleteProject,
+  deleteTask,
+  deleteSubTask,
   updateProject,
   updateSubTask,
   getProjectAnalysis,
@@ -804,6 +806,50 @@ export function useCreateTaskMutation() {
     onError: (error: any) => {
       toast.error(
         error instanceof Error ? error.message : "Failed to create task",
+      );
+    },
+  });
+}
+
+export function useDeleteTaskMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (taskId: string) => deleteTask(taskId),
+    onSuccess: (data, taskId) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["project", "tasks"],
+      });
+      toast.success("Task deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete task",
+      );
+    },
+  });
+}
+
+export function useDeleteSubTaskMutation(parentTaskId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (subTaskId: string) => deleteSubTask(subTaskId),
+    onSuccess: async (data, subTaskId) => {
+      if (parentTaskId) {
+        await queryClient.invalidateQueries({
+          queryKey: ["task", "subtasks", parentTaskId],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["task", "details", parentTaskId],
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
+      toast.success("Subtask deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete subtask",
       );
     },
   });

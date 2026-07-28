@@ -140,8 +140,12 @@ export default function TaskFloorUnitMultiSelect({
     });
   }, []);
 
+  const hasInitialized = React.useRef(false);
+
   useEffect(() => {
-    if (!initialSelections?.length) return;
+    if (!initialSelections?.length || hasInitialized.current) return;
+    
+    hasInitialized.current = true;
 
     const nextFloors: Floor[] = [];
     const nextUnits: Record<string, Room[]> = {};

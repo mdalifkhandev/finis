@@ -7,6 +7,7 @@ import {
   useReviewSubTaskReportMutation,
   useTaskDetailsQuery,
   useTaskSubTasksQuery,
+  useDeleteSubTaskMutation,
 } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -18,6 +19,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -69,6 +71,7 @@ export default function SubtasksRoute() {
   const taskDetailsQuery = useTaskDetailsQuery(parentTaskId);
   const reviewSubTaskMutation = useReviewSubTaskApprovalMutation(parentTaskId);
   const reviewSubTaskReportMutation = useReviewSubTaskReportMutation(parentTaskId);
+  const deleteSubTaskMutation = useDeleteSubTaskMutation(parentTaskId);
 
   const subtasks = useMemo<TaskItem[]>(() => {
     const unitToFloorMap = new Map<string, { id: string; name: string }>();
@@ -210,6 +213,20 @@ export default function SubtasksRoute() {
                       },
                     })
                   }
+                  onPressDelete={() => {
+                    Alert.alert(
+                      "Delete Subtask",
+                      "Are you sure you want to delete this subtask?",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: () => deleteSubTaskMutation.mutate(task.id),
+                        },
+                      ]
+                    );
+                  }}
                   subtaskActionLabel={["Inactive", "Review"].includes(task.status) ? "Approve Sub Task" : "Approved Sub Task"}
                   subtaskActionDisabled={!["Inactive", "Review"].includes(task.status)}
                   onPressSubtaskAction={() =>

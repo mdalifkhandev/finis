@@ -1076,6 +1076,30 @@ export async function updateSubTask(subTaskId: string, payload: Partial<CreateSu
   return data.data;
 }
 
+export async function deleteTask(taskId: string) {
+  const { data } = await api.delete<{ success: boolean; data: any; message?: string }>(
+    `/admin/tasks/${taskId}`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete task");
+  }
+
+  return data.data;
+}
+
+export async function deleteSubTask(subTaskId: string) {
+  const { data } = await api.delete<{ success: boolean; data: any; message?: string }>(
+    `/admin/subtasks/${subTaskId}`,
+  );
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to delete subtask");
+  }
+
+  return data.data;
+}
+
 export type GeofencePoint = { lat: number; lng: number };
 export type CompanyGeofence = {
   id: string;
