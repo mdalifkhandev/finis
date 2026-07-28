@@ -314,7 +314,29 @@ export default function PayrollCalendarCard({
             return;
           }
 
-          onSelectDate(anchor);
+          const currentStart = selectedRange?.start;
+          const currentEnd = selectedRange?.end;
+
+          if (currentStart && currentEnd && anchor > currentEnd) {
+            // Clicked after the current range -> make it the new end date
+            const newStart = new Date(anchor);
+            if (periodMode === "weekly") {
+              newStart.setDate(newStart.getDate() - 6);
+            } else if (periodMode === "biweekly") {
+              newStart.setDate(newStart.getDate() - 13);
+            } else if (periodMode === "monthly") {
+              newStart.setMonth(newStart.getMonth() - 1);
+              newStart.setDate(newStart.getDate() + 1);
+            } else if (periodMode === "bimonthly") {
+              newStart.setMonth(newStart.getMonth() - 2);
+              newStart.setDate(newStart.getDate() + 1);
+            }
+            onSelectDate(newStart);
+          } else {
+            // Clicked before or inside -> make it the new start date
+            onSelectDate(anchor);
+          }
+          
           onSelectRangeEnd?.(null);
           onMonthDateChange(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
         }}

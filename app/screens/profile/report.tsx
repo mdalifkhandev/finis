@@ -91,7 +91,7 @@ export default function ReportScreen() {
   });
 
   const now = new Date();
-  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [startDate, setStartDate] = useState<Date | null>(now);
   const [endDate, setEndDate] = useState<Date>(now);
   const [pickerTarget, setPickerTarget] = useState<"start" | "end" | null>(null);
   const { refreshing, onRefresh } = usePullToRefresh();
@@ -401,6 +401,21 @@ export default function ReportScreen() {
                   activeOpacity={0.85}
                   onPress={() => {
                     setFrequency(option.value);
+                    const start = startDate || new Date();
+                    const end = new Date(start);
+                    if (option.value === "daily") {
+                      end.setDate(start.getDate());
+                    } else if (option.value === "weekly") {
+                      end.setDate(start.getDate() + 7);
+                    } else if (option.value === "monthly") {
+                      end.setMonth(start.getMonth() + 1);
+                    } else if (option.value === "quarterly") {
+                      end.setMonth(start.getMonth() + 3);
+                    } else if (option.value === "yearly") {
+                      end.setFullYear(start.getFullYear() + 1);
+                    }
+                    setStartDate(start);
+                    setEndDate(end);
                     setFrequencyOpen(false);
                   }}
                   className="flex-row items-center justify-center border-b border-[#F1F5F9] py-4"

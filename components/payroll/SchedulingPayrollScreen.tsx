@@ -84,7 +84,26 @@ export default function SchedulingPayrollScreen() {
             onMonthDateChange={setMonthDate}
             onPeriodModeChange={(mode) => {
               setPeriodMode(mode);
-              setSelectedDate(null);
+              if (mode === "custom") {
+                setSelectedDate(null);
+                setSelectedRangeEnd(null);
+                return;
+              }
+              const end = new Date();
+              end.setHours(0, 0, 0, 0);
+              const start = new Date(end);
+              if (mode === "weekly") {
+                start.setDate(start.getDate() - 6);
+              } else if (mode === "biweekly") {
+                start.setDate(start.getDate() - 13);
+              } else if (mode === "monthly") {
+                start.setMonth(start.getMonth() - 1);
+                start.setDate(start.getDate() + 1);
+              } else if (mode === "bimonthly") {
+                start.setMonth(start.getMonth() - 2);
+                start.setDate(start.getDate() + 1);
+              }
+              setSelectedDate(start);
               setSelectedRangeEnd(null);
             }}
           />
