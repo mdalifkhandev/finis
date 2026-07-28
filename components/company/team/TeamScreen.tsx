@@ -8,6 +8,7 @@ import {
   useAssignedWorkersQuery,
   useRemoveProjectWorkerMutation,
 } from "@/hooks/company/company";
+import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import AddTeamMemberSheet, { TeamMemberOption } from "./AddTeamMemberSheet";
@@ -27,6 +28,19 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
   const [activeManagerId, setActiveManagerId] = useState<string | null>(null);
   const [deletingManagerId, setDeletingManagerId] = useState<string | null>(null);
   const [deletingWorkerId, setDeletingWorkerId] = useState<string | null>(null);
+
+  const router = useRouter();
+
+  const handleViewProfile = (userId: string, name: string, avatarUrl: string | null | undefined) => {
+    router.push({
+      pathname: "/screens/chat/userprofile",
+      params: {
+        id: userId,
+        name: name,
+        avatarUrl: avatarUrl ?? undefined,
+      },
+    });
+  };
 
   const { data: managersData, isLoading: isLoadingTeam } =
     useProjectManagersQuery(projectId);
@@ -232,11 +246,12 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
             {activeWorkers.map((worker: any) => (
               <TeamWorkerCard
                 key={worker.id}
-                avatarUrl={worker.avatarUrl}
-                name={worker.name}
-                role={worker.role}
-                onDelete={() => handleDeleteWorker(worker.id)}
-              />
+                  name={worker.name}
+                  role={worker.role}
+                  avatarUrl={worker.avatarUrl}
+                  onDelete={() => setDeletingWorkerId(worker.userId)}
+                  onViewProfile={() => handleViewProfile(worker.userId, worker.name, worker.avatarUrl)}
+                />
             ))}
           </>
         ) : (
@@ -248,10 +263,10 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
               role={manager.role}
               email={manager.email}
               phone={manager.phone}
-              onDelete={() => handleDeleteManager(manager.id)}
               onPress={() => setActiveManagerId(manager.id)}
-            />
-          ))
+              onDelete={() => setDeletingManagerId(manager.userId)}
+              onViewProfile={() => handleViewProfile(manager.userId, manager.name, manager.avatarUrl)}
+            />))
         )}
       </View>
 

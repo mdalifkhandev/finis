@@ -10,6 +10,7 @@ type TeamMemberCardProps = {
   phone: string | null;
   onDelete?: () => void;
   onPress?: () => void;
+  onViewProfile?: () => void;
   hideDelete?: boolean;
 };
 
@@ -21,6 +22,7 @@ export default function TeamMemberCard({
   phone,
   onDelete,
   onPress,
+  onViewProfile,
   hideDelete = false,
 }: TeamMemberCardProps) {
   return (
@@ -54,15 +56,27 @@ export default function TeamMemberCard({
           </View>
         </TouchableOpacity>
 
-        {!hideDelete ? (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={onDelete}
-            className="h-7 w-7 items-center mt-2 mr-2 justify-center"
-          >
-            <Ionicons name="trash-outline" size={24} color="#FF4B4B" />
-          </TouchableOpacity>
-        ) : null}
+        <View className="flex-row items-center justify-end mt-2 gap-3">
+          {onViewProfile ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onViewProfile}
+              className="h-8 w-8 items-center justify-center rounded-full bg-slate-50"
+            >
+              <Ionicons name="eye-outline" size={20} color="#1E5371" />
+            </TouchableOpacity>
+          ) : null}
+
+          {!hideDelete ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onDelete}
+              className="h-8 w-8 items-center justify-center rounded-full bg-red-50"
+            >
+              <Ionicons name="trash-outline" size={20} color="#FF4B4B" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </View>
   );

@@ -7,6 +7,7 @@ type TeamWorkerCardProps = {
   name: string;
   role: string;
   onDelete?: () => void;
+  onViewProfile?: () => void;
 };
 
 export default function TeamWorkerCard({
@@ -14,6 +15,7 @@ export default function TeamWorkerCard({
   name,
   role,
   onDelete,
+  onViewProfile,
 }: TeamWorkerCardProps) {
   return (
     <View className="mt-2.5 rounded-[10px] border border-[#E0E4E9] bg-[#FFFFFF] px-3 py-3">
@@ -37,13 +39,27 @@ export default function TeamWorkerCard({
           </View>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={onDelete}
-          className="h-7 w-7 mr-3 items-center justify-center"
-        >
-          <Ionicons name="trash-outline" size={20} color="#FF4B4B" />
-        </TouchableOpacity>
+        <View className="flex-row items-center justify-end mt-2 gap-3">
+          {onViewProfile ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onViewProfile}
+              className="h-8 w-8 items-center justify-center rounded-full bg-slate-50"
+            >
+              <Ionicons name="eye-outline" size={20} color="#1E5371" />
+            </TouchableOpacity>
+          ) : null}
+
+          {onDelete ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={onDelete}
+              className="h-8 w-8 items-center justify-center rounded-full bg-red-50"
+            >
+              <Ionicons name="trash-outline" size={20} color="#FF4B4B" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </View>
   );
