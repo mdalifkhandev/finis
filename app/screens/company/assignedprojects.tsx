@@ -170,7 +170,6 @@ export default function AssignedProjectsRoute() {
         transparent
         animationType="fade"
         onRequestClose={() => setBottomSheetVisible(false)}
-        style={{ paddingBottom: Math.max(insets.bottom, 24) }}
       >
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}

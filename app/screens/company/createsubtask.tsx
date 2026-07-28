@@ -395,7 +395,6 @@ export default function CreateSubtaskRoute() {
       transparent
       animationType="fade"
       onRequestClose={() => setShowPrioritySheet(false)}
-      style={{ paddingBottom: Math.max(insets.bottom, 24) }}
     >
       <Pressable
         className="flex-1 bg-black/40 justify-center items-center p-5"

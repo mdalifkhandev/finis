@@ -86,7 +86,6 @@ export default function ManagerTasksRoute() {
         transparent
         animationType="slide"
         onRequestClose={() => setIsProjectSheetVisible(false)}
-        style={{ paddingBottom: Math.max(insets.bottom, 24) }}
       >
         <Pressable
           className="flex-1 justify-end bg-black/35"
@@ -95,6 +94,7 @@ export default function ManagerTasksRoute() {
           <Pressable
             className="max-h-[78%] rounded-t-[24px] bg-white px-5 pb-6 pt-4"
             onPress={(event) => event.stopPropagation()}
+            style={{ paddingBottom: Math.max(insets.bottom, 24) }}
           >
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-[18px] font-semibold text-[#1F2328]">

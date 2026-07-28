@@ -10,7 +10,7 @@ import {
   Alert,
   Modal,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import ProfileField from "./ProfileField";
 import ProfileHeaderBar from "./ProfileHeaderBar";
@@ -90,6 +90,7 @@ export default function EditProfileScreen() {
     });
   };
 
+  const insets = useSafeAreaInsets();
   return (
     <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
       <KeyboardAvoidingView
@@ -196,7 +197,7 @@ export default function EditProfileScreen() {
           activeOpacity={1}
           onPress={() => setShowGenderModal(false)}
         >
-          <TouchableOpacity activeOpacity={1} className="rounded-[16px] bg-white p-5">
+          <TouchableOpacity activeOpacity={1} className="rounded-[16px] bg-white p-5" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
             <Text className="mb-4 text-[18px] font-bold text-[#141A22]">Select Gender</Text>
             {["male", "female"].map((opt) => (
               <TouchableOpacity
