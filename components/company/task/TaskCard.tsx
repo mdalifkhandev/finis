@@ -79,9 +79,9 @@ export default function TaskCard({
   } else if (hasApprovedSubtasks && task.rawStatus?.toLowerCase() === "review") {
     actionLabel = "Approve ";
   } else if (task.approvalDecision === "approved") {
-    actionLabel = "Activated";
-    actionDisabled = true;
-    actionVariant = "muted";
+    actionLabel = "View Subtasks";
+    actionDisabled = false;
+    actionVariant = "primary";
   }
 
   const shouldShowAssignWorkerButton = isAdminRole;
@@ -200,7 +200,11 @@ export default function TaskCard({
             activeOpacity={0.8}
             onPress={(e) => {
               e.stopPropagation();
-              onPressUpdateStatus?.();
+              if (actionLabel === "View Subtasks") {
+                onPress?.();
+              } else {
+                onPressUpdateStatus?.();
+              }
             }}
           >
             <Text className="text-[13px] font-medium text-white text-center">
