@@ -14,6 +14,7 @@ type AssignedProjectCardProps = {
   extraMembers: string;
   avatars: Array<string | null>;
   onPress?: () => void;
+  onMenuPress?: () => void;
 };
 
 export default function AssignedProjectCard({
@@ -26,6 +27,7 @@ export default function AssignedProjectCard({
   extraMembers,
   avatars,
   onPress,
+  onMenuPress,
 }: AssignedProjectCardProps) {
   return (
     <TouchableOpacity
@@ -33,14 +35,25 @@ export default function AssignedProjectCard({
       onPress={onPress}
       className="mt-4 h-[206px] w-full flex-col items-start gap-4 rounded-xl border border-[#EDEDED] bg-white p-4"
     >
-      <View className="flex-row items-center">
-        <PriorityBadge level={priority} />
-        <Ionicons
-          name="business-outline"
-          size={24}
-          color="#1e5d7e"
-          style={{ marginLeft: 12 }}
-        />
+      <View className="w-full flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <PriorityBadge level={priority} />
+          <Ionicons
+            name="business-outline"
+            size={24}
+            color="#1e5d7e"
+            style={{ marginLeft: 12 }}
+          />
+        </View>
+        {onMenuPress && (
+          <TouchableOpacity
+            onPress={onMenuPress}
+            className="p-2 -mr-2"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color="#64748b" />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View className="w-full">

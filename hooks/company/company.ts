@@ -9,6 +9,7 @@ import {
   getProjectProfile,
   updateCompany,
   deleteCompany,
+  deleteProject,
   updateProject,
   updateSubTask,
   getProjectAnalysis,
@@ -188,6 +189,40 @@ export function useDeleteCompanyMutation() {
 
   return {
     deleteCompany: mutation.mutateAsync,
+    mutate: mutation.mutate,
+    isPending: mutation.isPending,
+    error: mutation.error,
+  };
+}
+
+export function useDeleteProjectMutation() {
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: (id: string) => deleteProject(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["company", "projects"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      toast.success("Project deleted successfully");
+    },
+  });
+
+  useEffect(() => {
+    if (mutation.isError) {
+      toast.error(
+        mutation.error instanceof Error
+          ? mutation.error.message
+          : "Failed to delete project",
+      );
+    }
+  }, [mutation.error, mutation.isError]);
+
+  return {
+    deleteProject: mutation.mutateAsync,
     mutate: mutation.mutate,
     isPending: mutation.isPending,
     error: mutation.error,
