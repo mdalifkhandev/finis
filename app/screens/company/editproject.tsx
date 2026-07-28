@@ -1,6 +1,9 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import ProjectCheckboxOption from "@/components/company/project/ProjectCheckboxOption";
 import ProjectInputField from "@/components/company/project/ProjectInputField";
+import ProjectPriorityDropdown, {
+  ProjectPriorityValue,
+} from "@/components/company/project/ProjectPriorityDropdown";
 import ProjectTypeDropdown, {
   ProjectTypeValue,
 } from "@/components/company/project/ProjectTypeDropdown";
@@ -110,6 +113,7 @@ export default function EditProjectRoute() {
   const [projectType, setProjectType] = useState<ProjectTypeValue>(
     currentProject.projectType,
   );
+  const [priority, setPriority] = useState<ProjectPriorityValue>("Medium");
   const [floors, setFloors] = useState(currentProject.floors);
   const [roomsPerFloor, setRoomsPerFloor] = useState(
     currentProject.roomsPerFloor,
@@ -184,6 +188,10 @@ export default function EditProjectRoute() {
     setEndDateValue(parsedEndDate);
     setStartDate(formatDate(projectProfile.startDate));
     setEndDate(formatDate(projectProfile.endDate));
+    setPriority(
+      projectProfile.priority === "HIGH" ? "High" :
+      projectProfile.priority === "LOW" ? "Low" : "Medium"
+    );
     setProjectType(
       projectProfile.type?.toLowerCase() === "apartment"
         ? "Apartment Building"
@@ -321,6 +329,7 @@ export default function EditProjectRoute() {
         budget: budgetEnabled ? budgetNumber : 0,
         location: location.trim(),
         description: description.trim(),
+        priority: priority.toUpperCase(),
         ...(useFloorAndUnitFields
           ? {
               ...(floorsMinNumber !== undefined && floorsMinNumber !== null
@@ -427,6 +436,12 @@ export default function EditProjectRoute() {
             </View>
 
             <View className="mt-4 rounded-xl border border-[#D8DEE6] bg-[#EDF1F4] p-3">
+              <View className="mb-4">
+                <ProjectPriorityDropdown
+                  value={priority}
+                  onChange={setPriority}
+                />
+              </View>
               <ProjectTypeDropdown
                 value={projectType}
                 onChange={handleSelectProjectType}

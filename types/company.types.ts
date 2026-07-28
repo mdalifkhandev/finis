@@ -33,6 +33,7 @@ export type CreateProjectPayload = {
   budget: number;
   location: string;
   description: string;
+  priority?: string;
   numFloors?: number;
   numFloorsMin?: number;
   numFloorsMax?: number;
@@ -190,6 +191,7 @@ export type UpdateProjectPayload = {
   budget?: number;
   location?: string;
   description?: string;
+  priority?: string;
   numFloors?: number;
   numFloorsMin?: number;
   numFloorsMax?: number;

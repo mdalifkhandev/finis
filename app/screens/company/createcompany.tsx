@@ -1,6 +1,9 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import CompanyAvatarPicker from "@/components/company/createcompany/CompanyAvatarPicker";
 import CompanyFormField from "@/components/company/createcompany/CompanyFormField";
+import ProjectPriorityDropdown, {
+  ProjectPriorityValue,
+} from "@/components/company/project/ProjectPriorityDropdown";
 import {
   useCompanyQuery,
   useCreateCompanyMutation,
@@ -34,7 +37,7 @@ export default function CreateCompanyRoute() {
   const [website, setWebsite] = useState("");
   const [address, setAddress] = useState("");
   const [revenue, setRevenue] = useState("");
-  const [projectLevel, setProjectLevel] = useState("");
+  const [projectLevel, setProjectLevel] = useState<ProjectPriorityValue>("Medium");
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<CompanyLogoFile | null>(null);
 
@@ -73,7 +76,10 @@ export default function CreateCompanyRoute() {
         ? String(companyData.revenue)
         : "",
     );
-    setProjectLevel(companyData.projectLevel ?? "");
+    setProjectLevel(
+      companyData.projectLevel === "High" || companyData.projectLevel === "HIGH" ? "High" :
+      companyData.projectLevel === "Low" || companyData.projectLevel === "LOW" ? "Low" : "Medium"
+    );
     setLogoPreview(companyData.logoUrl ?? null);
     setLogoFile(null);
   }, [companyData]);
@@ -115,7 +121,7 @@ export default function CreateCompanyRoute() {
       !website.trim() ||
       !address.trim() ||
       !revenue.trim() ||
-      !projectLevel.trim()
+      !projectLevel
     ) {
       toast.error("Please fill in all company details.");
       return;
@@ -132,7 +138,7 @@ export default function CreateCompanyRoute() {
       website: website.trim(),
       address: address.trim(),
       revenue: revenue.trim(),
-      projectLevel: projectLevel.trim(),
+      projectLevel: projectLevel.toUpperCase(),
       logo: logoFile,
     };
 
@@ -266,12 +272,13 @@ export default function CreateCompanyRoute() {
           </View>
 
           <View className="mt-3">
-            <CompanyFormField
-              label="Project Level"
-              placeholder="Project level"
-              value={projectLevel}
-              onChangeText={setProjectLevel}
-            />
+            <View className="rounded-xl border border-[#D8DEE6] bg-[#EDF1F4] p-3">
+              <ProjectPriorityDropdown
+                label="Project Level"
+                value={projectLevel}
+                onChange={setProjectLevel}
+              />
+            </View>
           </View>
 
           <TouchableOpacity

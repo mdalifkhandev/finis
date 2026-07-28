@@ -1,6 +1,9 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
 import ProjectCheckboxOption from "@/components/company/project/ProjectCheckboxOption";
 import ProjectInputField from "@/components/company/project/ProjectInputField";
+import ProjectPriorityDropdown, {
+  ProjectPriorityValue,
+} from "@/components/company/project/ProjectPriorityDropdown";
 import ProjectTypeDropdown, {
   ProjectTypeValue,
 } from "@/components/company/project/ProjectTypeDropdown";
@@ -68,6 +71,7 @@ export default function CreateProjectRoute() {
   const [endDate, setEndDate] = useState("");
   const [projectType, setProjectType] =
     useState<ProjectTypeValue>("Apartment Building");
+  const [priority, setPriority] = useState<ProjectPriorityValue>("Medium");
   const [floors, setFloors] = useState("");
   const [roomsPerFloor, setRoomsPerFloor] = useState("");
   const [numFloorsMin, setNumFloorsMin] = useState("");
@@ -191,6 +195,7 @@ export default function CreateProjectRoute() {
         budget: budgetNumber,
         location: location.trim(),
         description: description.trim(),
+        priority: priority.toUpperCase(),
         ...(type !== "house"
           ? {
               ...(floorsMinNumber != null ? { numFloorsMin: floorsMinNumber } : {}),
@@ -323,6 +328,12 @@ export default function CreateProjectRoute() {
             </View>
 
             <View className="mt-4 rounded-xl border border-[#D8DEE6] bg-[#EDF1F4] p-3">
+              <View className="mb-4">
+                <ProjectPriorityDropdown
+                  value={priority}
+                  onChange={setPriority}
+                />
+              </View>
               <ProjectTypeDropdown
                 value={projectType}
                 onChange={handleSelectProjectType}
