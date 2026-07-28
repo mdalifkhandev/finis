@@ -121,10 +121,7 @@ export default function CreateCompanyRoute() {
       return;
     }
 
-    if (!isEditMode && !logoFile) {
-      toast.error("Please select a company logo.");
-      return;
-    }
+
 
     const payload = {
       name: trimmedName,
@@ -155,7 +152,7 @@ export default function CreateCompanyRoute() {
   };
 
   return (
-    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={['top', 'left', "right"]} className="flex-1 bg-[#E9EDF1]">
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -176,6 +173,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-4">
             <CompanyFormField
+              label="Company Name"
               placeholder="Company name"
               value={companyName}
               onChangeText={setCompanyName}
@@ -184,6 +182,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-3">
             <CompanyFormField
+              label="Industry"
               placeholder="Select industry"
               value={industry}
               rightIconName="chevron-down"
@@ -210,6 +209,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-3">
             <CompanyFormField
+              label="Description"
               placeholder="Brief description of the company..."
               value={description}
               onChangeText={setDescription}
@@ -219,6 +219,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-3">
             <CompanyFormField
+              label="Phone Number"
               placeholder="+1 (555)000-00000"
               value={phone}
               onChangeText={setPhone}
@@ -228,6 +229,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-3">
             <CompanyFormField
+              label="Email Address"
               placeholder="abc@company.com"
               value={email}
               onChangeText={setEmail}
@@ -237,6 +239,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-3">
             <CompanyFormField
+              label="Website Link"
               placeholder="Website link"
               value={website}
               onChangeText={setWebsite}
@@ -245,6 +248,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-3">
             <CompanyFormField
+              label="Business Address"
               placeholder="Business address"
               value={address}
               onChangeText={setAddress}
@@ -253,6 +257,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-3">
             <CompanyFormField
+              label="Revenue"
               placeholder="Revenue"
               value={revenue}
               onChangeText={setRevenue}
@@ -262,6 +267,7 @@ export default function CreateCompanyRoute() {
 
           <View className="mt-3">
             <CompanyFormField
+              label="Project Level"
               placeholder="Project level"
               value={projectLevel}
               onChangeText={setProjectLevel}

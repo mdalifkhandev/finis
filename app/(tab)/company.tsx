@@ -17,10 +17,11 @@ import {
   Modal,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Company() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const limit = 10;
@@ -226,7 +227,10 @@ export default function Company() {
         >
           <View style={{ flex: 1, justifyContent: "flex-end" }}>
             <TouchableOpacity activeOpacity={1}>
-              <View className="rounded-t-3xl bg-white pb-8 pt-5 px-5">
+              <View 
+                className="rounded-t-3xl bg-white pt-5 px-5"
+                style={{ paddingBottom: Math.max(insets.bottom, 32) }}
+              >
                 <View className="mb-5 items-center">
                   <View className="h-1 w-12 rounded-full bg-slate-300" />
                 </View>
