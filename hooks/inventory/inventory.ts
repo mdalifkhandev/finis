@@ -115,3 +115,23 @@ export function useUpdateInventoryMutation() {
     },
   });
 }
+
+export function useDeleteInventoryMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, itemId }: { projectId: string; itemId: string }) =>
+      import("@/api/inventory/inventory.api").then((m) =>
+        m.deleteInventoryItem(projectId, itemId),
+      ),
+    onSuccess: () => {
+      toast.success("Inventory item deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["inventory", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory", "summary"] });
+      queryClient.invalidateQueries({ queryKey: ["inventory", "low-stock"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete inventory item");
+    },
+  });
+}

@@ -1,3 +1,4 @@
+import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { getInventoryStatus } from "./inventoryStore";
@@ -6,11 +7,13 @@ import { InventoryItem } from "./types";
 type InventoryItemCardProps = {
   item: InventoryItem;
   onPressUpdate?: () => void;
+  onPressDelete?: () => void;
 };
 
 export default function InventoryItemCard({
   item,
   onPressUpdate,
+  onPressDelete,
 }: InventoryItemCardProps) {
   const status = getInventoryStatus(item);
 
@@ -96,11 +99,14 @@ export default function InventoryItemCard({
           Updated: {item.updatedAt}
         </Text>
 
-        <TouchableOpacity activeOpacity={0.85} onPress={onPressUpdate}>
-          <Text className="text-[17px] font-medium text-[#1D5478]">
-            Update Stock
-          </Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center space-x-3">
+          <TouchableOpacity activeOpacity={0.85} onPress={onPressUpdate} className="mr-3">
+            <Feather name="edit-2" size={20} color="#1D5478" />
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.85} onPress={onPressDelete}>
+            <Feather name="trash-2" size={20} color="#DC2626" />
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );

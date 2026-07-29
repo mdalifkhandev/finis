@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Modal,
@@ -7,33 +7,60 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  ScrollView,
 } from "react-native";
 import InventoryFormField from "./InventoryFormField";
 import { InventoryItem } from "./types";
 
+export type UpdateInventoryData = {
+  name: string;
+  category: string;
+  currentQty: number;
+  unit: string;
+  location: string;
+};
+
 type UpdateInventoryModalProps = {
   visible: boolean;
   item: InventoryItem | null;
-  quantity: string;
-  unit: string;
-  onChangeQuantity: (value: string) => void;
-  onChangeUnit: (value: string) => void;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (data: UpdateInventoryData) => void;
   isSaving?: boolean;
 };
 
 export default function UpdateInventoryModal({
   visible,
   item,
-  quantity,
-  unit,
-  onChangeQuantity,
-  onChangeUnit,
   onClose,
   onSave,
   isSaving,
 }: UpdateInventoryModalProps) {
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState("");
+  const [location, setLocation] = useState("");
+
+  useEffect(() => {
+    if (item) {
+      setName(item.name || "");
+      setCategory(item.category || "");
+      setQuantity(item.currentQty?.toString() || "0");
+      setUnit(item.unit || "");
+      setLocation(item.location || "");
+    }
+  }, [item]);
+
+  const handleSave = () => {
+    onSave({
+      name,
+      category,
+      currentQty: Number(quantity) || 0,
+      unit,
+      location,
+    });
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={onClose}>
@@ -42,54 +69,72 @@ export default function UpdateInventoryModal({
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : undefined}
             >
-              <View className="rounded-[24px] border border-[#DCE3EA] bg-white p-5">
-                <Text className="text-[22px] font-semibold text-[#2B2B2B]">
-                  Update Stock
+              <View className="rounded-[24px] border border-[#DCE3EA] bg-white p-5 max-h-[80%]">
+                <Text className="text-[22px] font-semibold text-[#2B2B2B] mb-2">
+                  Update Inventory
                 </Text>
-                {item ? (
-                  <Text className="mt-2 text-[15px] text-[#667085]">
-                    {item.name}
-                  </Text>
-                ) : null}
+                
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <InventoryFormField
+                    label="Name"
+                    value={name}
+                    onChangeText={setName}
+                    placeholder="Item name"
+                  />
+                  
+                  <InventoryFormField
+                    label="Category"
+                    value={category}
+                    onChangeText={setCategory}
+                    placeholder="Category"
+                  />
 
-                <InventoryFormField
-                  label="Quantity"
-                  value={quantity}
-                  onChangeText={onChangeQuantity}
-                  placeholder="0"
-                  keyboardType="decimal-pad"
-                />
+                  <InventoryFormField
+                    label="Quantity"
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    placeholder="0"
+                    keyboardType="decimal-pad"
+                  />
 
-                <InventoryFormField
-                  label="Unit"
-                  value={unit}
-                  onChangeText={onChangeUnit}
-                  placeholder="pcs"
-                />
+                  <InventoryFormField
+                    label="Unit"
+                    value={unit}
+                    onChangeText={setUnit}
+                    placeholder="pcs"
+                  />
+                  
+                  <InventoryFormField
+                    label="Location"
+                    value={location}
+                    onChangeText={setLocation}
+                    placeholder="Warehouse / Shelf"
+                  />
 
-                <View className="mt-8 flex-row items-center justify-between gap-3">
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={onClose}
-                    disabled={isSaving}
-                    className="h-[54px] flex-1 items-center justify-center rounded-[14px] border border-[#D3D9E2] bg-[#F7F9FB]"
-                  >
-                    <Text className="text-[16px] font-medium text-[#1F2937]">
-                      Cancel
-                    </Text>
-                  </TouchableOpacity>
+                  <View className="mt-6 flex-row items-center justify-between gap-3">
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={onClose}
+                      disabled={isSaving}
+                      className="h-[54px] flex-1 items-center justify-center rounded-[14px] border border-[#D3D9E2] bg-[#F7F9FB]"
+                    >
+                      <Text className="text-[16px] font-medium text-[#1F2937]">
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
 
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={onSave}
-                    disabled={isSaving}
-                    className="h-[54px] flex-1 items-center justify-center rounded-[14px] bg-[#1D5478]"
-                  >
-                    <Text className="text-[16px] font-medium text-white">
-                      {isSaving ? "Saving..." : "Save"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={handleSave}
+                      disabled={isSaving}
+                      className="h-[54px] flex-1 items-center justify-center rounded-[14px] bg-[#1D5478]"
+                    >
+                      <Text className="text-[16px] font-medium text-white">
+                        {isSaving ? "Saving..." : "Save"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
               </View>
             </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
@@ -98,4 +143,3 @@ export default function UpdateInventoryModal({
     </Modal>
   );
 }
-

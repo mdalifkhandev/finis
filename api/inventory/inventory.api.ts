@@ -156,3 +156,11 @@ export async function updateInventoryItemData({ projectId, itemId, ...data }: Up
   return response.data.data;
 }
 
+export async function deleteInventoryItem(projectId: string, itemId: string) {
+  const response = await api.delete<ApiResponse<any>>(`/inventory/${projectId}/item/${itemId}`);
+  if (!response.data.success) {
+    throw new Error(response.data.message || "Failed to delete item");
+  }
+  return response.data.data;
+}
+

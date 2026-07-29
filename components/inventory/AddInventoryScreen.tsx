@@ -14,7 +14,7 @@ import {
   Pressable,
   TextInput,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import InventoryFormField from "./InventoryFormField";
 import InventoryHeader from "./InventoryHeader";
@@ -40,6 +40,7 @@ function SelectorBottomSheet({
   onClose,
   onSelect,
 }: SelectorBottomSheetProps) {
+  const insets = useSafeAreaInsets();
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newValue, setNewValue] = useState("");
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -87,15 +88,17 @@ function SelectorBottomSheet({
       transparent
       animationType="slide"
       statusBarTranslucent
+      navigationBarTranslucent
       onRequestClose={closeSheet}
     >
       <Pressable
         className="flex-1 justify-end bg-black/40"
-        style={{ paddingBottom: keyboardHeight }}
         onPress={closeSheet}
       >
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="w-full">
           <Pressable
-            className="max-h-[70%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            className="max-h-[80%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            style={{ paddingBottom: Math.max(insets.bottom, 28) }}
             onPress={(event) => event.stopPropagation()}
           >
             <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
@@ -171,6 +174,7 @@ function SelectorBottomSheet({
               </>
             )}
           </Pressable>
+        </KeyboardAvoidingView>
       </Pressable>
     </Modal>
   );

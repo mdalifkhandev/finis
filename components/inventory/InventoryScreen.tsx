@@ -13,12 +13,13 @@ import InventoryHeader from "./InventoryHeader";
 import InventoryItemCard from "./InventoryItemCard";
 import InventoryStatCard from "./InventoryStatCard";
 import LowStockAlertsCard from "./LowStockAlertsCard";
-import UpdateInventoryModal from "./UpdateInventoryModal";
+import UpdateInventoryModal, { UpdateInventoryData } from "./UpdateInventoryModal";
 import {
   useInventorySummaryQuery,
   useAllInventoryItemsQuery,
   useLowStockAlertsQuery,
   useUpdateInventoryMutation,
+  useDeleteInventoryMutation,
 } from "@/hooks/inventory/inventory";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,6 +29,7 @@ export default function InventoryScreen() {
   const { data: alerts = [], isLoading: isLoadingAlerts, refetch: refetchAlerts } = useLowStockAlertsQuery();
   const { data: items = [], isLoading, refetch: refetchItems } = useAllInventoryItemsQuery();
   const { mutate: updateItem, isPending: isUpdating } = useUpdateInventoryMutation();
+  const { mutate: deleteItem, isPending: isDeleting } = useDeleteInventoryMutation();
   const queryClient = useQueryClient();
   const { refreshing, onRefresh } = usePullToRefresh(async () => {
     await Promise.all([
@@ -41,8 +43,6 @@ export default function InventoryScreen() {
   });
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-  const [editedQuantity, setEditedQuantity] = useState("");
-  const [editedUnit, setEditedUnit] = useState("");
 
   const selectedItem = useMemo(
     () => items.find((item) => item.id === selectedItemId) ?? null,
@@ -54,24 +54,14 @@ export default function InventoryScreen() {
     if (!item) return;
 
     setSelectedItemId(item.id);
-    setEditedQuantity(String(item.currentQty));
-    setEditedUnit(item.unit);
   };
 
   const handleCloseUpdate = () => {
     setSelectedItemId(null);
-    setEditedQuantity("");
-    setEditedUnit("");
   };
 
-  const handleSaveUpdate = () => {
+  const handleSaveUpdate = (data: UpdateInventoryData) => {
     if (!selectedItem) return;
-
-    const quantity = Number(editedQuantity);
-    if (!Number.isFinite(quantity) || quantity < 0) {
-      Alert.alert("Invalid Quantity", "Enter a valid stock quantity.");
-      return;
-    }
 
     if (!selectedItem.projectId) {
       Alert.alert("Error", "Project ID is missing for this item.");
@@ -81,13 +71,32 @@ export default function InventoryScreen() {
     updateItem({
       projectId: selectedItem.projectId,
       itemId: selectedItem.id,
-      currentQty: quantity,
-      unit: editedUnit,
+      ...data,
     }, {
       onSuccess: () => {
         handleCloseUpdate();
       }
     });
+  };
+
+  const handleDeleteItem = (itemId: string, projectId: string | undefined) => {
+    if (!projectId) {
+      Alert.alert("Error", "Project ID is missing for this item.");
+      return;
+    }
+
+    Alert.alert(
+      "Delete Inventory Item",
+      "Are you sure you want to delete this item? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteItem({ projectId, itemId }),
+        },
+      ]
+    );
   };
 
   return (
@@ -149,6 +158,7 @@ export default function InventoryScreen() {
                   key={item.id}
                   item={item}
                   onPressUpdate={() => handleOpenUpdate(item.id)}
+                  onPressDelete={() => handleDeleteItem(item.id, item.projectId)}
                 />
               ))}
             </View>
@@ -159,10 +169,6 @@ export default function InventoryScreen() {
       <UpdateInventoryModal
         visible={Boolean(selectedItem)}
         item={selectedItem}
-        quantity={editedQuantity}
-        unit={editedUnit}
-        onChangeQuantity={setEditedQuantity}
-        onChangeUnit={setEditedUnit}
         onClose={handleCloseUpdate}
         onSave={handleSaveUpdate}
         isSaving={isUpdating}

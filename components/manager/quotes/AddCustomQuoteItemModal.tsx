@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -77,6 +78,7 @@ function SelectorSheet({
   onSelect,
   onClose,
 }: SelectorSheetProps) {
+  const insets = useSafeAreaInsets();
   const safeSearchValue = searchValue ?? "";
   const normalizedSearch = safeSearchValue.trim().toLowerCase();
   const filteredOptions = useMemo(() => {
@@ -110,6 +112,7 @@ function SelectorSheet({
         <Pressable className="flex-1 justify-end bg-black/40" onPress={onClose}>
           <Pressable
             className="max-h-[72%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            style={{ paddingBottom: Math.max(insets.bottom, 28) }}
             onPress={(event) => event.stopPropagation()}
           >
             <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
