@@ -345,9 +345,8 @@ export default function PayrollCalendarCard({
                 className="mb-2 h-[38px] w-[13.2%] items-center justify-center"
               >
                 <View
-                  className={`h-[34px] w-full items-center justify-center rounded-[4px] ${
-                    inRange ? "bg-[#1F5577]" : "bg-transparent"
-                  }`}
+
+                  className={`h-[34px] w-full items-center justify-center ${inRange ? "bg-[#1F5577] rounded-lg" : "bg-transparent"}`}
                 >
                   <Text
                     className={`text-[15px] ${
