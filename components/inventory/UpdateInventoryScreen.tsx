@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Keyboard,
@@ -18,7 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Ionicons } from "@expo/vector-icons";
 import InventoryFormField from "./InventoryFormField";
 import InventoryHeader from "./InventoryHeader";
-import { useCreateInventoryMutation, useInventoryProjectsQuery } from "@/hooks/inventory/inventory";
+import { useUpdateInventoryMutation, useInventoryProjectsQuery, useAllInventoryItemsQuery } from "@/hooks/inventory/inventory";
 import { toast } from "sonner-native";
 
 type SelectorBottomSheetProps = {
@@ -136,10 +136,11 @@ function SelectorBottomSheet({
                           onSelect(item);
                           closeSheet();
                         }}
-                        className={`mb-3 min-h-[52px] flex-row items-center justify-between rounded-[12px] border px-4 py-3 ${selectedValue.toLowerCase() === item.toLowerCase()
-                          ? "border-[#2662F4] bg-[#F0F4FF]"
-                          : "border-[#D8DEE5] bg-[#F7F9FB]"
-                          }`}
+                        className={`mb-3 min-h-[52px] flex-row items-center justify-between rounded-[12px] border px-4 py-3 ${
+                          selectedValue.toLowerCase() === item.toLowerCase()
+                            ? "border-[#2662F4] bg-[#F0F4FF]"
+                            : "border-[#D8DEE5] bg-[#F7F9FB]"
+                        }`}
                       >
                         <Text className="flex-1 pr-3 text-[15px] font-medium text-[#141A22]">{item}</Text>
                         {selectedValue.toLowerCase() === item.toLowerCase() ? (
@@ -199,7 +200,10 @@ function DropdownField({
   );
 }
 
-export default function AddInventoryScreen() {
+export default function UpdateInventoryScreen({ itemId }: { itemId: string }) {
+  const { data: items } = useAllInventoryItemsQuery();
+  const item = useMemo(() => items?.find(i => i.id === itemId), [items, itemId]);
+
   const [projectId, setProjectId] = useState<string | null>(null);
   const [isProjectModalVisible, setProjectModalVisible] = useState(false);
   const [selector, setSelector] = useState<"category" | "unit" | "location" | null>(null);
@@ -211,9 +215,21 @@ export default function AddInventoryScreen() {
   const [quantity, setQuantity] = useState("");
   const [minStockQty, setMinStockQty] = useState("");
 
+  useEffect(() => {
+    if (item) {
+      setProjectId(item.projectId || null);
+      setName(item.name || "");
+      setCategory(item.category || "");
+      setUnit(item.unit || "");
+      setLocation(item.location || "");
+      setQuantity(item.currentQty?.toString() || "0");
+      setMinStockQty(item.minStock?.toString() || "0");
+    }
+  }, [item]);
+
   const { data: inventoryOptions, isLoading: isLoadingProjects } = useInventoryProjectsQuery();
   const projects = inventoryOptions?.projects ?? [];
-  const { mutate: createItem, isPending } = useCreateInventoryMutation();
+  const { mutate: updateItem, isPending } = useUpdateInventoryMutation();
 
   const selectedProject = projects.find((p) => p.id === projectId);
   const locationOptions = useMemo(
@@ -222,28 +238,28 @@ export default function AddInventoryScreen() {
   );
   const selectorConfig = selector
     ? {
-      category: {
-        title: "Category",
-        options: inventoryOptions?.category ?? [],
-        value: category,
-        placeholder: "Enter new category",
-        onSelect: setCategory,
-      },
-      unit: {
-        title: "Unit",
-        options: inventoryOptions?.unit ?? [],
-        value: unit,
-        placeholder: "Enter new unit",
-        onSelect: setUnit,
-      },
-      location: {
-        title: "Location",
-        options: locationOptions,
-        value: location,
-        placeholder: "Enter new location",
-        onSelect: setLocation,
-      },
-    }[selector]
+        category: {
+          title: "Category",
+          options: inventoryOptions?.category ?? [],
+          value: category,
+          placeholder: "Enter new category",
+          onSelect: setCategory,
+        },
+        unit: {
+          title: "Unit",
+          options: inventoryOptions?.unit ?? [],
+          value: unit,
+          placeholder: "Enter new unit",
+          onSelect: setUnit,
+        },
+        location: {
+          title: "Location",
+          options: locationOptions,
+          value: location,
+          placeholder: "Enter new location",
+          onSelect: setLocation,
+        },
+      }[selector]
     : null;
 
   const handleSave = () => {
@@ -257,14 +273,14 @@ export default function AddInventoryScreen() {
       return;
     }
 
-    createItem(
+    updateItem(
       {
+        itemId,
         projectId,
         name: name.trim() || "Unnamed Item",
         category: category.trim(),
         unit: unit.trim(),
         currentQty: Number(quantity) || 0,
-        minStockQty: Number(minStockQty) || 0,
         location: location.trim(),
       },
       {
@@ -276,10 +292,10 @@ export default function AddInventoryScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1] " edges={['top', 'left', "right"]}>
+    <SafeAreaView className="flex-1 bg-[#E9EDF1] " edges={['top','left',"right"]}>
       <KeyboardAvoidingView
         className="flex-1"
-
+       
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
         <ScrollView
@@ -287,7 +303,7 @@ export default function AddInventoryScreen() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: 120, flexGrow: 1 }}
         >
-          <InventoryHeader title="Add Inventory " onBack={() => router.back()} />
+          <InventoryHeader title="Update Inventory" onBack={() => router.back()} />
 
           <View className="mt-6 flex-1 px-5">
             <View className="rounded-[24px] border border-[#DEE4EA] bg-[#F7F9FB] p-4">
@@ -376,7 +392,7 @@ export default function AddInventoryScreen() {
                   <ActivityIndicator color="#1F2937" style={{ marginRight: 8 }} />
                 ) : null}
                 <Text className="text-[16px] font-medium text-[#1F2937]">
-                  Save
+                  Update Item
                 </Text>
               </TouchableOpacity>
             </View>
@@ -422,14 +438,16 @@ export default function AddInventoryScreen() {
                       setProjectId(item.id);
                       setProjectModalVisible(false);
                     }}
-                    className={`mb-3 flex-row items-center justify-between rounded-[12px] border p-4 ${projectId === item.id
-                      ? "border-[#2662F4] bg-[#F0F4FF]"
-                      : "border-[#D8DEE5] bg-[#F7F9FB]"
-                      }`}
+                    className={`mb-3 flex-row items-center justify-between rounded-[12px] border p-4 ${
+                      projectId === item.id
+                        ? "border-[#2662F4] bg-[#F0F4FF]"
+                        : "border-[#D8DEE5] bg-[#F7F9FB]"
+                    }`}
                   >
                     <Text
-                      className={`text-[16px] ${projectId === item.id ? "font-semibold text-[#2662F4]" : "text-[#141A22]"
-                        }`}
+                      className={`text-[16px] ${
+                        projectId === item.id ? "font-semibold text-[#2662F4]" : "text-[#141A22]"
+                      }`}
                     >
                       {item.name}
                     </Text>

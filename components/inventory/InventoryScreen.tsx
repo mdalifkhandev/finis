@@ -13,7 +13,7 @@ import InventoryHeader from "./InventoryHeader";
 import InventoryItemCard from "./InventoryItemCard";
 import InventoryStatCard from "./InventoryStatCard";
 import LowStockAlertsCard from "./LowStockAlertsCard";
-import UpdateInventoryModal, { UpdateInventoryData } from "./UpdateInventoryModal";
+
 import {
   useInventorySummaryQuery,
   useAllInventoryItemsQuery,
@@ -42,40 +42,10 @@ export default function InventoryScreen() {
     ]);
   });
 
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-
-  const selectedItem = useMemo(
-    () => items.find((item) => item.id === selectedItemId) ?? null,
-    [items, selectedItemId],
-  );
-
   const handleOpenUpdate = (itemId: string) => {
-    const item = items.find((entry) => entry.id === itemId);
-    if (!item) return;
-
-    setSelectedItemId(item.id);
-  };
-
-  const handleCloseUpdate = () => {
-    setSelectedItemId(null);
-  };
-
-  const handleSaveUpdate = (data: UpdateInventoryData) => {
-    if (!selectedItem) return;
-
-    if (!selectedItem.projectId) {
-      Alert.alert("Error", "Project ID is missing for this item.");
-      return;
-    }
-
-    updateItem({
-      projectId: selectedItem.projectId,
-      itemId: selectedItem.id,
-      ...data,
-    }, {
-      onSuccess: () => {
-        handleCloseUpdate();
-      }
+    router.push({
+      pathname: "/screens/inventory/edit",
+      params: { id: itemId }
     });
   };
 
@@ -165,14 +135,6 @@ export default function InventoryScreen() {
           )}
         </View>
       </ScrollView>
-
-      <UpdateInventoryModal
-        visible={Boolean(selectedItem)}
-        item={selectedItem}
-        onClose={handleCloseUpdate}
-        onSave={handleSaveUpdate}
-        isSaving={isUpdating}
-      />
     </SafeAreaView>
   );
 }
