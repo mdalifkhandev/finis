@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import { Modal, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type PayrollCalendarCardProps = {
   monthDate: Date;
@@ -158,6 +159,7 @@ export default function PayrollCalendarCard({
   onPeriodModeChange = () => {},
 }: PayrollCalendarCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const selectedLabel =
     PERIOD_OPTIONS.find((item) => item.value === periodMode)?.label ?? "Custom";
@@ -263,7 +265,10 @@ export default function PayrollCalendarCard({
               onPress={() => setMenuOpen(false)}
               className="absolute inset-0 bg-black/35"
             />
-            <View className="rounded-t-[24px] bg-white px-4 pb-6 pt-3">
+            <View
+              className="max-h-[70%] rounded-t-[24px] bg-white px-4 pt-3"
+              style={{ paddingBottom: Math.max(insets.bottom, 24) }}
+            >
               <View className="mx-auto mb-3 h-1.5 w-14 rounded-full bg-[#D0D5DD]" />
               <Text className="mb-4 text-[16px] font-semibold text-[#101828]">
                 Select Payroll Period
