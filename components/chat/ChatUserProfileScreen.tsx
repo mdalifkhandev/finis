@@ -1,8 +1,11 @@
 import BackTitleHeader from "@/components/common/BackTitleHeader";
+import { useCreateDirectThreadMutation } from "@/hooks/chat/chat";
 import { useChatUserProfileQuery } from "@/hooks/chat/user-profile";
+import { useAuthStore } from "@/store/auth.store";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const placeholderAvatar = require("../../assets/images/placeholder-person.png");
@@ -28,11 +31,55 @@ export default function ChatUserProfileScreen() {
   }>();
 
   const userId = typeof id === "string" ? id : undefined;
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const currentUserRole = useAuthStore((state) => state.user?.role);
+  const openThreadMutation = useCreateDirectThreadMutation();
   const { data, isLoading } = useChatUserProfileQuery(userId);
 
   const resolvedName = data?.fullName ?? name ?? "User";
   const resolvedAvatar = data?.avatarUrl || avatarUrl || null;
   const imageSource = resolvedAvatar ? { uri: resolvedAvatar } : placeholderAvatar;
+  const targetRole = data?.role;
+  const canStartDirectChat = (() => {
+    if (!currentUserRole || !targetRole || !userId || userId === currentUserId) {
+      return false;
+    }
+
+    if (currentUserRole === "admin") {
+      return targetRole === "manager" || targetRole === "worker";
+    }
+
+    if (currentUserRole === "manager") {
+      return targetRole === "admin" || targetRole === "worker";
+    }
+
+    if (currentUserRole === "worker") {
+      return targetRole === "manager";
+    }
+
+    return false;
+  })();
+
+  const handleMessagePress = async () => {
+    if (!userId || !canStartDirectChat) return;
+
+    try {
+      const thread = await openThreadMutation.mutateAsync(userId);
+
+      router.push({
+        pathname: "/screens/chat/conversation",
+        params: {
+          threadId: thread.id,
+          name: resolvedName,
+          avatarUrl: resolvedAvatar ?? "",
+          userId,
+          role: targetRole ?? "",
+        },
+      });
+    } catch (_error) {
+      // mutation already shows toast
+    }
+  };
 
   return (
     <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
@@ -61,6 +108,28 @@ export default function ChatUserProfileScreen() {
                     {data?.status ?? "active"}
                   </Text>
                 </View>
+
+                {userId !== currentUserId ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={handleMessagePress}
+                    disabled={!canStartDirectChat || openThreadMutation.isPending}
+                    className={`mt-4 h-11 min-w-[150px] flex-row items-center justify-center rounded-[10px] px-5 ${
+                      canStartDirectChat ? "bg-[#1D5478]" : "bg-[#CBD5E1]"
+                    }`}
+                  >
+                    {openThreadMutation.isPending ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="chatbubble-ellipses-outline" size={18} color="#FFFFFF" />
+                        <Text className="ml-2 text-[14px] font-semibold text-white">
+                          Message
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
               </View>
             </View>
 

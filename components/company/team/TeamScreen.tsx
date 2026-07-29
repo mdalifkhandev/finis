@@ -31,7 +31,18 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
 
   const router = useRouter();
 
-  const handleViewProfile = (userId: string, name: string, avatarUrl: string | null | undefined) => {
+  const handleViewProfile = (
+    userId: string,
+    name: string,
+    avatarUrl: string | null | undefined,
+    userData?: unknown,
+  ) => {
+    console.log("[TeamScreen] View profile user data:", userData ?? {
+      userId,
+      name,
+      avatarUrl,
+    });
+
     router.push({
       pathname: "/screens/chat/userprofile",
       params: {
@@ -60,8 +71,9 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
   const selectedManagers = useMemo(() => {
     if (!managersData) return [];
     return managersData.map((m: any) => ({
-      id: m.id,
-      userId: m.userId || m.memberId,
+      id: m.memberId ?? m.id,
+      memberId: m.memberId,
+      userId: m.userId ?? m.id,
       name: m.fullName || m.name,
       role: m.role || "Manager",
       email: m.email,
@@ -72,7 +84,7 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
 
   const activeManager = useMemo(
     () =>
-      selectedManagers.find((manager: any) => manager.id === activeManagerId) ??
+      selectedManagers.find((manager: any) => manager.userId === activeManagerId) ??
       null,
     [activeManagerId, selectedManagers],
   );
@@ -90,8 +102,9 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
   const activeWorkers = useMemo(() => {
     if (!assignedWorkersData) return [];
     return assignedWorkersData.map((w: any) => ({
-      id: w.id,
-      userId: w.memberId, // From API response
+      id: w.memberId ?? w.id,
+      memberId: w.memberId,
+      userId: w.userId ?? w.id,
       name: w.fullName,
       role: w.role || "Worker",
       email: w.email,
@@ -250,7 +263,7 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
                   role={worker.role}
                   avatarUrl={worker.avatarUrl}
                   onDelete={() => setDeletingWorkerId(worker.userId)}
-                  onViewProfile={() => handleViewProfile(worker.userId, worker.name, worker.avatarUrl)}
+                  onViewProfile={() => handleViewProfile(worker.userId, worker.name, worker.avatarUrl, worker)}
                 />
             ))}
           </>
@@ -263,9 +276,9 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
               role={manager.role}
               email={manager.email}
               phone={manager.phone}
-              onPress={() => setActiveManagerId(manager.id)}
+              onPress={() => setActiveManagerId(manager.userId)}
               onDelete={() => setDeletingManagerId(manager.userId)}
-              onViewProfile={() => handleViewProfile(manager.userId, manager.name, manager.avatarUrl)}
+              onViewProfile={() => handleViewProfile(manager.userId, manager.name, manager.avatarUrl, manager)}
             />))
         )}
       </View>
