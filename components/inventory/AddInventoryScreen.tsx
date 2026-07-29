@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Keyboard,
@@ -41,20 +41,34 @@ function SelectorBottomSheet({
   onSelect,
 }: SelectorBottomSheetProps) {
   const insets = useSafeAreaInsets();
-  const [isAddingNew, setIsAddingNew] = useState(false);
-  const [newValue, setNewValue] = useState("");
+  const [searchValue, setSearchValue] = useState("");
+  const normalizedSearch = searchValue.trim().toLowerCase();
+  const filteredOptions = useMemo(() => {
+    if (!normalizedSearch) return options;
+    return options.filter((item) =>
+      item.toLowerCase().includes(normalizedSearch),
+    );
+  }, [normalizedSearch, options]);
+  const canCreateValue =
+    searchValue.trim().length > 0 &&
+    !options.some((item) => item.toLowerCase() === normalizedSearch);
+
+  useEffect(() => {
+    if (visible) {
+      setSearchValue(selectedValue);
+    }
+  }, [selectedValue, visible]);
 
   const closeSheet = () => {
     Keyboard.dismiss();
-    setIsAddingNew(false);
-    setNewValue("");
+    setSearchValue("");
     onClose();
   };
 
-  const handleAdd = () => {
-    const value = newValue.trim();
+  const handleCreate = () => {
+    const value = searchValue.trim();
     if (!value) {
-      toast.error(`Please enter a ${title.toLowerCase()}`);
+      toast.error(`Please search or enter a ${title.toLowerCase()}`);
       return;
     }
 
@@ -67,18 +81,20 @@ function SelectorBottomSheet({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent
       onRequestClose={closeSheet}
     >
-      <Pressable
-        className="flex-1 justify-end bg-black/40"
-        onPress={closeSheet}
-      >
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="w-full">
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
+        <Pressable
+          className="flex-1 justify-end bg-black/40"
+          onPress={closeSheet}
+        >
           <Pressable
-            className="mix-h-[70%] rounded-t-[24px] bg-white p-5"
-            style={{ paddingBottom: Math.max(insets.bottom, 20) }}
+            className="max-h-[72%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            style={{ paddingBottom: Math.max(insets.bottom, 28) }}
             onPress={(event) => event.stopPropagation()}
           >
+            <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
             <View className="mb-4 flex-row items-center justify-between">
               <Text className="text-[18px] font-bold text-[#141A22]">Select {title}</Text>
               <TouchableOpacity onPress={closeSheet}>
@@ -86,87 +102,66 @@ function SelectorBottomSheet({
               </TouchableOpacity>
             </View>
 
-            {isAddingNew ? (
-              <View className="rounded-[12px] border border-[#D8DEE5] bg-[#F7F9FB] p-3">
-                <TextInput
-                  autoFocus
-                  value={newValue}
-                  onChangeText={setNewValue}
-                  placeholder={placeholder}
-                  placeholderTextColor="#8B949C"
-                  className="h-[46px] rounded-[12px] border border-[#D8DEE5] bg-white px-4 text-[15px] text-[#141A22]"
-                  returnKeyType="done"
-                  onSubmitEditing={handleAdd}
-                />
-                <View className="mt-3 flex-row gap-3">
-                  <TouchableOpacity
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      Keyboard.dismiss();
-                      setIsAddingNew(false);
-                      setNewValue("");
-                    }}
-                    className="h-[44px] flex-1 items-center justify-center rounded-[12px] bg-[#E8EDF3]"
-                  >
-                    <Text className="text-[14px] font-semibold text-[#4D596A]">Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={handleAdd}
-                    className="h-[44px] flex-1 items-center justify-center rounded-[12px] bg-[#1F506D]"
-                  >
-                    <Text className="text-[14px] font-semibold text-white">Add & Select</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <View>
-                <View>
-                  <FlatList
-                    data={options}
-                    keyExtractor={(item) => item.toLowerCase()}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    style={{ flexGrow: 0 }}
-                    contentContainerStyle={{ paddingTop: 4, paddingBottom: 8 }}
-                    renderItem={({ item }) => (
-                      <TouchableOpacity
-                        activeOpacity={0.75}
-                        onPress={() => {
-                          onSelect(item);
-                          closeSheet();
-                        }}
-                        className={`mb-3 min-h-[52px] flex-row items-center justify-between rounded-[12px] border px-4 py-3 ${selectedValue.toLowerCase() === item.toLowerCase()
-                          ? "border-[#2662F4] bg-[#F0F4FF]"
-                          : "border-[#D8DEE5] bg-[#F7F9FB]"
-                          }`}
-                      >
-                        <Text className="flex-1 pr-3 text-[15px] font-medium text-[#141A22]">{item}</Text>
-                        {selectedValue.toLowerCase() === item.toLowerCase() ? (
-                          <Ionicons name="checkmark-circle" size={20} color="#2662F4" />
-                        ) : null}
-                      </TouchableOpacity>
-                    )}
-                    ListEmptyComponent={
-                      <Text className="py-6 text-center text-[14px] text-[#697487]">
-                        No {title.toLowerCase()} found.
-                      </Text>
-                    }
-                  />
-                </View>
+            <View className="mb-4 h-[52px] flex-row items-center rounded-[12px] border border-[#D8DEE5] bg-[#F7F9FB] px-4">
+              <Ionicons name="search-outline" size={20} color="#8B949C" />
+              <TextInput
+                autoFocus
+                value={searchValue}
+                onChangeText={setSearchValue}
+                placeholder={placeholder}
+                placeholderTextColor="#A0AEC0"
+                className="ml-2 flex-1 text-[16px] text-[#141A22]"
+                returnKeyType={canCreateValue ? "done" : "search"}
+                onSubmitEditing={() => {
+                  if (canCreateValue) handleCreate();
+                }}
+              />
+            </View>
+
+            {canCreateValue ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={handleCreate}
+                className="mb-3 rounded-[12px] border border-[#1F506D] bg-[#EEF6FB] px-4 py-3"
+              >
+                <Text className="text-[14px] font-medium text-[#1F506D]">
+                  Create "{searchValue.trim()}"
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            <FlatList
+              data={filteredOptions}
+              keyExtractor={(item, index) => `${title}-${index}-${item.toLowerCase()}`}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setIsAddingNew(true)}
-                  className="mt-2 h-[46px] flex-row items-center justify-center rounded-[12px] border border-dashed border-[#1F506D] bg-[#F3F8FB]"
+                  activeOpacity={0.75}
+                  onPress={() => {
+                    onSelect(item);
+                    closeSheet();
+                  }}
+                  className={`mb-3 min-h-[52px] flex-row items-center justify-between rounded-[12px] border px-4 py-3 ${selectedValue.toLowerCase() === item.toLowerCase()
+                    ? "border-[#2662F4] bg-[#F0F4FF]"
+                    : "border-[#D8DEE5] bg-[#F7F9FB]"
+                    }`}
                 >
-                  <Ionicons name="add" size={20} color="#1F506D" />
-                  <Text className="ml-2 text-[14px] font-semibold text-[#1F506D]">Add New {title}</Text>
+                  <Text className="flex-1 pr-3 text-[15px] font-medium text-[#141A22]">{item}</Text>
+                  {selectedValue.toLowerCase() === item.toLowerCase() ? (
+                    <Ionicons name="checkmark-circle" size={20} color="#2662F4" />
+                  ) : null}
                 </TouchableOpacity>
-              </View>
-            )}
+              )}
+              ListEmptyComponent={
+                <Text className="py-6 text-center text-[14px] text-[#697487]">
+                  No {title.toLowerCase()} found.
+                </Text>
+              }
+            />
           </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -226,21 +221,21 @@ export default function AddInventoryScreen() {
         title: "Category",
         options: inventoryOptions?.category ?? [],
         value: category,
-        placeholder: "Enter new category",
+        placeholder: "Search or create category",
         onSelect: setCategory,
       },
       unit: {
         title: "Unit",
         options: inventoryOptions?.unit ?? [],
         value: unit,
-        placeholder: "Enter new unit",
+        placeholder: "Search or create unit",
         onSelect: setUnit,
       },
       location: {
         title: "Location",
         options: locationOptions,
         value: location,
-        placeholder: "Enter new location",
+        placeholder: "Search or create location",
         onSelect: setLocation,
       },
     }[selector]
