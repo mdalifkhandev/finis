@@ -429,6 +429,12 @@ export type TaskSubTaskListItem = {
   estimatedHours?: number | null;
 };
 
+export type SubTaskGroupItem = {
+  title: string;
+  subTaskCount: number;
+  statusSummary: Record<string, number>;
+};
+
 export type TaskSubTasksResponse = ApiResponse<TaskSubTaskListItem[]>;
 
 export type TaskDetailsReport = {

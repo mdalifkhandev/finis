@@ -7,6 +7,7 @@ import {
   useReviewSubTaskReportMutation,
   useTaskDetailsQuery,
   useTaskSubTasksQuery,
+  useSubTasksByGroupQuery,
   useDeleteSubTaskMutation,
 } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
@@ -50,11 +51,19 @@ function formatDateLabel(dateValue: string) {
   });
 }
 
+function mapFilterToStatus(filter: TaskFilter): string | undefined {
+  if (filter === "Progress") return "in_progress";
+  if (filter === "Pending") return "pending";
+  if (filter === "Completed") return "completed";
+  return undefined;
+}
+
 export default function SubtasksRoute() {
   const params = useLocalSearchParams<{
     parentTaskId?: string;
     projectId?: string;
     title?: string;
+    groupTitle?: string;
     allowSubTaskCreation?: string;
   }>();
   const projectId = Array.isArray(params.projectId) ? params.projectId[0] : params.projectId;
@@ -62,6 +71,7 @@ export default function SubtasksRoute() {
     ? params.parentTaskId[0]
     : params.parentTaskId;
   const taskTitle = Array.isArray(params.title) ? params.title[0] : params.title;
+  const groupTitle = Array.isArray(params.groupTitle) ? params.groupTitle[0] : params.groupTitle;
   const allowSubTaskCreationParam = Array.isArray(params.allowSubTaskCreation)
     ? params.allowSubTaskCreation[0]
     : params.allowSubTaskCreation;
@@ -69,7 +79,17 @@ export default function SubtasksRoute() {
   const [filter, setFilter] = useState<TaskFilter>("All");
   const [searchText, setSearchText] = useState("");
 
-  const tasksQuery = useTaskSubTasksQuery(parentTaskId, searchText.trim() || undefined);
+  const status = mapFilterToStatus(filter);
+  const flatSubtasksQuery = useTaskSubTasksQuery(
+    groupTitle ? undefined : parentTaskId,
+    searchText.trim() || undefined,
+  );
+  const groupedSubtasksQuery = useSubTasksByGroupQuery(groupTitle, {
+    taskId: parentTaskId,
+    projectId,
+    status,
+    limit: 100,
+  });
   const taskDetailsQuery = useTaskDetailsQuery(parentTaskId);
   const reviewSubTaskMutation = useReviewSubTaskApprovalMutation(parentTaskId);
   const reviewSubTaskReportMutation = useReviewSubTaskReportMutation(parentTaskId);
@@ -83,7 +103,11 @@ export default function SubtasksRoute() {
       });
     });
 
-    return (tasksQuery.data?.data ?? []).map((task) => {
+    const sourceSubtasks = groupTitle
+      ? groupedSubtasksQuery.data?.data ?? []
+      : flatSubtasksQuery.data?.data ?? [];
+
+    return sourceSubtasks.map((task) => {
       const units = (
         task.units?.filter(Boolean) ??
         task.subTaskUnits?.map((item) => item.unit).filter(Boolean) ??
@@ -128,15 +152,45 @@ export default function SubtasksRoute() {
         estimatedHours: task.estimatedHours,
       };
     });
-  }, [projectId, taskDetailsQuery.data, tasksQuery.data]);
+  }, [flatSubtasksQuery.data, groupTitle, groupedSubtasksQuery.data, projectId, taskDetailsQuery.data]);
 
   const filteredSubtasks = useMemo(() => {
-    if (filter === "All") return subtasks;
+    const normalizedSearch = searchText.trim().toLowerCase();
+    const searchedSubtasks =
+      groupTitle && normalizedSearch
+        ? subtasks.filter((task) =>
+            [
+              task.title,
+              task.description,
+              task.location,
+              task.assignee,
+              task.status,
+            ]
+              .filter(Boolean)
+              .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
+          )
+        : subtasks;
+
+    if (groupTitle || filter === "All") return searchedSubtasks;
     if (filter === "Progress") {
-      return subtasks.filter((task) => task.status === "In Progress");
+      return searchedSubtasks.filter((task) => task.status === "In Progress");
     }
-    return subtasks.filter((task) => task.status === filter);
-  }, [filter, subtasks]);
+    return searchedSubtasks.filter((task) => task.status === filter);
+  }, [filter, groupTitle, searchText, subtasks]);
+
+  const isLoading = groupTitle ? groupedSubtasksQuery.isLoading : flatSubtasksQuery.isLoading;
+  const isRefetching = groupTitle
+    ? groupedSubtasksQuery.isRefetching
+    : flatSubtasksQuery.isRefetching;
+  const isError = groupTitle ? groupedSubtasksQuery.isError : flatSubtasksQuery.isError;
+
+  const handleRefresh = () => {
+    if (groupTitle) {
+      void groupedSubtasksQuery.refetch();
+    } else {
+      void flatSubtasksQuery.refetch();
+    }
+  };
 
   const handleCreateSubtask = () => {
     if (!projectId) return;
@@ -157,8 +211,8 @@ export default function SubtasksRoute() {
         contentContainerStyle={{ paddingBottom: 36 }}
         refreshControl={
           <RefreshControl
-            refreshing={tasksQuery.isRefetching}
-            onRefresh={() => void tasksQuery.refetch()}
+            refreshing={isRefetching}
+            onRefresh={handleRefresh}
             tintColor="#1E5371"
             colors={["#1E5371"]}
           />
@@ -172,9 +226,14 @@ export default function SubtasksRoute() {
             <Text className="mt-1 text-[17px] font-semibold text-[#26313E]">
               {taskTitle || "Task"}
             </Text>
+            {groupTitle ? (
+              <Text className="mt-1 text-[13px] font-medium text-[#1E5371]">
+                Group: {groupTitle}
+              </Text>
+            ) : null}
           </View>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             activeOpacity={0.85}
             onPress={handleCreateSubtask}
             disabled={!projectId || !allowSubTaskCreation}
@@ -184,9 +243,9 @@ export default function SubtasksRoute() {
           >
             <Ionicons name="add" size={22} color="#FFFFFF" />
             <Text className="ml-2 text-[16px] font-medium text-white">Create New Subtask</Text>
-          </TouchableOpacity>
+          </TouchableOpacity>    */}
 
-          <View className="mt-3.5 h-[48px] flex-row items-center rounded-[13px] border border-[#CDD4DB] bg-[#F5F7F9] px-3">
+          <View className="h-[48px] flex-row items-center rounded-[13px] border border-[#CDD4DB] bg-[#F5F7F9] px-3">
             <Ionicons name="search-outline" size={24} color="#7C8594" />
             <TextInput
               value={searchText}
@@ -199,7 +258,7 @@ export default function SubtasksRoute() {
 
           <TaskFilterTabs value={filter} onChange={setFilter} />
 
-          {tasksQuery.isLoading ? (
+          {isLoading ? (
             <View className="items-center py-16">
               <ActivityIndicator size="large" color="#1E5371" />
             </View>
@@ -270,7 +329,9 @@ export default function SubtasksRoute() {
             <View className="items-center py-16">
               <Ionicons name="list-outline" size={34} color="#98A2B3" />
               <Text className="mt-3 text-[15px] text-[#667085]">
-                No {filter === "All" ? "subtasks" : filter.toLowerCase() + " subtasks"} found.
+                {isError
+                  ? "Failed to load subtasks."
+                  : `No ${groupTitle || filter === "All" ? "subtasks" : filter.toLowerCase() + " subtasks"} found.`}
               </Text>
             </View>
           )}

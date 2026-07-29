@@ -38,6 +38,8 @@ import {
   createSubTask,
   getTaskLocations,
   getTaskSubTasks,
+  getSubTaskGroups,
+  getSubTasksByGroup,
   getAvailableWorkers,
   addProjectWorker,
   getAssignedWorkers,
@@ -507,6 +509,41 @@ export function useTaskSubTasksQuery(taskId?: string, search?: string) {
   });
 }
 
+export function useSubTaskGroupsQuery(params: {
+  taskId?: string;
+  projectId?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: ["task", "subtask-groups", params],
+    queryFn: () => getSubTaskGroups(params),
+    enabled: !!params.taskId || !!params.projectId,
+  });
+}
+
+export function useSubTasksByGroupQuery(
+  title?: string,
+  params: {
+    taskId?: string;
+    projectId?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  } = {},
+) {
+  return useQuery({
+    queryKey: ["task", "subtasks-by-group", title, params],
+    queryFn: () => {
+      if (!title) throw new Error("Subtask group title is required");
+      return getSubTasksByGroup(title, params);
+    },
+    enabled: !!title && (!!params.taskId || !!params.projectId),
+  });
+}
+
 export function useTaskLocationsQuery(taskId?: string) {
   return useQuery({
     queryKey: ["task", "locations", taskId],
@@ -840,6 +877,8 @@ export function useDeleteSubTaskMutation(parentTaskId?: string) {
         await queryClient.invalidateQueries({
           queryKey: ["task", "subtasks", parentTaskId],
         });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtask-groups"] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks-by-group"] });
         await queryClient.invalidateQueries({
           queryKey: ["task", "details", parentTaskId],
         });
@@ -1149,6 +1188,8 @@ export function useReviewSubTaskApprovalMutation(taskId?: string) {
     onSuccess: async () => {
       if (taskId) {
         await queryClient.invalidateQueries({ queryKey: ["task", "subtasks", taskId] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtask-groups"] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks-by-group"] });
         await queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
         await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
       }
@@ -1183,6 +1224,8 @@ export function useReviewSubTaskReportMutation(taskId?: string) {
     onSuccess: async () => {
       if (taskId) {
         await queryClient.invalidateQueries({ queryKey: ["task", "subtasks", taskId] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtask-groups"] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks-by-group"] });
         await queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
         await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
       }
@@ -1206,6 +1249,9 @@ export function useCreateSubTaskMutation(taskId?: string, projectId?: string) {
     },
     onSuccess: async () => {
       if (taskId) {
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks", taskId] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtask-groups"] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks-by-group"] });
         await queryClient.invalidateQueries({ queryKey: ["task", "details", taskId] });
         await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });
         if (projectId) {
@@ -1232,6 +1278,9 @@ export function useUpdateSubTaskMutation(subTaskId?: string, parentTaskId?: stri
     },
     onSuccess: async () => {
       if (parentTaskId) {
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks", parentTaskId] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtask-groups"] });
+        await queryClient.invalidateQueries({ queryKey: ["task", "subtasks-by-group"] });
         await queryClient.invalidateQueries({ queryKey: ["task", "details", parentTaskId] });
       }
       await queryClient.invalidateQueries({ queryKey: ["project", "tasks"] });

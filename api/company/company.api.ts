@@ -28,6 +28,7 @@ import type {
   TaskAssignee,
   TaskSubTaskListItem,
   TaskSubTasksResponse,
+  SubTaskGroupItem,
 } from "@/types/company.types";
 function resolveMediaUrl(path: string | null) {
   return path;
@@ -406,7 +407,7 @@ type BackendSubTaskResponseItem = {
   dueDate?: string | null;
   status: string;
   approvalDecision: string;
-  createdAt: string;
+  createdAt?: string;
   submittedAt?: string | null;
   completedAt?: string | null;
   unit: {
@@ -423,7 +424,7 @@ type BackendSubTaskResponseItem = {
     id: string;
     name: string;
   }>;
-  taskAssignee: {
+  taskAssignee?: {
     id: string;
     user: {
       id: string;
@@ -436,13 +437,13 @@ type BackendSubTaskResponseItem = {
       name: string;
     } | null;
   } | null;
-  creator: {
+  creator?: {
     id: string;
     fullName: string;
     avatarUrl: string | null;
     role: string;
   } | null;
-  _count: {
+  _count?: {
     reports: number;
     inventories: number;
   };
@@ -497,15 +498,15 @@ function mapBackendSubTaskResponse(task: BackendSubTaskResponseItem): TaskSubTas
     dueDate: task.dueDate,
     status: task.status,
     approvalDecision: task.approvalDecision,
-    createdAt: task.createdAt,
+    createdAt: task.createdAt ?? new Date().toISOString(),
     submittedAt: task.submittedAt,
     completedAt: task.completedAt,
     unit: task.unit,
     subTaskUnits: task.subTaskUnits,
     units: task.units,
-    taskAssignee: task.taskAssignee,
-    creator: task.creator,
-    _count: task._count,
+    taskAssignee: task.taskAssignee ?? null,
+    creator: task.creator ?? null,
+    _count: task._count ?? { reports: 0, inventories: 0 },
   };
 }
 
@@ -550,6 +551,67 @@ export async function getTaskSubTasks(taskId: string, search?: string): Promise<
 
   return {
     data: data.data.map((subTask) => mapBackendSubTaskResponse(subTask)),
+  };
+}
+
+export async function getSubTaskGroups(params: {
+  taskId?: string;
+  projectId?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  data: SubTaskGroupItem[];
+  meta: TasksListMeta;
+}> {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    data: SubTaskGroupItem[];
+    meta: TasksListMeta;
+  }>("/admin/subtasks/groups", { params });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load subtask groups");
+  }
+
+  return {
+    data: data.data,
+    meta: data.meta,
+  };
+}
+
+export async function getSubTasksByGroup(
+  title: string,
+  params: {
+    taskId?: string;
+    projectId?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  },
+): Promise<{
+  title: string;
+  data: TaskSubTaskListItem[];
+  meta: TasksListMeta;
+}> {
+  const { data } = await api.get<{
+    success: boolean;
+    message: string;
+    title: string;
+    data: BackendSubTaskResponseItem[];
+    meta: TasksListMeta;
+  }>(`/admin/subtasks/groups/${encodeURIComponent(title)}`, { params });
+
+  if (!data.success) {
+    throw new Error(data.message || "Failed to load grouped subtasks");
+  }
+
+  return {
+    title: data.title,
+    data: data.data.map((subTask) => mapBackendSubTaskResponse(subTask)),
+    meta: data.meta,
   };
 }
 

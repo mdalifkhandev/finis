@@ -210,7 +210,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                 }}
                 onPress={() =>
                   router.push({
-                    pathname: "/screens/company/subtasks",
+                    pathname: "/screens/company/subtaskgroups",
                     params: {
                       parentTaskId: task.id,
                       projectId: task.projectId || projectId,
