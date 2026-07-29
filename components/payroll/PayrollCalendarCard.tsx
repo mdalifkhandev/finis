@@ -1,9 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
-import DateTimePicker, {
-  type DateType,
-  useDefaultStyles,
-} from "react-native-ui-datepicker";
 import { Modal, Text, TouchableOpacity, View } from "react-native";
 
 type PayrollCalendarCardProps = {
@@ -35,15 +31,13 @@ const PERIOD_OPTIONS: Array<{
   { label: "Bimonthly", value: "bimonthly" },
 ];
 
-function toDate(value: DateType | undefined): Date | null {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-
-  const parsed = new Date(value as string | number);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+function startOfWeek(value: Date) {
+  const next = new Date(value);
+  next.setHours(0, 0, 0, 0);
+  return next;
 }
 
-function startOfWeek(value: Date) {
+function normalizeDate(value: Date) {
   const next = new Date(value);
   next.setHours(0, 0, 0, 0);
   return next;
@@ -61,21 +55,11 @@ function addMonths(value: Date, amount: number) {
   return next;
 }
 
-function endOfToday() {
-  const next = new Date();
-  next.setHours(23, 59, 59, 999);
-  return next;
-}
-
 function endOfWeek(value: Date) {
   const next = new Date(value);
   next.setHours(0, 0, 0, 0);
   next.setDate(next.getDate() + 6);
   return next;
-}
-
-function startOfBiweekly(value: Date) {
-  return startOfWeek(value);
 }
 
 function endOfBiweekly(value: Date) {
@@ -88,6 +72,81 @@ function endOfBimonthly(value: Date) {
   return next;
 }
 
+function getPeriodEnd(start: Date, mode: PayrollCalendarMode) {
+  if (mode === "weekly") return endOfWeek(start);
+  if (mode === "biweekly") return endOfBiweekly(start);
+  if (mode === "monthly") {
+    const next = addMonths(start, 1);
+    next.setDate(next.getDate() - 1);
+    return next;
+  }
+  if (mode === "bimonthly") return endOfBimonthly(start);
+  return start;
+}
+
+function getPeriodStartFromEnd(end: Date, mode: PayrollCalendarMode) {
+  const start = normalizeDate(end);
+  if (mode === "weekly") {
+    start.setDate(start.getDate() - 6);
+  } else if (mode === "biweekly") {
+    start.setDate(start.getDate() - 13);
+  } else if (mode === "monthly") {
+    start.setMonth(start.getMonth() - 1);
+    start.setDate(start.getDate() + 1);
+  } else if (mode === "bimonthly") {
+    start.setMonth(start.getMonth() - 2);
+    start.setDate(start.getDate() + 1);
+  }
+  return start;
+}
+
+function moveFixedRange(
+  anchor: Date,
+  currentStart: Date | null | undefined,
+  currentEnd: Date | null | undefined,
+  mode: PayrollCalendarMode,
+) {
+  const selected = normalizeDate(anchor);
+
+  if (!currentStart || !currentEnd) {
+    return { start: selected, end: getPeriodEnd(selected, mode) };
+  }
+
+  const start = normalizeDate(currentStart);
+  const end = normalizeDate(currentEnd);
+  const startDistance = Math.abs(selected.getTime() - start.getTime());
+  const endDistance = Math.abs(selected.getTime() - end.getTime());
+
+  if (startDistance <= endDistance) {
+    return { start: selected, end: getPeriodEnd(selected, mode) };
+  }
+
+  return { start: getPeriodStartFromEnd(selected, mode), end: selected };
+}
+
+function isSameDay(first: Date | null | undefined, second: Date | null | undefined) {
+  if (!first || !second) return false;
+  return (
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate()
+  );
+}
+
+function isBetween(value: Date, start: Date | null | undefined, end: Date | null | undefined) {
+  if (!start || !end) return false;
+  const dateTime = normalizeDate(value).getTime();
+  return dateTime >= normalizeDate(start).getTime() && dateTime <= normalizeDate(end).getTime();
+}
+
+function buildCalendarDays(monthDate: Date) {
+  const firstOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const gridStart = new Date(firstOfMonth);
+  gridStart.setDate(firstOfMonth.getDate() - firstOfMonth.getDay());
+
+  return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index));
+}
+
 export default function PayrollCalendarCard({
   monthDate,
   selectedDate,
@@ -98,73 +157,7 @@ export default function PayrollCalendarCard({
   onMonthDateChange,
   onPeriodModeChange = () => {},
 }: PayrollCalendarCardProps) {
-  const defaultStyles = useDefaultStyles();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const calendarStyles = useMemo(
-    () => ({
-      ...defaultStyles,
-      header: {
-        ...defaultStyles.header,
-        marginBottom: 18,
-        paddingHorizontal: 2,
-      },
-      month_selector_label: {
-        ...defaultStyles.month_selector_label,
-        fontSize: 18,
-        fontWeight: "700" as const,
-        color: "#111827",
-      },
-      year_selector_label: {
-        ...defaultStyles.year_selector_label,
-        fontSize: 18,
-        fontWeight: "700" as const,
-        color: "#111827",
-      },
-      weekday_label: {
-        ...defaultStyles.weekday_label,
-        color: "#1F5577",
-        fontSize: 13,
-        fontWeight: "500" as const,
-      },
-      day: {
-        ...defaultStyles.day,
-        width: 42,
-        height: 42,
-        borderRadius: 21,
-      },
-      day_label: {
-        ...defaultStyles.day_label,
-        color: "#111827",
-        fontSize: 15,
-        fontWeight: "500" as const,
-      },
-      selected: {
-        ...defaultStyles.selected,
-        backgroundColor: "#1F5577",
-        borderRadius: 21,
-      },
-      selected_label: {
-        ...defaultStyles.selected_label,
-        color: "#FFFFFF",
-        fontSize: 15,
-        fontWeight: "600" as const,
-      },
-      outside_label: {
-        ...defaultStyles.outside_label,
-        color: "#D1D5DB",
-      },
-      button_prev: {
-        ...defaultStyles.button_prev,
-        paddingHorizontal: 8,
-      },
-      button_next: {
-        ...defaultStyles.button_next,
-        paddingHorizontal: 8,
-      },
-    }),
-    [defaultStyles],
-  );
 
   const selectedLabel =
     PERIOD_OPTIONS.find((item) => item.value === periodMode)?.label ?? "Custom";
@@ -178,20 +171,67 @@ export default function PayrollCalendarCard({
       : selectedDate
         ? {
           start: selectedDate,
-          end:
-            periodMode === "weekly"
-              ? endOfWeek(selectedDate)
-              : periodMode === "biweekly"
-                ? endOfBiweekly(selectedDate)
-                : periodMode === "monthly"
-                  ? (() => {
-                      const next = addMonths(selectedDate, 1);
-                      next.setDate(next.getDate() - 1);
-                      return next;
-                    })()
-                  : endOfBimonthly(selectedDate),
+          end: selectedRangeEnd ?? getPeriodEnd(selectedDate, periodMode),
           }
         : undefined;
+
+  const calendarDays = useMemo(() => buildCalendarDays(monthDate), [monthDate]);
+  const monthLabel = monthDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const handlePressDate = (date: Date) => {
+    const anchor = normalizeDate(date);
+
+    if (periodMode === "custom") {
+      const currentStart = selectedDate ? normalizeDate(selectedDate) : null;
+      const currentEnd = selectedRangeEnd ? normalizeDate(selectedRangeEnd) : null;
+
+      if (!currentStart) {
+        onSelectDate(anchor);
+        onSelectRangeEnd?.(null);
+      } else if (!currentEnd) {
+        if (anchor < currentStart) {
+          onSelectDate(anchor);
+          onSelectRangeEnd?.(currentStart);
+        } else {
+          onSelectRangeEnd?.(anchor);
+        }
+      } else if (anchor <= currentStart) {
+        onSelectDate(anchor);
+        onSelectRangeEnd?.(currentEnd);
+      } else if (anchor >= currentEnd) {
+        onSelectRangeEnd?.(anchor);
+      } else {
+        const startDistance = Math.abs(anchor.getTime() - currentStart.getTime());
+        const endDistance = Math.abs(currentEnd.getTime() - anchor.getTime());
+
+        if (startDistance <= endDistance) {
+          onSelectDate(anchor);
+        } else {
+          onSelectRangeEnd?.(anchor);
+        }
+      }
+      onMonthDateChange(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
+      return;
+    }
+
+    const movedRange = moveFixedRange(
+      anchor,
+      selectedRange?.start,
+      selectedRange?.end,
+      periodMode,
+    );
+
+    onSelectDate(movedRange.start);
+    onSelectRangeEnd?.(movedRange.end);
+    onMonthDateChange(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
+  };
+
+  const handleMonthMove = (amount: number) => {
+    onMonthDateChange(new Date(monthDate.getFullYear(), monthDate.getMonth() + amount, 1));
+  };
 
   return (
     <View className="rounded-[18px] border border-[#D8DDE3] bg-white px-3 py-3">
@@ -261,92 +301,71 @@ export default function PayrollCalendarCard({
         </Modal>
       </View>
 
-      <DateTimePicker
-        mode="range"
-        locale="en"
-        startDate={selectedRange?.start}
-        endDate={selectedRange?.end}
-        month={monthDate.getMonth()}
-        year={monthDate.getFullYear()}
-        firstDayOfWeek={0}
-        weekdaysFormat="short"
-        showOutsideDays
-        maxDate={endOfToday()}
-        styles={calendarStyles}
-        onChange={(payload: any) => {
-          const anchor = toDate(payload?.date ?? payload?.startDate ?? payload?.endDate);
-          if (!anchor) return;
+      <View className="px-1 pb-1">
+        <View className="mb-4 flex-row items-center justify-between">
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => handleMonthMove(-1)}
+            className="h-9 w-9 items-center justify-center"
+          >
+            <Ionicons name="chevron-back" size={20} color="#111827" />
+          </TouchableOpacity>
 
-          if (anchor > endOfToday()) {
-            return;
-          }
+          <Text className="text-[18px] font-bold text-[#111827]">{monthLabel}</Text>
 
-          if (periodMode === "custom") {
-            const currentStart = selectedDate;
-            const currentEnd = selectedRangeEnd ?? null;
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => handleMonthMove(1)}
+            className="h-9 w-9 items-center justify-center"
+          >
+            <Ionicons name="chevron-forward" size={20} color="#111827" />
+          </TouchableOpacity>
+        </View>
 
-            if (!currentStart) {
-              onSelectDate(anchor);
-              onSelectRangeEnd?.(null);
-            } else if (!currentEnd) {
-              if (anchor < currentStart) {
-                onSelectDate(anchor);
-                onSelectRangeEnd?.(currentStart);
-              } else {
-                onSelectRangeEnd?.(anchor);
-              }
-            } else if (anchor <= currentStart) {
-              onSelectDate(anchor);
-              onSelectRangeEnd?.(currentEnd);
-            } else if (anchor >= currentEnd) {
-              onSelectRangeEnd?.(anchor);
-            } else {
-              const startDistance = Math.abs(anchor.getTime() - currentStart.getTime());
-              const endDistance = Math.abs(currentEnd.getTime() - anchor.getTime());
+        <View className="mb-2 flex-row justify-between">
+          {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((day) => (
+            <View key={day} className="h-7 w-[13.2%] items-center justify-center">
+              <Text className="text-[11px] font-semibold text-[#1F5577]">{day}</Text>
+            </View>
+          ))}
+        </View>
 
-              if (startDistance <= endDistance) {
-                onSelectDate(anchor);
-              } else {
-                onSelectRangeEnd?.(anchor);
-              }
-            }
-            onMonthDateChange(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
-            return;
-          }
+        <View className="flex-row flex-wrap justify-between">
+          {calendarDays.map((date) => {
+            const isCurrentMonth = date.getMonth() === monthDate.getMonth();
+            const inRange = isBetween(date, selectedRange?.start, selectedRange?.end);
+            const isEdge =
+              isSameDay(date, selectedRange?.start) || isSameDay(date, selectedRange?.end);
 
-          const currentStart = selectedRange?.start;
-          const currentEnd = selectedRange?.end;
-
-          if (currentStart && currentEnd && anchor > currentEnd) {
-            // Clicked after the current range -> make it the new end date
-            const newStart = new Date(anchor);
-            if (periodMode === "weekly") {
-              newStart.setDate(newStart.getDate() - 6);
-            } else if (periodMode === "biweekly") {
-              newStart.setDate(newStart.getDate() - 13);
-            } else if (periodMode === "monthly") {
-              newStart.setMonth(newStart.getMonth() - 1);
-              newStart.setDate(newStart.getDate() + 1);
-            } else if (periodMode === "bimonthly") {
-              newStart.setMonth(newStart.getMonth() - 2);
-              newStart.setDate(newStart.getDate() + 1);
-            }
-            onSelectDate(newStart);
-          } else {
-            // Clicked before or inside -> make it the new start date
-            onSelectDate(anchor);
-          }
-          
-          onSelectRangeEnd?.(null);
-          onMonthDateChange(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
-        }}
-        onMonthChange={(month) => {
-          onMonthDateChange(new Date(monthDate.getFullYear(), month, 1));
-        }}
-        onYearChange={(year) => {
-          onMonthDateChange(new Date(year, monthDate.getMonth(), 1));
-        }}
-      />
+            return (
+              <TouchableOpacity
+                key={date.toISOString()}
+                activeOpacity={0.8}
+                onPress={() => handlePressDate(date)}
+                className="mb-2 h-[38px] w-[13.2%] items-center justify-center"
+              >
+                <View
+                  className={`h-[34px] w-full items-center justify-center rounded-[4px] ${
+                    inRange ? "bg-[#1F5577]" : "bg-transparent"
+                  }`}
+                >
+                  <Text
+                    className={`text-[15px] ${
+                      inRange || isEdge
+                        ? "font-semibold text-white"
+                        : isCurrentMonth
+                          ? "font-medium text-[#111827]"
+                          : "font-medium text-[#D1D5DB]"
+                    }`}
+                  >
+                    {date.getDate()}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
     </View>
   );
 }

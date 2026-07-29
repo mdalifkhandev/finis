@@ -23,6 +23,30 @@ function mapPeriodModeToBackendRange(mode: PayrollCalendarMode) {
   return "custom";
 }
 
+function addMonths(value: Date, amount: number) {
+  const next = new Date(value);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+}
+
+function getPeriodEnd(start: Date, mode: PayrollCalendarMode) {
+  const end = new Date(start);
+  if (mode === "weekly") {
+    end.setDate(end.getDate() + 6);
+  } else if (mode === "biweekly") {
+    end.setDate(end.getDate() + 13);
+  } else if (mode === "monthly") {
+    const next = addMonths(start, 1);
+    next.setDate(next.getDate() - 1);
+    return next;
+  } else if (mode === "bimonthly") {
+    const next = addMonths(start, 2);
+    next.setDate(next.getDate() - 1);
+    return next;
+  }
+  return end;
+}
+
 export default function SchedulingPayrollScreen() {
   const [monthDate, setMonthDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -104,7 +128,7 @@ export default function SchedulingPayrollScreen() {
                 start.setDate(start.getDate() + 1);
               }
               setSelectedDate(start);
-              setSelectedRangeEnd(null);
+              setSelectedRangeEnd(getPeriodEnd(start, mode));
             }}
           />
 
