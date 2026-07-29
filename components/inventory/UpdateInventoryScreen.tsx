@@ -120,8 +120,8 @@ function SelectorBottomSheet({
                 </View>
               </View>
             ) : (
-              <View className="flex-1">
-                <View className="flex-1">
+              <View>
+                <View>
                   <FlatList
                     data={options}
                     keyExtractor={(item) => item.toLowerCase()}

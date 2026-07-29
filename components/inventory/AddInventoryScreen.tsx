@@ -75,7 +75,7 @@ function SelectorBottomSheet({
       >
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="w-full">
           <Pressable
-            className="h-[60%] rounded-t-[24px] bg-white p-5"
+            className="mix-h-[70%] rounded-t-[24px] bg-white p-5"
             style={{ paddingBottom: Math.max(insets.bottom, 20) }}
             onPress={(event) => event.stopPropagation()}
           >
@@ -120,8 +120,8 @@ function SelectorBottomSheet({
                 </View>
               </View>
             ) : (
-              <View className="flex-1">
-                <View className="flex-1">
+              <View>
+                <View>
                   <FlatList
                     data={options}
                     keyExtractor={(item) => item.toLowerCase()}
