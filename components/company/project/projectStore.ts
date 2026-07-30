@@ -21,21 +21,21 @@ export type ProjectData = {
   description: string;
   houseScope: HouseScopeValue;
   selectedSections: string[];
+  status?: string;
 };
 
 const DEFAULT_PROJECT_DATA: ProjectData = {
-  projectName: "Riverside Tower",
-  company: "CC.LTD",
-  startDate: "2025-08-01",
-  endDate: "Ongoing",
+  projectName: "",
+  company: "",
+  startDate: "",
+  endDate: "",
   projectType: "Apartment Building",
-  floors: "5",
-  roomsPerFloor: "20",
-  budgetEnabled: true,
-  budget: "2500000",
-  location: "123 Construction Blvd, Toronto, ON",
-  description:
-    "Install electrical wiring and outlets for Room 302. Ensure all connections meet code requirements.",
+  floors: "",
+  roomsPerFloor: "",
+  budgetEnabled: false,
+  budget: "",
+  location: "",
+  description: "",
   houseScope: "whole",
   selectedSections: [],
 };
@@ -81,6 +81,7 @@ export function mapApiToProjectData(apiData: {
   description: string;
   isWholeHouse: boolean;
   houseSections: string[];
+  status?: string;
   client?: { companyName?: string };
 }): ProjectData {
   return {
@@ -106,5 +107,6 @@ export function mapApiToProjectData(apiData: {
     description: apiData.description,
     houseScope: apiData.isWholeHouse ? "whole" : "sections",
     selectedSections: apiData.houseSections ?? [],
+    status: apiData.status,
   };
 }

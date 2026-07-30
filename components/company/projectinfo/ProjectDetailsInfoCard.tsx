@@ -20,10 +20,10 @@ export default function ProjectDetailsInfoCard() {
       <View className="mt-3 border-t border-[#D4D9E0]" />
 
       <Text className="mt-3 text-[16px] font-medium text-[#4B5563]">
-        Client Info
+        Project Info
       </Text>
 
-      <ProjectInfoRow label="Name" value={project.projectName} />
+      <ProjectInfoRow label="Project Name" value={project.projectName} />
       <ProjectInfoRow
         label="Company"
         value={
@@ -38,7 +38,7 @@ export default function ProjectDetailsInfoCard() {
         value={
           <View className="rounded-md bg-[#DDE4FF] px-2 py-0.5">
             <Text className="text-[11px] font-medium text-[#1F4BFF]">
-              {project.projectType}
+              {project.status}
             </Text>
           </View>
         }
