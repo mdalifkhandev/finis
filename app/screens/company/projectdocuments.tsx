@@ -9,16 +9,27 @@ import * as FileSystem from "expo-file-system/legacy";
 import RNBlobUtil from "react-native-blob-util";
 import * as Sharing from "expo-sharing";
 import { router, useLocalSearchParams } from "expo-router";
-import React from "react";
-import { Alert, Platform, RefreshControl, ScrollView, ActivityIndicator, View } from "react-native";
+import React, { useState } from "react";
+import { Alert, Platform, RefreshControl, ScrollView, ActivityIndicator, View, Text, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
+
+type DocumentFilter = "all" | "project" | "task" | "expense";
+
+const DOCUMENT_FILTERS: Array<{ label: string; value: DocumentFilter }> = [
+  { label: "All", value: "all" },
+  { label: "Project", value: "project" },
+  { label: "Task", value: "task" },
+  { label: "Expense", value: "expense" },
+];
 
 export default function ProjectDocumentsRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const projectId = typeof id === "string" ? id : undefined;
+  const [filter, setFilter] = useState<DocumentFilter>("all");
+  const documentType = filter === "all" ? undefined : filter;
 
-  const { data: documents = [], isLoading, refetch } = useProjectDocumentsQuery(projectId);
+  const { data: documents = [], isLoading, refetch } = useProjectDocumentsQuery(projectId, documentType);
 
   const { refreshing, onRefresh } = usePullToRefresh(async () => {
     if (projectId) {
@@ -115,6 +126,30 @@ export default function ProjectDocumentsRoute() {
         }
       >
         <BackTitleHeader title="Documents" onBack={() => router.back()} />
+        <View className="mx-5 mt-4 flex-row rounded-[12px] border border-[#D8DEE5] bg-[#F7F9FB] p-1">
+          {DOCUMENT_FILTERS.map((item) => {
+            const active = filter === item.value;
+
+            return (
+              <TouchableOpacity
+                key={item.value}
+                activeOpacity={0.85}
+                onPress={() => setFilter(item.value)}
+                className={`h-10 flex-1 items-center justify-center rounded-[9px] ${
+                  active ? "bg-[#1F5577]" : "bg-transparent"
+                }`}
+              >
+                <Text
+                  className={`text-[14px] font-medium ${
+                    active ? "text-white" : "text-[#4D596A]"
+                  }`}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
         {isLoading && !refreshing ? (
           <View className="mt-10 items-center justify-center">
             <ActivityIndicator size="large" color="#1F506D" />

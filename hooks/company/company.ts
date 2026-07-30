@@ -1076,10 +1076,10 @@ export function useReviewTaskReportMutation(taskId: string, reportId: string) {
 
 import { getProjectDocuments } from "../../api/company/company.api";
 
-export function useProjectDocumentsQuery(projectId?: string) {
+export function useProjectDocumentsQuery(projectId?: string, type?: "project" | "task" | "expense") {
   const query = useQuery({
-    queryKey: ["project", "documents", projectId],
-    queryFn: () => getProjectDocuments(projectId!),
+    queryKey: ["project", "documents", projectId, type ?? "all"],
+    queryFn: () => getProjectDocuments(projectId!, type),
     enabled: !!projectId,
     staleTime: 60 * 1000,
   });

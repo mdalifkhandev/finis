@@ -330,16 +330,48 @@ export async function getCompanyDocuments(id: string): Promise<DocumentItem[]> {
 
 export async function getProjectDocuments(
   projectId: string,
+  type?: "project" | "task" | "expense",
 ): Promise<DocumentItem[]> {
-  const { data } = await api.get<ApiResponse<DocumentItem[]>>(
+  const { data } = await api.get<ApiResponse<{
+    documents?: Array<DocumentItem | CompanyDocumentApiItem>;
+    projectDocuments?: Array<DocumentItem | CompanyDocumentApiItem>;
+    taskDocuments?: Array<DocumentItem | CompanyDocumentApiItem>;
+  } | Array<DocumentItem | CompanyDocumentApiItem>>>(
     `/admin/projects/${projectId}/documents`,
+    { params: type ? { type } : undefined },
   );
 
   if (!data.success) {
     throw new Error(data.message || "Failed to load project documents");
   }
 
-  return data.data;
+  const documents = Array.isArray(data.data) ? data.data : data.data?.documents;
+
+  return (documents ?? []).map((document: DocumentItem | CompanyDocumentApiItem) => {
+    const apiDocument = document as CompanyDocumentApiItem;
+    const viewDocument = document as DocumentItem;
+
+    return {
+      id: viewDocument.id ?? apiDocument.id,
+      fileName: viewDocument.fileName ?? apiDocument.fileName,
+      fileType: viewDocument.fileType ?? apiDocument.fileType,
+      fileSize: viewDocument.fileSize ?? `${apiDocument.fileSizeMb ?? 0} MB`,
+      uploadedBy:
+        viewDocument.uploadedBy ??
+        apiDocument.uploadedByUser?.fullName ??
+        "Unknown",
+      uploadedDate:
+        viewDocument.uploadedDate ??
+        (apiDocument.uploadedAt
+          ? new Date(apiDocument.uploadedAt).toLocaleDateString("en-US", {
+              month: "numeric",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "N/A"),
+      fileUrl: resolveMediaUrl(viewDocument.fileUrl ?? apiDocument.fileUrl) ?? "",
+    };
+  });
 }
 
 export async function getProjectAnalysis(id: string) {
