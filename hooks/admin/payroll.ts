@@ -240,13 +240,6 @@ export function useAdminPayrollOverviewQuery(params?: {
         range: params?.range,
       };
 
-  useEffect(() => {
-    console.log("[AdminPayrollOverviewQuery] params", {
-      input: params,
-      resolvedParams,
-    });
-  }, [params, resolvedParams.date, resolvedParams.month, resolvedParams.year]);
-
   const query = useQuery({
     queryKey: [
       "admin",
