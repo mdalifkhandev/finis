@@ -175,7 +175,7 @@ export default function RoleTabBar({ role }: { role?: AppRole }) {
             flexDirection: "row",
             justifyContent: "space-around",
             paddingTop: 10,
-            paddingBottom: 38,
+            paddingBottom: 42,
             paddingHorizontal: 8,
           }}
         >
@@ -199,14 +199,14 @@ export default function RoleTabBar({ role }: { role?: AppRole }) {
               >
                 <Ionicons
                   name={focused ? tab.activeIcon : tab.inactiveIcon}
-                  size={20}
+                  size={19}
                   color={focused ? "#1f3d5c" : "#4b5563"}
                 />
                 <Text
                   style={{
                     marginTop: 4,
-                    fontSize: 12,
-                    fontWeight: "600",
+                    fontSize: 11,
+                    fontWeight: "500",
                     color: focused ? "#1f3d5c" : "#6b7280",
                   }}
                 >
