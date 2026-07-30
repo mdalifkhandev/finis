@@ -314,7 +314,7 @@ export default function WorkerGroupedTaskList({
               name: `Unit ${unit.name}`,
               status: unit.status,
               approvalDecision: unit.approvalDecision ?? null,
-              canCreateSubTask: isMainTaskOnly ? false : unit.canCreateSubTask,
+              canCreateSubTask: unit.canCreateSubTask ?? task.allowSubTaskCreation ?? false,
               subTasks: (unit.subTasks ?? []).map((subTask) => ({
                 id: subTask.id,
                 title: subTask.title?.trim() || "Sub Task",
@@ -359,7 +359,7 @@ export default function WorkerGroupedTaskList({
           name: task.room?.name ? `Unit ${task.room.name}` : "Unit",
           status: task.status,
           approvalDecision: task.approvalDecision ?? null,
-          canCreateSubTask: isMainTaskOnly ? false : (task.allowSubTaskCreation ?? true),
+          canCreateSubTask: task.allowSubTaskCreation ?? false,
           subTasks: [],
           sourceTask: task,
         };
