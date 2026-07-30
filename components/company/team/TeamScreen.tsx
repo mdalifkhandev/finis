@@ -157,7 +157,7 @@ export default function TeamScreen({ projectId }: TeamScreenProps) {
     if (!targetManager) return;
     addWorkerMutation.mutate({
       userId: member.id,
-      managerId: targetManager.id,
+      managerId: targetManager.userId,
     }, {
       onSuccess: () => {
         setShowAddSheet(false);

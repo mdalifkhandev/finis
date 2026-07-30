@@ -86,9 +86,8 @@ export default function TaskCard({
     actionVariant = "primary";
   }
 
-  const shouldShowAssignWorkerButton = isAdminRole;
-  const shouldDisableManagerAction = isManagerRole && actionLabel === "Activate Task";
-  const resolvedActionDisabled = actionDisabled || shouldDisableManagerAction;
+  const shouldShowAssignWorkerButton = isAdminRole || isManagerRole;
+  const resolvedActionDisabled = actionDisabled;
 
   return (
     <TouchableOpacity
