@@ -15,36 +15,28 @@ function formatLocalDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function mapPeriodModeToBackendRange(mode: PayrollCalendarMode) {
-  if (mode === "weekly") return "weekly";
-  if (mode === "biweekly") return "bi-weekly";
-  if (mode === "monthly") return "monthly";
-  if (mode === "bimonthly") return "bi-monthly";
-  return "custom";
-}
-
-function addMonths(value: Date, amount: number) {
+function normalizeDate(value: Date) {
   const next = new Date(value);
-  next.setMonth(next.getMonth() + amount);
+  next.setHours(0, 0, 0, 0);
   return next;
 }
 
-function getPeriodEnd(start: Date, mode: PayrollCalendarMode) {
-  const end = new Date(start);
+function getPeriodStartFromEnd(end: Date, mode: PayrollCalendarMode) {
+  const start = normalizeDate(end);
+
   if (mode === "weekly") {
-    end.setDate(end.getDate() + 6);
+    start.setDate(start.getDate() - 6);
   } else if (mode === "biweekly") {
-    end.setDate(end.getDate() + 13);
+    start.setDate(start.getDate() - 13);
   } else if (mode === "monthly") {
-    const next = addMonths(start, 1);
-    next.setDate(next.getDate() - 1);
-    return next;
+    start.setMonth(start.getMonth() - 1);
+    start.setDate(start.getDate() + 1);
   } else if (mode === "bimonthly") {
-    const next = addMonths(start, 2);
-    next.setDate(next.getDate() - 1);
-    return next;
+    start.setMonth(start.getMonth() - 2);
+    start.setDate(start.getDate() + 1);
   }
-  return end;
+
+  return start;
 }
 
 export default function SchedulingPayrollScreen() {
@@ -54,10 +46,8 @@ export default function SchedulingPayrollScreen() {
   const [periodMode, setPeriodMode] = useState<PayrollCalendarMode>("custom");
   const { data, refetch } = useAdminWorkerSummaryQuery();
   const [refreshing, setRefreshing] = useState(false);
-  const summaryAnchorDate = selectedDate ?? new Date();
-  const summaryStartDate = selectedDate ?? summaryAnchorDate;
+  const summaryStartDate = selectedDate ?? normalizeDate(new Date());
   const summaryEndDate = selectedRangeEnd ?? summaryStartDate;
-  const backendRange = mapPeriodModeToBackendRange(periodMode);
 
   const activities = useMemo<ActivityItem[]>(() => {
     return (
@@ -113,22 +103,10 @@ export default function SchedulingPayrollScreen() {
                 setSelectedRangeEnd(null);
                 return;
               }
-              const end = new Date();
-              end.setHours(0, 0, 0, 0);
-              const start = new Date(end);
-              if (mode === "weekly") {
-                start.setDate(start.getDate() - 6);
-              } else if (mode === "biweekly") {
-                start.setDate(start.getDate() - 13);
-              } else if (mode === "monthly") {
-                start.setMonth(start.getMonth() - 1);
-                start.setDate(start.getDate() + 1);
-              } else if (mode === "bimonthly") {
-                start.setMonth(start.getMonth() - 2);
-                start.setDate(start.getDate() + 1);
-              }
+              const end = normalizeDate(new Date());
+              const start = getPeriodStartFromEnd(end, mode);
               setSelectedDate(start);
-              setSelectedRangeEnd(getPeriodEnd(start, mode));
+              setSelectedRangeEnd(end);
             }}
           />
 
@@ -138,8 +116,6 @@ export default function SchedulingPayrollScreen() {
               router.push({
                 pathname: "/screens/payroll/summary",
                 params: {
-                  date: formatLocalDate(summaryAnchorDate),
-                  range: backendRange,
                   startDate: formatLocalDate(summaryStartDate),
                   endDate: formatLocalDate(summaryEndDate),
                 },

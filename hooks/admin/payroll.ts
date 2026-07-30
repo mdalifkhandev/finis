@@ -34,15 +34,20 @@ export function useAdminPayrollSummaryQuery(params?: {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const currentDate = params?.date ? new Date(params.date) : new Date();
-  const resolvedParams = {
-    date: params?.date,
-    month: params?.month ?? String(currentDate.getMonth() + 1),
-    year: params?.year ?? String(currentDate.getFullYear()),
-    range: params?.range,
-    startDate: params?.startDate,
-    endDate: params?.endDate,
-    projectId: params?.projectId,
-  };
+  const hasExplicitWindow = !!params?.startDate || !!params?.endDate;
+  const resolvedParams = hasExplicitWindow
+    ? {
+        startDate: params?.startDate,
+        endDate: params?.endDate,
+        projectId: params?.projectId,
+      }
+    : {
+        date: params?.date,
+        month: params?.month ?? String(currentDate.getMonth() + 1),
+        year: params?.year ?? String(currentDate.getFullYear()),
+        range: params?.range,
+        projectId: params?.projectId,
+      };
 
   const query = useQuery({
     queryKey: [
@@ -222,14 +227,18 @@ export function useAdminPayrollOverviewQuery(params?: {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
   const currentDate = params?.date ? new Date(params.date) : new Date();
-  const resolvedParams = {
-    date: params?.date,
-    month: params?.month ?? String(currentDate.getMonth() + 1),
-    year: params?.year ?? String(currentDate.getFullYear()),
-    range: params?.range,
-    startDate: params?.startDate,
-    endDate: params?.endDate,
-  };
+  const hasExplicitWindow = !!params?.startDate || !!params?.endDate;
+  const resolvedParams = hasExplicitWindow
+    ? {
+        startDate: params?.startDate,
+        endDate: params?.endDate,
+      }
+    : {
+        date: params?.date,
+        month: params?.month ?? String(currentDate.getMonth() + 1),
+        year: params?.year ?? String(currentDate.getFullYear()),
+        range: params?.range,
+      };
 
   useEffect(() => {
     console.log("[AdminPayrollOverviewQuery] params", {

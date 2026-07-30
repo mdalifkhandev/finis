@@ -280,7 +280,6 @@ export default function PayrollCalendarCard({
                   activeOpacity={0.85}
                   onPress={() => {
                     onPeriodModeChange(option.value);
-                    onSelectRangeEnd?.(null);
                     setMenuOpen(false);
                   }}
                   className={`mb-2 h-12 flex-row items-center justify-between rounded-[14px] px-4 ${

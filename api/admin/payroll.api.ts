@@ -323,14 +323,18 @@ export async function getAdminPayrollOverview(params?: {
   endDate?: string;
 }) {
   const currentDate = params?.date ? new Date(params.date) : new Date();
-  const resolvedParams = {
-    date: params?.date,
-    month: params?.month ?? String(currentDate.getMonth() + 1),
-    year: params?.year ?? String(currentDate.getFullYear()),
-    range: params?.range,
-    startDate: params?.startDate,
-    endDate: params?.endDate,
-  };
+  const hasExplicitWindow = !!params?.startDate || !!params?.endDate;
+  const resolvedParams = hasExplicitWindow
+    ? {
+        startDate: params?.startDate,
+        endDate: params?.endDate,
+      }
+    : {
+        date: params?.date,
+        month: params?.month ?? String(currentDate.getMonth() + 1),
+        year: params?.year ?? String(currentDate.getFullYear()),
+        range: params?.range,
+      };
 
 
 

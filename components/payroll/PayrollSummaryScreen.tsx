@@ -30,25 +30,48 @@ export default function PayrollSummaryScreen() {
   const selectedStartDate = Array.isArray(startDate) ? startDate[0] : startDate;
   const selectedEndDate = Array.isArray(endDate) ? endDate[0] : endDate;
   const selectedProjectId = Array.isArray(projectId) ? projectId[0] : projectId;
+  const hasExplicitWindow = !!selectedStartDate || !!selectedEndDate;
+  const summaryParams = hasExplicitWindow
+    ? {
+        startDate: selectedStartDate,
+        endDate: selectedEndDate,
+        projectId: selectedProjectId,
+      }
+    : {
+        date: selectedDate,
+        range: selectedRange as any,
+        projectId: selectedProjectId,
+      };
+  const overviewParams = hasExplicitWindow
+    ? {
+        startDate: selectedStartDate,
+        endDate: selectedEndDate,
+      }
+    : {
+        date: selectedDate,
+        range: selectedRange as any,
+      };
+  const processPayrollParams = hasExplicitWindow
+    ? {
+        mode: "approved",
+        startDate: selectedStartDate ?? undefined,
+        endDate: selectedEndDate ?? undefined,
+        projectId: selectedProjectId ?? undefined,
+      }
+    : {
+        mode: "approved",
+        date: selectedDate ?? undefined,
+        range: selectedRange ?? undefined,
+        projectId: selectedProjectId ?? undefined,
+      };
   const {
     data,
     refetch: refetchSummary,
-  } = useAdminPayrollSummaryQuery({
-    date: selectedDate,
-    range: selectedRange as any,
-    startDate: selectedStartDate,
-    endDate: selectedEndDate,
-    projectId: selectedProjectId,
-  });
+  } = useAdminPayrollSummaryQuery(summaryParams);
   const {
     data: overview,
     refetch: refetchOverview,
-  } = useAdminPayrollOverviewQuery({
-    date: selectedDate,
-    range: selectedRange as any,
-    startDate: selectedStartDate,
-    endDate: selectedEndDate,
-  });
+  } = useAdminPayrollOverviewQuery(overviewParams);
   const approvePayroll = useApproveAdminPayrollMutation();
   const updatePayroll = useUpdateAdminPayrollMutation();
   const [editSheetVisible, setEditSheetVisible] = useState(false);
@@ -191,14 +214,7 @@ export default function PayrollSummaryScreen() {
             onPress={() =>
               router.push({
                 pathname: "/screens/payroll/paystub",
-                params: {
-                  mode: "approved",
-                  date: selectedDate ?? undefined,
-                  range: selectedRange ?? undefined,
-                  startDate: selectedStartDate ?? undefined,
-                  endDate: selectedEndDate ?? undefined,
-                  projectId: selectedProjectId ?? undefined,
-                },
+                params: processPayrollParams,
               })
             }
             className="mb-8 mt-3 h-12 items-center justify-center rounded-[10px] bg-[#1F5577]"
