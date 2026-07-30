@@ -2,57 +2,27 @@ import BackTitleHeader from "@/components/common/BackTitleHeader";
 import DocumentsList from "@/components/company/documents/DocumentsList";
 import { setCurrentPreviewDocument } from "@/components/company/taskdetails/documentPreviewStore";
 import { usePullToRefresh } from "@/hooks/common/usePullToRefresh";
-import { getCompanyDocuments } from "@/api/company/company.api";
+import { useCompanyDocumentsQuery } from "@/hooks/company/company";
 import { API_BASE_URL } from "@/lib/config";
 import { DocumentItem } from "@/components/company/documents/types";
 import * as FileSystem from "expo-file-system/legacy";
 import RNBlobUtil from "react-native-blob-util";
 import * as Sharing from "expo-sharing";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
-import { Alert, Platform, RefreshControl, ScrollView } from "react-native";
+import React from "react";
+import { ActivityIndicator, Alert, Platform, RefreshControl, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 
 export default function DocumentsRoute() {
-  const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const { id } = useLocalSearchParams<{ id?: string }>();
   const companyId = typeof id === "string" ? id : undefined;
+  const { data: documents = [], isLoading, refetch } = useCompanyDocumentsQuery(companyId);
   const { refreshing, onRefresh } = usePullToRefresh(async () => {
-    if (!companyId) return;
-    const result = await getCompanyDocuments(companyId);
-    setDocuments(result);
-  });
-
-  useEffect(() => {
-    let isActive = true;
-
-    if (!companyId) {
-      setDocuments([]);
-      return;
+    if (companyId) {
+      await refetch();
     }
-
-    const loadDocuments = async () => {
-      try {
-        const result = await getCompanyDocuments(companyId);
-        if (!isActive) return;
-        setDocuments(result);
-      } catch (error) {
-        if (!isActive) return;
-        setDocuments([]);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Failed to load company documents",
-        );
-      }
-    };
-
-    void loadDocuments();
-    return () => {
-      isActive = false;
-    };
-  }, [companyId]);
+  });
 
   const handleDownloadPress = async (document: DocumentItem) => {
     if (!document.fileUrl) {
@@ -143,11 +113,17 @@ export default function DocumentsRoute() {
         }
       >
         <BackTitleHeader title="Documents" onBack={() => router.back()} />
-        <DocumentsList
-          documents={documents}
-          onPreviewPress={handlePreviewPress}
-          onDownloadPress={handleDownloadPress}
-        />
+        {isLoading && !refreshing ? (
+          <View className="mt-10 items-center justify-center">
+            <ActivityIndicator size="large" color="#1F506D" />
+          </View>
+        ) : (
+          <DocumentsList
+            documents={documents}
+            onPreviewPress={handlePreviewPress}
+            onDownloadPress={handleDownloadPress}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );

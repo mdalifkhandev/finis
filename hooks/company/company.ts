@@ -1074,7 +1074,28 @@ export function useReviewTaskReportMutation(taskId: string, reportId: string) {
 }
 
 
-import { getProjectDocuments } from "../../api/company/company.api";
+import { getCompanyDocuments, getProjectDocuments } from "../../api/company/company.api";
+
+export function useCompanyDocumentsQuery(companyId?: string) {
+  const query = useQuery({
+    queryKey: ["company", "documents", companyId],
+    queryFn: () => getCompanyDocuments(companyId!),
+    enabled: !!companyId,
+    staleTime: 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (query.isError) {
+      toast.error(
+        query.error instanceof Error
+          ? query.error.message
+          : "Failed to load company documents",
+      );
+    }
+  }, [query.error, query.isError]);
+
+  return query;
+}
 
 export function useProjectDocumentsQuery(projectId?: string, type?: "project" | "task" | "expense") {
   const query = useQuery({
