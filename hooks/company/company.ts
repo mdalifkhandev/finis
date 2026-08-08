@@ -54,6 +54,8 @@ import {
   createProjectGeofence,
   updateProjectGeofence,
   deleteProjectGeofence,
+  generateCompanyShareLink,
+  generateProjectShareLink,
 } from "@/api/company/company.api";
 import type { CreateTaskPayload, CreateSubTaskPayload } from "@/types/company.types";
 import { useAuthStore } from "@/store/auth.store";
@@ -1460,3 +1462,38 @@ export function useProjectGeofenceTimeSummaryQuery(projectId?: string) {
   });
 }
 
+
+
+export function useGenerateCompanyShareLinkMutation() {
+  const mutation = useMutation({
+    mutationFn: (companyId: string) => generateCompanyShareLink(companyId),
+    onSuccess: () => {
+      toast.success("Share link generated!");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to generate link");
+    }
+  });
+
+  return {
+    generateLink: mutation.mutateAsync,
+    isPending: mutation.isPending,
+  };
+}
+
+export function useGenerateProjectShareLinkMutation() {
+  const mutation = useMutation({
+    mutationFn: (projectId: string) => generateProjectShareLink(projectId),
+    onSuccess: () => {
+      toast.success("Share link generated!");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to generate link");
+    }
+  });
+
+  return {
+    generateLink: mutation.mutateAsync,
+    isPending: mutation.isPending,
+  };
+}

@@ -18,6 +18,9 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Clipboard from "expo-clipboard";
+import { Share } from "react-native";
+import { useGenerateCompanyShareLinkMutation } from "@/hooks/company/company";
 
 export default function Company() {
   const router = useRouter();
@@ -33,6 +36,29 @@ export default function Company() {
 
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<{ id: string, name: string } | null>(null);
+
+  const { generateLink, isPending: isGeneratingLink } = useGenerateCompanyShareLinkMutation();
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  
+  const handleGenerateShareLink = async () => {
+    if (!selectedCompany) return;
+    try {
+      const { shareToken } = await generateLink(selectedCompany.id);
+      const dashboardUrl = process.env.EXPO_PUBLIC_DASHBOARD_URL || 'https://dashboard.finis.com';
+      setShareLink(`${dashboardUrl}/public/company/${shareToken}`);
+    } catch (e) {}
+  };
+  
+  const handleCopyLink = async () => {
+    if (!shareLink) return;
+    await Clipboard.setStringAsync(shareLink);
+    Alert.alert("Link copied to clipboard!");
+  };
+  
+  const handleShareLink = async () => {
+    if (!shareLink) return;
+    await Share.share({ message: shareLink, url: shareLink });
+  };
 
   const handleMenuPress = (company: { id: string, name: string }) => {
     setSelectedCompany(company);
@@ -214,12 +240,12 @@ export default function Company() {
         visible={bottomSheetVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setBottomSheetVisible(false)}
+        onRequestClose={() => { setBottomSheetVisible(false); setShareLink(null); }}
       >
         <TouchableOpacity
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
           activeOpacity={1}
-          onPress={() => setBottomSheetVisible(false)}
+          onPress={() => { setBottomSheetVisible(false); setShareLink(null); }}
         >
           <View style={{ flex: 1, justifyContent: "flex-end" }}>
             <TouchableOpacity activeOpacity={1}>
@@ -242,9 +268,32 @@ export default function Company() {
                   </Text>
                 </TouchableOpacity>
 
+                {shareLink ? (
+                  <View className="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <Text className="text-sm text-slate-500 mb-2">Public Link:</Text>
+                    <Text className="text-base text-slate-800 mb-4">{shareLink}</Text>
+                    <View className="flex-row gap-3">
+                      <TouchableOpacity activeOpacity={0.7} onPress={handleCopyLink} className="flex-1 flex-row items-center justify-center rounded-xl p-3 bg-[#1f3d5c]">
+                        <Ionicons name="copy-outline" size={20} color="#ffffff" />
+                        <Text className="ml-2 text-sm font-medium text-white">Copy Link</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity activeOpacity={0.7} onPress={handleShareLink} className="flex-row items-center justify-center rounded-xl p-3 bg-slate-200">
+                        <Ionicons name="share-social-outline" size={20} color="#0f172a" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity activeOpacity={0.7} onPress={handleGenerateShareLink} className="flex-row items-center rounded-xl p-4 bg-blue-50 mb-4">
+                    <Ionicons name="link-outline" size={24} color="#3b82f6" />
+                    <Text className="ml-3 text-base font-medium text-blue-500">
+                      {isGeneratingLink ? "Generating..." : "Generate Public Link"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
                 <TouchableOpacity
                   activeOpacity={0.7}
-                  onPress={() => setBottomSheetVisible(false)}
+                  onPress={() => { setBottomSheetVisible(false); setShareLink(null); }}
                   className="flex-row items-center justify-center rounded-xl p-4 bg-slate-100"
                 >
                   <Text className="text-base font-medium text-slate-700">

@@ -364,10 +364,10 @@ export async function getProjectDocuments(
         viewDocument.uploadedDate ??
         (apiDocument.uploadedAt
           ? new Date(apiDocument.uploadedAt).toLocaleDateString("en-US", {
-              month: "numeric",
-              day: "numeric",
-              year: "numeric",
-            })
+            month: "numeric",
+            day: "numeric",
+            year: "numeric",
+          })
           : "N/A"),
       fileUrl: resolveMediaUrl(viewDocument.fileUrl ?? apiDocument.fileUrl) ?? "",
     };
@@ -568,7 +568,7 @@ export async function getTasks(params: GetTasksParams = {}): Promise<{
 export async function getTaskSubTasks(taskId: string, search?: string): Promise<{
   data: TaskSubTaskListItem[];
 }> {
-  const url = search 
+  const url = search
     ? `/admin/tasks/${taskId}/subtasks?search=${encodeURIComponent(search)}`
     : `/admin/tasks/${taskId}/subtasks`;
   const { data } = await api.get<{
@@ -1390,7 +1390,7 @@ export async function getTaskDetails(taskId: string): Promise<TaskDetailsData> {
     message: string;
     data: BackendTaskDetailsResponse;
   }>(`/admin/tasks/${taskId}`);
-  
+
   if (!data.success) {
     throw new Error(data.message || "Failed to load task details");
   }
@@ -1529,31 +1529,31 @@ export async function getAdminSubTaskDetails(subTaskId: string): Promise<TaskDet
     assignee: subTask.assignment?.worker ? { fullName: subTask.assignment.worker.fullName } : null,
     taskAssignees: subTask.taskAssignee
       ? [
-          {
-            id: subTask.taskAssignee.id,
-            user: subTask.taskAssignee.user,
-            unit: subTask.taskAssignee.unit,
-            assignedAt: subTask.taskAssignee.assignedAt,
-          },
-        ]
+        {
+          id: subTask.taskAssignee.id,
+          user: subTask.taskAssignee.user,
+          unit: subTask.taskAssignee.unit,
+          assignedAt: subTask.taskAssignee.assignedAt,
+        },
+      ]
       : [],
     subTasks: [],
     reports: subTask.report
       ? [
-          {
-            id: subTask.report.id,
-            notes: subTask.report.notes ?? subTask.reportSummary ?? "",
-            beforePhotoUrl: subTask.photos?.beforePhotoUrl ?? null,
-            afterPhotoUrl: subTask.photos?.afterPhotoUrl ?? null,
-            receiptUrl: subTask.photos?.receiptUrl ?? null,
-            reviewDecision: subTask.report.reviewDecision ?? "",
-            worker: {
-              id: subTask.assignment?.worker?.id ?? "",
-              fullName: subTask.assignment?.worker?.fullName ?? "",
-              avatarUrl: subTask.assignment?.worker?.avatarUrl ?? null,
-            },
+        {
+          id: subTask.report.id,
+          notes: subTask.report.notes ?? subTask.reportSummary ?? "",
+          beforePhotoUrl: subTask.photos?.beforePhotoUrl ?? null,
+          afterPhotoUrl: subTask.photos?.afterPhotoUrl ?? null,
+          receiptUrl: subTask.photos?.receiptUrl ?? null,
+          reviewDecision: subTask.report.reviewDecision ?? "",
+          worker: {
+            id: subTask.assignment?.worker?.id ?? "",
+            fullName: subTask.assignment?.worker?.fullName ?? "",
+            avatarUrl: subTask.assignment?.worker?.avatarUrl ?? null,
           },
-        ]
+        },
+      ]
       : [],
     taskInventories: (subTask.inventoryUsed ?? [])
       .filter((item) => item.inventory)
@@ -1639,3 +1639,12 @@ export async function updateTask(
   return data.data;
 }
 
+export async function generateCompanyShareLink(companyId: string) {
+  const { data } = await api.post(`/admin/companies/${companyId}/share`);
+  return data.data;
+}
+
+export async function generateProjectShareLink(projectId: string) {
+  const { data } = await api.post(`/admin/projects/${projectId}/share`);
+  return data.data;
+}
