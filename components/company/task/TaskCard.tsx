@@ -59,6 +59,7 @@ export default function TaskCard({
   const priorityStyle = PRIORITY_CONFIG[priorityKey] || PRIORITY_CONFIG.low;
 
   const statusKey = task.status?.toLowerCase() || "pending";
+
   const statusStyle = STATUS_CONFIG[statusKey] || STATUS_CONFIG.pending;
   const isAdminRole = currentUserRole === "admin";
   const isManagerRole = currentUserRole === "manager";
@@ -72,8 +73,8 @@ export default function TaskCard({
   let actionDisabled = isActionLoading;
   let actionVariant = "primary";
 
-  if (task.completionDecision === "approved" || task.status === "Completed") {
-    actionLabel = "Complete Task";
+  if (task.completionDecision === "approved" || task.status?.toLowerCase() === "completed") {
+    actionLabel = "Completed";
     actionDisabled = true;
     actionVariant = "muted";
   } else if (task.approvalDecision !== "approved") {
