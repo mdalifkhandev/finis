@@ -42,6 +42,7 @@ import {
   getSubTasksByGroup,
   getAvailableWorkers,
   addProjectWorker,
+  assignProjectSchedule,
   getAssignedWorkers,
   removeProjectWorker,
   getTaskAvailableWorkers,
@@ -896,76 +897,6 @@ export function useDeleteSubTaskMutation(parentTaskId?: string) {
   });
 }
 
-export function useRemoveProjectManagerMutation(projectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (userId: string) => {
-      if (!projectId) throw new Error("Project ID is required");
-      return removeProjectManager(projectId, userId);
-    },
-    onSuccess: () => {
-      if (projectId) {
-        void queryClient.invalidateQueries({
-          queryKey: ["project", "team", projectId],
-        });
-        void queryClient.invalidateQueries({
-          queryKey: ["project", "managers", projectId],
-        });
-        void queryClient.invalidateQueries({
-          queryKey: ["team", "available-managers"],
-        });
-      }
-      toast.success("Manager removed successfully");
-    },
-    onError: (error: any) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to remove manager",
-      );
-    },
-  });
-}
-
-export function useAvailableWorkersQuery() {
-  return useQuery({
-    queryKey: ["team", "available-workers"],
-    queryFn: () => getAvailableWorkers(),
-  });
-}
-
-export function useAddProjectWorkerMutation(projectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: { userId: string; managerId: string }) => {
-      if (!projectId) throw new Error("Project ID is required");
-      return addProjectWorker(projectId, payload);
-    },
-    onSuccess: () => {
-      if (projectId) {
-        void queryClient.invalidateQueries({
-          queryKey: ["project", "team", projectId],
-        });
-        void queryClient.invalidateQueries({
-          queryKey: ["project", "managers", projectId],
-        });
-        void queryClient.invalidateQueries({
-          queryKey: ["team", "available-workers"],
-        });
-        void queryClient.invalidateQueries({
-          queryKey: ["project", "assigned-workers", projectId],
-        });
-      }
-      toast.success("Worker added successfully");
-    },
-    onError: (error: any) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to add worker",
-      );
-    },
-  });
-}
-
 export function useAssignedWorkersQuery(projectId?: string, managerId?: string | null) {
   return useQuery({
     queryKey: ["project", "assigned-workers", projectId, managerId],
@@ -1496,4 +1427,66 @@ export function useGenerateProjectShareLinkMutation() {
     generateLink: mutation.mutateAsync,
     isPending: mutation.isPending,
   };
+}export function useAvailableWorkersQuery() {
+  return useQuery({
+    queryKey: ['team', 'available-workers'],
+    queryFn: () => getAvailableWorkers(),
+  });
+}
+
+export function useAddProjectWorkerMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { userId: string; managerId: string }) => {
+      if (!projectId) throw new Error('Project ID is required');
+      return addProjectWorker(projectId, payload);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ['project', 'team', projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ['project', 'assigned-workers', projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ['team', 'available-workers'],
+        });
+      }
+      toast.success('Worker added successfully');
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to add worker',
+      );
+    },
+  });
+}
+
+export function useAssignProjectScheduleMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: { userIds: string[]; startTime: string; endTime: string }) => {
+      if (!projectId) throw new Error('Project ID is required');
+      return assignProjectSchedule(projectId, payload);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ['project', 'team', projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ['project', 'assigned-workers', projectId],
+        });
+      }
+      toast.success('Schedule assigned successfully');
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to assign schedule',
+      );
+    },
+  });
 }

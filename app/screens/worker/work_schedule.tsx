@@ -1,9 +1,11 @@
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Platform, Alert, KeyboardAvoidingView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
+import { useSubmitTimeAdjustmentMutation } from "@/hooks/manager/time-adjustments";
 
 const THEME = {
   colors: {
@@ -11,15 +13,75 @@ const THEME = {
     white: "#FFFFFF",
     textMain: "#0F172A",
     textSecondary: "#64748B",
-    bluePrimary: "#3B82F6",
+    bluePrimary: "#1f3d5c",
     border: "#E2E8F0",
   },
 };
 
 export default function WorkScheduleScreen() {
   const { data: profile, isLoading } = useWorkerProfileQuery();
-
   const schedules = profile?.workScheduleAssignments || [];
+
+  const submitMutation = useSubmitTimeAdjustmentMutation();
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
+  const [requestType, setRequestType] = useState<"check_in" | "check_out">("check_in");
+  const [adjustedTime, setAdjustedTime] = useState(new Date());
+  const [showPicker, setShowPicker] = useState(false);
+  const [reason, setReason] = useState("");
+
+  const openAdjustmentModal = (assignment: any) => {
+    setSelectedSchedule(assignment);
+    setRequestType("check_in");
+    setAdjustedTime(new Date());
+    setReason("");
+    setModalVisible(true);
+  };
+
+  const handleTimeChange = (event: any, selectedDate?: Date) => {
+    setShowPicker(Platform.OS === 'ios');
+    if (selectedDate) setAdjustedTime(selectedDate);
+  };
+
+  const handleSubmit = () => {
+    if (!selectedSchedule) return;
+
+    const originalTimeStr = requestType === "check_in" 
+      ? selectedSchedule.schedule?.startTime 
+      : selectedSchedule.schedule?.endTime;
+
+    // Convert "08:00 AM" to full ISO date for the backend
+    const parseTime = (timeStr: string) => {
+      if (!timeStr) return new Date().toISOString();
+      const [time, modifier] = timeStr.split(' ');
+      let [hours, minutes] = time.split(':');
+      if (hours === '12') hours = '00';
+      if (modifier?.toLowerCase() === 'pm') hours = (parseInt(hours, 10) + 12).toString();
+      const d = new Date();
+      d.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+      return d.toISOString();
+    };
+
+    submitMutation.mutate(
+      {
+        date: new Date().toISOString(),
+        requestType,
+        originalTime: parseTime(originalTimeStr),
+        adjustedTime: adjustedTime.toISOString(),
+        reason,
+      },
+      {
+        onSuccess: () => {
+          Alert.alert("Success", "Time adjustment request submitted successfully.");
+          setModalVisible(false);
+        },
+        onError: (err: any) => {
+          Alert.alert("Error", err.message || "Failed to submit request.");
+        }
+      }
+    );
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: THEME.colors.background }}>
@@ -76,6 +138,13 @@ export default function WorkScheduleScreen() {
                   ))}
                 </View>
               </View>
+
+              <TouchableOpacity 
+                onPress={() => openAdjustmentModal(assignment)}
+                style={{ marginTop: 16, backgroundColor: THEME.colors.bluePrimary, padding: 12, borderRadius: 8, alignItems: "center" }}
+              >
+                <Text style={{ color: THEME.colors.white, fontWeight: "600", fontSize: 14 }}>Request Time Adjustment</Text>
+              </TouchableOpacity>
             </View>
           ))
         ) : (
@@ -85,6 +154,91 @@ export default function WorkScheduleScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Time Adjustment Modal */}
+      <Modal visible={modalVisible} transparent animationType="slide" statusBarTranslucent>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+            <View style={{ backgroundColor: THEME.colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <Text style={{ fontSize: 18, fontWeight: "700", color: THEME.colors.textMain }}>Request Adjustment</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Feather name="x" size={24} color={THEME.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: "row", marginBottom: 16, gap: 12 }}>
+              <TouchableOpacity 
+                style={{ flex: 1, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: requestType === "check_in" ? THEME.colors.bluePrimary : THEME.colors.border, backgroundColor: requestType === "check_in" ? "#EEF2FF" : THEME.colors.white, alignItems: "center" }}
+                onPress={() => setRequestType("check_in")}
+              >
+                <Text style={{ fontWeight: "600", color: requestType === "check_in" ? THEME.colors.bluePrimary : THEME.colors.textSecondary }}>Check In</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={{ flex: 1, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: requestType === "check_out" ? THEME.colors.bluePrimary : THEME.colors.border, backgroundColor: requestType === "check_out" ? "#EEF2FF" : THEME.colors.white, alignItems: "center" }}
+                onPress={() => setRequestType("check_out")}
+              >
+                <Text style={{ fontWeight: "600", color: requestType === "check_out" ? THEME.colors.bluePrimary : THEME.colors.textSecondary }}>Check Out</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ fontSize: 14, fontWeight: "600", color: THEME.colors.textMain, marginBottom: 8 }}>New Adjusted Time</Text>
+            {Platform.OS === 'ios' ? (
+              <DateTimePicker
+                value={adjustedTime}
+                mode="time"
+                display="default"
+                onChange={handleTimeChange}
+                style={{ marginBottom: 16 }}
+              />
+            ) : (
+              <>
+                <TouchableOpacity 
+                  style={{ padding: 12, borderWidth: 1, borderColor: THEME.colors.border, borderRadius: 8, marginBottom: 16, alignItems: "center" }}
+                  onPress={() => setShowPicker(true)}
+                >
+                  <Text style={{ color: THEME.colors.textMain }}>{adjustedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                </TouchableOpacity>
+                {showPicker && (
+                  <DateTimePicker
+                    value={adjustedTime}
+                    mode="time"
+                    display="default"
+                    onChange={handleTimeChange}
+                  />
+                )}
+              </>
+            )}
+
+            <Text style={{ fontSize: 14, fontWeight: "600", color: THEME.colors.textMain, marginBottom: 8 }}>Reason</Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: THEME.colors.border, borderRadius: 8, padding: 12, color: THEME.colors.textMain, marginBottom: 24, textAlignVertical: 'top' }}
+              placeholder="Why do you need this adjustment?"
+              placeholderTextColor="#94A3B8"
+              value={reason}
+              onChangeText={setReason}
+              multiline
+              numberOfLines={3}
+            />
+
+            <TouchableOpacity 
+              onPress={handleSubmit}
+              disabled={submitMutation.isPending}
+              style={{ backgroundColor: THEME.colors.bluePrimary, padding: 16, borderRadius: 8, alignItems: "center" }}
+            >
+              {submitMutation.isPending ? (
+                <ActivityIndicator color={THEME.colors.white} />
+              ) : (
+                <Text style={{ color: THEME.colors.white, fontWeight: "600", fontSize: 16 }}>Submit Request</Text>
+              )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }

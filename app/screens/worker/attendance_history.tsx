@@ -122,6 +122,15 @@ export default function AttendanceHistoryScreen() {
                   <Text style={{ fontSize: 16, fontWeight: "700", color: THEME.colors.textMain }}>
                     {formatHours(displayHours)}
                   </Text>
+                  <TouchableOpacity
+                    onPress={() => router.push({
+                      pathname: "/screens/worker/adjust-time",
+                      params: { date: date.toISOString(), checkIn: firstSession?.checkInTime, checkOut: lastSession?.checkOutTime }
+                    })}
+                    style={{ marginTop: 8 }}
+                  >
+                    <Text style={{ fontSize: 12, color: THEME.colors.bluePrimary, fontWeight: "600" }}>Adjust</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             );

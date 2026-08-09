@@ -18,11 +18,13 @@ const MENU_ROUTES: Record<
   | "/screens/company/task"
   | "/screens/company/projectdocuments"
   | "/screens/company/managergeofencing"
+  | "/screens/manager/project-schedule"
 > = {
   "Project details": "/screens/company/projectinfo",
   "Project Analysis": "/screens/company/projectanalysis",
   Team: "/screens/company/team",
   Task: "/screens/company/task",
+  "Worker Schedule": "/screens/manager/project-schedule",
   Document: "/screens/company/projectdocuments",
   Geofencing: "/screens/company/managergeofencing",
 };
@@ -39,8 +41,8 @@ export default function ProjectDetailsRoute() {
   const menuItems = React.useMemo(
     () =>
       role === "manager"
-        ? ["Project details", "Project Analysis", "Task", "Document", "Geofencing"]
-        : ["Project details", "Project Analysis", "Team", "Task", "Document"],
+        ? ["Project details", "Project Analysis", "Task", "Worker Schedule", "Document", "Geofencing"]
+        : ["Project details", "Project Analysis", "Team", "Task", "Worker Schedule", "Document"],
     [role],
   );
 

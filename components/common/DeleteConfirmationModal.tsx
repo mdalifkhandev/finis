@@ -34,7 +34,7 @@ export default function DeleteConfirmationModal({
           <Pressable
             onPress={(event) => event.stopPropagation()}
             className="rounded-t-2xl bg-white px-4 pt-3"
-            style={{ paddingBottom: isIOS ? Math.max(insets.bottom, 10) + 12 : 40 }}
+            style={{ paddingBottom: isIOS ? Math.max(insets.bottom, 10) + 12 : Math.max(insets.bottom, 24) + 24 }}
           >
             <View className="mb-3 items-center">
               <View className="h-1.5 w-11 rounded-full bg-[#D1D5DB]" />

@@ -812,22 +812,18 @@ export async function getProjectTeam(projectId: string) {
   const { data } = await api.get<{
     success: boolean;
     message: string;
-    data: { managers: CompanyProjectTeamMember[], workers: any[] };
-  }>(`/admin/projects/${projectId}/team`);
+    data: any[];
+  }>(`/admin/projects/${projectId}/team/workers`);
 
   if (!data.success) {
     throw new Error(data.message || "Failed to load project team");
   }
 
   return {
-    managers: data.data.managers.map((member) => ({
-      ...member,
-      user: {
-        ...member.user,
-        avatarUrl: resolveMediaUrl(member.user.avatarUrl),
-      },
+    workers: data.data.map((worker: any) => ({
+      ...worker,
+      avatarUrl: resolveMediaUrl(worker.avatarUrl),
     })),
-    workers: data.data.workers,
   };
 }
 
@@ -1053,6 +1049,27 @@ export async function getAvailableWorkers() {
     ...worker,
     avatarUrl: resolveMediaUrl(worker.avatarUrl),
   }));
+}
+
+export async function assignProjectSchedule(projectId: string, payload: { userIds: string[]; startTime: string; endTime: string }) {
+  try {
+    const { data } = await api.post<{
+      success: boolean;
+      message: string;
+      data: any;
+    }>(`/admin/projects/${projectId}/schedule/assign`, payload);
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to assign schedule");
+    }
+
+    return data.data;
+  } catch (error: any) {
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw error;
+  }
 }
 
 export async function addProjectWorker(projectId: string, payload: { userId: string; managerId: string }) {
