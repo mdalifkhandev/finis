@@ -53,11 +53,34 @@ export default function AttendanceHistoryScreen() {
         {isLoading ? (
           <ActivityIndicator size="large" color={THEME.colors.bluePrimary} style={{ marginTop: 40 }} />
         ) : attendances.length > 0 ? (
-          attendances.map((session: any) => {
-            const date = new Date(session.checkInTime);
+          attendances.map((attendance: any) => {
+            const date = new Date(attendance.date);
+            const firstSession = attendance.sessions?.[0];
+            const lastSession = attendance.sessions?.[attendance.sessions.length - 1];
+            let computedHours = 0;
+            if (attendance.sessions && attendance.sessions.length > 0) {
+              attendance.sessions.forEach((s: any) => {
+                if (s.checkInTime && s.checkOutTime) {
+                  const diff = new Date(s.checkOutTime).getTime() - new Date(s.checkInTime).getTime();
+                  computedHours += diff / (1000 * 60 * 60);
+                }
+              });
+            }
+            const displayHours = attendance.totalHours || computedHours;
+
+            const formatHours = (hours: number) => {
+              if (!hours || hours <= 0) return '--';
+              const h = Math.floor(hours);
+              const m = Math.round((hours - h) * 60);
+              if (h > 0 && m > 0) return `${h}h ${m}m`;
+              if (h > 0) return `${h}h`;
+              if (m > 0) return `${m}m`;
+              return '--';
+            };
+
             return (
               <View
-                key={session.id}
+                key={attendance.id}
                 style={{
                   backgroundColor: THEME.colors.white,
                   borderRadius: 16,
@@ -71,25 +94,25 @@ export default function AttendanceHistoryScreen() {
               >
                 <View style={{ backgroundColor: '#EEF2FF', padding: 12, borderRadius: 12, marginRight: 16 }}>
                   <Text style={{ fontSize: 18, fontWeight: '700', color: '#4F46E5', textAlign: 'center' }}>
-                    {date.getDate()}
+                    {date.getDate() || "--"}
                   </Text>
                   <Text style={{ fontSize: 12, fontWeight: '600', color: '#4F46E5', textAlign: 'center', textTransform: 'uppercase' }}>
-                    {date.toLocaleDateString('en-US', { month: 'short' })}
+                    {!isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { month: 'short' }) : "ERR"}
                   </Text>
                 </View>
 
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 16, fontWeight: "600", color: THEME.colors.textMain, marginBottom: 4 }}>
-                    {date.toLocaleDateString('en-US', { weekday: 'long' })}
+                    {!isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { weekday: 'long' }) : "Unknown Day"}
                   </Text>
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <MaterialCommunityIcons name="clock-in" size={16} color={THEME.colors.green} />
                     <Text style={{ fontSize: 14, color: THEME.colors.textSecondary, marginLeft: 4, marginRight: 12 }}>
-                      {session.checkInTime ? new Date(session.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                      {firstSession?.checkInTime ? new Date(firstSession.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                     </Text>
                     <MaterialCommunityIcons name="clock-out" size={16} color={THEME.colors.red} />
                     <Text style={{ fontSize: 14, color: THEME.colors.textSecondary, marginLeft: 4 }}>
-                      {session.checkOutTime ? new Date(session.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                      {lastSession?.checkOutTime ? new Date(lastSession.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                     </Text>
                   </View>
                 </View>
@@ -97,7 +120,7 @@ export default function AttendanceHistoryScreen() {
                 <View style={{ alignItems: "flex-end" }}>
                   <Text style={{ fontSize: 12, color: THEME.colors.textSecondary, marginBottom: 4 }}>Work Time</Text>
                   <Text style={{ fontSize: 16, fontWeight: "700", color: THEME.colors.textMain }}>
-                    {session.totalHours ? `${Number(session.totalHours).toFixed(1)}h` : '--'}
+                    {formatHours(displayHours)}
                   </Text>
                 </View>
               </View>

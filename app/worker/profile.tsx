@@ -2,15 +2,15 @@ import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    Image,
-    Modal,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StatusBar,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useWorkerProfileQuery } from "@/hooks/profile/profile";
@@ -67,7 +67,7 @@ export default function WorkerProfile() {
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: THEME.colors.background }}
-      edges={['top','left',"right"]}
+      edges={['top', 'left', "right"]}
     >
       <StatusBar barStyle="dark-content" />
 
@@ -194,16 +194,6 @@ export default function WorkerProfile() {
               <Feather name="chevron-right" size={20} color="#94A3B8" />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push("/worker/tasks")}
-              style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
-            >
-              <View style={{ width: 36, height: 36, alignItems: "center", justifyContent: "center" }}>
-                <Ionicons name="list-outline" size={24} color={THEME.colors.textSecondary} />
-              </View>
-              <Text style={{ flex: 1, marginLeft: 12, fontSize: 16, color: "#475569", fontWeight: "500" }}>Task History</Text>
-              <Feather name="chevron-right" size={20} color="#94A3B8" />
-            </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => router.push("/screens/profile/expenses")}
