@@ -49,21 +49,25 @@ function normalizeThreads(
       return rightTime - leftTime;
     })
     .map((thread) => {
-      const otherParticipant =
-        thread.participants.find((participant) => participant.id !== currentUserId) ??
-        thread.participants[0];
+      const isProjectChat = thread.type === "project" || thread.type === "group";
+      const otherParticipants = thread.participants.filter((p) => p.id !== currentUserId);
+      const mainOtherParticipant = otherParticipants[0] ?? thread.participants[0];
+      
+      const isOnline = isProjectChat
+        ? otherParticipants.some((p) => p.isOnline)
+        : (mainOtherParticipant?.isOnline ?? false);
 
       return {
         id: thread.id,
         threadId: thread.id,
-        profileUserId: otherParticipant?.id,
-        profileRole: otherParticipant?.role,
-        name: thread.name || otherParticipant?.fullName || "Conversation",
+        profileUserId: mainOtherParticipant?.id,
+        profileRole: mainOtherParticipant?.role,
+        name: thread.name || mainOtherParticipant?.fullName || "Conversation",
         preview: formatChatPreview(thread.lastMessage),
         time: formatChatTime(thread.lastMessage?.sentAt),
         unreadCount: thread.unreadCount,
-        avatarUrl: toAbsoluteAvatar(otherParticipant?.avatarUrl),
-        isOnline: otherParticipant?.isOnline ?? false,
+        avatarUrl: toAbsoluteAvatar(mainOtherParticipant?.avatarUrl),
+        isOnline,
         isBlocked: thread.isBlocked ?? false,
         blockedByMe: thread.blockedByMe ?? false,
         blockedByOther: thread.blockedByOther ?? false,
