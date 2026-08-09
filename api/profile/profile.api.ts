@@ -68,6 +68,11 @@ export type WorkerProfile = {
   certifications: any[];
   userSettings: any | null;
   companyMembers: any[];
+  workScheduleAssignments?: any[];
+  taskStats?: {
+    completed: number;
+    revision: number;
+  };
 };
 
 export async function getWorkerProfile() {

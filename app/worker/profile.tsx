@@ -130,6 +130,22 @@ export default function WorkerProfile() {
           </Text>
 
           <View style={{ width: "100%", marginTop: 24 }}>
+            {/* Task Stats Card */}
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
+              <View style={{ flex: 1, backgroundColor: THEME.colors.background, borderRadius: 16, padding: 16, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 13, color: THEME.colors.textSecondary, marginBottom: 4 }}>Completed Tasks</Text>
+                <Text style={{ fontSize: 24, fontWeight: '700', color: THEME.colors.bluePrimary }}>
+                  {profile?.taskStats?.completed || 0}
+                </Text>
+              </View>
+              <View style={{ flex: 1, backgroundColor: THEME.colors.background, borderRadius: 16, padding: 16, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontSize: 13, color: THEME.colors.textSecondary, marginBottom: 4 }}>In Revision</Text>
+                <Text style={{ fontSize: 24, fontWeight: '700', color: THEME.colors.red }}>
+                  {profile?.taskStats?.revision || 0}
+                </Text>
+              </View>
+            </View>
+
             <Text
               style={{
                 fontSize: 16,
@@ -149,31 +165,43 @@ export default function WorkerProfile() {
                 marginBottom: 12,
               }}
             >
-              <View
-                style={{
-                  width: 36,
-                  height: 36,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <MaterialCommunityIcons
-                  name="account-details-outline"
-                  size={24}
-                  color={THEME.colors.textSecondary}
-                />
+              <View style={{ width: 36, height: 36, alignItems: "center", justifyContent: "center" }}>
+                <MaterialCommunityIcons name="account-details-outline" size={24} color={THEME.colors.textSecondary} />
               </View>
-              <Text
-                style={{
-                  flex: 1,
-                  marginLeft: 12,
-                  fontSize: 16,
-                  color: "#475569",
-                  fontWeight: "500",
-                }}
-              >
-                Personal info
-              </Text>
+              <Text style={{ flex: 1, marginLeft: 12, fontSize: 16, color: "#475569", fontWeight: "500" }}>Personal info</Text>
+              <Feather name="chevron-right" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/screens/worker/work_schedule")}
+              style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
+            >
+              <View style={{ width: 36, height: 36, alignItems: "center", justifyContent: "center" }}>
+                <Ionicons name="calendar-outline" size={24} color={THEME.colors.textSecondary} />
+              </View>
+              <Text style={{ flex: 1, marginLeft: 12, fontSize: 16, color: "#475569", fontWeight: "500" }}>Work Schedule</Text>
+              <Feather name="chevron-right" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/screens/worker/attendance_history")}
+              style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
+            >
+              <View style={{ width: 36, height: 36, alignItems: "center", justifyContent: "center" }}>
+                <MaterialCommunityIcons name="clock-check-outline" size={24} color={THEME.colors.textSecondary} />
+              </View>
+              <Text style={{ flex: 1, marginLeft: 12, fontSize: 16, color: "#475569", fontWeight: "500" }}>Attendance History</Text>
+              <Feather name="chevron-right" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/worker/tasks")}
+              style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
+            >
+              <View style={{ width: 36, height: 36, alignItems: "center", justifyContent: "center" }}>
+                <Ionicons name="list-outline" size={24} color={THEME.colors.textSecondary} />
+              </View>
+              <Text style={{ flex: 1, marginLeft: 12, fontSize: 16, color: "#475569", fontWeight: "500" }}>Task History</Text>
               <Feather name="chevron-right" size={20} color="#94A3B8" />
             </TouchableOpacity>
 

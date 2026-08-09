@@ -27,7 +27,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import HomeHeader from "../../components/home/HomeHeader";
 import SectionHeader from "../../components/home/SectionHeader";
 import StatCard from "../../components/home/StatCard";
@@ -49,6 +49,7 @@ function formatLocalDateKey(date: Date) {
 }
 
 export default function WorkerHome() {
+  const insets = useSafeAreaInsets();
   useWorkerGeofenceSocket();
   const { data: profile } = useWorkerProfileQuery();
   const {
@@ -538,7 +539,8 @@ export default function WorkerHome() {
           onPress={() => setIsCheckInSheetVisible(false)}
         >
           <Pressable
-            className="max-h-[78%] rounded-t-[24px] bg-white px-5 pb-6 pt-4"
+            className="max-h-[78%] rounded-t-[24px] bg-white px-5 pt-4"
+            style={{ paddingBottom: Math.max(insets.bottom, 24) + 16 }}
             onPress={() => {}}
           >
             <View className="mb-4 flex-row items-center justify-between">
