@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -13,7 +13,7 @@ const THEME = {
     white: "#FFFFFF",
     textMain: "#0F172A",
     textSecondary: "#64748B",
-    bluePrimary: "#3B82F6",
+    bluePrimary: "#1f3d5c",
     border: "#E2E8F0",
     red: "#EF4444",
   },
@@ -87,7 +87,8 @@ export default function AdjustTimeScreen() {
         <Text style={{ fontSize: 20, fontWeight: "700", color: THEME.colors.textMain }}>Adjust Time</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ padding: 20 }}>
         <Text style={{ fontSize: 14, color: THEME.colors.textSecondary, marginBottom: 20 }}>
           Submit a request to change your recorded work time. This requires manager approval.
         </Text>
@@ -189,6 +190,7 @@ export default function AdjustTimeScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
