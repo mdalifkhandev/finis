@@ -717,16 +717,18 @@ export default function AdminExpensesScreen() {
                       View
                     </Text>
                   </TouchableOpacity>
+                  {canCreateExpenses && ["DRAFT", "SUBMITTED", "REJECTED"].includes(e.status) ? (
+                    <TouchableOpacity
+                      onPress={() => openEdit(e)}
+                      className="rounded-full bg-[#EAF3FA] px-3 py-2"
+                    >
+                      <Text className="text-[12px] font-semibold text-[#1D5478]">
+                        Edit
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
                   {canCreateExpenses && e.status === "DRAFT" ? (
                     <>
-                      <TouchableOpacity
-                        onPress={() => openEdit(e)}
-                        className="rounded-full bg-[#EAF3FA] px-3 py-2"
-                      >
-                        <Text className="text-[12px] font-semibold text-[#1D5478]">
-                          Edit
-                        </Text>
-                      </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => submitMutation.mutate(e.id)}
                         className="rounded-full bg-[#1D5478] px-3 py-2"
