@@ -157,16 +157,19 @@ function SelectorField({
   value,
   placeholder,
   onPress,
+  required,
 }: {
   label: string;
   value: string;
   placeholder: string;
   onPress: () => void;
+  required?: boolean;
 }) {
   return (
     <View>
       <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">
         {label}
+        {required && <Text className="text-red-500"> *</Text>}
       </Text>
       <TouchableOpacity
         activeOpacity={0.85}
@@ -523,9 +526,11 @@ export default function AdminExpensesScreen() {
       !form.amount ||
       !form.currency.trim() ||
       !form.category.trim() ||
-      !form.projectId.trim()
+      !form.projectId.trim() ||
+      !form.paymentMethod.trim() ||
+      (!receipt && !editing?.receiptUrl)
     ) {
-      toast.error("Please fill required fields");
+      toast.error("Please fill all required fields including Payment Method and Receipt");
       return;
     }
     setSavingAction(action);
@@ -782,7 +787,9 @@ export default function AdminExpensesScreen() {
             contentContainerStyle={{ padding: 20, gap: 12 }}
           >
             <View>
-              <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">Expense Title</Text>
+              <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">
+                Expense Title<Text className="text-red-500"> *</Text>
+              </Text>
               <TextInput
                 value={form.title}
                 onChangeText={(title) => setForm((f) => ({ ...f, title }))}
@@ -791,7 +798,9 @@ export default function AdminExpensesScreen() {
               />
             </View>
             <View>
-              <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">Expense Date</Text>
+              <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">
+                Expense Date<Text className="text-red-500"> *</Text>
+              </Text>
               <TextInput
                 value={form.expenseDate}
                 onChangeText={(expenseDate) =>
@@ -802,7 +811,9 @@ export default function AdminExpensesScreen() {
               />
             </View>
             <View>
-              <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">Amount</Text>
+              <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">
+                Amount<Text className="text-red-500"> *</Text>
+              </Text>
               <TextInput
                 value={form.amount}
                 onChangeText={(amount) => setForm((f) => ({ ...f, amount }))}
@@ -816,6 +827,7 @@ export default function AdminExpensesScreen() {
               value={selectedProjectName}
               placeholder="Select project"
               onPress={() => openSelector("project")}
+              required
             />
             {form.projectId ? (
               <SelectorField
@@ -830,18 +842,21 @@ export default function AdminExpensesScreen() {
               value={form.currency}
               placeholder="Select or type currency"
               onPress={() => openSelector("currency")}
+              required
             />
             <SelectorField
               label="Category"
               value={form.category}
               placeholder="Select or type category"
               onPress={() => openSelector("category")}
+              required
             />
             <SelectorField
               label="Payment Method"
               value={form.paymentMethod}
               placeholder="Select or type payment method"
               onPress={() => openSelector("paymentMethod")}
+              required
             />
             <View>
               <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">Vendor</Text>
@@ -863,7 +878,7 @@ export default function AdminExpensesScreen() {
               />
             </View>
             <Text className="text-[12px] font-semibold text-[#64748B]">
-              Receipt
+              Receipt<Text className="text-red-500"> *</Text>
             </Text>
             <View className="flex-row gap-2">
               <TouchableOpacity

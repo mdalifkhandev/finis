@@ -7,7 +7,7 @@ export type ReimbursementExpense = {
   status: ReimbursementExpenseStatus; submittedAt?: string | null; approvedAt?: string | null; rejectedAt?: string | null; paidAt?: string | null; rejectionNote?: string | null;
   createdAt: string; updatedAt: string; project?: { id: string; name: string } | null; task?: { id: string; title: string } | null;
 };
-export type ExpensePayload = { title: string; expenseDate: string; amount: number; currency?: string; category: string; vendor?: string; paymentMethod?: string; projectId?: string; taskId?: string; notes?: string; action?: "DRAFT" | "SUBMITTED" };
+export type ExpensePayload = { title: string; expenseDate: string; amount: number; currency?: string; category: string; vendor?: string; paymentMethod: string; projectId?: string; taskId?: string; notes?: string; action?: "DRAFT" | "SUBMITTED" };
 export type ExpenseFilters = { page?: number; limit?: number; search?: string; status?: string; category?: string; currency?: string; projectId?: string; sortBy?: "createdAt" | "expenseDate" | "amount"; sortOrder?: "asc" | "desc" };
 export type ExpenseSummary = { totalExpenses: number; draft: number; submitted: number; approved: number; rejected: number; paid: number; totalAmountThisMonth: number };
 export type ExpenseOptions = { currency: string[]; category: string[]; paymentMethod: string[] };
