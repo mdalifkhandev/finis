@@ -23,7 +23,10 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { toast } from "sonner-native";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import { toast, Toaster } from "sonner-native";
 import type { ReimbursementExpense } from "@/api/admin/expenses.api";
 import {
   useAdminExpenseOptionsQuery,
@@ -239,15 +242,16 @@ function SelectorSheet({
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent
       onRequestClose={closeSheet}
     >
-      <Pressable
-        className="flex-1 justify-end bg-black/40"
-        onPress={closeSheet}
-      >
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="w-full">
+      <KeyboardAvoidingView behavior="padding" className="flex-1">
+        <Pressable
+          className="flex-1 justify-end bg-black/40"
+          onPress={closeSheet}
+        >
           <Pressable
-            className="mix-h-[70%] rounded-t-[24px] bg-white p-5"
+            className="max-h-[70%] rounded-t-[24px] bg-white p-5"
             style={{ paddingBottom: Math.max(insets.bottom, 20) }}
             onPress={(event) => event.stopPropagation()}
           >
@@ -320,8 +324,8 @@ function SelectorSheet({
               />
             </View>
           </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -347,6 +351,15 @@ export default function AdminExpensesScreen() {
   const [savingAction, setSavingAction] = useState<
     "DRAFT" | "SUBMITTED" | null
   >(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      setForm((f) => ({ ...f, expenseDate: formattedDate }));
+    }
+  };
   const [selectedExpense, setSelectedExpense] =
     useState<ReimbursementExpense | null>(null);
   const list = useAdminExpensesQuery({ page: 1, limit: 50 });
@@ -774,6 +787,10 @@ export default function AdminExpensesScreen() {
         onRequestClose={() => setModalOpen(false)}
       >
         <SafeAreaView className="flex-1 bg-white">
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === "ios" ? "padding" : "padding"}
+            className="flex-1"
+          >
           <View className="flex-row items-center px-5 py-3">
             <TouchableOpacity onPress={() => setModalOpen(false)}>
               <Ionicons name="close" size={24} color="#111827" />
@@ -797,19 +814,13 @@ export default function AdminExpensesScreen() {
                 className="rounded-[12px] border border-[#E5EAF0] px-4 py-3"
               />
             </View>
-            <View>
-              <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">
-                Expense Date<Text className="text-red-500"> *</Text>
-              </Text>
-              <TextInput
-                value={form.expenseDate}
-                onChangeText={(expenseDate) =>
-                  setForm((f) => ({ ...f, expenseDate }))
-                }
-                placeholder="YYYY-MM-DD"
-                className="rounded-[12px] border border-[#E5EAF0] px-4 py-3"
-              />
-            </View>
+            <SelectorField
+              label="Expense Date"
+              value={form.expenseDate}
+              placeholder="YYYY-MM-DD"
+              onPress={() => setShowDatePicker(true)}
+              required
+            />
             <View>
               <Text className="mb-2 text-[12px] font-semibold text-[#64748B]">
                 Amount<Text className="text-red-500"> *</Text>
@@ -874,7 +885,7 @@ export default function AdminExpensesScreen() {
                 onChangeText={(notes) => setForm((f) => ({ ...f, notes }))}
                 placeholder="Notes"
                 multiline
-                className="min-h-[90px] rounded-[12px] border border-[#E5EAF0] px-4 py-3"
+                className="min-h-[48px] max-h-[90px] rounded-[12px] border border-[#E5EAF0] px-4 py-3"
               />
             </View>
             <Text className="text-[12px] font-semibold text-[#64748B]">
@@ -947,7 +958,17 @@ export default function AdminExpensesScreen() {
               ) : null}
             </View>
           </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
+        {showDatePicker && (
+          <DateTimePicker
+            value={form.expenseDate ? new Date(form.expenseDate) : new Date()}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={handleDateChange}
+          />
+        )}
+        <Toaster />
       </Modal>
       <Modal
         visible={selectedExpense !== null}
