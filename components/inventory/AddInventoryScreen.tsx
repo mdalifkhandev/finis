@@ -84,11 +84,11 @@ function SelectorBottomSheet({
       statusBarTranslucent
       onRequestClose={closeSheet}
     >
-      <KeyboardAvoidingView behavior="padding" className="flex-1">
-        <Pressable
-          className="flex-1 justify-end bg-black/40"
-          onPress={closeSheet}
-        >
+      <Pressable
+        className="flex-1 justify-end bg-black/40"
+        onPress={closeSheet}
+      >
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="w-full">
           <Pressable
             className="max-h-[72%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
             style={{ paddingBottom: Math.max(insets.bottom, 28) }}
@@ -160,8 +160,8 @@ function SelectorBottomSheet({
               }
             />
           </Pressable>
-        </Pressable>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </Pressable>
     </Modal>
   );
 }
