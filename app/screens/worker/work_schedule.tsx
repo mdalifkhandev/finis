@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Platform, Alert, KeyboardAvoidingView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, TextInput, Platform, Alert, KeyboardAvoidingView, RefreshControl } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -19,8 +19,17 @@ const THEME = {
 };
 
 export default function WorkScheduleScreen() {
-  const { data: profile, isLoading } = useWorkerProfileQuery();
+  const insets = useSafeAreaInsets();
+  const { data: profile, isLoading, refetch } = useWorkerProfileQuery();
   const schedules = profile?.workScheduleAssignments || [];
+  const pendingRequests = profile?.timeAdjustments || [];
+  const hasPending = pendingRequests.length > 0;
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    refetch().finally(() => setRefreshing(false));
+  }, [refetch]);
 
   const submitMutation = useSubmitTimeAdjustmentMutation();
 
@@ -101,52 +110,71 @@ export default function WorkScheduleScreen() {
         <Text style={{ fontSize: 20, fontWeight: "700", color: THEME.colors.textMain }}>Work Schedule</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <ScrollView 
+        contentContainerStyle={{ padding: 20 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[THEME.colors.bluePrimary]} tintColor={THEME.colors.bluePrimary} />
+        }
+      >
         {isLoading ? (
           <ActivityIndicator size="large" color={THEME.colors.bluePrimary} style={{ marginTop: 40 }} />
         ) : schedules.length > 0 ? (
-          schedules.map((assignment: any) => (
-            <View
-              key={assignment.id}
-              style={{
-                backgroundColor: THEME.colors.white,
-                borderRadius: 16,
-                padding: 20,
-                marginBottom: 16,
-                borderWidth: 1,
-                borderColor: THEME.colors.border,
-              }}
-            >
-              <Text style={{ fontSize: 18, fontWeight: "700", color: THEME.colors.textMain, marginBottom: 12 }}>
-                {assignment.schedule?.name || "Regular Schedule"}
-              </Text>
-              
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                <Ionicons name="time-outline" size={20} color={THEME.colors.bluePrimary} />
-                <Text style={{ marginLeft: 8, fontSize: 16, color: THEME.colors.textSecondary }}>
-                  {assignment.schedule?.startTime} - {assignment.schedule?.endTime}
-                </Text>
-              </View>
+          schedules.map((assignment: any) => {
+            const isPendingForThisSchedule = pendingRequests.some((req: any) => {
+              const reqTimeStr = new Date(req.originalTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+              const normalizedReq = reqTimeStr.replace(/^0/, '');
+              const normalizedStart = (assignment.schedule?.startTime || '').replace(/^0/, '');
+              const normalizedEnd = (assignment.schedule?.endTime || '').replace(/^0/, '');
+              return normalizedReq === normalizedStart || normalizedReq === normalizedEnd;
+            });
 
-              <View style={{ flexDirection: "row", alignItems: "flex-start", marginTop: 8 }}>
-                <Ionicons name="calendar-outline" size={20} color={THEME.colors.bluePrimary} style={{ marginTop: 2 }} />
-                <View style={{ marginLeft: 8, flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                  {assignment.schedule?.days?.map((day: string) => (
-                    <View key={day} style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
-                      <Text style={{ color: '#4F46E5', fontSize: 13, fontWeight: '600' }}>{day}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              <TouchableOpacity 
-                onPress={() => openAdjustmentModal(assignment)}
-                style={{ marginTop: 16, backgroundColor: THEME.colors.bluePrimary, padding: 12, borderRadius: 8, alignItems: "center" }}
+            return (
+              <View
+                key={assignment.id}
+                style={{
+                  backgroundColor: THEME.colors.white,
+                  borderRadius: 16,
+                  padding: 20,
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: THEME.colors.border,
+                }}
               >
-                <Text style={{ color: THEME.colors.white, fontWeight: "600", fontSize: 14 }}>Request Time Adjustment</Text>
-              </TouchableOpacity>
-            </View>
-          ))
+                <Text style={{ fontSize: 18, fontWeight: "700", color: THEME.colors.textMain, marginBottom: 12 }}>
+                  {(assignment.schedule?.name || "Regular Schedule").replace(/ \(Adjusted\)/g, '')}
+                  {assignment.schedule?.name?.includes('(Adjusted)') ? ' (Adjusted)' : ''}
+                </Text>
+                
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+                  <Ionicons name="time-outline" size={20} color={THEME.colors.bluePrimary} />
+                  <Text style={{ marginLeft: 8, fontSize: 16, color: THEME.colors.textSecondary }}>
+                    {assignment.schedule?.startTime} - {assignment.schedule?.endTime}
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: "row", alignItems: "flex-start", marginTop: 8 }}>
+                  <Ionicons name="calendar-outline" size={20} color={THEME.colors.bluePrimary} style={{ marginTop: 2 }} />
+                  <View style={{ marginLeft: 8, flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {assignment.schedule?.days?.map((day: string) => (
+                      <View key={day} style={{ backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
+                        <Text style={{ color: '#4F46E5', fontSize: 13, fontWeight: '600' }}>{day}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <TouchableOpacity 
+                  disabled={isPendingForThisSchedule}
+                  onPress={() => openAdjustmentModal(assignment)}
+                  style={{ marginTop: 16, backgroundColor: isPendingForThisSchedule ? THEME.colors.textSecondary : THEME.colors.bluePrimary, padding: 12, borderRadius: 8, alignItems: "center" }}
+                >
+                  <Text style={{ color: THEME.colors.white, fontWeight: "600", fontSize: 14 }}>
+                    {isPendingForThisSchedule ? "Adjustment Request Pending" : "Request Time Adjustment"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })
         ) : (
           <View style={{ alignItems: "center", marginTop: 60 }}>
             <Ionicons name="calendar-clear-outline" size={64} color="#CBD5E1" />
@@ -157,12 +185,9 @@ export default function WorkScheduleScreen() {
 
       {/* Time Adjustment Modal */}
       <Modal visible={modalVisible} transparent animationType="slide" statusBarTranslucent>
-        <KeyboardAvoidingView 
-          style={{ flex: 1 }} 
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
           <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
-            <View style={{ backgroundColor: THEME.colors.white, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 }}>
+            <View style={{ backgroundColor: THEME.colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Math.max(insets.bottom, 24) }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <Text style={{ fontSize: 18, fontWeight: "700", color: THEME.colors.textMain }}>Request Adjustment</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>

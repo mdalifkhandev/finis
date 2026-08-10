@@ -143,7 +143,7 @@ export default function AdjustTimeScreen() {
           <DateTimePicker
             value={adjustedTime}
             mode="time"
-            is24Hour={true}
+            is24Hour={false}
             display="default"
             onChange={handleTimeChange}
           />

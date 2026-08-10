@@ -73,6 +73,7 @@ export type WorkerProfile = {
     completed: number;
     revision: number;
   };
+  timeAdjustments?: any[];
 };
 
 export async function getWorkerProfile() {
