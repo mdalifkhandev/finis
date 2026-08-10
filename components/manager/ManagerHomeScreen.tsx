@@ -128,7 +128,23 @@ export default function ManagerHomeScreen() {
           ))}
         </View>
 
-
+        <View className="mt-6 px-5">
+          <TouchableOpacity 
+            style={{ backgroundColor: '#EEF2FF', padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+            onPress={() => router.push("/screens/manager/requests")}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ backgroundColor: '#4F46E5', padding: 8, borderRadius: 8, marginRight: 12 }}>
+                <Text style={{ fontSize: 16 }}>📋</Text>
+              </View>
+              <View>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#1E293B' }}>Pending Requests</Text>
+                <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Review time adjustments</Text>
+              </View>
+            </View>
+            <Text style={{ color: '#4F46E5', fontWeight: '600' }}>View</Text>
+          </TouchableOpacity>
+        </View>
 
         <View className="mt-6">
           <SectionHeader

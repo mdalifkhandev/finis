@@ -14,6 +14,7 @@ import {
   RefreshControl,
   ScrollView,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -84,7 +85,7 @@ export default function Home() {
   }));
 
   return (
-    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-slate-50">
+    <SafeAreaView edges={['top', 'left', "right"]} className="flex-1 bg-slate-50">
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
@@ -135,6 +136,24 @@ export default function Home() {
               label={item.label}
             />
           ))}
+        </View>
+
+        <View className="mt-6 px-5">
+          <TouchableOpacity
+            style={{ backgroundColor: '#EEF2FF', padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+            onPress={() => router.push("/screens/manager/requests")}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ backgroundColor: '#4F46E5', padding: 8, borderRadius: 8, marginRight: 12 }}>
+                <Text style={{ fontSize: 16 }}>📋</Text>
+              </View>
+              <View>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#1E293B' }}>Pending Requests</Text>
+                <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Review time adjustments</Text>
+              </View>
+            </View>
+            <Text style={{ color: '#4F46E5', fontWeight: '600' }}>View</Text>
+          </TouchableOpacity>
         </View>
 
         <InviteButton />

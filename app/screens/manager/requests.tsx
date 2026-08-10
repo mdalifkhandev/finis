@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -14,7 +14,7 @@ const THEME = {
     white: "#FFFFFF",
     textMain: "#0F172A",
     textSecondary: "#64748B",
-    bluePrimary: "#3B82F6",
+    bluePrimary: "#1f3d5c",
     border: "#E2E8F0",
     green: "#22C55E",
     red: "#EF4444",
@@ -23,7 +23,7 @@ const THEME = {
 
 export default function ManagerRequestsScreen() {
   const insets = useSafeAreaInsets();
-  const { data: requests, isLoading } = usePendingTimeAdjustmentsQuery();
+  const { data: requests, isLoading, refetch } = usePendingTimeAdjustmentsQuery();
   const updateMutation = useUpdateTimeAdjustmentStatusMutation();
 
   const handleAction = (id: string, status: "approved" | "denied") => {
@@ -61,11 +61,21 @@ export default function ManagerRequestsScreen() {
         <Text style={{ fontSize: 20, fontWeight: "700", color: THEME.colors.textMain }}>Pending Requests</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 20 }}>
-        {isLoading ? (
+      <ScrollView 
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 20 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={() => refetch()}
+            tintColor={THEME.colors.bluePrimary}
+            colors={[THEME.colors.bluePrimary]}
+          />
+        }
+      >
+        {isLoading && (!requests || (requests as any[]).length === 0) ? (
           <ActivityIndicator size="large" color={THEME.colors.bluePrimary} style={{ marginTop: 40 }} />
-        ) : requests && requests.length > 0 ? (
-          requests.map((req: any) => (
+        ) : requests && (requests as any[]).length > 0 ? (
+          (requests as any[]).map((req: any) => (
             <View
               key={req.id}
               style={{
