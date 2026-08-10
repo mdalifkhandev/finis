@@ -215,6 +215,7 @@ export default function WorkScheduleScreen() {
               <DateTimePicker
                 value={adjustedTime}
                 mode="time"
+                is24Hour={false}
                 display="default"
                 onChange={handleTimeChange}
                 style={{ marginBottom: 16 }}
@@ -231,6 +232,7 @@ export default function WorkScheduleScreen() {
                   <DateTimePicker
                     value={adjustedTime}
                     mode="time"
+                    is24Hour={false}
                     display="default"
                     onChange={handleTimeChange}
                   />
