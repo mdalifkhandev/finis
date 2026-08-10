@@ -41,9 +41,10 @@ import {
 import { appendImageToFormData } from "@/lib/uploads/image-upload";
 import { API_BASE_URL } from "@/lib/config";
 import { useAuthStore } from "@/store/auth.store";
+import { useTasksQuery } from "@/hooks/company/company";
 
 type ReceiptAsset = { uri: string; name?: string | null; type?: string | null };
-type SelectorType = "project" | "currency" | "category" | "paymentMethod";
+type SelectorType = "project" | "task" | "currency" | "category" | "paymentMethod";
 type OptionItem = { id: string; name: string; value: string };
 
 const fallbackOptions = {
@@ -82,6 +83,7 @@ const emptyForm = {
   vendor: "",
   paymentMethod: "",
   projectId: "",
+  taskId: "",
   notes: "",
 };
 function money(amount?: number, currency = "BDT") {
@@ -348,6 +350,7 @@ export default function AdminExpensesScreen() {
   const summary = useAdminExpenseSummaryQuery();
   const optionQuery = useAdminExpenseOptionsQuery();
   const projectsQuery = useAdminExpenseProjectsQuery();
+  const tasksQuery = useTasksQuery({ projectId: form.projectId, limit: 100 });
   const createMutation = useCreateAdminExpenseMutation();
   const updateMutation = useUpdateAdminExpenseMutation();
   const deleteMutation = useDeleteAdminExpenseMutation();
@@ -462,20 +465,34 @@ export default function AdminExpensesScreen() {
       vendor: expense.vendor ?? "",
       paymentMethod: expense.paymentMethod ?? "",
       projectId: expense.projectId ?? "",
+      taskId: expense.taskId ?? "",
       notes: expense.notes ?? "",
     });
     setModalOpen(true);
   };
   const openSelector = (type: SelectorType) => {
-    setSelectorSearch(type === "project" ? selectedProjectName : form[type]);
+    setSelectorSearch(
+      type === "project"
+        ? selectedProjectName
+        : type === "task"
+        ? selectedTaskName
+        : form[type]
+    );
     setActiveSelector(type);
   };
   const selectOption = (item: OptionItem) => {
     if (!activeSelector) return;
-    setForm((f) => ({
-      ...f,
-      [activeSelector === "project" ? "projectId" : activeSelector]: item.value,
-    }));
+    setForm((f) => {
+      const nextForm = {
+        ...f,
+        [activeSelector === "project" ? "projectId" : activeSelector === "task" ? "taskId" : activeSelector]: item.value,
+      };
+      // Reset task if project changes
+      if (activeSelector === "project" && f.projectId !== item.value) {
+        nextForm.taskId = "";
+      }
+      return nextForm;
+    });
     setSelectorSearch(item.name);
     setActiveSelector(null);
   };
@@ -489,6 +506,7 @@ export default function AdminExpensesScreen() {
     appendText(fd, "vendor", form.vendor.trim());
     appendText(fd, "paymentMethod", form.paymentMethod.trim());
     appendText(fd, "projectId", form.projectId.trim());
+    appendText(fd, "taskId", form.taskId.trim());
     appendText(fd, "notes", form.notes.trim());
     appendText(fd, "action", action);
     appendImageToFormData(fd, "receipt", receipt, {
@@ -537,6 +555,8 @@ export default function AdminExpensesScreen() {
   const selectorTitle =
     activeSelector === "project"
       ? "Project"
+      : activeSelector === "task"
+        ? "Task"
       : activeSelector === "currency"
         ? "Currency"
         : activeSelector === "category"
@@ -547,12 +567,21 @@ export default function AdminExpensesScreen() {
     name: project.name,
     value: project.id,
   }));
+  const taskOptions = (tasksQuery.data?.data ?? []).map((task) => ({
+    id: task.id,
+    name: task.title,
+    value: task.id,
+  }));
   const selectedProjectName =
     projectOptions.find((project) => project.value === form.projectId)?.name ??
     "";
+  const selectedTaskName =
+    taskOptions.find((task) => task.value === form.taskId)?.name ?? "";
   const selectorOptions =
     activeSelector === "project"
       ? projectOptions
+      : activeSelector === "task"
+        ? taskOptions
       : toOptions(activeSelector ? options[activeSelector] : []);
   const selectedReceiptUrl = resolveReceiptUrl(selectedExpense?.receiptUrl);
 
@@ -788,6 +817,14 @@ export default function AdminExpensesScreen() {
               placeholder="Select project"
               onPress={() => openSelector("project")}
             />
+            {form.projectId ? (
+              <SelectorField
+                label="Task (Optional)"
+                value={selectedTaskName}
+                placeholder="Select task (optional)"
+                onPress={() => openSelector("task")}
+              />
+            ) : null}
             <SelectorField
               label="Currency"
               value={form.currency}
@@ -1000,6 +1037,8 @@ export default function AdminExpensesScreen() {
             selectedValue={
               activeSelector === "project"
                 ? form.projectId
+                : activeSelector === "task"
+                ? form.taskId
                 : activeSelector
                   ? form[activeSelector]
                   : ""
