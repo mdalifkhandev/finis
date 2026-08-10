@@ -26,6 +26,7 @@ type FloorUnitsProps = {
   onToggle: (floor: Floor, unit: Room) => void;
   onToggleAll: (floor: Floor, units: Room[]) => void;
   onUnitsLoaded?: (floorId: string, units: Room[]) => void;
+  readonly?: boolean;
 };
 
 function FloorUnits({
@@ -36,6 +37,7 @@ function FloorUnits({
   onToggle,
   onToggleAll,
   onUnitsLoaded,
+  readonly,
 }: FloorUnitsProps) {
   const shouldFetchUnits = !unitsOverride;
   const { data: fetchedUnits, isLoading } = useFloorRoomsQuery(
@@ -59,7 +61,7 @@ function FloorUnits({
           <Text className="text-[14px] font-semibold text-[#1E5371]">{floor.name}</Text>
         </View>
 
-        {units.length ? (
+        {!readonly && units.length ? (
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() => onToggleAll(floor, units)}
@@ -85,22 +87,31 @@ function FloorUnits({
         <View className="mt-3 flex-row flex-wrap gap-2">
           {units.map((unit) => {
             const selected = selectedUnitIds.includes(unit.id);
+            if (readonly && !selected) return null;
             return (
               <TouchableOpacity
                 key={unit.id}
                 activeOpacity={0.8}
                 onPress={() => onToggle(floor, unit)}
+                disabled={readonly}
                 className={`flex-row items-center rounded-[9px] border px-3 py-2.5 ${selected
                     ? "border-[#1E5371] bg-[#EDF5F8]"
                     : "border-[#CDD4DE] bg-white"
                   }`}
               >
-                <Ionicons
-                  name={selected ? "checkbox" : "square-outline"}
-                  size={19}
-                  color={selected ? "#1E5371" : "#98A2B3"}
-                />
-                <Text className="ml-2 text-[14px] text-[#26313E]">{unit.name}</Text>
+                {!readonly && (
+                  <Ionicons
+                    name={selected ? "checkbox" : "square-outline"}
+                    size={19}
+                    color={selected ? "#1E5371" : "#8996A8"}
+                  />
+                )}
+                <Text
+                  className={`text-[15px] ${selected ? "text-[#1E5371] font-semibold" : "text-[#4D596A] font-medium"
+                    } ${!readonly ? "ml-2" : ""}`}
+                >
+                  {unit.name}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -112,21 +123,25 @@ function FloorUnits({
   );
 }
 
-export default function TaskFloorUnitMultiSelect({
-  projectId,
-  floors,
-  unitsByFloor,
-  isLoading,
-  initialSelections,
-  onChange,
-}: {
+export type TaskFloorUnitMultiSelectProps = {
   projectId?: string;
   floors?: Floor[];
-  unitsByFloor?: Record<string, Room[]>;
   isLoading?: boolean;
   initialSelections?: TaskFloorUnitSelection[];
   onChange: (selections: TaskFloorUnitSelection[]) => void;
-}) {
+  unitsByFloor?: Record<string, Room[]>;
+  readonly?: boolean;
+};
+
+export default function TaskFloorUnitMultiSelect({
+  projectId,
+  floors,
+  isLoading,
+  initialSelections,
+  onChange,
+  unitsByFloor,
+  readonly,
+}: TaskFloorUnitMultiSelectProps) {
   const insets = useSafeAreaInsets();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [selectedFloors, setSelectedFloors] = useState<Floor[]>([]);
@@ -263,45 +278,57 @@ export default function TaskFloorUnitMultiSelect({
 
   return (
     <>
-      <View className="mt-4">
-        <Text className="mb-2 text-[14px] font-medium text-[#4D596A]">Select Floors</Text>
+      {!readonly && (
+        <View className="mt-4">
+          <Text className="mb-2 text-[14px] font-medium text-[#4D596A]">Select Floors</Text>
         <View className="min-h-[62px] flex-row flex-wrap items-center gap-2 rounded-[16px] border border-[#D3DBE4] bg-[#F7F9FB] px-3 py-3">
           {selectedFloors.map((floor) => (
             <View key={floor.id} className="h-9 flex-row items-center rounded-full bg-[#E5F0F5] px-3">
               <Text className="text-[14px] font-semibold text-[#1E5371]">{floor.name}</Text>
-              <TouchableOpacity onPress={() => toggleFloor(floor)} className="ml-1.5">
-                <Ionicons name="close" size={17} color="#1E5371" />
-              </TouchableOpacity>
+              {!readonly && (
+                <TouchableOpacity onPress={() => toggleFloor(floor)} className="ml-1.5">
+                  <Ionicons name="close" size={17} color="#1E5371" />
+                </TouchableOpacity>
+              )}
             </View>
           ))}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => setSheetVisible(true)}
-            className="h-9 w-9 items-center justify-center rounded-full bg-[#DCEBF2]"
-          >
-            <Ionicons name="add" size={24} color="#1E5371" />
-          </TouchableOpacity>
-          {!selectedFloors.length ? (
-            <Text className="text-[14px] text-[#98A2B3]">Add floors</Text>
-          ) : null}
+          {!readonly && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setSheetVisible(true)}
+              className="h-9 w-9 items-center justify-center rounded-full bg-[#DCEBF2]"
+            >
+              <Ionicons name="add" size={20} color="#1E5371" />
+            </TouchableOpacity>
+          )}
+          {!readonly && selectedFloors.length === 0 && (
+            <Text className="text-[14px] text-[#A3ADB8]">Add floors</Text>
+          )}
         </View>
-      </View>
+        </View>
+      )}
 
       {selectedFloors.length ? (
-        <View className="mt-5">
-          <View className="mb-2 flex-row items-center justify-between">
-            <Text className="text-[14px] font-medium text-[#4D596A]">Select Units</Text>
-            <TouchableOpacity onPress={toggleAllSelectedFloorsUnits} className="flex-row items-center gap-1.5">
-              <Text className="text-[14px] font-medium text-[#1E5371]">
-                {areAllUnitsSelectedGlobally ? "Deselect All" : "Select All"}
-              </Text>
-              <Ionicons
-                name={areAllUnitsSelectedGlobally ? "checkbox" : "square-outline"}
-                size={18}
-                color="#1E5371"
-              />
-            </TouchableOpacity>
-          </View>
+        <View className="mt-4">
+          {!readonly && (
+            <View className="mb-2 flex-row items-center justify-between">
+              <Text className="text-[14px] font-medium text-[#4D596A]">Selected Units</Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={toggleAllSelectedFloorsUnits}
+                className="flex-row items-center gap-1.5 rounded-[6px] border border-[#DCE3EA] bg-white px-2 py-1"
+              >
+                <Text className="text-[13px] font-medium text-[#1E5371]">
+                  {areAllUnitsSelectedGlobally ? "Deselect All" : "Select All"}
+                </Text>
+                <Ionicons
+                  name={areAllUnitsSelectedGlobally ? "checkmark" : "list"}
+                  size={18}
+                  color="#1E5371"
+                />
+              </TouchableOpacity>
+            </View>
+          )}
           <View className="overflow-hidden rounded-[16px] border border-[#CBD4DE] bg-[#F9FAFC]">
             {selectedFloors.map((floor) => (
               <FloorUnits
@@ -313,6 +340,7 @@ export default function TaskFloorUnitMultiSelect({
                 onToggle={toggleUnit}
                 onToggleAll={toggleAllUnits}
                 onUnitsLoaded={handleUnitsLoaded}
+                readonly={readonly}
               />
             ))}
           </View>

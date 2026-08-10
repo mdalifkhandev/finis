@@ -38,13 +38,14 @@ function formatDate(value: Date) {
 }
 
 export default function CreateTaskRoute() {
-  const { projectId, parentTaskTitle, editTaskTitle, editTaskDescription, editTaskPriority, editTaskDueDate, taskId } = useLocalSearchParams<{
+  const { projectId, parentTaskTitle, editTaskTitle, editTaskDescription, editTaskPriority, editTaskDueDate, editTaskFloorUnits, taskId } = useLocalSearchParams<{
     projectId?: string;
     parentTaskTitle?: string;
     editTaskTitle?: string;
     editTaskDescription?: string;
     editTaskPriority?: "LOW" | "MEDIUM" | "HIGH";
     editTaskDueDate?: string;
+    editTaskFloorUnits?: string;
     taskId?: string;
   }>();
   const resolvedParentTaskTitle = Array.isArray(parentTaskTitle)
@@ -214,7 +215,9 @@ export default function CreateTaskRoute() {
               projectId={projectId}
               floors={floors}
               isLoading={isFloorsLoading}
+              initialSelections={editTaskFloorUnits ? JSON.parse(editTaskFloorUnits) : []}
               onChange={setFloorUnitSelections}
+              readonly={!!taskId}
             />
 
             <View className="mt-4">

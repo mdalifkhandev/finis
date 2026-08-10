@@ -429,6 +429,18 @@ type BackendTaskResponseItem = {
   subTaskCount?: number;
   completedSubTaskCount?: number;
   assignedWorkerCount?: number;
+  _count?: {
+    reports?: number;
+    subTasks?: number;
+  };
+  taskUnits?: Array<{
+    unit: {
+      id: string;
+      name: string;
+      floorId?: string;
+      floor?: { id: string; name: string; floorNumber?: number };
+    };
+  }>;
 };
 
 type BackendSubTaskResponseItem = {
@@ -445,16 +457,22 @@ type BackendSubTaskResponseItem = {
   unit: {
     id: string;
     name: string;
+    floorId?: string;
+    floor?: { id: string; name: string; floorNumber?: number };
   } | null;
   subTaskUnits?: Array<{
     unit: {
       id: string;
       name: string;
+      floorId?: string;
+      floor?: { id: string; name: string; floorNumber?: number };
     };
   }>;
   units?: Array<{
     id: string;
     name: string;
+    floorId?: string;
+    floor?: { id: string; name: string; floorNumber?: number };
   }>;
   taskAssignee?: {
     id: string;
@@ -467,6 +485,8 @@ type BackendSubTaskResponseItem = {
     unit: {
       id: string;
       name: string;
+      floorId?: string;
+      floor?: { id: string; name: string; floorNumber?: number };
     } | null;
   } | null;
   creator?: {
@@ -510,7 +530,10 @@ function mapBackendTaskResponse(task: BackendTaskResponseItem): TaskListItem {
       avatarUrl: null,
       role: "",
     } as TaskAssignee,
-    _count: { reports: 0, subTasks: task.subTaskCount ?? 0 },
+    _count: {
+      reports: task._count?.reports ?? 0,
+      subTasks: task.subTaskCount ?? 0,
+    },
     location: task.location ?? "",
     subTaskCount: task.subTaskCount ?? 0,
     completedSubTaskCount: task.completedSubTaskCount ?? 0,
@@ -518,6 +541,25 @@ function mapBackendTaskResponse(task: BackendTaskResponseItem): TaskListItem {
     allowSubTaskCreation: task.task.allowSubTaskCreation ?? true,
     approvalDecision: task.task.approvalDecision,
     completionDecision: task.task.completionDecision,
+    floorUnitSelections: task.taskUnits 
+      ? task.taskUnits
+          .filter(tu => tu.unit && tu.unit.floorId)
+          .map(tu => ({
+            floor: {
+              id: tu.unit.floor?.id || tu.unit.floorId || "",
+              name: tu.unit.floor?.name || ""
+            },
+            unit: {
+              id: tu.unit.id,
+              name: tu.unit.name
+            }
+          }))
+      : task.floors?.flatMap(floor => 
+          (floor.units || []).map(unit => ({
+            floor: { id: floor.id, name: floor.name },
+            unit: { id: unit.id, name: unit.name }
+          }))
+        ) || [],
   } as TaskListItem;
 }
 

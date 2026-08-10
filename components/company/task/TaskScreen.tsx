@@ -98,6 +98,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
         approvalDecision: task.approvalDecision,
         completionDecision: task.completionDecision,
         rawStatus: task.status,
+        floorUnitSelections: (task as any).floorUnitSelections,
       }));
       setTasks(mapped);
     } else if (!isLoading) {
@@ -175,6 +176,7 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
               <TaskCard
                 key={task.id}
                 task={task}
+
                 subTaskCount={task.subTaskCount ?? 0}
                 completedTaskCount={task.completedSubTaskCount ?? 0}
                 isActionLoading={
@@ -191,10 +193,13 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                       editTaskDescription: task.description || "",
                       editTaskPriority: task.priority || "MEDIUM",
                       editTaskDueDate: task.dueDate || "",
+                      editTaskFloorUnits: task.floorUnitSelections?.length 
+                        ? JSON.stringify(task.floorUnitSelections) 
+                        : (task.floorId && task.unitId ? JSON.stringify([{ floor: { id: task.floorId, name: task.floorName }, unit: { id: task.unitId, name: task.unitName } }]) : ""),
                     },
                   })
                 }
-                onPressDelete={() => {
+                onPressDelete={() =>
                   Alert.alert(
                     "Delete Task",
                     "Are you sure you want to delete this task?",
@@ -206,8 +211,8 @@ export default function TaskScreen({ projectId, onCreateTaskPress }: TaskScreenP
                         onPress: () => deleteTaskMutation.mutate(task.id),
                       },
                     ]
-                  );
-                }}
+                  )
+                }
                 onPress={() =>
                   router.push({
                     pathname: "/screens/company/subtaskgroups",

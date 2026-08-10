@@ -114,7 +114,7 @@ export default function CreateSubtaskRoute() {
     });
   })();
 
-  const availableFloors = isSubtaskMode ? subtaskFloorsSource : floors;
+  const availableFloors = isSubtaskMode && !taskId ? subtaskFloorsSource : floors;
 
   const unitsByFloor = useMemo(() => {
     const map: Record<string, any[]> = {};
@@ -318,8 +318,9 @@ export default function CreateSubtaskRoute() {
             floors={availableFloors}
             unitsByFloor={unitsByFloor}
             isLoading={isSelectorLoading}
-            initialSelections={validateInitialSelections()}
+            initialSelections={taskId ? (floorUnitSelections.length > 0 ? floorUnitSelections : undefined) : validateInitialSelections()}
             onChange={setFloorUnitSelections}
+            readonly={!!taskId}
           />
 
           <View className="mt-4">

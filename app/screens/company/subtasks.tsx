@@ -9,6 +9,7 @@ import {
   useTaskSubTasksQuery,
   useSubTasksByGroupQuery,
   useDeleteSubTaskMutation,
+  useProjectFloorsQuery,
 } from "@/hooks/company/company";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -94,12 +95,22 @@ export default function SubtasksRoute() {
   const reviewSubTaskMutation = useReviewSubTaskApprovalMutation(parentTaskId);
   const reviewSubTaskReportMutation = useReviewSubTaskReportMutation(parentTaskId);
   const deleteSubTaskMutation = useDeleteSubTaskMutation(parentTaskId);
+  const { data: projectFloorsData } = useProjectFloorsQuery(projectId);
 
   const subtasks = useMemo<TaskItem[]>(() => {
     const unitToFloorMap = new Map<string, { id: string; name: string }>();
-    (taskDetailsQuery.data?.floors ?? []).forEach((floor) => {
-      floor.units.forEach((unit) => {
-        unitToFloorMap.set(unit.id, { id: floor.id, name: floor.name });
+
+    // Check both parent task floors and project floors to ensure we find the unit's floor
+    const sources = [
+      ...(taskDetailsQuery.data?.floors ?? []),
+      ...(projectFloorsData ?? []),
+    ];
+
+    sources.forEach((floor) => {
+      floor.units?.forEach((unit) => {
+        if (!unitToFloorMap.has(unit.id)) {
+          unitToFloorMap.set(unit.id, { id: floor.id, name: floor.name });
+        }
       });
     });
 
@@ -116,15 +127,15 @@ export default function SubtasksRoute() {
 
       const locationLabel = units.length
         ? units
-            .map((unit) => {
-              const floorObj = unitToFloorMap.get(unit.id);
-              return floorObj ? `${floorObj.name} - ${unit.name}` : unit.name;
-            })
-            .join(", ")
+          .map((unit) => {
+            const floorObj = unit.floor || unitToFloorMap.get(unit.id);
+            return floorObj ? `${floorObj.name} - ${unit.name}` : unit.name;
+          })
+          .join(", ")
         : "Unit";
-        
+
       const floorUnitSelections = units.flatMap((unit) => {
-        const floorObj = unitToFloorMap.get(unit.id);
+        const floorObj = unit.floor || unitToFloorMap.get(unit.id);
         if (floorObj) {
           return [{ floor: floorObj, unit }];
         }
@@ -152,23 +163,23 @@ export default function SubtasksRoute() {
         estimatedHours: task.estimatedHours,
       };
     });
-  }, [flatSubtasksQuery.data, groupTitle, groupedSubtasksQuery.data, projectId, taskDetailsQuery.data]);
+  }, [flatSubtasksQuery.data, groupTitle, groupedSubtasksQuery.data, projectId, taskDetailsQuery.data, projectFloorsData]);
 
   const filteredSubtasks = useMemo(() => {
     const normalizedSearch = searchText.trim().toLowerCase();
     const searchedSubtasks =
       groupTitle && normalizedSearch
         ? subtasks.filter((task) =>
-            [
-              task.title,
-              task.description,
-              task.location,
-              task.assignee,
-              task.status,
-            ]
-              .filter(Boolean)
-              .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
-          )
+          [
+            task.title,
+            task.description,
+            task.location,
+            task.assignee,
+            task.status,
+          ]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(normalizedSearch)),
+        )
         : subtasks;
 
     if (groupTitle || filter === "All") return searchedSubtasks;
@@ -275,12 +286,15 @@ export default function SubtasksRoute() {
                       params: {
                         taskId: task.id,
                         parentTaskId: parentTaskId,
+                        parentTaskTitle: taskTitle,
                         projectId: projectId,
                         editTaskTitle: task.title,
                         editTaskDescription: task.description || "",
                         editTaskPriority: task.priority || "MEDIUM",
                         editTaskDueDate: task.dueDate || "",
-                        editTaskFloorUnits: task.floorUnitSelections ? JSON.stringify(task.floorUnitSelections) : "",
+                        editTaskFloorUnits: task.floorUnitSelections?.length
+                          ? JSON.stringify(task.floorUnitSelections)
+                          : (task.floorId && task.unitId ? JSON.stringify([{ floor: { id: task.floorId, name: task.floorName }, unit: { id: task.unitId, name: task.unitName } }]) : ""),
                         editTaskEstimatedHours: task.estimatedHours != null ? String(task.estimatedHours) : "",
                       },
                     })
@@ -304,22 +318,22 @@ export default function SubtasksRoute() {
                   onPressSubtaskAction={() =>
                     task.status === "Review"
                       ? reviewSubTaskReportMutation.mutate({
-                          subTaskId: task.id,
-                          payload: {
-                            reviewDecision: "approved",
-                          },
-                        })
-                      : reviewSubTaskMutation.mutate({
-                          subTaskId: task.id,
+                        subTaskId: task.id,
+                        payload: {
                           reviewDecision: "approved",
-                        })
+                        },
+                      })
+                      : reviewSubTaskMutation.mutate({
+                        subTaskId: task.id,
+                        reviewDecision: "approved",
+                      })
                   }
                   onPress={() =>
                     task.id
                       ? router.push({
-                          pathname: "/screens/company/taskdetails",
-                          params: { subTaskId: task.id },
-                        })
+                        pathname: "/screens/company/taskdetails",
+                        params: { subTaskId: task.id },
+                      })
                       : undefined
                   }
                 />

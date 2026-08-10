@@ -295,6 +295,10 @@ export type TaskListItem = {
     reports: number;
     subTasks?: number;
   };
+  floorUnitSelections?: Array<{
+    floor: { id: string; name: string };
+    unit: { id: string; name: string };
+  }>;
 };
 
 export type TasksListMeta = {
@@ -392,16 +396,22 @@ export type TaskSubTaskListItem = {
   unit: {
     id: string;
     name: string;
+    floorId?: string;
+    floor?: { id: string; name: string; floorNumber?: number };
   } | null;
   subTaskUnits?: Array<{
     unit: {
       id: string;
       name: string;
+      floorId?: string;
+      floor?: { id: string; name: string; floorNumber?: number };
     };
   }>;
   units?: Array<{
     id: string;
     name: string;
+    floorId?: string;
+    floor?: { id: string; name: string; floorNumber?: number };
   }>;
   taskAssignee: {
     id: string;
@@ -414,6 +424,8 @@ export type TaskSubTaskListItem = {
     unit: {
       id: string;
       name: string;
+      floorId?: string;
+      floor?: { id: string; name: string; floorNumber?: number };
     } | null;
   } | null;
   creator: {
