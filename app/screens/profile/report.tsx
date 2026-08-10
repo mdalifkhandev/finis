@@ -76,9 +76,13 @@ function formatDate(date: Date) {
 
 export default function ReportScreen() {
   const role = useAuthStore((state) => state.user?.role);
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "manager";
 
-  const [selectedType, setSelectedType] = useState<string>("payroll");
+  const availableReportTypes = role === "manager"
+    ? REPORT_TYPES.filter(type => type.key === "project_invoices" || type.key === "worker_performance")
+    : REPORT_TYPES;
+
+  const [selectedType, setSelectedType] = useState<string>("");
   const [frequency, setFrequency] = useState<string>("daily");
   const [frequencyOpen, setFrequencyOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<string>("all");
@@ -143,7 +147,7 @@ export default function ReportScreen() {
         <View className="mt-16 items-center px-8">
           <Ionicons name="lock-closed-outline" size={28} color="#94A3B8" />
           <Text className="mt-3 text-center text-[14px] text-[#64748B]">
-            Reports are only available to admins.
+            Reports are only available to admins and managers.
           </Text>
         </View>
       </SafeAreaView>
@@ -191,182 +195,184 @@ export default function ReportScreen() {
         </Text>
 
         <View className="gap-3">
-          {REPORT_TYPES.map((type) => {
+          {availableReportTypes.map((type) => {
             const active = selectedType === type.key;
             return (
-              <TouchableOpacity
-                key={type.key}
-                activeOpacity={0.85}
-                onPress={() => setSelectedType(type.key)}
-                className={`flex-row items-center rounded-[14px] border px-4 py-4 ${active
-                  ? "border-l-4 border-[#1D5478] bg-[#EAF3FA]"
-                  : "border-l-[1px] border-[#CBD5E1] bg-white"
-                  }`}
-              >
-                <View
-                  className="h-10 w-10 items-center justify-center rounded-[12px]"
-                  style={{ backgroundColor: active ? "#D8E7F3" : "#F1F5F9" }}
+              <View key={type.key}>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => setSelectedType(active ? "" : type.key)}
+                  className={`flex-row items-center rounded-[14px] border px-4 py-4 ${active
+                    ? "border-l-4 border-[#1D5478] bg-[#EAF3FA]"
+                    : "border-l-[1px] border-[#CBD5E1] bg-white"
+                    }`}
                 >
-                  <Ionicons
-                    name={type.icon}
-                    size={20}
-                    color={active ? "#1D5478" : "#64748B"}
-                  />
-                </View>
-                <View className="ml-3 flex-1">
-                  <Text
-                    className={`text-[15px] font-semibold ${active ? "text-[#1D5478]" : "text-[#111827]"
-                      }`}
+                  <View
+                    className="h-10 w-10 items-center justify-center rounded-[12px]"
+                    style={{ backgroundColor: active ? "#D8E7F3" : "#F1F5F9" }}
                   >
-                    {type.title}
-                  </Text>
-                  <Text className="mt-0.5 text-[13px] leading-4 text-[#6B7280]">
-                    {type.subtitle}
-                  </Text>
-                </View>
-                {active ? (
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={22}
-                    color="#1D5478"
-                  />
-                ) : (
-                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                    <Ionicons
+                      name={type.icon}
+                      size={20}
+                      color={active ? "#1D5478" : "#64748B"}
+                    />
+                  </View>
+                  <View className="ml-3 flex-1">
+                    <Text
+                      className={`text-[15px] font-semibold ${active ? "text-[#1D5478]" : "text-[#111827]"
+                        }`}
+                    >
+                      {type.title}
+                    </Text>
+                    <Text className="mt-0.5 text-[13px] leading-4 text-[#6B7280]">
+                      {type.subtitle}
+                    </Text>
+                  </View>
+                  {active ? (
+                    <Ionicons
+                      name="chevron-down"
+                      size={22}
+                      color="#1D5478"
+                    />
+                  ) : (
+                    <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                  )}
+                </TouchableOpacity>
+
+                {active && (
+                  <View className="mt-3 rounded-[16px] border-l-4 border-[#1D5478] bg-white px-4 py-4">
+                    <Text className="text-[16px] font-semibold text-[#111827]">
+                      Report Parameters
+                    </Text>
+
+                    {/* Project (only for invoices or expenses) */}
+                    {(selectedType === "project_invoices" || selectedType === "expense") && (
+                      <View>
+                        <Text className="mb-2 mt-4 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
+                          PROJECT
+                        </Text>
+                        <TouchableOpacity
+                          activeOpacity={0.85}
+                          onPress={() => setProjectOpen(true)}
+                          className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-4"
+                        >
+                          <Text
+                            className="text-[15px] text-[#334155]"
+                            numberOfLines={1}
+                            style={{ flex: 1, marginRight: 8 }}
+                          >
+                            {selectedProject === "all"
+                              ? "All Projects"
+                              : projects.find((p) => p.id === selectedProject)?.name ??
+                              "Select Project"}
+                          </Text>
+                          <Ionicons name="chevron-down" size={18} color="#64748B" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {/* Period Frequency */}
+                    <Text className="mb-2 mt-4 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
+                      PERIOD FREQUENCY
+                    </Text>
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => setFrequencyOpen(true)}
+                      className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-4"
+                    >
+                      <Text className="text-[15px] text-[#334155]">
+                        {selectedFrequencyLabel}
+                      </Text>
+                      <Ionicons name="chevron-down" size={18} color="#64748B" />
+                    </TouchableOpacity>
+
+                    {/* Dates */}
+                    <View className="mt-4 flex-row gap-3">
+                      <View className="flex-1 overflow-hidden">
+                        <Text className="mb-2 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
+                          START DATE
+                        </Text>
+                        <TouchableOpacity
+                          activeOpacity={0.85}
+                          onPress={() => setPickerTarget("start")}
+                          className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-3"
+                        >
+                          <View className="flex-row items-center flex-1 mr-2">
+                            <Ionicons name="calendar-outline" size={16} color="#1D5478" />
+                            <Text
+                              className="ml-2 text-[13px] text-[#334155] flex-1"
+                              numberOfLines={1}
+                            >
+                              {startDate ? formatDate(startDate) : "Select start date"}
+                            </Text>
+                          </View>
+                          <Ionicons name="chevron-down" size={16} color="#64748B" />
+                        </TouchableOpacity>
+                      </View>
+
+                      <View className="flex-1 overflow-hidden">
+                        <Text className="mb-2 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
+                          END DATE
+                        </Text>
+                        <TouchableOpacity
+                          activeOpacity={0.85}
+                          onPress={() => setPickerTarget("end")}
+                          className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-3"
+                        >
+                          <View className="flex-row items-center flex-1 mr-2">
+                            <Ionicons name="calendar-outline" size={16} color="#1D5478" />
+                            <Text
+                              className="ml-2 text-[13px] text-[#334155] flex-1"
+                              numberOfLines={1}
+                            >
+                              {formatDate(endDate)}
+                            </Text>
+                          </View>
+                          <Ionicons name="chevron-down" size={16} color="#64748B" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    {/* Generate */}
+                    <TouchableOpacity
+                      activeOpacity={0.85}
+                      onPress={() => {
+                        if (!startDate) {
+                          toast.error("Please select start date");
+                          return;
+                        }
+
+                        const paramsToPass: any = {
+                          type: selectedType,
+                          frequency,
+                          startDate: startDate.toISOString().slice(0, 10),
+                          endDate: endDate.toISOString().slice(0, 10),
+                        };
+
+                        if (
+                          selectedProject !== "all" &&
+                          (selectedType === "project_invoices" || selectedType === "expense")
+                        ) {
+                          paramsToPass.projectId = selectedProject;
+                        }
+
+                        router.push({
+                          pathname: "/screens/profile/reportresult",
+                          params: paramsToPass,
+                        });
+                      }}
+                      className="mt-4 h-[48px] flex-row items-center justify-center rounded-[12px] bg-[#1D5478]"
+                    >
+                      <Ionicons name="bar-chart-outline" size={18} color="#FFFFFF" />
+                      <Text className="ml-2 text-[15px] font-semibold text-white">
+                        Generate Report
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
-              </TouchableOpacity>
+              </View>
             );
           })}
-        </View>
-
-        {/* Report Parameters */}
-        <View className="mt-6 rounded-[16px] border-l-4 border-[#1D5478] bg-white px-4 py-4">
-          <Text className="text-[16px] font-semibold text-[#111827]">
-            Report Parameters
-          </Text>
-
-          {/* Project (only for invoices or expenses) */}
-          {(selectedType === "project_invoices" || selectedType === "expense") && (
-            <View>
-              <Text className="mb-2 mt-4 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
-                PROJECT
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => setProjectOpen(true)}
-                className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-4"
-              >
-                <Text
-                  className="text-[15px] text-[#334155]"
-                  numberOfLines={1}
-                  style={{ flex: 1, marginRight: 8 }}
-                >
-                  {selectedProject === "all"
-                    ? "All Projects"
-                    : projects.find((p) => p.id === selectedProject)?.name ??
-                    "Select Project"}
-                </Text>
-                <Ionicons name="chevron-down" size={18} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Period Frequency */}
-          <Text className="mb-2 mt-4 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
-            PERIOD FREQUENCY
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => setFrequencyOpen(true)}
-            className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-4"
-          >
-            <Text className="text-[15px] text-[#334155]">
-              {selectedFrequencyLabel}
-            </Text>
-            <Ionicons name="chevron-down" size={18} color="#64748B" />
-          </TouchableOpacity>
-
-          {/* Dates */}
-          <View className="mt-4 flex-row gap-3">
-            <View className="flex-1 overflow-hidden">
-              <Text className="mb-2 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
-                START DATE
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => setPickerTarget("start")}
-                className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-3"
-              >
-                <View className="flex-row items-center flex-1 mr-2">
-                  <Ionicons name="calendar-outline" size={16} color="#1D5478" />
-                  <Text
-                    className="ml-2 text-[13px] text-[#334155] flex-1"
-                    numberOfLines={1}
-                  >
-                    {startDate ? formatDate(startDate) : "Select start date"}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={16} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-
-            <View className="flex-1 overflow-hidden">
-              <Text className="mb-2 text-[12px] font-semibold tracking-[1px] text-[#6B7280]">
-                END DATE
-              </Text>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => setPickerTarget("end")}
-                className="h-[48px] flex-row items-center justify-between rounded-[12px] border border-[#E5EAF0] bg-[#F8FAFC] px-3"
-              >
-                <View className="flex-row items-center flex-1 mr-2">
-                  <Ionicons name="calendar-outline" size={16} color="#1D5478" />
-                  <Text
-                    className="ml-2 text-[13px] text-[#334155] flex-1"
-                    numberOfLines={1}
-                  >
-                    {formatDate(endDate)}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-down" size={16} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Generate */}
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => {
-              if (!startDate) {
-                toast.error("Please select start date");
-                return;
-              }
-
-              const paramsToPass: any = {
-                type: selectedType,
-                frequency,
-                startDate: startDate.toISOString().slice(0, 10),
-                endDate: endDate.toISOString().slice(0, 10),
-              };
-
-              if (
-                selectedProject !== "all" &&
-                (selectedType === "project_invoices" || selectedType === "expense")
-              ) {
-                paramsToPass.projectId = selectedProject;
-              }
-
-              router.push({
-                pathname: "/screens/profile/reportresult",
-                params: paramsToPass,
-              });
-            }}
-            className="mt-4 h-[48px] flex-row items-center justify-center rounded-[12px] bg-[#1D5478]"
-          >
-            <Ionicons name="bar-chart-outline" size={18} color="#FFFFFF" />
-            <Text className="ml-2 text-[15px] font-semibold text-white">
-              Generate Report
-            </Text>
-          </TouchableOpacity>
         </View>
 
 

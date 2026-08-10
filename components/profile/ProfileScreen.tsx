@@ -68,6 +68,7 @@ export default function ProfileScreen() {
   };
 
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
+  const canOpenReport = isAdmin || profile?.role === "manager";
   const canOpenExpenses = isAdmin || profile?.role === "manager";
 
   return (
@@ -94,7 +95,7 @@ export default function ProfileScreen() {
               <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
             </TouchableOpacity>
 
-            {isAdmin ? <AdminMenuItem icon="document-text-outline" label="Report" route="/screens/profile/report" /> : null}
+            {canOpenReport ? <AdminMenuItem icon="document-text-outline" label="Report" route="/screens/profile/report" /> : null}
             {canOpenExpenses ? <AdminMenuItem icon="receipt-outline" label="Expense" route="/screens/profile/expenses" /> : null}
           </View>
         </View>
