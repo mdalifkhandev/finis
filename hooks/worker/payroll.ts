@@ -11,14 +11,13 @@ function formatLocalDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export function useWorkerPayrollQuery(date?: string) {
+export function useWorkerPayrollQuery(params?: { date?: string; startDate?: string; endDate?: string }) {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
-  const resolvedDate = date ?? formatLocalDate(new Date());
 
   const query = useQuery({
-    queryKey: ["worker", "payroll", resolvedDate, token],
-    queryFn: () => getWorkerPayroll({ date: resolvedDate }),
+    queryKey: ["worker", "payroll", params?.date, params?.startDate, params?.endDate, token],
+    queryFn: () => getWorkerPayroll(params),
     enabled: isHydrated && !!token,
     staleTime: 30 * 1000,
   });

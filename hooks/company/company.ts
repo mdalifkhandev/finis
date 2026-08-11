@@ -804,6 +804,36 @@ export function useAddProjectManagerMutation(projectId?: string) {
   });
 }
 
+export function useRemoveProjectManagerMutation(projectId?: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) => {
+      if (!projectId) throw new Error("Project ID is required");
+      return removeProjectManager(projectId, userId);
+    },
+    onSuccess: () => {
+      if (projectId) {
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "team", projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["project", "managers", projectId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["team", "available-managers"],
+        });
+      }
+      toast.success("Manager removed successfully");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to remove manager",
+      );
+    },
+  });
+}
+
 export function useProjectFloorsQuery(projectId?: string) {
   return useQuery({
     queryKey: ["project", "floors", projectId],

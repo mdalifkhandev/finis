@@ -31,12 +31,26 @@ function formatDateLabel(value?: string | null) {
   });
 }
 
+import { type PayrollCalendarMode } from "./PayrollCalendarCard";
+
 export default function WorkerPayrollScreen() {
   const [monthDate, setMonthDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [periodMode, setPeriodMode] = useState<PayrollCalendarMode>("custom");
+  const [selectedRangeEnd, setSelectedRangeEnd] = useState<Date | null>(null);
 
   const selectedDateKey = useMemo(() => formatLocalDate(selectedDate), [selectedDate]);
-  const { data: payroll, isLoading } = useWorkerPayrollQuery(selectedDateKey);
+  const queryParams = useMemo(() => {
+    if (periodMode !== "custom" && selectedRangeEnd) {
+      return {
+        startDate: formatLocalDate(selectedDate),
+        endDate: formatLocalDate(selectedRangeEnd),
+      };
+    }
+    return { date: selectedDateKey };
+  }, [periodMode, selectedDate, selectedRangeEnd, selectedDateKey]);
+
+  const { data: payroll, isLoading } = useWorkerPayrollQuery(queryParams);
 
   const lifetimeSummary = payroll?.lifetimeSummary;
   const projects = payroll?.projects ?? [];
@@ -51,7 +65,10 @@ export default function WorkerPayrollScreen() {
   const handleSeeTransactions = () => {
     router.push({
       pathname: "/screens/payroll/paystub",
-      params: { mode: "worker", date: selectedDateKey },
+      params: { 
+        mode: "worker", 
+        ...(queryParams.startDate ? { startDate: queryParams.startDate, endDate: queryParams.endDate } : { date: queryParams.date })
+      },
     });
   };
 
@@ -85,8 +102,12 @@ export default function WorkerPayrollScreen() {
             <PayrollCalendarCard
               monthDate={monthDate}
               selectedDate={selectedDate}
+              periodMode={periodMode}
+              selectedRangeEnd={selectedRangeEnd}
               onSelectDate={setSelectedDate}
+              onSelectRangeEnd={setSelectedRangeEnd}
               onMonthDateChange={setMonthDate}
+              onPeriodModeChange={setPeriodMode}
             />
           </View>
 
@@ -96,7 +117,9 @@ export default function WorkerPayrollScreen() {
                 Project List
               </Text>
               <Text className="text-[12px] text-[#667085]">
-                {formatDateLabel(payroll?.date)}
+                {periodMode !== "custom" && selectedRangeEnd
+                  ? `${formatDateLabel(queryParams.startDate)} - ${formatDateLabel(queryParams.endDate)}`
+                  : formatDateLabel(payroll?.date)}
               </Text>
             </View>
 

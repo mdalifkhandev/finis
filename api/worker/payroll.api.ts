@@ -49,14 +49,18 @@ function formatLocalDate(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export async function getWorkerPayroll(params?: { date?: string }) {
-  const currentDate = params?.date ? new Date(params.date) : new Date();
-  const resolvedParams = {
-    date: params?.date ?? formatLocalDate(currentDate),
-  };
+export async function getWorkerPayroll(params?: {
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const query = new URLSearchParams();
+  if (params?.date) query.append("date", params.date);
+  if (params?.startDate) query.append("startDate", params.startDate);
+  if (params?.endDate) query.append("endDate", params.endDate);
 
   const { data } = await api.get<ApiResponse<WorkerPayrollResponse>>("/worker/payroll", {
-    params: resolvedParams,
+    params: Object.fromEntries(query.entries()),
   });
 
   if (!data.success) {
