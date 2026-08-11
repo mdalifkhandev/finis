@@ -250,11 +250,10 @@ export function useCompanyQuery(id?: string) {
 
   useEffect(() => {
     if (query.isError) {
-      toast.error(
-        query.error instanceof Error
-          ? query.error.message
-          : "Failed to load company",
-      );
+      const errorMessage = query.error instanceof Error ? query.error.message : "";
+      if (errorMessage !== "Access denied") {
+        toast.error(errorMessage || "Failed to load company");
+      }
     }
   }, [query.error, query.isError]);
 
@@ -310,11 +309,10 @@ export function useCompanyProjectsQuery(id?: string) {
 
   useEffect(() => {
     if (query.isError) {
-      toast.error(
-        query.error instanceof Error
-          ? query.error.message
-          : "Failed to load projects",
-      );
+      const errorMessage = query.error instanceof Error ? query.error.message : "";
+      if (errorMessage !== "Access denied") {
+        toast.error(errorMessage || "Failed to load projects");
+      }
     }
   }, [query.error, query.isError]);
 
