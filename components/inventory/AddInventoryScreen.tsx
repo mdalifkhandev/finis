@@ -88,9 +88,9 @@ function SelectorBottomSheet({
         className="flex-1 justify-end bg-black/40"
         onPress={closeSheet}
       >
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="w-full">
+        <KeyboardAvoidingView behavior="padding" className="w-full">
           <Pressable
-            className="max-h-[72%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            className="h-[450px] rounded-t-[24px] bg-white px-5 pt-4"
             style={{ paddingBottom: Math.max(insets.bottom, 28) }}
             onPress={(event) => event.stopPropagation()}
           >
@@ -159,6 +159,8 @@ function SelectorBottomSheet({
                 </Text>
               }
             />
+            {/* REQUIRED FILLER TO PREVENT ANDROID KEYBOARD GAP BUG - DO NOT REMOVE */}
+            <View className="bg-white absolute" style={{ height: 400, bottom: -390, left: 0, right: 0 }} />
           </Pressable>
         </KeyboardAvoidingView>
       </Pressable>

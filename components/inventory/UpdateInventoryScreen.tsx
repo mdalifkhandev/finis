@@ -90,7 +90,7 @@ function SelectorBottomSheet({
           onPress={closeSheet}
         >
           <Pressable
-            className="max-h-[72%] rounded-t-[24px] bg-white px-5 pb-7 pt-4"
+            className="h-[450px] rounded-t-[24px] bg-white px-5 pt-4"
             style={{ paddingBottom: Math.max(insets.bottom, 28) }}
             onPress={(event) => event.stopPropagation()}
           >
@@ -159,6 +159,8 @@ function SelectorBottomSheet({
                 </Text>
               }
             />
+            {/* REQUIRED FILLER TO PREVENT ANDROID KEYBOARD GAP BUG - DO NOT REMOVE */}
+            <View className="bg-white absolute" style={{ height: 400, bottom: -390, left: 0, right: 0 }} />
           </Pressable>
         </Pressable>
       </KeyboardAvoidingView>
@@ -232,28 +234,28 @@ export default function UpdateInventoryScreen({ itemId }: { itemId: string }) {
   );
   const selectorConfig = selector
     ? {
-        category: {
-          title: "Category",
-          options: inventoryOptions?.category ?? [],
-          value: category,
-          placeholder: "Enter new category",
-          onSelect: setCategory,
-        },
-        unit: {
-          title: "Unit",
-          options: inventoryOptions?.unit ?? [],
-          value: unit,
-          placeholder: "Enter new unit",
-          onSelect: setUnit,
-        },
-        location: {
-          title: "Location",
-          options: locationOptions,
-          value: location,
-          placeholder: "Enter new location",
-          onSelect: setLocation,
-        },
-      }[selector]
+      category: {
+        title: "Category",
+        options: inventoryOptions?.category ?? [],
+        value: category,
+        placeholder: "Enter new category",
+        onSelect: setCategory,
+      },
+      unit: {
+        title: "Unit",
+        options: inventoryOptions?.unit ?? [],
+        value: unit,
+        placeholder: "Enter new unit",
+        onSelect: setUnit,
+      },
+      location: {
+        title: "Location",
+        options: locationOptions,
+        value: location,
+        placeholder: "Enter new location",
+        onSelect: setLocation,
+      },
+    }[selector]
     : null;
 
   const handleSave = () => {
@@ -286,10 +288,10 @@ export default function UpdateInventoryScreen({ itemId }: { itemId: string }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1] " edges={['top','left',"right"]}>
+    <SafeAreaView className="flex-1 bg-[#E9EDF1] " edges={['top', 'left', "right"]}>
       <KeyboardAvoidingView
         className="flex-1"
-       
+
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
         <ScrollView
@@ -432,16 +434,14 @@ export default function UpdateInventoryScreen({ itemId }: { itemId: string }) {
                       setProjectId(item.id);
                       setProjectModalVisible(false);
                     }}
-                    className={`mb-3 flex-row items-center justify-between rounded-[12px] border p-4 ${
-                      projectId === item.id
-                        ? "border-[#2662F4] bg-[#F0F4FF]"
-                        : "border-[#D8DEE5] bg-[#F7F9FB]"
-                    }`}
+                    className={`mb-3 flex-row items-center justify-between rounded-[12px] border p-4 ${projectId === item.id
+                      ? "border-[#2662F4] bg-[#F0F4FF]"
+                      : "border-[#D8DEE5] bg-[#F7F9FB]"
+                      }`}
                   >
                     <Text
-                      className={`text-[16px] ${
-                        projectId === item.id ? "font-semibold text-[#2662F4]" : "text-[#141A22]"
-                      }`}
+                      className={`text-[16px] ${projectId === item.id ? "font-semibold text-[#2662F4]" : "text-[#141A22]"
+                        }`}
                     >
                       {item.name}
                     </Text>
