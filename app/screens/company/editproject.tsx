@@ -258,9 +258,14 @@ export default function EditProjectRoute() {
     if (pickerTarget === "start") {
       setStartDateValue(selectedDate);
       setStartDate(formatDateFromObject(selectedDate));
-      if (selectedDate > endDateValue) {
-        setEndDateValue(selectedDate);
-        setEndDate(formatDateFromObject(selectedDate));
+      
+      if (endDateValue <= selectedDate) {
+        const nextDay = new Date(selectedDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        setEndDateValue(nextDay);
+        if (endDate) {
+          setEndDate("");
+        }
       }
     } else {
       setEndDateValue(selectedDate);
@@ -443,7 +448,14 @@ export default function EditProjectRoute() {
                   label="End Date (Optional)"
                   placeholder="YYYY-MM-DD"
                   value={endDate}
-                  onPress={() => setPickerTarget("end")}
+                  onPress={() => {
+                    const minEndDate = new Date(startDateValue);
+                    minEndDate.setDate(minEndDate.getDate() + 1);
+                    if (endDateValue < minEndDate) {
+                      setEndDateValue(minEndDate);
+                    }
+                    setPickerTarget("end");
+                  }}
                   rightIconName="calendar-outline"
                 />
               </View>
@@ -690,7 +702,11 @@ export default function EditProjectRoute() {
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
             onChange={handleDateChange}
-            minimumDate={pickerTarget === "end" ? startDateValue : undefined}
+            minimumDate={
+              pickerTarget === "end"
+                ? new Date(startDateValue.getTime() + 86400000)
+                : undefined
+            }
           />
         ) : null}
       </KeyboardAvoidingView>

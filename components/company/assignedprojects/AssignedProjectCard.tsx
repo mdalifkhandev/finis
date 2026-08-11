@@ -70,11 +70,19 @@ export default function AssignedProjectCard({
       </View>
 
       <View className="w-full">
-        <View className="w-[102px] flex-row items-center justify-center gap-2 rounded-md bg-[#F7F7F8] px-4 py-1">
-          <Text className="text-[12px] font-normal text-[#101010]">
-            {date}
-          </Text>
-        </View>
+        {date ? (
+          <View className="flex-row items-center justify-center gap-2 rounded-md bg-[#F7F7F8] px-4 py-1 self-start">
+            <Text className="text-[12px] font-normal text-[#101010]">
+              {date}
+            </Text>
+          </View>
+        ) : (
+          <View className="flex-row items-center justify-center gap-2 rounded-md bg-[#F7F7F8] px-4 py-1 self-start opacity-50">
+            <Text className="text-[12px] font-normal text-[#64748b]">
+              No Date
+            </Text>
+          </View>
+        )}
         <View className="mt-4">
           <AvatarStack avatars={avatars} extraCount={extraMembers} />
         </View>
