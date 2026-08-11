@@ -52,14 +52,14 @@ export default function WorkerPayrollScreen() {
 
   const { data: payroll, isLoading } = useWorkerPayrollQuery(queryParams);
 
-  const lifetimeSummary = payroll?.lifetimeSummary;
+  const periodSummary = payroll?.periodSummary ?? payroll?.lifetimeSummary;
   const projects = payroll?.projects ?? [];
-  const totalBalance = lifetimeSummary?.totalPay ?? 0;
+  const totalBalance = periodSummary?.totalPay ?? 0;
   const workerName = payroll?.worker?.fullName || "Worker";
   const workerRole = payroll?.worker?.department || payroll?.worker?.role || "Worker";
   const hourlyRate = useMemo(
-    () => parseHourlyRate(lifetimeSummary?.averageHourlyRate ?? 0),
-    [lifetimeSummary?.averageHourlyRate],
+    () => parseHourlyRate(periodSummary?.averageHourlyRate ?? 0),
+    [periodSummary?.averageHourlyRate],
   );
 
   const handleSeeTransactions = () => {
@@ -129,10 +129,10 @@ export default function WorkerPayrollScreen() {
               </View>
             ) : projects.length > 0 ? (
               projects.map((project) => {
-                const lifetimeHours = lifetimeSummary?.totalHours ?? 0;
+                const periodHours = periodSummary?.totalHours ?? 0;
                 const progress =
-                  lifetimeHours > 0
-                    ? Math.min(100, Math.round((project.totalHours / lifetimeHours) * 100))
+                  periodHours > 0
+                    ? Math.min(100, Math.round((project.totalHours / periodHours) * 100))
                     : 0;
 
                 return (

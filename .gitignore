@@ -44,6 +44,5 @@ app-example
 /android
 .agents
 
-.env
 google-services.json
 GoogleService-Info.plist

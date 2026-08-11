@@ -39,6 +39,7 @@ export type WorkerPayrollResponse = {
   date: string;
   worker: WorkerPayrollWorker;
   projects: WorkerPayrollProjectSummary[];
+  periodSummary: WorkerPayrollLifetimeSummary;
   lifetimeSummary: WorkerPayrollLifetimeSummary;
 };
 

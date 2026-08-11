@@ -50,7 +50,13 @@ export default function PayStubScreen() {
   const resolvedDate = selectedDate ?? formatLocalDate(new Date());
 
   if (resolvedMode === "worker") {
-    return <WorkerModePayStubContent date={resolvedDate} />;
+    return (
+      <WorkerModePayStubContent
+        date={resolvedDate}
+        startDate={selectedStartDate}
+        endDate={selectedEndDate}
+      />
+    );
   }
 
   if (resolvedMode === "approved") {
@@ -69,10 +75,20 @@ export default function PayStubScreen() {
   return <DefaultModePayStubContent payrollId={resolvedPayrollId} />;
 }
 
-function WorkerModePayStubContent({ date }: { date: string }) {
-  const { data: workerPayroll, isLoading } = useWorkerPayrollQuery(date);
-  const workerSummary = workerPayroll?.lifetimeSummary;
+function WorkerModePayStubContent({
+  date,
+  startDate,
+  endDate,
+}: {
+  date: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const queryParams = startDate && endDate ? { startDate, endDate } : { date };
+  const { data: workerPayroll, isLoading } = useWorkerPayrollQuery(queryParams);
+  const workerSummary = workerPayroll?.periodSummary ?? workerPayroll?.lifetimeSummary;
   const workerProjects = workerPayroll?.projects ?? [];
+  const payPeriodLabel = startDate && endDate ? `${startDate} - ${endDate}` : date;
 
   return (
     <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
@@ -82,7 +98,7 @@ function WorkerModePayStubContent({ date }: { date: string }) {
         <View className="mt-4 px-4">
           <View className="rounded-[12px] border border-[#E3E6EA] bg-white p-4 mt-4">
             <Text className="text-center text-[12px] text-[#667085] mt-2">
-              Pay Period: {date}
+              Pay Period: {payPeriodLabel}
             </Text>
 
             <View className="my-3 h-px bg-[#E6E8EB] mt-2" />
@@ -141,7 +157,7 @@ function WorkerModePayStubContent({ date }: { date: string }) {
               <Text className="text-[18px] font-medium text-[#101828]">
                 Project List
               </Text>
-              <Text className="text-[12px] text-[#667085]">{date}</Text>
+              <Text className="text-[12px] text-[#667085]">{payPeriodLabel}</Text>
             </View>
 
             {isLoading ? (
@@ -238,6 +254,8 @@ function ApprovedModePayStubContent({
 
   const approvedSummary = approved?.summary;
   const approvedRecords = approved?.records ?? [];
+  const payPeriodLabel =
+    startDate && endDate ? `${startDate} - ${endDate}` : startDate ?? endDate ?? date;
   const approvedPayrollIds = useMemo(
     () => approvedRecords.map((item) => item.payrollId).filter(Boolean),
     [approvedRecords],
@@ -289,7 +307,7 @@ function ApprovedModePayStubContent({
         <View className="mt-4 px-4">
           <View className="rounded-[12px] border border-[#E3E6EA] bg-white p-4">
             <Text className="text-center text-[12px] text-[#667085]">
-              Pay Period: {date}
+              Pay Period: {payPeriodLabel}
             </Text>
 
             <View className="my-3 h-px bg-[#E6E8EB]" />

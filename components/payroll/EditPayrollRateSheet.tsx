@@ -32,6 +32,7 @@ export default function EditPayrollRateSheet({
   const isIOS = Platform.OS === "ios";
   const insets = useSafeAreaInsets();
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const bottomPadding = Math.max(insets.bottom, isIOS ? 10 : 56) + 12;
 
   useEffect(() => {
     if (!visible) {
@@ -71,7 +72,7 @@ export default function EditPayrollRateSheet({
             onPress={(event) => event.stopPropagation()}
             className="rounded-t-[24px] bg-white px-4 pt-4"
             style={{
-              paddingBottom: isIOS ? Math.max(insets.bottom, 10) + 12 : 40,
+              paddingBottom: bottomPadding,
             }}
           >
             <View className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-[#D0D5DD]" />
