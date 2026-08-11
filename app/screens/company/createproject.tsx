@@ -212,20 +212,20 @@ export default function CreateProjectRoute() {
         priority: priority.toUpperCase(),
         ...(type !== "house"
           ? {
-              ...(floorsMinNumber != null ? { numFloorsMin: floorsMinNumber } : {}),
-              ...(floorsMaxNumber != null ? { numFloorsMax: floorsMaxNumber } : {}),
-              ...(unitMinNumber != null ? { unitPerFloorMin: unitMinNumber } : {}),
-              ...(unitMaxNumber != null ? { unitPerFloorMax: unitMaxNumber } : {}),
-            }
+            ...(floorsMinNumber != null ? { numFloorsMin: floorsMinNumber } : {}),
+            ...(floorsMaxNumber != null ? { numFloorsMax: floorsMaxNumber } : {}),
+            ...(unitMinNumber != null ? { unitPerFloorMin: unitMinNumber } : {}),
+            ...(unitMaxNumber != null ? { unitPerFloorMax: unitMaxNumber } : {}),
+          }
           : projectType === "House"
             ? {
-                isWholeHouse: houseScope === "whole",
-                ...(houseScope === "sections"
-                  ? {
-                      houseSections: mappedHouseSections,
-                    }
-                  : {}),
-              }
+              isWholeHouse: houseScope === "whole",
+              ...(houseScope === "sections"
+                ? {
+                  houseSections: mappedHouseSections,
+                }
+                : {}),
+            }
             : {}),
         autoGenerateFloors: type !== "house",
       });
@@ -275,7 +275,7 @@ export default function CreateProjectRoute() {
     if (pickerTarget === "start") {
       setStartDateValue(selectedDate);
       setStartDate(formatDate(selectedDate));
-      
+
       // If start date goes past end date, clear end date or adjust it
       if (endDateValue <= selectedDate) {
         const nextDay = new Date(selectedDate);
@@ -295,7 +295,7 @@ export default function CreateProjectRoute() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#E9EDF1]" edges={['top','left',"right"]}>
+    <SafeAreaView className="flex-1 bg-[#E9EDF1]" edges={['top', 'left', "right"]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -327,7 +327,7 @@ export default function CreateProjectRoute() {
                 label="Company"
                 value={company?.name ?? "Company"}
                 rightIconName="chevron-down"
-                onPress={() => {}}
+                onPress={() => { }}
               />
             </View>
 
@@ -375,9 +375,6 @@ export default function CreateProjectRoute() {
               {projectType !== "House" ? (
                 <>
                   <View className="mt-3">
-                    <Text className="mb-2 text-[15px] font-medium text-[#1F2937]">
-                      Floor Range
-                    </Text>
                     <View className="flex-row gap-3">
                       <View className="flex-1">
                         <ProjectInputField
@@ -401,9 +398,6 @@ export default function CreateProjectRoute() {
                   </View>
 
                   <View className="mt-3">
-                    <Text className="mb-2 text-[15px] font-medium text-[#1F2937]">
-                      Unit Range
-                    </Text>
                     <View className="mb-3">
                       <UnitDigitsDropdown value={unitDigits} onChange={setUnitDigits} />
                     </View>
