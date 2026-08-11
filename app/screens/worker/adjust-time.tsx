@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, Scro
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api/client";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
@@ -22,6 +22,7 @@ const THEME = {
 export default function AdjustTimeScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
+  const queryClient = useQueryClient();
   const { date, checkIn, checkOut } = params;
 
   const [requestType, setRequestType] = useState<"check_in" | "check_out">("check_in");
@@ -41,6 +42,7 @@ export default function AdjustTimeScreen() {
       return res.data;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["worker", "attendance", "history"] });
       Alert.alert("Success", "Time adjustment request submitted to your manager.", [
         { text: "OK", onPress: () => router.back() }
       ]);

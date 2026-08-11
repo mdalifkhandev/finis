@@ -102,35 +102,78 @@ export default function AttendanceHistoryScreen() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16, fontWeight: "600", color: THEME.colors.textMain, marginBottom: 4 }}>
-                    {!isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { weekday: 'long' }) : "Unknown Day"}
-                  </Text>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <MaterialCommunityIcons name="clock-in" size={16} color={THEME.colors.green} />
-                    <Text style={{ fontSize: 14, color: THEME.colors.textSecondary, marginLeft: 4, marginRight: 12 }}>
-                      {firstSession?.checkInTime ? new Date(firstSession.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  {/* Row 1: Day and Status Badge */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <Text style={{ fontSize: 16, fontWeight: "600", color: THEME.colors.textMain }}>
+                      {!isNaN(date.getTime()) ? date.toLocaleDateString('en-US', { weekday: 'long' }) : "Unknown Day"}
                     </Text>
-                    <MaterialCommunityIcons name="clock-out" size={16} color={THEME.colors.red} />
-                    <Text style={{ fontSize: 14, color: THEME.colors.textSecondary, marginLeft: 4 }}>
-                      {lastSession?.checkOutTime ? new Date(lastSession.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                    </Text>
+                    <View style={{ minHeight: 24, justifyContent: 'center' }}>
+                      {attendance.adjustmentStatus === 'pending' && (
+                        <View style={{ backgroundColor: '#FEF3C7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                          <Text style={{ fontSize: 12, color: '#D97706', fontWeight: "700" }}>Pending</Text>
+                        </View>
+                      )}
+                      {attendance.adjustmentStatus === 'approved' && (
+                        <View style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                          <Text style={{ fontSize: 12, color: '#16A34A', fontWeight: "700" }}>Approved</Text>
+                        </View>
+                      )}
+                      {attendance.adjustmentStatus === 'rejected' && (
+                        <View style={{ backgroundColor: '#FEE2E2', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+                          <Text style={{ fontSize: 12, color: '#DC2626', fontWeight: "700" }}>Rejected</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
-                </View>
 
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={{ fontSize: 12, color: THEME.colors.textSecondary, marginBottom: 4 }}>Work Time</Text>
-                  <Text style={{ fontSize: 16, fontWeight: "700", color: THEME.colors.textMain }}>
-                    {formatHours(displayHours)}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => router.push({
-                      pathname: "/screens/worker/adjust-time",
-                      params: { date: date.toISOString(), checkIn: firstSession?.checkInTime, checkOut: lastSession?.checkOutTime }
-                    })}
-                    style={{ marginTop: 8 }}
-                  >
-                    <Text style={{ fontSize: 12, color: THEME.colors.bluePrimary, fontWeight: "600" }}>Adjust</Text>
-                  </TouchableOpacity>
+                  {/* Row 2: In/Out Times and Work Time */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", marginRight: 12 }}>
+                        <MaterialCommunityIcons name="clock-in" size={16} color={THEME.colors.green} />
+                        <Text style={{ fontSize: 14, color: THEME.colors.textSecondary, marginLeft: 2 }}>
+                          {firstSession?.checkInTime ? new Date(firstSession.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                        </Text>
+                      </View>
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <MaterialCommunityIcons name="clock-out" size={16} color={THEME.colors.red} />
+                        <Text style={{ fontSize: 14, color: THEME.colors.textSecondary, marginLeft: 2 }}>
+                          {lastSession?.checkOutTime ? new Date(lastSession.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      {/* <Text style={{ fontSize: 12, color: THEME.colors.textSecondary, marginBottom: 2 }}>Work Time</Text> */}
+                      <Text style={{ fontSize: 16, fontWeight: "700", color: THEME.colors.textMain }}>
+                        {formatHours(displayHours)}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Row 3: Requested Time and Adjust Button */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                    <View style={{ flex: 1 }}>
+                      {attendance.adjustmentRequestedTime && (
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                          <MaterialCommunityIcons name="clock-edit-outline" size={14} color={THEME.colors.bluePrimary} />
+                          <Text style={{ fontSize: 12, color: THEME.colors.textSecondary, marginLeft: 4 }}>
+                            Req {attendance.adjustmentRequestType === 'check_in' ? 'in' : 'out'}: <Text style={{ fontWeight: '600', color: THEME.colors.bluePrimary }}>{new Date(attendance.adjustmentRequestedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {attendance.adjustmentStatus !== 'pending' && (
+                      <TouchableOpacity
+                        onPress={() => router.push({
+                          pathname: "/screens/worker/adjust-time",
+                          params: { date: date.toISOString(), checkIn: firstSession?.checkInTime, checkOut: lastSession?.checkOutTime }
+                        })}
+                      >
+                        <Text style={{ fontSize: 12, color: THEME.colors.bluePrimary, fontWeight: "600" }}>Adjust</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               </View>
             );
