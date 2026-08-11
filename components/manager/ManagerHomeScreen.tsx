@@ -1,6 +1,7 @@
 import { DEFAULT_AVATAR_URL } from "@/api/auth/auth.constants";
 import { useAdminDashboardQuery } from "@/hooks/admin/admin";
 import { useAuthMeQuery } from "@/hooks/auth/auth";
+import { usePendingTimeAdjustmentsQuery } from "@/hooks/manager/time-adjustments";
 import { API_BASE_URL } from "@/lib/config";
 import { useAuthStore } from "@/store/auth.store";
 import { router } from "expo-router";
@@ -33,6 +34,7 @@ export default function ManagerHomeScreen() {
     useAuthMeQuery();
   const dashboardQuery = useAdminDashboardQuery();
   const dashboard = dashboardQuery.data;
+  const { data: pendingRequests, refetch: refetchPendingRequests } = usePendingTimeAdjustmentsQuery();
   const isHydrated = useAuthStore((state) => state.isHydrated);
 
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
@@ -40,7 +42,7 @@ export default function ManagerHomeScreen() {
   const subtitle = profile?.role ? `${profile.role}!` : "Manager!!";
 
   const handleRefresh = async () => {
-    await Promise.all([refetchProfile(), dashboardQuery.refetch()]);
+    await Promise.all([refetchProfile(), dashboardQuery.refetch(), refetchPendingRequests()]);
   };
 
   const refreshing = isProfileLoading || dashboardQuery.isRefetching;
@@ -128,23 +130,25 @@ export default function ManagerHomeScreen() {
           ))}
         </View>
 
-        <View className="mt-6 px-5">
-          <TouchableOpacity 
-            style={{ backgroundColor: '#EEF2FF', padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-            onPress={() => router.push("/screens/manager/requests")}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ backgroundColor: '#4F46E5', padding: 8, borderRadius: 8, marginRight: 12 }}>
-                <Text style={{ fontSize: 16 }}>📋</Text>
+        {pendingRequests && (pendingRequests as any[]).length > 0 && (
+          <View className="mt-6 px-5">
+            <TouchableOpacity 
+              style={{ backgroundColor: '#EEF2FF', padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+              onPress={() => router.push("/screens/manager/requests")}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ backgroundColor: '#1f3d5c', padding: 8, borderRadius: 8, marginRight: 12 }}>
+                  <Text style={{ fontSize: 16 }}>📋</Text>
+                </View>
+                <View>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#1E293B' }}>Pending Requests</Text>
+                  <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Review time adjustments</Text>
+                </View>
               </View>
-              <View>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#1E293B' }}>Pending Requests</Text>
-                <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Review time adjustments</Text>
-              </View>
-            </View>
-            <Text style={{ color: '#4F46E5', fontWeight: '600' }}>View</Text>
-          </TouchableOpacity>
-        </View>
+              <Text style={{ color: '#1f3d5c', fontWeight: '600' }}>View</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View className="mt-6">
           <SectionHeader

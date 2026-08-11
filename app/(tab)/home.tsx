@@ -6,6 +6,7 @@ import StatCard from "@/components/home/StatCard";
 import WorkerCard from "@/components/home/WorkerCard";
 import { useAdminDashboardQuery } from "@/hooks/admin/admin";
 import { useAdminProfileQuery } from "@/hooks/profile/profile";
+import { usePendingTimeAdjustmentsQuery } from "@/hooks/manager/time-adjustments";
 import { API_BASE_URL } from "@/lib/config";
 import { router } from "expo-router";
 import React from "react";
@@ -35,13 +36,14 @@ export default function Home() {
   } = useAdminProfileQuery();
   const dashboardQuery = useAdminDashboardQuery();
   const dashboard = dashboardQuery.data;
+  const { data: pendingRequests, refetch: refetchPendingRequests } = usePendingTimeAdjustmentsQuery();
 
   const avatarUrl = resolveAvatarUrl(profile?.avatarUrl);
   const displayName = profile?.fullName?.trim().split(" ")[0] || "Welcome Back";
   const subtitle = profile?.role ? `${profile.role}!` : "Admin!!";
 
   const handleRefresh = async () => {
-    await Promise.all([refetchProfile(), dashboardQuery.refetch()]);
+    await Promise.all([refetchProfile(), dashboardQuery.refetch(), refetchPendingRequests()]);
   };
   const refreshing = isProfileLoading || dashboardQuery.isRefetching;
   const stats = [
@@ -138,23 +140,25 @@ export default function Home() {
           ))}
         </View>
 
-        <View className="mt-6 px-5">
-          <TouchableOpacity
-            style={{ backgroundColor: '#EEF2FF', padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-            onPress={() => router.push("/screens/manager/requests")}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ backgroundColor: '#4F46E5', padding: 8, borderRadius: 8, marginRight: 12 }}>
-                <Text style={{ fontSize: 16 }}>📋</Text>
+        {pendingRequests && (pendingRequests as any[]).length > 0 && (
+          <View className="mt-6 px-5">
+            <TouchableOpacity 
+              style={{ backgroundColor: '#EEF2FF', padding: 16, borderRadius: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+              onPress={() => router.push("/screens/manager/requests")}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ backgroundColor: '#1f3d5c', padding: 8, borderRadius: 8, marginRight: 12 }}>
+                  <Text style={{ fontSize: 16 }}>📋</Text>
+                </View>
+                <View>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#1E293B' }}>Pending Requests</Text>
+                  <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Review time adjustments</Text>
+                </View>
               </View>
-              <View>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#1E293B' }}>Pending Requests</Text>
-                <Text style={{ fontSize: 13, color: '#64748B', marginTop: 2 }}>Review time adjustments</Text>
-              </View>
-            </View>
-            <Text style={{ color: '#4F46E5', fontWeight: '600' }}>View</Text>
-          </TouchableOpacity>
-        </View>
+              <Text style={{ color: '#1f3d5c', fontWeight: '600' }}>View</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         <InviteButton />
 
