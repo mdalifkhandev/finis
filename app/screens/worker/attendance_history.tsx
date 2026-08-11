@@ -12,7 +12,7 @@ const THEME = {
     white: "#FFFFFF",
     textMain: "#0F172A",
     textSecondary: "#64748B",
-    bluePrimary: "#3B82F6",
+    bluePrimary: "#1f3d5c",
     border: "#E2E8F0",
     green: "#22C55E",
     red: "#EF4444",
@@ -49,7 +49,7 @@ export default function AttendanceHistoryScreen() {
         <Text style={{ fontSize: 20, fontWeight: "700", color: THEME.colors.textMain }}>Attendance History</Text>
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={{ padding: 20 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[THEME.colors.bluePrimary]} />}
       >
@@ -156,24 +156,15 @@ export default function AttendanceHistoryScreen() {
                   {/* Row 3: Requested Time and Adjust Button */}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
                     <View style={{ flex: 1 }}>
-                      {attendance.latestCheckInRequest && (
-                        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                      {attendance.adjustmentRequestedTime ? (
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
                           <MaterialCommunityIcons name="clock-edit-outline" size={14} color={THEME.colors.bluePrimary} />
                           <Text style={{ fontSize: 12, color: THEME.colors.textSecondary, marginLeft: 4 }}>
-                            Req in: <Text style={{ fontWeight: '600', color: THEME.colors.bluePrimary }}>{new Date(attendance.latestCheckInRequest.adjustedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                            <Text style={{ fontSize: 10, color: attendance.latestCheckInRequest.status === 'pending' ? '#D97706' : attendance.latestCheckInRequest.status === 'approved' ? '#16A34A' : '#DC2626' }}> ({attendance.latestCheckInRequest.status})</Text>
+                            Req {attendance.adjustmentRequestType === 'check_in' ? 'in' : 'out'}: <Text style={{ fontWeight: '600', color: THEME.colors.bluePrimary }}>{new Date(attendance.adjustmentRequestedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                            <Text style={{ fontSize: 10, color: attendance.adjustmentStatus === 'pending' ? '#D97706' : attendance.adjustmentStatus === 'approved' ? '#16A34A' : '#DC2626' }}> ({attendance.adjustmentStatus})</Text>
                           </Text>
                         </View>
-                      )}
-                      {attendance.latestCheckOutRequest && (
-                        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
-                          <MaterialCommunityIcons name="clock-edit-outline" size={14} color={THEME.colors.bluePrimary} />
-                          <Text style={{ fontSize: 12, color: THEME.colors.textSecondary, marginLeft: 4 }}>
-                            Req out: <Text style={{ fontWeight: '600', color: THEME.colors.bluePrimary }}>{new Date(attendance.latestCheckOutRequest.adjustedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                            <Text style={{ fontSize: 10, color: attendance.latestCheckOutRequest.status === 'pending' ? '#D97706' : attendance.latestCheckOutRequest.status === 'approved' ? '#16A34A' : '#DC2626' }}> ({attendance.latestCheckOutRequest.status})</Text>
-                          </Text>
-                        </View>
-                      )}
+                      ) : null}
                     </View>
 
                     {attendance.adjustmentStatus !== 'pending' && (
@@ -182,8 +173,16 @@ export default function AttendanceHistoryScreen() {
                           pathname: "/screens/worker/adjust-time",
                           params: { date: date.toISOString(), checkIn: firstSession?.checkInTime, checkOut: lastSession?.checkOutTime }
                         })}
+                        style={{
+                          backgroundColor: THEME.colors.bluePrimary,
+                          paddingHorizontal: 4,
+                          paddingVertical: 2,
+                          borderRadius: 16,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
                       >
-                        <Text style={{ fontSize: 12, color: THEME.colors.bluePrimary, fontWeight: "600" }}>Adjust</Text>
+                        <Text style={{ fontSize: 12, color: THEME.colors.white, fontWeight: "600" }}>Adjust</Text>
                       </TouchableOpacity>
                     )}
                   </View>
