@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -20,7 +20,7 @@ const THEME = {
 };
 
 export default function AttendanceHistoryScreen() {
-  const { data: attendanceData, isLoading } = useQuery({
+  const { data: attendanceData, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ["worker", "attendance", "history"],
     queryFn: async () => {
       const { data } = await api.get("/worker/attendance/history?page=1&limit=50");
@@ -49,7 +49,10 @@ export default function AttendanceHistoryScreen() {
         <Text style={{ fontSize: 20, fontWeight: "700", color: THEME.colors.textMain }}>Attendance History</Text>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <ScrollView 
+        contentContainerStyle={{ padding: 20 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[THEME.colors.bluePrimary]} />}
+      >
         {isLoading ? (
           <ActivityIndicator size="large" color={THEME.colors.bluePrimary} style={{ marginTop: 40 }} />
         ) : attendances.length > 0 ? (
@@ -153,11 +156,21 @@ export default function AttendanceHistoryScreen() {
                   {/* Row 3: Requested Time and Adjust Button */}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
                     <View style={{ flex: 1 }}>
-                      {attendance.adjustmentRequestedTime && (
-                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      {attendance.latestCheckInRequest && (
+                        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
                           <MaterialCommunityIcons name="clock-edit-outline" size={14} color={THEME.colors.bluePrimary} />
                           <Text style={{ fontSize: 12, color: THEME.colors.textSecondary, marginLeft: 4 }}>
-                            Req {attendance.adjustmentRequestType === 'check_in' ? 'in' : 'out'}: <Text style={{ fontWeight: '600', color: THEME.colors.bluePrimary }}>{new Date(attendance.adjustmentRequestedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                            Req in: <Text style={{ fontWeight: '600', color: THEME.colors.bluePrimary }}>{new Date(attendance.latestCheckInRequest.adjustedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                            <Text style={{ fontSize: 10, color: attendance.latestCheckInRequest.status === 'pending' ? '#D97706' : attendance.latestCheckInRequest.status === 'approved' ? '#16A34A' : '#DC2626' }}> ({attendance.latestCheckInRequest.status})</Text>
+                          </Text>
+                        </View>
+                      )}
+                      {attendance.latestCheckOutRequest && (
+                        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                          <MaterialCommunityIcons name="clock-edit-outline" size={14} color={THEME.colors.bluePrimary} />
+                          <Text style={{ fontSize: 12, color: THEME.colors.textSecondary, marginLeft: 4 }}>
+                            Req out: <Text style={{ fontWeight: '600', color: THEME.colors.bluePrimary }}>{new Date(attendance.latestCheckOutRequest.adjustedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                            <Text style={{ fontSize: 10, color: attendance.latestCheckOutRequest.status === 'pending' ? '#D97706' : attendance.latestCheckOutRequest.status === 'approved' ? '#16A34A' : '#DC2626' }}> ({attendance.latestCheckOutRequest.status})</Text>
                           </Text>
                         </View>
                       )}
