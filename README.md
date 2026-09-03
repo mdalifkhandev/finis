@@ -278,54 +278,115 @@ is currently used for development and manual UI testing.
 
 Once backend-based authentication and role assignment are connected, the app can skip this screen and route directly to the correct role layout.
 
-## Requirements
-Recommended local setup:
-- Node.js 20+
-- npm
-- Android Studio for Android emulator/builds
-- Xcode for iOS builds on macOS
+## Local Setup and Connection
 
-## Setup
-Install dependencies:
+This mobile app connects to the NestJS API in the sibling `finis-backend`
+folder. Subscription plan and shared project/company links open the React
+dashboard in the sibling `finis-dashboard` folder.
+
+### Requirements
+
+- Node.js 20 or 22
+- pnpm
+- JDK 17 and Android Studio/Android SDK for Android native builds
+- Xcode on macOS for iOS native builds
+- A running backend and PostgreSQL database for real API data
+
+### Install
+
+From this folder:
 
 ```bash
-npm install
+cd ~/Desktop/project/finis/finis
+pnpm install
+cp .env.example .env
 ```
 
-Start Expo dev server:
+If VS Code was installed through Snap and pnpm reports
+`ERR_PNPM_UNEXPECTED_STORE`, use the existing store explicitly:
 
 ```bash
-npx expo start
+pnpm --store-dir /home/alif/.local/share/pnpm/store/v11 install
 ```
 
-Run Android:
+### Environment variables
 
-```bash
-npx expo run:android
+For an Android emulator, use:
+
+```dotenv
+EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2:6000
+EXPO_PUBLIC_API_BASE_URL_PLAN=http://10.0.2.2:5173
+EXPO_PUBLIC_DASHBOARD_URL=http://10.0.2.2:5173
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
 ```
 
-Run iOS:
+For a physical phone, replace `192.168.1.10` below with the computer's LAN
+IP. The phone and computer must be on the same network.
 
-```bash
-npx expo run:ios
+```dotenv
+EXPO_PUBLIC_API_BASE_URL=http://192.168.1.10:6000
+EXPO_PUBLIC_API_BASE_URL_PLAN=http://192.168.1.10:5173
+EXPO_PUBLIC_DASHBOARD_URL=http://192.168.1.10:5173
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key
 ```
 
-Run web:
+Find the computer's LAN IP on Ubuntu with:
 
 ```bash
-npx expo start --web
+hostname -I
 ```
 
-Run lint:
+For a remote device, use public HTTPS URLs instead of LAN URLs. Do not add a
+trailing slash to the base URLs.
+
+### Run the app
+
+Start the backend and dashboard first, then run one of these commands:
 
 ```bash
-npm run lint
+pnpm start
+pnpm android
+pnpm web
 ```
 
-Run TypeScript check:
+For an existing native Android project, `pnpm android` builds and installs the
+debug app. If only Metro is needed, run `pnpm start` and press `a`.
+
+After changing `.env`, stop Metro and restart it with a cleared cache:
 
 ```bash
-npx tsc --noEmit
+pnpm exec expo start --clear
+```
+
+### Native Android generation and release build
+
+Regenerate native files after changing native Expo configuration:
+
+```bash
+pnpm exec expo prebuild --platform android
+```
+
+Build the release APK:
+
+```bash
+cd android
+NODE_ENV=production ./gradlew assembleRelease
+```
+
+The APK is written to:
+
+```text
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+Firebase native builds also require `google-services.json` in this folder.
+For iOS, `GoogleService-Info.plist` is required.
+
+### Checks
+
+```bash
+pnpm lint
+pnpm exec tsc --noEmit
 ```
 
 ## Build / Asset Notes
