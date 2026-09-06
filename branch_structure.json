@@ -1,0 +1,24 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "main",
+    "mdalifkhandev",
+    "quote-based-project-flow",
+    "soriful",
+    "update"
+  ],
+  "parent": {
+    "main": null,
+    "mdalifkhandev": "main",
+    "quote-based-project-flow": "main",
+    "soriful": "main",
+    "update": "main"
+  },
+  "order": [
+    "main",
+    "mdalifkhandev",
+    "quote-based-project-flow",
+    "soriful",
+    "update"
+  ]
+}
