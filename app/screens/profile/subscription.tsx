@@ -1,13 +1,28 @@
 import { getAdminSubscriptionHistory } from "@/api/admin/admin.api";
+import {
+  confirmMobileSubscription,
+  createMobileSubscription,
+  getPublicPlans,
+  type PublicSubscriptionPlan,
+} from "@/api/subscription/subscription.api";
 import BackTitleHeader from "@/components/common/BackTitleHeader";
-import { API_BASE_URL_PLAN } from "@/lib/config";
+import { useAuthStore } from "@/store/auth.store";
 import { Ionicons } from "@expo/vector-icons";
+import { useStripe } from "@stripe/stripe-react-native";
 import { useQuery } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { Linking, RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  ActivityIndicator,
+  Modal,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuthStore } from "@/store/auth.store";
+import { toast } from "sonner-native";
 
 function formatCurrencyAmount(amount?: number | null) {
   if (typeof amount !== "number") {
@@ -28,15 +43,33 @@ function formatDateLabel(value?: string | null) {
 export default function SubscriptionScreen() {
   const token = useAuthStore((state) => state.token);
   const isHydrated = useAuthStore((state) => state.isHydrated);
-  const role = useAuthStore((state) => state.user?.role);
+  const user = useAuthStore((state) => state.user);
+  const role = user?.role;
 
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+
+  // Queries
   const { data: subscription, refetch } = useQuery({
     queryKey: ["admin", "subscription", "history", token],
     queryFn: getAdminSubscriptionHistory,
     enabled: isHydrated && !!token && (role === "admin" || role === "manager"),
     staleTime: 60 * 1000,
   });
+
+  const {
+    data: publicPlans = [],
+    isLoading: isPlansLoading,
+    refetch: refetchPlans,
+  } = useQuery({
+    queryKey: ["public-plans"],
+    queryFn: getPublicPlans,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const [refreshing, setRefreshing] = useState(false);
+  const [showPlansModal, setShowPlansModal] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [subscribingPlanId, setSubscribingPlanId] = useState<string | null>(null);
 
   const current = subscription?.current ?? null;
   const currentPeriodStart = formatDateLabel(current?.startDate);
@@ -47,19 +80,20 @@ export default function SubscriptionScreen() {
     : "MONTHLY BILLING";
   const planPrice = formatCurrencyAmount(current?.amount);
   const planBadge = current?.isExpired ? "Expired" : current?.isActive ? "Active" : "Inactive";
+
   const featureRows = useMemo(
     () =>
       current
         ? [
-             current.permissions.companies.max
-            ? `Up to ${current.permissions.companies.max} companies`
-            : null,
-             current.permissions.projects.max
-            ? `Up to ${current.permissions.projects.max} projects`
-            : null,
-             current.permissions.users.max
-            ? `Up to ${current.permissions.users.max} users`
-            : null,
+            current.permissions.companies.max
+              ? `Up to ${current.permissions.companies.max} companies`
+              : null,
+            current.permissions.projects.max
+              ? `Up to ${current.permissions.projects.max} projects`
+              : null,
+            current.permissions.users.max
+              ? `Up to ${current.permissions.users.max} users`
+              : null,
             current.permissions.features.geofencing ? "Geofencing access" : null,
             current.permissions.features.advancedReporting ? "Advanced reporting" : null,
             current.permissions.features.customReporting ? "Custom reporting" : null,
@@ -96,20 +130,103 @@ export default function SubscriptionScreen() {
     [current],
   );
 
-  const handleUpgradePlan = async () => {
-    await Linking.openURL(`${API_BASE_URL_PLAN}/plans`);
-  };
-
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await refetch();
+      await Promise.all([refetch(), refetchPlans()]);
     } finally {
       setRefreshing(false);
     }
   };
+
+  const handleSubscribePlan = async (plan: PublicSubscriptionPlan) => {
+    if (subscribingPlanId) return;
+    setSubscribingPlanId(plan.id);
+
+    try {
+      const res = await createMobileSubscription({
+        planId: plan.id,
+        interval: billingCycle,
+      });
+
+      if (!res.requiresPayment) {
+        toast.success(res.message || "Subscription updated successfully!");
+        await refetch();
+        setShowPlansModal(false);
+        return;
+      }
+
+      if (
+        (!res.paymentIntentClientSecret && !res.setupIntentClientSecret) ||
+        !res.customerEphemeralKeySecret ||
+        !res.customerId
+      ) {
+        throw new Error("Missing Stripe payment credentials from server.");
+      }
+
+      const defaultBillingDetails = {
+        name: user?.name || user?.fullName || undefined,
+        email: user?.email || undefined,
+      };
+
+      const { error: initError } = await initPaymentSheet(
+        res.setupIntentClientSecret
+          ? {
+              merchantDisplayName: "Finis",
+              customerId: res.customerId,
+              customerEphemeralKeySecret: res.customerEphemeralKeySecret,
+              setupIntentClientSecret: res.setupIntentClientSecret,
+              allowsDelayedPaymentMethods: false,
+              defaultBillingDetails,
+            }
+          : {
+              merchantDisplayName: "Finis",
+              customerId: res.customerId,
+              customerEphemeralKeySecret: res.customerEphemeralKeySecret,
+              paymentIntentClientSecret: res.paymentIntentClientSecret!,
+              allowsDelayedPaymentMethods: false,
+              defaultBillingDetails,
+            },
+      );
+
+      if (initError) {
+        toast.error(initError.message || "Failed to initialize payment sheet.");
+        return;
+      }
+
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        if (presentError.code === "Canceled") {
+          toast.info("Payment was cancelled.");
+          return;
+        }
+        toast.error(presentError.message || "Payment failed.");
+        return;
+      }
+
+      // Payment succeeded! Confirm subscription with backend
+      if (res.subscriptionId) {
+        try {
+          await confirmMobileSubscription({ subscriptionId: res.subscriptionId });
+        } catch (e: any) {
+          console.warn("Mobile subscription confirm error:", e);
+        }
+      }
+
+      toast.success("Subscription activated successfully!");
+      await refetch();
+      setShowPlansModal(false);
+    } catch (err: any) {
+      console.error("Subscription error:", err);
+      toast.error(err?.message || "Something went wrong with the subscription.");
+    } finally {
+      setSubscribingPlanId(null);
+    }
+  };
+
   return (
-    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
+    <SafeAreaView edges={["top", "left", "right"]} className="flex-1 bg-[#E9EDF1]">
       <BackTitleHeader title="Subscription" onBack={() => router.back()} />
 
       <ScrollView
@@ -125,14 +242,13 @@ export default function SubscriptionScreen() {
               Your Plans
             </Text>
             <Text className="mt-1 text-[13px] leading-5 text-[#6B7280]">
-              Here are the subscription plans you can manage. One plan is marked
-              as current to show that you’ve already purchased it.
+              Manage your subscription directly inside the app. Check your current plan benefits or upgrade anytime.
             </Text>
 
             <View className="mt-4">
               {current ? (
                 <View
-                  className="rounded-[26px] border border-[#1D5478] bg-white px-4 py-4 shadow-sm"
+                  className="rounded-[26px] border border-[#1D5478] bg-white px-4 py-4"
                   style={{
                     shadowColor: "#0F172A",
                     shadowOpacity: 0.04,
@@ -181,7 +297,7 @@ export default function SubscriptionScreen() {
                       {planPrice}
                       <Text className="text-[16px] font-semibold text-[#6B7280]">
                         {" "}
-                        / month
+                        / {current.planInterval || "month"}
                       </Text>
                     </Text>
                     <Text className="mt-1 text-[13px] text-[#6B7280]">
@@ -249,31 +365,376 @@ export default function SubscriptionScreen() {
                         Current Plan
                       </Text>
                     </TouchableOpacity>
-
-           
                   </View>
                 </View>
               ) : (
-                <View className="rounded-[26px] border border-[#E5EAF0] bg-white px-4 py-4 shadow-sm">
-                  <Text className="text-[14px] text-[#64748B]">
+                <View
+                  className="rounded-[26px] border border-[#E5EAF0] bg-white px-4 py-6 items-center"
+                  style={{ elevation: 1 }}
+                >
+                  <Ionicons name="card-outline" size={40} color="#94A3B8" />
+                  <Text className="mt-2 text-[15px] font-medium text-[#64748B]">
                     No active subscription plan found.
                   </Text>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => setShowPlansModal(true)}
+                    className="mt-4 h-[44px] px-6 items-center justify-center rounded-[14px] bg-[#1D5478]"
+                  >
+                    <Text className="text-[14px] font-semibold text-white">
+                      Choose a Plan
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={handleUpgradePlan}
-              className="mt-4 h-[48px] items-center justify-center rounded-[14px] bg-[#1D5478]"
-            >
-              <Text className="text-[15px] font-semibold text-white">
-                Upgrade Plan
-              </Text>
-            </TouchableOpacity>
+            {current && (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => setShowPlansModal(true)}
+                className="mt-4 h-[48px] flex-row items-center justify-center gap-2 rounded-[14px] bg-[#1D5478]"
+              >
+                <Ionicons name="sparkles" size={18} color="#FFFFFF" />
+                <Text className="text-[15px] font-semibold text-white">
+                  Upgrade or Change Plan
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
+
+      {/* In-App Plan Selection & Stripe Checkout Modal */}
+      {showPlansModal && (
+        <Modal
+          visible={showPlansModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => {
+            if (!subscribingPlanId) setShowPlansModal(false);
+          }}
+        >
+          <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-[#F8FAFC]">
+            {/* Modal Header */}
+            <View className="flex-row items-center justify-between border-b border-[#E2E8F0] bg-white px-5 py-4">
+              <View>
+                <Text className="text-[20px] font-bold text-[#0F172A]">
+                  Select Plan
+                </Text>
+                <Text className="text-[12px] text-[#64748B]">
+                  In-app Stripe Checkout
+                </Text>
+              </View>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                disabled={!!subscribingPlanId}
+                onPress={() => setShowPlansModal(false)}
+                className="h-9 w-9 items-center justify-center rounded-full bg-[#F1F5F9]"
+              >
+                <Ionicons name="close" size={20} color="#475569" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Billing Cycle Switcher */}
+            <View className="px-5 pt-4">
+              <View className="flex-row rounded-[12px] bg-[#E2E8F0] p-1">
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setBillingCycle("monthly")}
+                  className="flex-1 items-center justify-center rounded-[10px] py-2.5"
+                  style={
+                    billingCycle === "monthly"
+                      ? {
+                          backgroundColor: "#FFFFFF",
+                          elevation: 1,
+                          shadowColor: "#000",
+                          shadowOpacity: 0.06,
+                          shadowRadius: 2,
+                        }
+                      : {}
+                  }
+                >
+                  <Text
+                    className={`text-[13px] font-bold ${
+                      billingCycle === "monthly" ? "text-[#1D5478]" : "text-[#64748B]"
+                    }`}
+                  >
+                    Monthly Billing
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setBillingCycle("yearly")}
+                  className="flex-1 items-center justify-center rounded-[10px] py-2.5"
+                  style={
+                    billingCycle === "yearly"
+                      ? {
+                          backgroundColor: "#FFFFFF",
+                          elevation: 1,
+                          shadowColor: "#000",
+                          shadowOpacity: 0.06,
+                          shadowRadius: 2,
+                        }
+                      : {}
+                  }
+                >
+                  <View className="flex-row items-center gap-1.5">
+                    <Text
+                      className={`text-[13px] font-bold ${
+                        billingCycle === "yearly" ? "text-[#1D5478]" : "text-[#64748B]"
+                      }`}
+                    >
+                      Yearly Billing
+                    </Text>
+                    <View className="rounded-full bg-[#10B981] px-1.5 py-0.5">
+                      <Text className="text-[9px] font-extrabold text-white">
+                        SAVE
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Plans List */}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+            >
+              {isPlansLoading ? (
+                <View className="py-20 items-center justify-center">
+                  <ActivityIndicator size="large" color="#1D5478" />
+                  <Text className="mt-3 text-[14px] text-[#64748B]">
+                    Loading plans...
+                  </Text>
+                </View>
+              ) : publicPlans.length === 0 ? (
+                <View className="rounded-[18px] border border-[#E2E8F0] bg-white p-6 items-center">
+                  <Ionicons name="alert-circle-outline" size={36} color="#94A3B8" />
+                  <Text className="mt-2 text-[15px] font-medium text-[#64748B]">
+                    No subscription plans available at the moment.
+                  </Text>
+                </View>
+              ) : (
+                <View className="gap-4">
+                  {publicPlans.map((plan) => {
+                    const isCurrent =
+                      current?.planName?.toLowerCase().trim() ===
+                        plan.name.toLowerCase().trim() && !current?.isExpired;
+                    const isProcessing = subscribingPlanId === plan.id;
+                    const price =
+                      billingCycle === "monthly"
+                        ? plan.priceMonthly
+                        : plan.priceYearly ?? plan.priceMonthly * 12;
+
+                    return (
+                      <View
+                        key={plan.id}
+                        className={`rounded-[22px] border bg-white p-5 ${
+                          isCurrent
+                            ? "border-[#1D5478] bg-[#F8FBFF]"
+                            : "border-[#E2E8F0]"
+                        }`}
+                        style={{
+                          elevation: 1,
+                          shadowColor: "#000",
+                          shadowOpacity: 0.04,
+                          shadowRadius: 4,
+                        }}
+                      >
+                        {/* Top row */}
+                        <View className="flex-row items-center justify-between">
+                          <View>
+                            <Text className="text-[20px] font-bold text-[#0F172A]">
+                              {plan.name}
+                            </Text>
+                            {plan.supportLevel && (
+                              <Text className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider mt-0.5">
+                                {plan.supportLevel} Support
+                              </Text>
+                            )}
+                          </View>
+                          {isCurrent && (
+                            <View className="rounded-full bg-[#1D54781A] px-3 py-1">
+                              <Text className="text-[11px] font-bold text-[#1D5478]">
+                                Active Plan
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+
+                        {/* Price */}
+                        <View className="mt-3 flex-row items-baseline">
+                          <Text className="text-[32px] font-extrabold text-[#0F172A]">
+                            ${price.toLocaleString("en-US")}
+                          </Text>
+                          <Text className="ml-1.5 text-[14px] font-medium text-[#64748B]">
+                            / {billingCycle === "monthly" ? "month" : "year"}
+                          </Text>
+                        </View>
+
+                        {/* Limits grid */}
+                        <View className="mt-4 flex-row gap-2 rounded-[14px] bg-[#F1F5F9] p-3">
+                          <View className="flex-1 items-center">
+                            <Text className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+                              Companies
+                            </Text>
+                            <Text className="mt-0.5 text-[16px] font-extrabold text-[#0F172A]">
+                              {plan.maxCompanies ? plan.maxCompanies : "∞"}
+                            </Text>
+                          </View>
+                          <View className="h-full w-[1px] bg-[#CBD5E1]" />
+                          <View className="flex-1 items-center">
+                            <Text className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+                              Projects
+                            </Text>
+                            <Text className="mt-0.5 text-[16px] font-extrabold text-[#0F172A]">
+                              {plan.maxProjects ? plan.maxProjects : "∞"}
+                            </Text>
+                          </View>
+                          <View className="h-full w-[1px] bg-[#CBD5E1]" />
+                          <View className="flex-1 items-center">
+                            <Text className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">
+                              Users
+                            </Text>
+                            <Text className="mt-0.5 text-[16px] font-extrabold text-[#0F172A]">
+                              {plan.maxUsers ? plan.maxUsers : "∞"}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Features checklist */}
+                        <View className="mt-4 gap-2 border-t border-[#F1F5F9] pt-3">
+                          <View className="flex-row items-center">
+                            <Ionicons
+                              name={plan.hasGeofencing ? "checkmark-circle" : "close-circle"}
+                              size={18}
+                              color={plan.hasGeofencing ? "#10B981" : "#94A3B8"}
+                            />
+                            <Text
+                              style={
+                                !plan.hasGeofencing
+                                  ? { textDecorationLine: "line-through" }
+                                  : undefined
+                              }
+                              className={`ml-2 text-[13px] ${
+                                plan.hasGeofencing ? "text-[#334155]" : "text-[#94A3B8]"
+                              }`}
+                            >
+                              Geofencing tracking
+                            </Text>
+                          </View>
+
+                          <View className="flex-row items-center">
+                            <Ionicons
+                              name={
+                                plan.hasAdvancedReporting
+                                  ? "checkmark-circle"
+                                  : "close-circle"
+                              }
+                              size={18}
+                              color={plan.hasAdvancedReporting ? "#10B981" : "#94A3B8"}
+                            />
+                            <Text
+                              style={
+                                !plan.hasAdvancedReporting
+                                  ? { textDecorationLine: "line-through" }
+                                  : undefined
+                              }
+                              className={`ml-2 text-[13px] ${
+                                plan.hasAdvancedReporting
+                                  ? "text-[#334155]"
+                                  : "text-[#94A3B8]"
+                              }`}
+                            >
+                              Advanced reporting & analytics
+                            </Text>
+                          </View>
+
+                          <View className="flex-row items-center">
+                            <Ionicons
+                              name={
+                                plan.hasCustomReporting
+                                  ? "checkmark-circle"
+                                  : "close-circle"
+                              }
+                              size={18}
+                              color={plan.hasCustomReporting ? "#10B981" : "#94A3B8"}
+                            />
+                            <Text
+                              style={
+                                !plan.hasCustomReporting
+                                  ? { textDecorationLine: "line-through" }
+                                  : undefined
+                              }
+                              className={`ml-2 text-[13px] ${
+                                plan.hasCustomReporting
+                                  ? "text-[#334155]"
+                                  : "text-[#94A3B8]"
+                              }`}
+                            >
+                              Custom reports export
+                            </Text>
+                          </View>
+
+                          <View className="flex-row items-center">
+                            <Ionicons
+                              name={plan.hasWhiteLabel ? "checkmark-circle" : "close-circle"}
+                              size={18}
+                              color={plan.hasWhiteLabel ? "#10B981" : "#94A3B8"}
+                            />
+                            <Text
+                              style={
+                                !plan.hasWhiteLabel
+                                  ? { textDecorationLine: "line-through" }
+                                  : undefined
+                              }
+                              className={`ml-2 text-[13px] ${
+                                plan.hasWhiteLabel ? "text-[#334155]" : "text-[#94A3B8]"
+                              }`}
+                            >
+                              White-label branding
+                            </Text>
+                          </View>
+                        </View>
+
+                        {/* Subscribe Action Button */}
+                        <TouchableOpacity
+                          activeOpacity={0.85}
+                          disabled={isCurrent || !!subscribingPlanId}
+                          onPress={() => handleSubscribePlan(plan)}
+                          className={`mt-5 h-[46px] flex-row items-center justify-center gap-2 rounded-[12px] ${
+                            isCurrent ? "bg-[#E2E8F0]" : "bg-[#1D5478]"
+                          }`}
+                        >
+                          {isProcessing ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          ) : (
+                            <>
+                              {!isCurrent && (
+                                <Ionicons name="card-outline" size={18} color="#FFFFFF" />
+                              )}
+                              <Text
+                                className={`text-[14px] font-bold ${
+                                  isCurrent ? "text-[#64748B]" : "text-white"
+                                }`}
+                              >
+                                {isCurrent ? "Current Plan" : "Subscribe with Stripe"}
+                              </Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }

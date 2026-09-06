@@ -1,3 +1,4 @@
+import { StripeProvider } from "@stripe/stripe-react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { ReactNode } from "react";
@@ -28,13 +29,22 @@ export default function AppProviders({ children }: AppProvidersProps) {
     void initializeAuth();
   }, [initializeAuth]);
 
+  const stripePublishableKey =
+    process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <AuthBootstrap />
-        {children}
-        <Toaster />
-      </QueryClientProvider>
+      <StripeProvider
+        publishableKey={stripePublishableKey}
+        merchantIdentifier="merchant.com.anonymous.finis"
+      >
+        <QueryClientProvider client={queryClient}>
+          <AuthBootstrap />
+          {children}
+          <Toaster />
+        </QueryClientProvider>
+      </StripeProvider>
     </GestureHandlerRootView>
   );
 }
+

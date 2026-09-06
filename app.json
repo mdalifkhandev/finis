@@ -47,6 +47,13 @@
     "plugins": [
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.anonymous.finis",
+          "enableGooglePay": true
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
