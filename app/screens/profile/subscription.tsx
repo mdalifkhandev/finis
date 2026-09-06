@@ -9,7 +9,7 @@ import BackTitleHeader from "@/components/common/BackTitleHeader";
 import { useAuthStore } from "@/store/auth.store";
 import { Ionicons } from "@expo/vector-icons";
 import { useStripe } from "@stripe/stripe-react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { router } from "expo-router";
 import React, { useMemo, useState } from "react";
 import {
@@ -46,6 +46,7 @@ export default function SubscriptionScreen() {
   const user = useAuthStore((state) => state.user);
   const role = user?.role;
 
+  const queryClient = useQueryClient();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   // Queries
@@ -133,6 +134,7 @@ export default function SubscriptionScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "subscription", "history"] });
       await Promise.all([refetch(), refetchPlans()]);
     } finally {
       setRefreshing(false);
@@ -151,6 +153,7 @@ export default function SubscriptionScreen() {
 
       if (!res.requiresPayment) {
         toast.success(res.message || "Subscription updated successfully!");
+        await queryClient.invalidateQueries({ queryKey: ["admin", "subscription", "history"] });
         await refetch();
         setShowPlansModal(false);
         return;
@@ -215,6 +218,7 @@ export default function SubscriptionScreen() {
       }
 
       toast.success("Subscription activated successfully!");
+      await queryClient.invalidateQueries({ queryKey: ["admin", "subscription", "history"] });
       await refetch();
       setShowPlansModal(false);
     } catch (err: any) {
@@ -311,7 +315,9 @@ export default function SubscriptionScreen() {
                       <Text className="font-bold text-[#111827]">
                         {currentPeriodStart && currentPeriodEnd
                           ? `${currentPeriodStart} — ${currentPeriodEnd}`
-                          : "N/A"}
+                          : currentPeriodEnd
+                            ? `Until ${currentPeriodEnd}`
+                            : "N/A"}
                       </Text>
                     </Text>
                   </View>
