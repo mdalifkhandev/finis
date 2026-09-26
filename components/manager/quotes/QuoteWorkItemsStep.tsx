@@ -1,0 +1,124 @@
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Text, TextInput, TouchableOpacity } from "react-native";
+import QuoteSectionCard from "./QuoteSectionCard";
+import QuoteWorkGroupCard, { type QuoteSelectedWorkGroup } from "./QuoteWorkGroupCard";
+import QuoteWorkTotalsBar from "./QuoteWorkTotalsBar";
+
+type QuoteWorkItemsStepProps = {
+  catalogTitle: string;
+  catalogDescription: string;
+  groups: QuoteSelectedWorkGroup[];
+  subtotal: number;
+  itemsSelected: number;
+  estimatedTotal: number;
+  onToggleGroup: (groupId: string) => void;
+  onToggleItem: (groupId: string, itemId: string) => void;
+  onEditItem: (groupId: string, itemId: string) => void;
+  onDeleteItem: (groupId: string, itemId: string) => void;
+  onChangeItemQuantity: (
+    groupId: string,
+    itemId: string,
+    value: string,
+  ) => void;
+  onSelectItemUnit: (groupId: string, itemId: string, unit: string) => void;
+  onAddCustomItem: () => void;
+  onNext: () => void;
+  onBack: () => void;
+  estimatedTime: string;
+  onChangeEstimatedTime: (value: string) => void;
+};
+
+export default function QuoteWorkItemsStep({
+  catalogTitle,
+  catalogDescription,
+  groups,
+  subtotal,
+  itemsSelected,
+  estimatedTotal,
+  onToggleGroup,
+  onToggleItem,
+  onEditItem,
+  onDeleteItem,
+  onChangeItemQuantity,
+  onSelectItemUnit,
+  onAddCustomItem,
+  onNext,
+  onBack,
+  estimatedTime,
+  onChangeEstimatedTime,
+}: QuoteWorkItemsStepProps) {
+  return (
+    <>
+      <QuoteSectionCard title="Select Services" icon="construct-outline">
+        <Text className="text-[14px] font-medium text-[#2B2B2B]">
+          {catalogTitle}
+        </Text>
+        <Text className="mt-2 text-[13px] leading-5 text-[#66707B]">
+          {catalogDescription}
+        </Text>
+
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={onAddCustomItem}
+          className="mt-4 h-[46px] flex-row items-center justify-center rounded-[12px] border border-[#1F5577] bg-white"
+        >
+          <Ionicons name="add" size={18} color="#1F5577" />
+          <Text className="ml-2 text-[14px] font-medium text-[#1F5577]">
+            Add Custom Item
+          </Text>
+        </TouchableOpacity>
+      </QuoteSectionCard>
+
+      {groups.map((group) => (
+        <QuoteWorkGroupCard
+          key={group.id}
+          group={group}
+          onToggleGroup={() => onToggleGroup(group.id)}
+          onToggleItem={(itemId) => onToggleItem(group.id, itemId)}
+          onEditItem={(itemId) => onEditItem(group.id, itemId)}
+          onDeleteItem={(itemId) => onDeleteItem(group.id, itemId)}
+          onChangeItemQuantity={(itemId, value) =>
+            onChangeItemQuantity(group.id, itemId, value)
+          }
+          onSelectItemUnit={(itemId, unit) =>
+            onSelectItemUnit(group.id, itemId, unit)
+          }
+        />
+      ))}
+
+      <Text className="mb-2 mt-1 text-[12px] font-medium text-[#344054]">
+        Estimated Time
+      </Text>
+      <TextInput
+        value={estimatedTime}
+        onChangeText={onChangeEstimatedTime}
+        placeholder="e.g. 6 - 9 weeks"
+        placeholderTextColor="#98A2B3"
+        className="mb-4 h-[58px] rounded-[16px] border border-[#D5DEE8] bg-[#F6F8FB] px-4 text-[18px] text-[#667085]"
+      />
+
+      <QuoteWorkTotalsBar
+        itemsSelected={itemsSelected}
+        estimatedTotal={estimatedTotal}
+        subtotal={subtotal}
+      />
+
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={onBack}
+        className="mt-4 h-[52px] items-center justify-center rounded-[12px] border border-[#D6DCE3] bg-white"
+      >
+        <Text className="text-[15px] font-medium text-[#2B2B2B]">Back</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={onNext}
+        className="mt-3 h-[56px] items-center justify-center rounded-[14px] bg-[#1F5577]"
+      >
+        <Text className="text-[16px] font-medium text-white">Next</Text>
+      </TouchableOpacity>
+    </>
+  );
+}

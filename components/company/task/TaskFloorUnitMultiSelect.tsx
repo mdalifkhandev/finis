@@ -1,0 +1,424 @@
+import { useFloorRoomsQuery } from "@/hooks/company/company";
+import type { Floor, Room } from "@/types/company.types";
+import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback, useEffect, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+export type TaskFloorUnitSelection = {
+  floor: Floor;
+  unit: Room;
+};
+
+type FloorUnitsProps = {
+  projectId?: string;
+  floor: Floor;
+  unitsOverride?: Room[];
+  selectedUnitIds: string[];
+  onToggle: (floor: Floor, unit: Room) => void;
+  onToggleAll: (floor: Floor, units: Room[]) => void;
+  onUnitsLoaded?: (floorId: string, units: Room[]) => void;
+  readonly?: boolean;
+};
+
+function FloorUnits({
+  projectId,
+  floor,
+  unitsOverride,
+  selectedUnitIds,
+  onToggle,
+  onToggleAll,
+  onUnitsLoaded,
+  readonly,
+}: FloorUnitsProps) {
+  const shouldFetchUnits = !unitsOverride;
+  const { data: fetchedUnits, isLoading } = useFloorRoomsQuery(
+    shouldFetchUnits ? projectId : undefined,
+    shouldFetchUnits ? floor.id : undefined,
+  );
+  const units = unitsOverride ?? fetchedUnits ?? [];
+
+  useEffect(() => {
+    if (units.length > 0 && onUnitsLoaded) {
+      onUnitsLoaded(floor.id, units);
+    }
+  }, [units, floor.id, onUnitsLoaded]);
+  const allSelected = Boolean(units.length) && selectedUnitIds.length === units.length;
+  const someSelected = Boolean(units.length) && selectedUnitIds.length > 0 && !allSelected;
+
+  return (
+    <View className="border-b border-[#DCE3EA] px-4 py-4 last:border-b-0">
+      <View className="flex-row items-center justify-between">
+        <View className="self-start rounded-[6px] bg-[#EAF3F7] px-2.5 py-1">
+          <Text className="text-[14px] font-semibold text-[#1E5371]">{floor.name}</Text>
+        </View>
+
+        {!readonly && units.length ? (
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => onToggleAll(floor, units)}
+            className={`h-6 w-6 items-center justify-center border ${allSelected
+                ? "border-[#1E5371] bg-[#1E5371]"
+                : someSelected
+                  ? "border-[#1E5371] bg-[#EDF5F8]"
+                  : "border-[#CDD4DE] bg-white"
+              }`}
+          >
+            <Ionicons
+              name={allSelected ? "checkmark" : someSelected ? "remove" : "checkmark"}
+              size={18}
+              color={allSelected ? "#FFFFFF" : "#1E5371"}
+            />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {isLoading ? (
+        <ActivityIndicator size="small" color="#1E5371" className="mt-4" />
+      ) : units.length ? (
+        <View className="mt-3 flex-row flex-wrap gap-2">
+          {units.map((unit) => {
+            const selected = selectedUnitIds.includes(unit.id);
+            if (readonly && !selected) return null;
+            return (
+              <TouchableOpacity
+                key={unit.id}
+                activeOpacity={0.8}
+                onPress={() => onToggle(floor, unit)}
+                disabled={readonly}
+                className={`flex-row items-center rounded-[9px] border px-3 py-2.5 ${selected
+                    ? "border-[#1E5371] bg-[#EDF5F8]"
+                    : "border-[#CDD4DE] bg-white"
+                  }`}
+              >
+                {!readonly && (
+                  <Ionicons
+                    name={selected ? "checkbox" : "square-outline"}
+                    size={19}
+                    color={selected ? "#1E5371" : "#8996A8"}
+                  />
+                )}
+                <Text
+                  className={`text-[15px] ${selected ? "text-[#1E5371] font-semibold" : "text-[#4D596A] font-medium"
+                    } ${!readonly ? "ml-2" : ""}`}
+                >
+                  {unit.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : (
+        <Text className="mt-3 text-[13px] text-[#667085]">No units available.</Text>
+      )}
+    </View>
+  );
+}
+
+export type TaskFloorUnitMultiSelectProps = {
+  projectId?: string;
+  floors?: Floor[];
+  isLoading?: boolean;
+  initialSelections?: TaskFloorUnitSelection[];
+  onChange: (selections: TaskFloorUnitSelection[]) => void;
+  unitsByFloor?: Record<string, Room[]>;
+  readonly?: boolean;
+};
+
+export default function TaskFloorUnitMultiSelect({
+  projectId,
+  floors,
+  isLoading,
+  initialSelections,
+  onChange,
+  unitsByFloor,
+  readonly,
+}: TaskFloorUnitMultiSelectProps) {
+  const insets = useSafeAreaInsets();
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [selectedFloors, setSelectedFloors] = useState<Floor[]>([]);
+  const [selectedUnits, setSelectedUnits] = useState<Record<string, Room[]>>({});
+  const [loadedUnitsByFloor, setLoadedUnitsByFloor] = useState<Record<string, Room[]>>({});
+
+  const handleUnitsLoaded = useCallback((floorId: string, units: Room[]) => {
+    setLoadedUnitsByFloor((prev) => {
+      if (prev[floorId]?.length === units.length) return prev;
+      return { ...prev, [floorId]: units };
+    });
+  }, []);
+
+  const hasInitialized = React.useRef(false);
+
+  useEffect(() => {
+    if (!initialSelections?.length || hasInitialized.current) return;
+    
+    hasInitialized.current = true;
+
+    const nextFloors: Floor[] = [];
+    const nextUnits: Record<string, Room[]> = {};
+
+    initialSelections.forEach(({ floor, unit }) => {
+      if (!nextFloors.some((item) => item.id === floor.id)) {
+        nextFloors.push(floor);
+      }
+
+      const floorUnits = nextUnits[floor.id] ?? [];
+      if (!floorUnits.some((item) => item.id === unit.id)) {
+        nextUnits[floor.id] = [...floorUnits, unit];
+      }
+    });
+
+    setSelectedFloors(nextFloors);
+    setSelectedUnits(nextUnits);
+  }, [initialSelections]);
+
+  const isFirstRender = React.useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    onChange(
+      selectedFloors.flatMap((floor) =>
+        (selectedUnits[floor.id] ?? []).map((unit) => ({ floor, unit })),
+      ),
+    );
+  }, [onChange, selectedFloors, selectedUnits]);
+
+  const toggleFloor = (floor: Floor) => {
+    setSelectedFloors((current) => {
+      if (current.some((item) => item.id === floor.id)) {
+        setSelectedUnits((units) => {
+          const next = { ...units };
+          delete next[floor.id];
+          return next;
+        });
+        return current.filter((item) => item.id !== floor.id);
+      }
+      return [...current, floor];
+    });
+  };
+
+  const toggleUnit = (floor: Floor, unit: Room) => {
+    setSelectedUnits((current) => {
+      const units = current[floor.id] ?? [];
+      const selected = units.some((item) => item.id === unit.id);
+      return {
+        ...current,
+        [floor.id]: selected
+          ? units.filter((item) => item.id !== unit.id)
+          : [...units, unit],
+      };
+    });
+  };
+
+  const toggleAllFloors = () => {
+    if (!floors?.length) return;
+    const allSelected = selectedFloors.length === floors.length;
+    if (allSelected) {
+      setSelectedFloors([]);
+      setSelectedUnits({});
+    } else {
+      setSelectedFloors([...floors]);
+    }
+  };
+
+  const toggleAllUnits = (floor: Floor, units: Room[]) => {
+    setSelectedUnits((current) => {
+      const currentUnits = current[floor.id] ?? [];
+      const allSelected = units.length > 0 && currentUnits.length === units.length;
+
+      return {
+        ...current,
+        [floor.id]: allSelected ? [] : [...units],
+      };
+    });
+  };
+
+  const areAllUnitsSelectedGlobally = React.useMemo(() => {
+    if (!selectedFloors.length) return false;
+    let allSelected = true;
+    let hasAnyUnits = false;
+    for (const floor of selectedFloors) {
+      const cached = loadedUnitsByFloor[floor.id] ?? [];
+      const selected = selectedUnits[floor.id] ?? [];
+      if (cached.length > 0) {
+        hasAnyUnits = true;
+        if (selected.length !== cached.length) {
+          allSelected = false;
+          break;
+        }
+      }
+    }
+    return hasAnyUnits && allSelected;
+  }, [selectedFloors, selectedUnits, loadedUnitsByFloor]);
+
+  const toggleAllSelectedFloorsUnits = () => {
+    if (areAllUnitsSelectedGlobally) {
+      setSelectedUnits({});
+    } else {
+      const nextUnits: Record<string, Room[]> = {};
+      for (const floor of selectedFloors) {
+        if (loadedUnitsByFloor[floor.id]) {
+          nextUnits[floor.id] = [...loadedUnitsByFloor[floor.id]];
+        }
+      }
+      setSelectedUnits(nextUnits);
+    }
+  };
+
+  return (
+    <>
+      {!readonly && (
+        <View className="mt-4">
+          <Text className="mb-2 text-[14px] font-medium text-[#4D596A]">Select Floors</Text>
+        <View className="min-h-[62px] flex-row flex-wrap items-center gap-2 rounded-[16px] border border-[#D3DBE4] bg-[#F7F9FB] px-3 py-3">
+          {selectedFloors.map((floor) => (
+            <View key={floor.id} className="h-9 flex-row items-center rounded-full bg-[#E5F0F5] px-3">
+              <Text className="text-[14px] font-semibold text-[#1E5371]">{floor.name}</Text>
+              {!readonly && (
+                <TouchableOpacity onPress={() => toggleFloor(floor)} className="ml-1.5">
+                  <Ionicons name="close" size={17} color="#1E5371" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
+          {!readonly && (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setSheetVisible(true)}
+              className="h-9 w-9 items-center justify-center rounded-full bg-[#DCEBF2]"
+            >
+              <Ionicons name="add" size={20} color="#1E5371" />
+            </TouchableOpacity>
+          )}
+          {!readonly && selectedFloors.length === 0 && (
+            <Text className="text-[14px] text-[#A3ADB8]">Add floors</Text>
+          )}
+        </View>
+        </View>
+      )}
+
+      {selectedFloors.length ? (
+        <View className="mt-4">
+          {!readonly && (
+            <View className="mb-2 flex-row items-center justify-between">
+              <Text className="text-[14px] font-medium text-[#4D596A]">Selected Units</Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={toggleAllSelectedFloorsUnits}
+                className="flex-row items-center gap-1.5 rounded-[6px] border border-[#DCE3EA] bg-white px-2 py-1"
+              >
+                <Text className="text-[13px] font-medium text-[#1E5371]">
+                  {areAllUnitsSelectedGlobally ? "Deselect All" : "Select All"}
+                </Text>
+                <Ionicons
+                  name={areAllUnitsSelectedGlobally ? "checkmark" : "list"}
+                  size={18}
+                  color="#1E5371"
+                />
+              </TouchableOpacity>
+            </View>
+          )}
+          <View className="overflow-hidden rounded-[16px] border border-[#CBD4DE] bg-[#F9FAFC]">
+            {selectedFloors.map((floor) => (
+              <FloorUnits
+                key={floor.id}
+                projectId={projectId}
+                floor={floor}
+                unitsOverride={unitsByFloor?.[floor.id]}
+                selectedUnitIds={(selectedUnits[floor.id] ?? []).map((unit) => unit.id)}
+                onToggle={toggleUnit}
+                onToggleAll={toggleAllUnits}
+                onUnitsLoaded={handleUnitsLoaded}
+                readonly={readonly}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      <Modal
+        visible={sheetVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSheetVisible(false)}
+      >
+        <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setSheetVisible(false)}>
+          <Pressable
+            className="max-h-[75%] rounded-t-[24px] bg-white px-5 pt-4"
+            style={{ paddingBottom: Math.max(insets.bottom, 24) }}
+            onPress={(event) => event.stopPropagation()}
+          >
+            <View className="mb-4 h-1.5 w-12 self-center rounded-full bg-[#D8DEE5]" />
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-[18px] font-semibold text-[#26313E]">Select Floors</Text>
+              <View className="flex-row items-center gap-4">
+                <TouchableOpacity onPress={toggleAllFloors} className="flex-row items-center gap-1.5">
+                  <Text className="text-[15px] font-medium text-[#1E5371]">
+                    {floors?.length && selectedFloors.length === floors.length ? "Deselect All" : "Select All"}
+                  </Text>
+                  <Ionicons
+                    name={floors?.length && selectedFloors.length === floors.length ? "checkbox" : "square-outline"}
+                    size={20}
+                    color="#1E5371"
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSheetVisible(false)}>
+                  <Ionicons name="close" size={24} color="#667085" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {isLoading ? (
+                <ActivityIndicator size="large" color="#1E5371" className="py-8" />
+              ) : floors?.length ? (
+                floors.map((floor) => {
+                  const selected = selectedFloors.some((item) => item.id === floor.id);
+                  return (
+                    <TouchableOpacity
+                      key={floor.id}
+                      activeOpacity={0.8}
+                      onPress={() => toggleFloor(floor)}
+                      className={`mb-3 flex-row items-center justify-between rounded-[12px] border px-4 py-4 ${selected
+                          ? "border-[#1E5371] bg-[#EDF5F8]"
+                          : "border-[#D8DEE5] bg-[#F8FAFC]"
+                        }`}
+                    >
+                      <Text className="text-[16px] font-medium text-[#26313E]">{floor.name}</Text>
+                      <Ionicons
+                        name={selected ? "checkbox" : "square-outline"}
+                        size={23}
+                        color={selected ? "#1E5371" : "#98A2B3"}
+                      />
+                    </TouchableOpacity>
+                  );
+                })
+              ) : (
+                <Text className="py-8 text-center text-[14px] text-[#667085]">No floors available.</Text>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setSheetVisible(false)}
+              className="mt-3 h-[48px] items-center justify-center rounded-[12px] bg-[#1E5371]"
+            >
+              <Text className="text-[15px] font-semibold text-white">Done</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}

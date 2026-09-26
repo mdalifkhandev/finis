@@ -1,0 +1,82 @@
+import * as SecureStore from "expo-secure-store";
+import { create } from "zustand";
+import { queryClient } from "@/lib/query-client";
+import { setCurrentAccessToken } from "@/lib/auth-token";
+import { disconnectChatSocket } from "@/lib/chat-socket";
+import { disconnectWorkerGeofenceSocket } from "@/lib/worker-geofence-socket";
+import { stopWorkerLocationTracking } from "@/lib/worker-location-task";
+import type { AuthSession, User } from "@/types/auth.types";
+
+const TOKEN_KEY = "token";
+
+type AuthState = {
+  user: User | null;
+  token: string | null;
+  accessToken: string | null;
+  isHydrated: boolean;
+  setAuth: (user: User, token: string) => Promise<void>;
+  logout: () => Promise<void>;
+  setSession: (session: AuthSession) => void;
+  setUser: (user: User | null) => void;
+  clearSession: () => void;
+  setHydrated: (hydrated: boolean) => void;
+  initializeAuth: () => Promise<void>;
+};
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  token: null,
+  accessToken: null,
+  isHydrated: false,
+  setAuth: async (user, token) => {
+    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    queryClient.clear();
+    setCurrentAccessToken(token);
+    set({ user, token, accessToken: token });
+  },
+  logout: async () => {
+    await stopWorkerLocationTracking();
+    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    disconnectChatSocket();
+    disconnectWorkerGeofenceSocket();
+    queryClient.clear();
+    setCurrentAccessToken(null);
+    set({ user: null, token: null, accessToken: null });
+  },
+  setSession: ({ accessToken, user }) => {
+    void SecureStore.setItemAsync(TOKEN_KEY, accessToken);
+    queryClient.clear();
+    setCurrentAccessToken(accessToken);
+    set({ user, token: accessToken, accessToken });
+  },
+  setUser: (user) => set({ user }),
+  clearSession: () => {
+    void stopWorkerLocationTracking();
+    void SecureStore.deleteItemAsync(TOKEN_KEY);
+    disconnectChatSocket();
+    disconnectWorkerGeofenceSocket();
+    queryClient.clear();
+    setCurrentAccessToken(null);
+    set({ user: null, token: null, accessToken: null });
+  },
+  setHydrated: (hydrated) => set({ isHydrated: hydrated }),
+  initializeAuth: async () => {
+    const storedToken = await SecureStore.getItemAsync(TOKEN_KEY);
+
+    if (!storedToken) {
+      setCurrentAccessToken(null);
+      set({ user: null, token: null, accessToken: null, isHydrated: true });
+      return;
+    }
+
+    const current = get();
+
+    set({
+      token: storedToken,
+      accessToken: storedToken,
+      user: current.user,
+      isHydrated: true,
+    });
+    setCurrentAccessToken(storedToken);
+  },
+}));

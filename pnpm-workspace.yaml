@@ -1,0 +1,6 @@
+nodeLinker: hoisted
+
+allowBuilds:
+  '@firebase/util': true
+  protobufjs: true
+  unrs-resolver: true

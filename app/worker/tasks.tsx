@@ -1,0 +1,128 @@
+import WorkerGroupedTaskList from "@/components/worker/WorkerGroupedTaskList";
+import { useWorkerTasksQuery } from "@/hooks/worker/tasks";
+import { Feather } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function WorkerTasks() {
+  const { data, isLoading, refetch, isRefetching } = useWorkerTasksQuery(1, 100);
+  const tasks = data?.data ?? [];
+
+  return (
+    <SafeAreaView
+      className="flex-1 bg-[#E9EDF1]"
+      edges={["top", "left", "right"]}
+    >
+      <StatusBar barStyle="dark-content" />
+
+      <View className="h-16 flex-row items-center justify-center px-5">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="absolute left-5"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Feather name="chevron-left" size={30} color="#26313E" />
+        </TouchableOpacity>
+        <Text className="text-[18px] font-bold text-[#26313E]">Tasks</Text>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 40 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={() => void refetch()}
+            colors={["#1E5371"]}
+            tintColor="#1E5371"
+          />
+        }
+      >
+        {isLoading ? (
+          <View className="mt-24 items-center">
+            <ActivityIndicator size="large" color="#1E5371" />
+          </View>
+        ) : tasks.length ? (
+          <WorkerGroupedTaskList
+            tasks={tasks}
+            onPressTask={(task) => {
+              // Block tasks awaiting admin approval
+              const normalizedApproval = (task.approvalDecision ?? "").toLowerCase().trim();
+              if (normalizedApproval === "pending" && (task.status === "pending" || !task.status)) {
+                Alert.alert(
+                  "⏳ Awaiting Approval",
+                  "This subtask is waiting for admin approval. You will be able to start it once it's approved.",
+                  [{ text: "OK" }]
+                );
+                return;
+              }
+
+              const normalizedStatus = (task.status ?? "").toLowerCase().trim();
+              const shouldOpenDetails =
+                normalizedStatus === "in_progress" ||
+                normalizedStatus === "review" ||
+                normalizedStatus === "revision" ||
+                normalizedStatus === "completed" ||
+                (normalizedStatus === "completed" && normalizedApproval === "pending");
+
+              const resolvedTaskType = task.taskType ?? "main";
+
+              if (shouldOpenDetails) {
+                router.push({
+                  pathname: "/screens/worker/taskdetails",
+                  params: {
+                    id: task.id,
+                    taskType: resolvedTaskType,
+                  },
+                });
+                return;
+              }
+
+              router.push({
+                pathname: "/screens/worker/viewtask",
+                params: {
+                  id: task.id,
+                  taskType: resolvedTaskType,
+                  taskTitle: task.title || "",
+                  taskDescription: task.description || "",
+                  projectName: task.project?.name || "",
+                  floorName: task.floor?.name || "",
+                  roomName: task.room?.name || "",
+                  dueDate: task.dueDate || "",
+                },
+              });
+            }}
+
+            onPressCreateSubtask={(task, context) => {
+              router.push({
+                pathname: "/screens/worker/createsubtask",
+                params: {
+                  taskId: task.id,
+                  taskTitle: task.title || "Task",
+                  floorsJson: JSON.stringify(task.floors ?? []),
+                  selectedFloorId: context.floorId,
+                  selectedUnitId: context.unitId,
+                },
+              });
+            }}
+          />
+        ) : (
+          <View className="mt-24 items-center">
+            <Text className="text-[15px] text-[#667085]">No tasks found.</Text>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
