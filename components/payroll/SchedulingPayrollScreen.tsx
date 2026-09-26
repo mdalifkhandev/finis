@@ -1,0 +1,155 @@
+import { router } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
+import { RefreshControl, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import BackTitleHeader from "../common/BackTitleHeader";
+import PayrollCalendarCard, { type PayrollCalendarMode } from "./PayrollCalendarCard";
+import ScheduledActivityCard from "./ScheduledActivityCard";
+import { useAdminWorkerSummaryQuery } from "@/hooks/admin/payroll";
+import type { ActivityItem } from "./types";
+
+function formatLocalDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDate(value: Date) {
+  const next = new Date(value);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function getPeriodStartFromEnd(end: Date, mode: PayrollCalendarMode) {
+  const start = normalizeDate(end);
+
+  if (mode === "weekly") {
+    start.setDate(start.getDate() - 6);
+  } else if (mode === "biweekly") {
+    start.setDate(start.getDate() - 13);
+  } else if (mode === "monthly") {
+    start.setMonth(start.getMonth() - 1);
+    start.setDate(start.getDate() + 1);
+  } else if (mode === "bimonthly") {
+    start.setMonth(start.getMonth() - 2);
+    start.setDate(start.getDate() + 1);
+  }
+
+  return start;
+}
+
+export default function SchedulingPayrollScreen() {
+  const [monthDate, setMonthDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedRangeEnd, setSelectedRangeEnd] = useState<Date | null>(null);
+  const [periodMode, setPeriodMode] = useState<PayrollCalendarMode>("custom");
+  const { data, refetch } = useAdminWorkerSummaryQuery();
+  const [refreshing, setRefreshing] = useState(false);
+  const summaryStartDate = selectedDate ?? normalizeDate(new Date());
+  const summaryEndDate = selectedRangeEnd ?? summaryStartDate;
+
+  const activities = useMemo<ActivityItem[]>(() => {
+    return (
+      data?.projects?.map((project) => ({
+        id: project.projectId,
+        title: project.projectName,
+        dateLabel: new Date(project.endDate).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        workersLabel: `${project.workerCount} workers • ${project.teamMemberCount} team members`,
+      })) ?? []
+    );
+  }, [data?.projects]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
+
+  return (
+    <SafeAreaView edges={['top','left',"right"]} className="flex-1 bg-[#E9EDF1]">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 96 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        <BackTitleHeader
+          title="Scheduling & Payroll"
+          onBack={() => router.back()}
+        />
+
+        <View className="mt-4 px-4">
+          <PayrollCalendarCard
+            monthDate={monthDate}
+            selectedDate={selectedDate}
+            periodMode={periodMode}
+            selectedRangeEnd={selectedRangeEnd}
+            onSelectDate={(date) => setSelectedDate(date)}
+            onSelectRangeEnd={setSelectedRangeEnd}
+            onMonthDateChange={setMonthDate}
+            onPeriodModeChange={(mode) => {
+              setPeriodMode(mode);
+              if (mode === "custom") {
+                setSelectedDate(null);
+                setSelectedRangeEnd(null);
+                return;
+              }
+              const end = normalizeDate(new Date());
+              const start = getPeriodStartFromEnd(end, mode);
+              setSelectedDate(start);
+              setSelectedRangeEnd(end);
+            }}
+          />
+
+          <TouchableOpacity
+            activeOpacity={0.88}
+            onPress={() =>
+              router.push({
+                pathname: "/screens/payroll/summary",
+                params: {
+                  startDate: formatLocalDate(summaryStartDate),
+                  endDate: formatLocalDate(summaryEndDate),
+                },
+              })
+            }
+            className="mt-3 h-[56px] items-center justify-center rounded-[12px] bg-[#1F5577]"
+          >
+            <Text className="text-[16px] font-medium text-white">
+              View Payroll Summary
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="mt-3 px-4">
+          <Text
+            className="text-[32px] font-medium text-[#101828]"
+            style={{ fontSize: 32 / 2 }}
+          >
+            Scheduled Activities
+          </Text>
+
+          {activities.length > 0 ? (
+            activities.map((item) => (
+              <ScheduledActivityCard key={item.id} activity={item} />
+            ))
+          ) : (
+            <View className="mt-3 rounded-[12px] border border-[#E3E6EA] bg-white px-4 py-4">
+              <Text className="text-[14px] text-[#667085]">
+                No scheduled activities found.
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
