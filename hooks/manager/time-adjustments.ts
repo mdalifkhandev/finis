@@ -33,6 +33,8 @@ export function useSubmitTimeAdjustmentMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["time-adjustments"] });
+      queryClient.invalidateQueries({ queryKey: ["worker", "profile"] });
+      queryClient.invalidateQueries({ queryKey: ["worker", "attendance", "history"] });
     },
   });
 }
