@@ -13,6 +13,7 @@ import {
   useProjectFloorsQuery,
   useProjectProfileQuery
 } from "@/hooks/company/company";
+import { useAuthStore } from "@/store/auth.store";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
@@ -69,6 +70,9 @@ export default function CreateSubtaskRoute() {
 
   const [title, setTitle] = useState(editTaskTitle ?? "");
   const [description, setDescription] = useState(editTaskDescription ?? "");
+  const [price, setPrice] = useState("");
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canSetPrice = userRole === "admin" || userRole === "super_admin";
 
   const validPriorities = ["low", "medium", "high", "critical"];
   const initialPriority = validPriorities.includes(editTaskPriority?.toLowerCase() ?? "")
@@ -186,6 +190,7 @@ export default function CreateSubtaskRoute() {
         await updateSubTaskMutation.mutateAsync({
           title: title.trim(),
           description: description.trim(),
+          ...(canSetPrice && price.trim() ? { price: Number(price) } : {}),
           priority: priority.toLowerCase(),
           unitIds: floorUnitSelections.map((selection) => selection.unit.id),
           dueDate: dueDate.trim() || formatDate(new Date()),
@@ -205,6 +210,7 @@ export default function CreateSubtaskRoute() {
         await createSubTaskMutation.mutateAsync({
           title: title.trim(),
           description: description.trim(),
+          ...(canSetPrice && price.trim() ? { price: Number(price) } : {}),
           priority: priority.toLowerCase(),
           unitIds: floorUnitSelections.map((selection) => selection.unit.id),
           dueDate: dueDate.trim() || formatDate(new Date()),
@@ -246,6 +252,7 @@ export default function CreateSubtaskRoute() {
         projectId,
         title: title.trim(),
         description: description.trim(),
+        ...(canSetPrice && price.trim() ? { price: Number(price) } : {}),
         priority: priority.toLowerCase(),
         dueDate: dueDate.trim() || formatDate(new Date()),
         floors: floorsPayload,
@@ -332,6 +339,18 @@ export default function CreateSubtaskRoute() {
               multiline
             />
           </View>
+
+          {canSetPrice ? (
+            <View className="mt-4">
+              <TaskFormField
+                label={isSubtaskMode ? "Subtask Price" : "Task Price"}
+                placeholder="e.g. 150"
+                value={price}
+                onChangeText={setPrice}
+                keyboardType="numeric"
+              />
+            </View>
+          ) : null}
 
           <View className="mt-4 flex-row gap-3">
             <View className="flex-1">

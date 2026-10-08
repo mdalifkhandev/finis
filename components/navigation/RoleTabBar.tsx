@@ -50,6 +50,13 @@ const ADMIN_TABS: TabItem[] = [
     inactiveIcon: "cube-outline",
     match: (pathname) => pathname === "/(tab)/inventory" || pathname.startsWith("/screens/inventory"),
   },
+  {
+    label: "Quotes",
+    route: "/manager/quotes",
+    activeIcon: "receipt",
+    inactiveIcon: "receipt-outline",
+    match: (pathname) => pathname === "/manager/quotes",
+  },
 ];
 
 const WORKER_TABS: TabItem[] = [

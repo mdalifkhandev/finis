@@ -273,6 +273,7 @@ export type TaskListItem = {
   createdBy: string;
   title: string;
   description: string;
+  price?: number;
   priority: string;
   status: string;
   dueDate: string;
@@ -367,6 +368,7 @@ export type CreateTaskResponse = ApiResponse<{ id: string }>;
 export type CreateSubTaskPayload = {
   title: string;
   description?: string;
+  price?: number;
   priority?: string;
   unitId?: string;
   unitIds?: string[];

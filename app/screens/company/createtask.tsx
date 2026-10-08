@@ -10,6 +10,7 @@ import {
   useProjectFloorsQuery,
   useProjectProfileQuery
 } from "@/hooks/company/company";
+import { useAuthStore } from "@/store/auth.store";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
@@ -58,6 +59,9 @@ export default function CreateTaskRoute() {
 
   const [title, setTitle] = useState(editTaskTitle ?? resolvedParentTaskTitle ?? "");
   const [description, setDescription] = useState(editTaskDescription ?? "");
+  const [price, setPrice] = useState("");
+  const userRole = useAuthStore((state) => state.user?.role);
+  const canSetPrice = userRole === "admin" || userRole === "super_admin";
 
   const [priority, setPriority] = useState<"LOW" | "MEDIUM" | "HIGH">(editTaskPriority ?? "MEDIUM");
   const [showPrioritySheet, setShowPrioritySheet] = useState(false);
@@ -126,6 +130,7 @@ export default function CreateTaskRoute() {
           payload: {
             title: title.trim(),
             description: description.trim(),
+            ...(canSetPrice && price.trim() ? { price: Number(price) } : {}),
             priority: priority.toLowerCase(),
             dueDate: dueDate.trim() || formatDate(new Date()),
             estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
@@ -142,6 +147,7 @@ export default function CreateTaskRoute() {
         projectId,
         title: title.trim(),
         description: description.trim(),
+        ...(canSetPrice && price.trim() ? { price: Number(price) } : {}),
         priority: priority.toLowerCase(),
         dueDate: dueDate.trim() || formatDate(new Date()),
         estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
@@ -229,6 +235,18 @@ export default function CreateTaskRoute() {
                 multiline
               />
             </View>
+
+            {canSetPrice ? (
+              <View className="mt-4">
+                <TaskFormField
+                  label="Task Price"
+                  placeholder="e.g. 150"
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="numeric"
+                />
+              </View>
+            ) : null}
 
             <View className="mt-4 flex-row gap-3">
               <View className="flex-1">

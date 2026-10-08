@@ -1,7 +1,7 @@
 import { create, type InternalAxiosRequestConfig, AxiosError } from "axios";
 import { API_BASE_URL } from "@/lib/config";
 import { getCurrentAccessToken } from "@/lib/auth-token";
-import { useNetworkStore } from "@/store/network.store";
+import { useNetworkStore, pingInternet } from "@/store/network.store";
 
 export const api = create({
   baseURL: API_BASE_URL,
@@ -41,15 +41,26 @@ api.interceptors.response.use(
     }
     return response;
   },
-  (error: AxiosError<{ message?: string }>) => {
+  async (error: AxiosError<{ message?: string }>) => {
     const isNetworkError =
       error.code === "ERR_NETWORK" ||
       error.message === "Network Error" ||
       (!error.response && error.code !== "ECONNABORTED");
 
     if (isNetworkError) {
-      error.message = "Mobile internet is not working. Please check your mobile data or Wi-Fi and try again.";
-      useNetworkStore.getState().setOffline(true);
+      try {
+        const hasInternet = await pingInternet(2000);
+        if (!hasInternet) {
+          error.message = "Mobile internet is not working. Please check your mobile data or Wi-Fi and try again.";
+          useNetworkStore.getState().setOffline(true);
+        } else {
+          // Device has real internet, but backend server is offline/down
+          error.message = "Unable to connect to backend server. The server is currently offline.";
+          useNetworkStore.getState().setOffline(false);
+        }
+      } catch {
+        error.message = "Network error. Please check your connection.";
+      }
     } else if (error.code === "ECONNABORTED" || error.message?.toLowerCase().includes("timeout")) {
       error.message = "Request timed out. Please check your network connection.";
       void useNetworkStore.getState().checkConnection();

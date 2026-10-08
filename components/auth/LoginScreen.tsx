@@ -8,12 +8,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { toast } from "sonner-native";
 import { getRoleHomeRoute } from "@/api/auth/auth.routes";
 import { useLogin } from "@/hooks/auth/auth";
+import { useServerHealth } from "@/hooks/common/useServerHealth";
+import { ServerHealthBanner } from "@/components/common/ServerHealthBanner";
 
 const REMEMBERED_IDENTIFIER_KEY = "finis-remembered-identifier";
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, isPending } = useLogin();
+  const serverHealth = useServerHealth(true);
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -44,6 +47,11 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     const trimmedIdentifier = identifier.trim();
+
+    if (serverHealth.status === "down") {
+      toast.error("Server is currently down. Please retry connection first.");
+      return;
+    }
 
     if (!trimmedIdentifier || !password) {
       toast.error("Enter your email or phone and password.");
@@ -95,7 +103,15 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-          <View className="px-5 pt-16">
+          <View className="px-5 pt-6">
+            <ServerHealthBanner
+              status={serverHealth.status}
+              latencyMs={serverHealth.latencyMs}
+              errorMessage={serverHealth.errorMessage}
+              onRetry={serverHealth.checkHealth}
+              isChecking={serverHealth.isChecking}
+            />
+
             <Text className="text-[38px] font-semibold text-[#1F2328]">
               Welcome Back
             </Text>
@@ -177,13 +193,23 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              className="mt-6 h-12 items-center justify-center rounded-xl bg-[#1F5577]"
+              className={`mt-6 h-12 items-center justify-center rounded-xl ${
+                serverHealth.status === "down"
+                  ? "bg-[#94A3B8]"
+                  : "bg-[#1F5577]"
+              }`}
               onPress={handleLogin}
               activeOpacity={0.86}
-              disabled={isPending}
+              disabled={isPending || serverHealth.status === "down" || serverHealth.isChecking}
             >
               <Text className="text-[18px] font-semibold text-white">
-                {isPending ? "Logging in..." : "Login"}
+                {serverHealth.isChecking
+                  ? "Checking Server..."
+                  : serverHealth.status === "down"
+                  ? "Server Down (Tap Retry Above)"
+                  : isPending
+                  ? "Logging in..."
+                  : "Login"}
               </Text>
             </TouchableOpacity>
           </View>
